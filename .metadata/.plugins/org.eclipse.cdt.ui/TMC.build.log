@@ -1,0 +1,18 @@
+01:06:40 **** Incremental Build of configuration Release for project TMC ****
+cs-make -s -j8 all 
+arm-none-eabi-gcc (GNU Arm Embedded Toolchain 9-2020-q2-update) 9.3.1 20200408 (release)
+Copyright (C) 2019 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+"-------- begin (mode: ROM_RUN) --------"
+ECHO is off.
+--------  end  --------
+"**** Linking :" _build_Landungsbruecke/Landungsbruecke_v3.07.15_BL.elf
+c:/program files (x86)/gnu arm embedded toolchain/9 2020-q2-update/bin/../lib/gcc/arm-none-eabi/9.3.1/../../../../arm-none-eabi/bin/ld.exe: error: linker script file 'hal/Landungsbruecke/freescale/MK20DN512-TMCM.ld' appears multiple times
+collect2.exe: error: ld returned 1 exit status
+cs-make: *** [_build_Landungsbruecke/Landungsbruecke_v3.07.15_BL.elf] Error 1
+"cs-make -s -j8 all" terminated with exit code 2. Build might be incomplete.
+
+01:06:41 Build Failed. 1 errors, 0 warnings. (took 366ms)
+

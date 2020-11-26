@@ -1,0 +1,2002 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"SPI.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.arch armv7e-m
+  17              		.syntax unified
+  18              		.thumb
+  19              		.thumb_func
+  20              		.fpu softvfp
+  22              	setTMCSPIParameters:
+  23              	.LVL0:
+  24              	.LFB1:
+  25              		.file 1 "hal/Landungsbruecke/tmc/SPI.c"
+   1:hal/Landungsbruecke/tmc/SPI.c **** #include "hal/HAL.h"
+   2:hal/Landungsbruecke/tmc/SPI.c **** #include "hal/RS232.h"
+   3:hal/Landungsbruecke/tmc/SPI.c **** 
+   4:hal/Landungsbruecke/tmc/SPI.c **** void init();
+   5:hal/Landungsbruecke/tmc/SPI.c **** void reset_ch1();
+   6:hal/Landungsbruecke/tmc/SPI.c **** void reset_ch2();
+   7:hal/Landungsbruecke/tmc/SPI.c **** 
+   8:hal/Landungsbruecke/tmc/SPI.c **** static void setTMCSPIParameters(SPI_MemMapPtr basePtr);
+   9:hal/Landungsbruecke/tmc/SPI.c **** 
+  10:hal/Landungsbruecke/tmc/SPI.c **** static uint8_t readWrite(SPIChannelTypeDef *SPIChannel, uint8_t data, uint8_t lastTransfer);
+  11:hal/Landungsbruecke/tmc/SPI.c **** static uint8_t spi_ch1_readWrite(uint8_t data, uint8_t lastTransfer);
+  12:hal/Landungsbruecke/tmc/SPI.c **** static uint8_t spi_ch2_readWrite(uint8_t data, uint8_t lastTransfer);
+  13:hal/Landungsbruecke/tmc/SPI.c **** static void spi_ch1_readWriteArray(uint8_t *data, size_t length);
+  14:hal/Landungsbruecke/tmc/SPI.c **** static void spi_ch2_readWriteArray(uint8_t *data, size_t length);
+  15:hal/Landungsbruecke/tmc/SPI.c **** 
+  16:hal/Landungsbruecke/tmc/SPI.c **** SPIChannelTypeDef *SPIChannel_1_default;
+  17:hal/Landungsbruecke/tmc/SPI.c **** SPIChannelTypeDef *SPIChannel_2_default;
+  18:hal/Landungsbruecke/tmc/SPI.c **** 
+  19:hal/Landungsbruecke/tmc/SPI.c **** static IOPinTypeDef IODummy = { .bitWeight = DUMMY_BITWEIGHT };
+  20:hal/Landungsbruecke/tmc/SPI.c **** 
+  21:hal/Landungsbruecke/tmc/SPI.c **** SPITypeDef SPI=
+  22:hal/Landungsbruecke/tmc/SPI.c **** {
+  23:hal/Landungsbruecke/tmc/SPI.c **** 	.ch1 =
+  24:hal/Landungsbruecke/tmc/SPI.c **** 	{
+  25:hal/Landungsbruecke/tmc/SPI.c **** 		.periphery       = SPI1_BASE_PTR,
+  26:hal/Landungsbruecke/tmc/SPI.c **** 		.CSN             = &IODummy,
+  27:hal/Landungsbruecke/tmc/SPI.c **** 		.readWrite       = spi_ch1_readWrite,
+  28:hal/Landungsbruecke/tmc/SPI.c **** 		.readWriteArray  = spi_ch1_readWriteArray,
+  29:hal/Landungsbruecke/tmc/SPI.c **** 		.reset           = reset_ch1
+  30:hal/Landungsbruecke/tmc/SPI.c **** 	},
+  31:hal/Landungsbruecke/tmc/SPI.c **** 	.ch2 =
+  32:hal/Landungsbruecke/tmc/SPI.c **** 	{
+  33:hal/Landungsbruecke/tmc/SPI.c **** 		.periphery       = SPI2_BASE_PTR,
+  34:hal/Landungsbruecke/tmc/SPI.c **** 		.CSN             = &IODummy,
+  35:hal/Landungsbruecke/tmc/SPI.c **** 		.readWrite       = spi_ch2_readWrite,
+  36:hal/Landungsbruecke/tmc/SPI.c **** 		.readWriteArray  = spi_ch2_readWriteArray,
+  37:hal/Landungsbruecke/tmc/SPI.c **** 		.reset           = reset_ch2
+  38:hal/Landungsbruecke/tmc/SPI.c **** 	},
+  39:hal/Landungsbruecke/tmc/SPI.c **** 	.init = init
+  40:hal/Landungsbruecke/tmc/SPI.c **** };
+  41:hal/Landungsbruecke/tmc/SPI.c **** 
+  42:hal/Landungsbruecke/tmc/SPI.c **** 
+  43:hal/Landungsbruecke/tmc/SPI.c **** void init()
+  44:hal/Landungsbruecke/tmc/SPI.c **** {
+  45:hal/Landungsbruecke/tmc/SPI.c **** 	// SPI0 -> EEPROM
+  46:hal/Landungsbruecke/tmc/SPI.c **** 	// -------------------------------------------------------------------------------
+  47:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC5 |= SIM_SCGC5_PORTC_MASK;  // enable clock for PORT C
+  48:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC6 |= SIM_SCGC6_SPI0_MASK;   // enable clock for SPI0
+  49:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC6 &= ~SIM_SCGC6_CRC_MASK;   // disable clock for CRC module
+  50:hal/Landungsbruecke/tmc/SPI.c **** 
+  51:hal/Landungsbruecke/tmc/SPI.c **** 	// configure SPI0 pins:
+  52:hal/Landungsbruecke/tmc/SPI.c **** 	//     SCK: Port C, Pin 5
+  53:hal/Landungsbruecke/tmc/SPI.c **** 	//     SDI: Port C, Pin 6
+  54:hal/Landungsbruecke/tmc/SPI.c **** 	//     SDO: Port C, Pin 7
+  55:hal/Landungsbruecke/tmc/SPI.c **** 	//     CSN: Port C, Pin 8
+  56:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->EEPROM_SCK.configuration.GPIO_Mode = GPIO_Mode_AF2;
+  57:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->EEPROM_SI.configuration.GPIO_Mode = GPIO_Mode_AF2;
+  58:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->EEPROM_SO.configuration.GPIO_Mode = GPIO_Mode_AF2;
+  59:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->EEPROM_NCS.configuration.GPIO_Mode = GPIO_Mode_OUT;
+  60:hal/Landungsbruecke/tmc/SPI.c **** 
+  61:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->EEPROM_SCK);
+  62:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->EEPROM_SI);
+  63:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->EEPROM_SO);
+  64:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->EEPROM_NCS);
+  65:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->EEPROM_NCS);
+  66:hal/Landungsbruecke/tmc/SPI.c **** 
+  67:hal/Landungsbruecke/tmc/SPI.c **** 	setTMCSPIParameters(SPI0_BASE_PTR);
+  68:hal/Landungsbruecke/tmc/SPI.c **** 
+  69:hal/Landungsbruecke/tmc/SPI.c **** 	// SPI1 -> ch1
+  70:hal/Landungsbruecke/tmc/SPI.c **** 	// -------------------------------------------------------------------------------
+  71:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC5 |= SIM_SCGC5_PORTB_MASK;  // enable clock for PORT B
+  72:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC6 |= SIM_SCGC6_SPI1_MASK;   // enable clock for SPI1
+  73:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC6 &= ~SIM_SCGC6_CRC_MASK;   // disable clock for CRC module
+  74:hal/Landungsbruecke/tmc/SPI.c **** 
+  75:hal/Landungsbruecke/tmc/SPI.c **** 	// configure SPI1 pins:
+  76:hal/Landungsbruecke/tmc/SPI.c **** 	//     SCK: Port B, Pin 11
+  77:hal/Landungsbruecke/tmc/SPI.c **** 	//     SDI: Port B, Pin 16
+  78:hal/Landungsbruecke/tmc/SPI.c **** 	//     SDO: Port B, Pin 17
+  79:hal/Landungsbruecke/tmc/SPI.c **** 	//     CSN: Port B, Pin 10
+  80:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI1_SCK.configuration.GPIO_Mode = GPIO_Mode_AF2;
+  81:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI1_SDI.configuration.GPIO_Mode = GPIO_Mode_AF2;
+  82:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI1_SDO.configuration.GPIO_Mode = GPIO_Mode_AF2;
+  83:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI1_CSN.configuration.GPIO_Mode = GPIO_Mode_OUT;
+  84:hal/Landungsbruecke/tmc/SPI.c **** 
+  85:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI1_SCK);
+  86:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI1_SDI);
+  87:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI1_SDO);
+  88:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI1_CSN);
+  89:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->SPI1_CSN);
+  90:hal/Landungsbruecke/tmc/SPI.c **** 
+  91:hal/Landungsbruecke/tmc/SPI.c **** 	setTMCSPIParameters(SPI1_BASE_PTR);
+  92:hal/Landungsbruecke/tmc/SPI.c **** 
+  93:hal/Landungsbruecke/tmc/SPI.c **** 	// SPI2 -> ch2
+  94:hal/Landungsbruecke/tmc/SPI.c **** 	// -------------------------------------------------------------------------------
+  95:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC5 |= SIM_SCGC5_PORTA_MASK | SIM_SCGC5_PORTB_MASK | SIM_SCGC5_PORTC_MASK;  // enable clocks
+  96:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC3 |= SIM_SCGC3_SPI2_MASK;                                                 // enable clock 
+  97:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC6 &= ~SIM_SCGC6_CRC_MASK;                                                 // disable clock
+  98:hal/Landungsbruecke/tmc/SPI.c **** 
+  99:hal/Landungsbruecke/tmc/SPI.c **** 	// configure SPI2 pins:
+ 100:hal/Landungsbruecke/tmc/SPI.c **** 	//     SCK:  Port B, Pin 21
+ 101:hal/Landungsbruecke/tmc/SPI.c **** 	//     SDI:  Port B, Pin 22
+ 102:hal/Landungsbruecke/tmc/SPI.c **** 	//     SDO:  Port B, Pin 23
+ 103:hal/Landungsbruecke/tmc/SPI.c **** 	//     CSN0: Port C, Pin 0
+ 104:hal/Landungsbruecke/tmc/SPI.c **** 	//     CSN1: Port A, Pin 5
+ 105:hal/Landungsbruecke/tmc/SPI.c **** 	//     CSN2: Port C, Pin 4
+ 106:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI2_SCK.configuration.GPIO_Mode = GPIO_Mode_AF2;
+ 107:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI2_SDI.configuration.GPIO_Mode = GPIO_Mode_AF2;
+ 108:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI2_SDO.configuration.GPIO_Mode = GPIO_Mode_AF2;
+ 109:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI2_CSN0.configuration.GPIO_Mode = GPIO_Mode_OUT;
+ 110:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI2_CSN1.configuration.GPIO_Mode = GPIO_Mode_OUT;
+ 111:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI2_CSN2.configuration.GPIO_Mode = GPIO_Mode_OUT;
+ 112:hal/Landungsbruecke/tmc/SPI.c **** 
+ 113:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI2_SCK);
+ 114:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI2_SDI);
+ 115:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI2_SDO);
+ 116:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI2_CSN0);
+ 117:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI2_CSN1);
+ 118:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI2_CSN2);
+ 119:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->SPI2_CSN0);
+ 120:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->SPI2_CSN1);
+ 121:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->SPI2_CSN2);
+ 122:hal/Landungsbruecke/tmc/SPI.c **** 
+ 123:hal/Landungsbruecke/tmc/SPI.c **** 	setTMCSPIParameters(SPI2_BASE_PTR);
+ 124:hal/Landungsbruecke/tmc/SPI.c **** 
+ 125:hal/Landungsbruecke/tmc/SPI.c **** 	// configure default SPI channel_1
+ 126:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel_1_default = &HAL.SPI->ch1;
+ 127:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel_1_default->CSN = &HAL.IOs->pins->SPI1_CSN;
+ 128:hal/Landungsbruecke/tmc/SPI.c **** 	// configure default SPI channel_2
+ 129:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel_2_default = &HAL.SPI->ch2;
+ 130:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel_2_default->CSN = &HAL.IOs->pins->SPI2_CSN0;
+ 131:hal/Landungsbruecke/tmc/SPI.c **** }
+ 132:hal/Landungsbruecke/tmc/SPI.c **** 
+ 133:hal/Landungsbruecke/tmc/SPI.c **** void setTMCSPIParameters(SPI_MemMapPtr basePtr)
+ 134:hal/Landungsbruecke/tmc/SPI.c **** {
+  26              		.loc 1 134 1 view -0
+  27              		.cfi_startproc
+  28              		@ args = 0, pretend = 0, frame = 0
+  29              		@ frame_needed = 0, uses_anonymous_args = 0
+  30              		@ link register save eliminated.
+ 135:hal/Landungsbruecke/tmc/SPI.c **** 	// set SPI2 to STOP mode
+ 136:hal/Landungsbruecke/tmc/SPI.c **** 	SPI_MCR_REG(basePtr) = SPI_MCR_HALT_MASK;
+  31              		.loc 1 136 2 view .LVU1
+  32              		.loc 1 136 23 is_stmt 0 view .LVU2
+  33 0000 0123     		movs	r3, #1
+  34 0002 0360     		str	r3, [r0]
+ 137:hal/Landungsbruecke/tmc/SPI.c **** 
+ 138:hal/Landungsbruecke/tmc/SPI.c **** 	// set SPI2 to master mode, set inactive state of chip select to HIGH, flush both FIFO buffer by c
+ 139:hal/Landungsbruecke/tmc/SPI.c **** 	SPI_MCR_REG(basePtr) |= SPI_MCR_MSTR_MASK
+  35              		.loc 1 139 2 is_stmt 1 view .LVU3
+  36              		.loc 1 139 23 is_stmt 0 view .LVU4
+  37 0004 0368     		ldr	r3, [r0]
+  38 0006 43F00043 		orr	r3, r3, #-2147483648
+  39 000a 43F44063 		orr	r3, r3, #3072
+  40 000e 0360     		str	r3, [r0]
+ 140:hal/Landungsbruecke/tmc/SPI.c **** 	                     |  SPI_MCR_CLR_RXF_MASK
+ 141:hal/Landungsbruecke/tmc/SPI.c **** 	                     |  SPI_MCR_CLR_TXF_MASK;
+ 142:hal/Landungsbruecke/tmc/SPI.c **** 
+ 143:hal/Landungsbruecke/tmc/SPI.c **** 	// baudrate => 48MHz/18 = 2.66MHz
+ 144:hal/Landungsbruecke/tmc/SPI.c **** 	SPI_CTAR_REG(basePtr, 0) = SPI_CTAR_FMSZ(7)     // duty cycle 50/50; 8bit frame(7+1); inactive SCK
+  41              		.loc 1 144 2 is_stmt 1 view .LVU5
+  42              		.loc 1 144 27 is_stmt 0 view .LVU6
+  43 0010 074B     		ldr	r3, .L2
+  44 0012 C360     		str	r3, [r0, #12]
+ 145:hal/Landungsbruecke/tmc/SPI.c **** 	                         | SPI_CTAR_DT(2)       // CS a SCK = 21ns[2ns]; after SCK = 21ns [2ns]; A
+ 146:hal/Landungsbruecke/tmc/SPI.c **** 	                         | SPI_CTAR_BR(2)       // prescaler value: 6 (BR=2, PBR=1 => 2,66MHz) (BR
+ 147:hal/Landungsbruecke/tmc/SPI.c **** 	                         | SPI_CTAR_PBR(1)      // prescaler value: 3
+ 148:hal/Landungsbruecke/tmc/SPI.c **** 	                         | SPI_CTAR_CPHA_MASK   // clock phase
+ 149:hal/Landungsbruecke/tmc/SPI.c **** 	                         | SPI_CTAR_PCSSCK(1)   // shift NCS->SCK
+ 150:hal/Landungsbruecke/tmc/SPI.c **** 	                         | SPI_CTAR_PASC(1)     // shift NCS->SCK
+ 151:hal/Landungsbruecke/tmc/SPI.c **** 	                         | SPI_CTAR_CPOL_MASK;  // clk high in idle
+ 152:hal/Landungsbruecke/tmc/SPI.c **** 
+ 153:hal/Landungsbruecke/tmc/SPI.c **** 	// set SPI2 to RUNNING mode
+ 154:hal/Landungsbruecke/tmc/SPI.c **** 	SPI_SR_REG(basePtr) |= SPI_SR_EOQF_MASK;
+  45              		.loc 1 154 2 is_stmt 1 view .LVU7
+  46              		.loc 1 154 22 is_stmt 0 view .LVU8
+  47 0014 C36A     		ldr	r3, [r0, #44]
+  48 0016 43F08053 		orr	r3, r3, #268435456
+  49 001a C362     		str	r3, [r0, #44]
+ 155:hal/Landungsbruecke/tmc/SPI.c **** 	SPI_MCR_REG(basePtr) &= ~SPI_MCR_HALT_MASK;
+  50              		.loc 1 155 2 is_stmt 1 view .LVU9
+  51              		.loc 1 155 23 is_stmt 0 view .LVU10
+  52 001c 0368     		ldr	r3, [r0]
+  53 001e 23F00103 		bic	r3, r3, #1
+  54 0022 0360     		str	r3, [r0]
+ 156:hal/Landungsbruecke/tmc/SPI.c **** 	SPI_MCR_REG(basePtr) &= ~SPI_MCR_FRZ_MASK;
+  55              		.loc 1 156 2 is_stmt 1 view .LVU11
+  56              		.loc 1 156 23 is_stmt 0 view .LVU12
+  57 0024 0368     		ldr	r3, [r0]
+  58 0026 23F00063 		bic	r3, r3, #134217728
+  59 002a 0360     		str	r3, [r0]
+ 157:hal/Landungsbruecke/tmc/SPI.c **** }
+  60              		.loc 1 157 1 view .LVU13
+  61 002c 7047     		bx	lr
+  62              	.L3:
+  63 002e 00BF     		.align	2
+  64              	.L2:
+  65 0030 2200513E 		.word	1045495842
+  66              		.cfi_endproc
+  67              	.LFE1:
+  69              		.align	1
+  70              		.global	init
+  71              		.syntax unified
+  72              		.thumb
+  73              		.thumb_func
+  74              		.fpu softvfp
+  76              	init:
+  77              	.LFB0:
+  44:hal/Landungsbruecke/tmc/SPI.c **** 	// SPI0 -> EEPROM
+  78              		.loc 1 44 1 is_stmt 1 view -0
+  79              		.cfi_startproc
+  80              		@ args = 0, pretend = 0, frame = 0
+  81              		@ frame_needed = 0, uses_anonymous_args = 0
+  47:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC6 |= SIM_SCGC6_SPI0_MASK;   // enable clock for SPI0
+  82              		.loc 1 47 2 view .LVU15
+  44:hal/Landungsbruecke/tmc/SPI.c **** 	// SPI0 -> EEPROM
+  83              		.loc 1 44 1 is_stmt 0 view .LVU16
+  84 0034 2DE9F047 		push	{r4, r5, r6, r7, r8, r9, r10, lr}
+  85              	.LCFI0:
+  86              		.cfi_def_cfa_offset 32
+  87              		.cfi_offset 4, -32
+  88              		.cfi_offset 5, -28
+  89              		.cfi_offset 6, -24
+  90              		.cfi_offset 7, -20
+  91              		.cfi_offset 8, -16
+  92              		.cfi_offset 9, -12
+  93              		.cfi_offset 10, -8
+  94              		.cfi_offset 14, -4
+  47:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC6 |= SIM_SCGC6_SPI0_MASK;   // enable clock for SPI0
+  95              		.loc 1 47 12 view .LVU17
+  96 0038 6F4D     		ldr	r5, .L5
+  56:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->EEPROM_SI.configuration.GPIO_Mode = GPIO_Mode_AF2;
+  97              		.loc 1 56 5 view .LVU18
+  98 003a DFF8D4A1 		ldr	r10, .L5+24
+  47:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC6 |= SIM_SCGC6_SPI0_MASK;   // enable clock for SPI0
+  99              		.loc 1 47 12 view .LVU19
+ 100 003e 41F23808 		movw	r8, #4152
+  48:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC6 &= ~SIM_SCGC6_CRC_MASK;   // disable clock for CRC module
+ 101              		.loc 1 48 12 view .LVU20
+ 102 0042 41F23C06 		movw	r6, #4156
+  47:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC6 |= SIM_SCGC6_SPI0_MASK;   // enable clock for SPI0
+ 103              		.loc 1 47 12 view .LVU21
+ 104 0046 55F80830 		ldr	r3, [r5, r8]
+  56:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->EEPROM_SI.configuration.GPIO_Mode = GPIO_Mode_AF2;
+ 105              		.loc 1 56 5 view .LVU22
+ 106 004a DAF80C40 		ldr	r4, [r10, #12]
+  47:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC6 |= SIM_SCGC6_SPI0_MASK;   // enable clock for SPI0
+ 107              		.loc 1 47 12 view .LVU23
+ 108 004e 43F40063 		orr	r3, r3, #2048
+ 109 0052 45F80830 		str	r3, [r5, r8]
+  48:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC6 &= ~SIM_SCGC6_CRC_MASK;   // disable clock for CRC module
+ 110              		.loc 1 48 2 is_stmt 1 view .LVU24
+  48:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC6 &= ~SIM_SCGC6_CRC_MASK;   // disable clock for CRC module
+ 111              		.loc 1 48 12 is_stmt 0 view .LVU25
+ 112 0056 AB59     		ldr	r3, [r5, r6]
+  56:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->EEPROM_SI.configuration.GPIO_Mode = GPIO_Mode_AF2;
+ 113              		.loc 1 56 9 view .LVU26
+ 114 0058 6068     		ldr	r0, [r4, #4]
+  48:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC6 &= ~SIM_SCGC6_CRC_MASK;   // disable clock for CRC module
+ 115              		.loc 1 48 12 view .LVU27
+ 116 005a 43F48053 		orr	r3, r3, #4096
+ 117 005e AB51     		str	r3, [r5, r6]
+  49:hal/Landungsbruecke/tmc/SPI.c **** 
+ 118              		.loc 1 49 2 is_stmt 1 view .LVU28
+  49:hal/Landungsbruecke/tmc/SPI.c **** 
+ 119              		.loc 1 49 12 is_stmt 0 view .LVU29
+ 120 0060 AB59     		ldr	r3, [r5, r6]
+  56:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->EEPROM_SI.configuration.GPIO_Mode = GPIO_Mode_AF2;
+ 121              		.loc 1 56 52 view .LVU30
+ 122 0062 0227     		movs	r7, #2
+  59:hal/Landungsbruecke/tmc/SPI.c **** 
+ 123              		.loc 1 59 52 view .LVU31
+ 124 0064 4FF00909 		mov	r9, #9
+  49:hal/Landungsbruecke/tmc/SPI.c **** 
+ 125              		.loc 1 49 12 view .LVU32
+ 126 0068 23F48023 		bic	r3, r3, #262144
+ 127 006c AB51     		str	r3, [r5, r6]
+  56:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->EEPROM_SI.configuration.GPIO_Mode = GPIO_Mode_AF2;
+ 128              		.loc 1 56 2 is_stmt 1 view .LVU33
+  56:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->EEPROM_SI.configuration.GPIO_Mode = GPIO_Mode_AF2;
+ 129              		.loc 1 56 52 is_stmt 0 view .LVU34
+ 130 006e 80F85D76 		strb	r7, [r0, #1629]
+  57:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->EEPROM_SO.configuration.GPIO_Mode = GPIO_Mode_AF2;
+ 131              		.loc 1 57 2 is_stmt 1 view .LVU35
+  57:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->EEPROM_SO.configuration.GPIO_Mode = GPIO_Mode_AF2;
+ 132              		.loc 1 57 51 is_stmt 0 view .LVU36
+ 133 0072 80F87D76 		strb	r7, [r0, #1661]
+  58:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->EEPROM_NCS.configuration.GPIO_Mode = GPIO_Mode_OUT;
+ 134              		.loc 1 58 2 is_stmt 1 view .LVU37
+  58:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->EEPROM_NCS.configuration.GPIO_Mode = GPIO_Mode_OUT;
+ 135              		.loc 1 58 51 is_stmt 0 view .LVU38
+ 136 0076 80F89D76 		strb	r7, [r0, #1693]
+  59:hal/Landungsbruecke/tmc/SPI.c **** 
+ 137              		.loc 1 59 2 is_stmt 1 view .LVU39
+  59:hal/Landungsbruecke/tmc/SPI.c **** 
+ 138              		.loc 1 59 52 is_stmt 0 view .LVU40
+ 139 007a 80F8BD96 		strb	r9, [r0, #1725]
+  61:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->EEPROM_SI);
+ 140              		.loc 1 61 2 is_stmt 1 view .LVU41
+  61:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->EEPROM_SI);
+ 141              		.loc 1 61 17 is_stmt 0 view .LVU42
+ 142 007e 2368     		ldr	r3, [r4]
+  61:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->EEPROM_SI);
+ 143              		.loc 1 61 2 view .LVU43
+ 144 0080 00F5C960 		add	r0, r0, #1608
+ 145 0084 1B68     		ldr	r3, [r3]
+ 146 0086 9847     		blx	r3
+ 147              	.LVL1:
+  62:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->EEPROM_SO);
+ 148              		.loc 1 62 2 is_stmt 1 view .LVU44
+  62:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->EEPROM_SO);
+ 149              		.loc 1 62 17 is_stmt 0 view .LVU45
+ 150 0088 D4E90030 		ldrd	r3, r0, [r4]
+  62:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->EEPROM_SO);
+ 151              		.loc 1 62 2 view .LVU46
+ 152 008c 1B68     		ldr	r3, [r3]
+ 153 008e 00F5CD60 		add	r0, r0, #1640
+ 154 0092 9847     		blx	r3
+ 155              	.LVL2:
+  63:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->EEPROM_NCS);
+ 156              		.loc 1 63 2 is_stmt 1 view .LVU47
+  63:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->EEPROM_NCS);
+ 157              		.loc 1 63 17 is_stmt 0 view .LVU48
+ 158 0094 D4E90030 		ldrd	r3, r0, [r4]
+  63:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->EEPROM_NCS);
+ 159              		.loc 1 63 2 view .LVU49
+ 160 0098 1B68     		ldr	r3, [r3]
+ 161 009a 00F5D160 		add	r0, r0, #1672
+ 162 009e 9847     		blx	r3
+ 163              	.LVL3:
+  64:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->EEPROM_NCS);
+ 164              		.loc 1 64 2 is_stmt 1 view .LVU50
+  64:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->EEPROM_NCS);
+ 165              		.loc 1 64 17 is_stmt 0 view .LVU51
+ 166 00a0 D4E90030 		ldrd	r3, r0, [r4]
+  64:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->EEPROM_NCS);
+ 167              		.loc 1 64 2 view .LVU52
+ 168 00a4 1B68     		ldr	r3, [r3]
+ 169 00a6 00F5D560 		add	r0, r0, #1704
+ 170 00aa 9847     		blx	r3
+ 171              	.LVL4:
+  65:hal/Landungsbruecke/tmc/SPI.c **** 
+ 172              		.loc 1 65 2 is_stmt 1 view .LVU53
+  65:hal/Landungsbruecke/tmc/SPI.c **** 
+ 173              		.loc 1 65 17 is_stmt 0 view .LVU54
+ 174 00ac D4E90030 		ldrd	r3, r0, [r4]
+  65:hal/Landungsbruecke/tmc/SPI.c **** 
+ 175              		.loc 1 65 2 view .LVU55
+ 176 00b0 5B69     		ldr	r3, [r3, #20]
+ 177 00b2 00F5D560 		add	r0, r0, #1704
+ 178 00b6 9847     		blx	r3
+ 179              	.LVL5:
+  67:hal/Landungsbruecke/tmc/SPI.c **** 
+ 180              		.loc 1 67 2 is_stmt 1 view .LVU56
+ 181 00b8 5048     		ldr	r0, .L5+4
+ 182 00ba FFF7A1FF 		bl	setTMCSPIParameters
+ 183              	.LVL6:
+  71:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC6 |= SIM_SCGC6_SPI1_MASK;   // enable clock for SPI1
+ 184              		.loc 1 71 2 view .LVU57
+  71:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC6 |= SIM_SCGC6_SPI1_MASK;   // enable clock for SPI1
+ 185              		.loc 1 71 12 is_stmt 0 view .LVU58
+ 186 00be 55F80830 		ldr	r3, [r5, r8]
+  80:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI1_SDI.configuration.GPIO_Mode = GPIO_Mode_AF2;
+ 187              		.loc 1 80 9 view .LVU59
+ 188 00c2 6068     		ldr	r0, [r4, #4]
+  71:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC6 |= SIM_SCGC6_SPI1_MASK;   // enable clock for SPI1
+ 189              		.loc 1 71 12 view .LVU60
+ 190 00c4 43F48063 		orr	r3, r3, #1024
+ 191 00c8 45F80830 		str	r3, [r5, r8]
+  72:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC6 &= ~SIM_SCGC6_CRC_MASK;   // disable clock for CRC module
+ 192              		.loc 1 72 2 is_stmt 1 view .LVU61
+  72:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC6 &= ~SIM_SCGC6_CRC_MASK;   // disable clock for CRC module
+ 193              		.loc 1 72 12 is_stmt 0 view .LVU62
+ 194 00cc AB59     		ldr	r3, [r5, r6]
+ 195 00ce 43F40053 		orr	r3, r3, #8192
+ 196 00d2 AB51     		str	r3, [r5, r6]
+  73:hal/Landungsbruecke/tmc/SPI.c **** 
+ 197              		.loc 1 73 2 is_stmt 1 view .LVU63
+  73:hal/Landungsbruecke/tmc/SPI.c **** 
+ 198              		.loc 1 73 12 is_stmt 0 view .LVU64
+ 199 00d4 AB59     		ldr	r3, [r5, r6]
+ 200 00d6 23F48023 		bic	r3, r3, #262144
+ 201 00da AB51     		str	r3, [r5, r6]
+  80:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI1_SDI.configuration.GPIO_Mode = GPIO_Mode_AF2;
+ 202              		.loc 1 80 2 is_stmt 1 view .LVU65
+  80:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI1_SDI.configuration.GPIO_Mode = GPIO_Mode_AF2;
+ 203              		.loc 1 80 50 is_stmt 0 view .LVU66
+ 204 00dc 80F8FD72 		strb	r7, [r0, #765]
+  81:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI1_SDO.configuration.GPIO_Mode = GPIO_Mode_AF2;
+ 205              		.loc 1 81 2 is_stmt 1 view .LVU67
+  81:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI1_SDO.configuration.GPIO_Mode = GPIO_Mode_AF2;
+ 206              		.loc 1 81 50 is_stmt 0 view .LVU68
+ 207 00e0 80F81D73 		strb	r7, [r0, #797]
+  82:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI1_CSN.configuration.GPIO_Mode = GPIO_Mode_OUT;
+ 208              		.loc 1 82 2 is_stmt 1 view .LVU69
+  82:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI1_CSN.configuration.GPIO_Mode = GPIO_Mode_OUT;
+ 209              		.loc 1 82 50 is_stmt 0 view .LVU70
+ 210 00e4 80F83D73 		strb	r7, [r0, #829]
+  83:hal/Landungsbruecke/tmc/SPI.c **** 
+ 211              		.loc 1 83 2 is_stmt 1 view .LVU71
+  83:hal/Landungsbruecke/tmc/SPI.c **** 
+ 212              		.loc 1 83 50 is_stmt 0 view .LVU72
+ 213 00e8 80F8DD92 		strb	r9, [r0, #733]
+  85:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI1_SDI);
+ 214              		.loc 1 85 2 is_stmt 1 view .LVU73
+  85:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI1_SDI);
+ 215              		.loc 1 85 17 is_stmt 0 view .LVU74
+ 216 00ec 2368     		ldr	r3, [r4]
+  85:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI1_SDI);
+ 217              		.loc 1 85 2 view .LVU75
+ 218 00ee 00F53A70 		add	r0, r0, #744
+ 219 00f2 1B68     		ldr	r3, [r3]
+ 220 00f4 9847     		blx	r3
+ 221              	.LVL7:
+  86:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI1_SDO);
+ 222              		.loc 1 86 2 is_stmt 1 view .LVU76
+  86:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI1_SDO);
+ 223              		.loc 1 86 17 is_stmt 0 view .LVU77
+ 224 00f6 D4E90030 		ldrd	r3, r0, [r4]
+  86:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI1_SDO);
+ 225              		.loc 1 86 2 view .LVU78
+ 226 00fa 1B68     		ldr	r3, [r3]
+ 227 00fc 00F54270 		add	r0, r0, #776
+ 228 0100 9847     		blx	r3
+ 229              	.LVL8:
+  87:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI1_CSN);
+ 230              		.loc 1 87 2 is_stmt 1 view .LVU79
+  87:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI1_CSN);
+ 231              		.loc 1 87 17 is_stmt 0 view .LVU80
+ 232 0102 D4E90030 		ldrd	r3, r0, [r4]
+  87:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI1_CSN);
+ 233              		.loc 1 87 2 view .LVU81
+ 234 0106 1B68     		ldr	r3, [r3]
+ 235 0108 00F54A70 		add	r0, r0, #808
+ 236 010c 9847     		blx	r3
+ 237              	.LVL9:
+  88:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->SPI1_CSN);
+ 238              		.loc 1 88 2 is_stmt 1 view .LVU82
+  88:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->SPI1_CSN);
+ 239              		.loc 1 88 17 is_stmt 0 view .LVU83
+ 240 010e D4E90030 		ldrd	r3, r0, [r4]
+  88:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->SPI1_CSN);
+ 241              		.loc 1 88 2 view .LVU84
+ 242 0112 1B68     		ldr	r3, [r3]
+ 243 0114 00F53270 		add	r0, r0, #712
+ 244 0118 9847     		blx	r3
+ 245              	.LVL10:
+  89:hal/Landungsbruecke/tmc/SPI.c **** 
+ 246              		.loc 1 89 2 is_stmt 1 view .LVU85
+  89:hal/Landungsbruecke/tmc/SPI.c **** 
+ 247              		.loc 1 89 17 is_stmt 0 view .LVU86
+ 248 011a D4E90030 		ldrd	r3, r0, [r4]
+  89:hal/Landungsbruecke/tmc/SPI.c **** 
+ 249              		.loc 1 89 2 view .LVU87
+ 250 011e 5B69     		ldr	r3, [r3, #20]
+ 251 0120 00F53270 		add	r0, r0, #712
+ 252 0124 9847     		blx	r3
+ 253              	.LVL11:
+  91:hal/Landungsbruecke/tmc/SPI.c **** 
+ 254              		.loc 1 91 2 is_stmt 1 view .LVU88
+ 255 0126 3648     		ldr	r0, .L5+8
+ 256 0128 FFF76AFF 		bl	setTMCSPIParameters
+ 257              	.LVL12:
+  95:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC3 |= SIM_SCGC3_SPI2_MASK;                                                 // enable clock 
+ 258              		.loc 1 95 2 view .LVU89
+  95:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC3 |= SIM_SCGC3_SPI2_MASK;                                                 // enable clock 
+ 259              		.loc 1 95 12 is_stmt 0 view .LVU90
+ 260 012c 55F80830 		ldr	r3, [r5, r8]
+ 106:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI2_SDI.configuration.GPIO_Mode = GPIO_Mode_AF2;
+ 261              		.loc 1 106 9 view .LVU91
+ 262 0130 6068     		ldr	r0, [r4, #4]
+  95:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC3 |= SIM_SCGC3_SPI2_MASK;                                                 // enable clock 
+ 263              		.loc 1 95 12 view .LVU92
+ 264 0132 43F46063 		orr	r3, r3, #3584
+  96:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC6 &= ~SIM_SCGC6_CRC_MASK;                                                 // disable clock
+ 265              		.loc 1 96 12 view .LVU93
+ 266 0136 41F23002 		movw	r2, #4144
+  95:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC3 |= SIM_SCGC3_SPI2_MASK;                                                 // enable clock 
+ 267              		.loc 1 95 12 view .LVU94
+ 268 013a 45F80830 		str	r3, [r5, r8]
+  96:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC6 &= ~SIM_SCGC6_CRC_MASK;                                                 // disable clock
+ 269              		.loc 1 96 2 is_stmt 1 view .LVU95
+  96:hal/Landungsbruecke/tmc/SPI.c **** 	SIM_SCGC6 &= ~SIM_SCGC6_CRC_MASK;                                                 // disable clock
+ 270              		.loc 1 96 12 is_stmt 0 view .LVU96
+ 271 013e AB58     		ldr	r3, [r5, r2]
+ 272 0140 43F48053 		orr	r3, r3, #4096
+ 273 0144 AB50     		str	r3, [r5, r2]
+  97:hal/Landungsbruecke/tmc/SPI.c **** 
+ 274              		.loc 1 97 2 is_stmt 1 view .LVU97
+  97:hal/Landungsbruecke/tmc/SPI.c **** 
+ 275              		.loc 1 97 12 is_stmt 0 view .LVU98
+ 276 0146 AB59     		ldr	r3, [r5, r6]
+ 277 0148 23F48023 		bic	r3, r3, #262144
+ 278 014c AB51     		str	r3, [r5, r6]
+ 106:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI2_SDI.configuration.GPIO_Mode = GPIO_Mode_AF2;
+ 279              		.loc 1 106 2 is_stmt 1 view .LVU99
+ 106:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI2_SDI.configuration.GPIO_Mode = GPIO_Mode_AF2;
+ 280              		.loc 1 106 50 is_stmt 0 view .LVU100
+ 281 014e 80F87D72 		strb	r7, [r0, #637]
+ 107:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI2_SDO.configuration.GPIO_Mode = GPIO_Mode_AF2;
+ 282              		.loc 1 107 2 is_stmt 1 view .LVU101
+ 107:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI2_SDO.configuration.GPIO_Mode = GPIO_Mode_AF2;
+ 283              		.loc 1 107 50 is_stmt 0 view .LVU102
+ 284 0152 80F8BD72 		strb	r7, [r0, #701]
+ 108:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI2_CSN0.configuration.GPIO_Mode = GPIO_Mode_OUT;
+ 285              		.loc 1 108 2 is_stmt 1 view .LVU103
+ 108:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI2_CSN0.configuration.GPIO_Mode = GPIO_Mode_OUT;
+ 286              		.loc 1 108 50 is_stmt 0 view .LVU104
+ 287 0156 80F89D72 		strb	r7, [r0, #669]
+ 109:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI2_CSN1.configuration.GPIO_Mode = GPIO_Mode_OUT;
+ 288              		.loc 1 109 2 is_stmt 1 view .LVU105
+ 109:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI2_CSN1.configuration.GPIO_Mode = GPIO_Mode_OUT;
+ 289              		.loc 1 109 51 is_stmt 0 view .LVU106
+ 290 015a 80F81D92 		strb	r9, [r0, #541]
+ 110:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI2_CSN2.configuration.GPIO_Mode = GPIO_Mode_OUT;
+ 291              		.loc 1 110 2 is_stmt 1 view .LVU107
+ 110:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->pins->SPI2_CSN2.configuration.GPIO_Mode = GPIO_Mode_OUT;
+ 292              		.loc 1 110 51 is_stmt 0 view .LVU108
+ 293 015e 80F83D92 		strb	r9, [r0, #573]
+ 111:hal/Landungsbruecke/tmc/SPI.c **** 
+ 294              		.loc 1 111 2 is_stmt 1 view .LVU109
+ 111:hal/Landungsbruecke/tmc/SPI.c **** 
+ 295              		.loc 1 111 51 is_stmt 0 view .LVU110
+ 296 0162 80F85D92 		strb	r9, [r0, #605]
+ 113:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI2_SDI);
+ 297              		.loc 1 113 2 is_stmt 1 view .LVU111
+ 113:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI2_SDI);
+ 298              		.loc 1 113 17 is_stmt 0 view .LVU112
+ 299 0166 2368     		ldr	r3, [r4]
+ 113:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI2_SDI);
+ 300              		.loc 1 113 2 view .LVU113
+ 301 0168 00F51A70 		add	r0, r0, #616
+ 302 016c 1B68     		ldr	r3, [r3]
+ 303 016e 9847     		blx	r3
+ 304              	.LVL13:
+ 114:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI2_SDO);
+ 305              		.loc 1 114 2 is_stmt 1 view .LVU114
+ 114:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI2_SDO);
+ 306              		.loc 1 114 17 is_stmt 0 view .LVU115
+ 307 0170 D4E90030 		ldrd	r3, r0, [r4]
+ 114:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI2_SDO);
+ 308              		.loc 1 114 2 view .LVU116
+ 309 0174 1B68     		ldr	r3, [r3]
+ 310 0176 00F52A70 		add	r0, r0, #680
+ 311 017a 9847     		blx	r3
+ 312              	.LVL14:
+ 115:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI2_CSN0);
+ 313              		.loc 1 115 2 is_stmt 1 view .LVU117
+ 115:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI2_CSN0);
+ 314              		.loc 1 115 17 is_stmt 0 view .LVU118
+ 315 017c D4E90030 		ldrd	r3, r0, [r4]
+ 115:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI2_CSN0);
+ 316              		.loc 1 115 2 view .LVU119
+ 317 0180 1B68     		ldr	r3, [r3]
+ 318 0182 00F52270 		add	r0, r0, #648
+ 319 0186 9847     		blx	r3
+ 320              	.LVL15:
+ 116:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI2_CSN1);
+ 321              		.loc 1 116 2 is_stmt 1 view .LVU120
+ 116:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI2_CSN1);
+ 322              		.loc 1 116 17 is_stmt 0 view .LVU121
+ 323 0188 D4E90030 		ldrd	r3, r0, [r4]
+ 116:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI2_CSN1);
+ 324              		.loc 1 116 2 view .LVU122
+ 325 018c 1B68     		ldr	r3, [r3]
+ 326 018e 00F50270 		add	r0, r0, #520
+ 327 0192 9847     		blx	r3
+ 328              	.LVL16:
+ 117:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI2_CSN2);
+ 329              		.loc 1 117 2 is_stmt 1 view .LVU123
+ 117:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI2_CSN2);
+ 330              		.loc 1 117 17 is_stmt 0 view .LVU124
+ 331 0194 D4E90030 		ldrd	r3, r0, [r4]
+ 117:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->SPI2_CSN2);
+ 332              		.loc 1 117 2 view .LVU125
+ 333 0198 1B68     		ldr	r3, [r3]
+ 334 019a 00F50A70 		add	r0, r0, #552
+ 335 019e 9847     		blx	r3
+ 336              	.LVL17:
+ 118:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->SPI2_CSN0);
+ 337              		.loc 1 118 2 is_stmt 1 view .LVU126
+ 118:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->SPI2_CSN0);
+ 338              		.loc 1 118 17 is_stmt 0 view .LVU127
+ 339 01a0 D4E90030 		ldrd	r3, r0, [r4]
+ 118:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->SPI2_CSN0);
+ 340              		.loc 1 118 2 view .LVU128
+ 341 01a4 1B68     		ldr	r3, [r3]
+ 342 01a6 00F51270 		add	r0, r0, #584
+ 343 01aa 9847     		blx	r3
+ 344              	.LVL18:
+ 119:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->SPI2_CSN1);
+ 345              		.loc 1 119 2 is_stmt 1 view .LVU129
+ 119:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->SPI2_CSN1);
+ 346              		.loc 1 119 17 is_stmt 0 view .LVU130
+ 347 01ac D4E90030 		ldrd	r3, r0, [r4]
+ 119:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->SPI2_CSN1);
+ 348              		.loc 1 119 2 view .LVU131
+ 349 01b0 5B69     		ldr	r3, [r3, #20]
+ 350 01b2 00F50270 		add	r0, r0, #520
+ 351 01b6 9847     		blx	r3
+ 352              	.LVL19:
+ 120:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->SPI2_CSN2);
+ 353              		.loc 1 120 2 is_stmt 1 view .LVU132
+ 120:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->SPI2_CSN2);
+ 354              		.loc 1 120 17 is_stmt 0 view .LVU133
+ 355 01b8 D4E90030 		ldrd	r3, r0, [r4]
+ 120:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->SPI2_CSN2);
+ 356              		.loc 1 120 2 view .LVU134
+ 357 01bc 5B69     		ldr	r3, [r3, #20]
+ 358 01be 00F50A70 		add	r0, r0, #552
+ 359 01c2 9847     		blx	r3
+ 360              	.LVL20:
+ 121:hal/Landungsbruecke/tmc/SPI.c **** 
+ 361              		.loc 1 121 2 is_stmt 1 view .LVU135
+ 121:hal/Landungsbruecke/tmc/SPI.c **** 
+ 362              		.loc 1 121 17 is_stmt 0 view .LVU136
+ 363 01c4 D4E90030 		ldrd	r3, r0, [r4]
+ 121:hal/Landungsbruecke/tmc/SPI.c **** 
+ 364              		.loc 1 121 2 view .LVU137
+ 365 01c8 5B69     		ldr	r3, [r3, #20]
+ 366 01ca 00F51270 		add	r0, r0, #584
+ 367 01ce 9847     		blx	r3
+ 368              	.LVL21:
+ 123:hal/Landungsbruecke/tmc/SPI.c **** 
+ 369              		.loc 1 123 2 is_stmt 1 view .LVU138
+ 370 01d0 0C48     		ldr	r0, .L5+12
+ 371 01d2 FFF715FF 		bl	setTMCSPIParameters
+ 372              	.LVL22:
+ 126:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel_1_default->CSN = &HAL.IOs->pins->SPI1_CSN;
+ 373              		.loc 1 126 2 view .LVU139
+ 126:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel_1_default->CSN = &HAL.IOs->pins->SPI1_CSN;
+ 374              		.loc 1 126 23 is_stmt 0 view .LVU140
+ 375 01d6 0C4A     		ldr	r2, .L5+16
+ 126:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel_1_default->CSN = &HAL.IOs->pins->SPI1_CSN;
+ 376              		.loc 1 126 29 view .LVU141
+ 377 01d8 DAF81030 		ldr	r3, [r10, #16]
+ 126:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel_1_default->CSN = &HAL.IOs->pins->SPI1_CSN;
+ 378              		.loc 1 126 23 view .LVU142
+ 379 01dc 1360     		str	r3, [r2]
+ 127:hal/Landungsbruecke/tmc/SPI.c **** 	// configure default SPI channel_2
+ 380              		.loc 1 127 2 is_stmt 1 view .LVU143
+ 127:hal/Landungsbruecke/tmc/SPI.c **** 	// configure default SPI channel_2
+ 381              		.loc 1 127 38 is_stmt 0 view .LVU144
+ 382 01de 6268     		ldr	r2, [r4, #4]
+ 127:hal/Landungsbruecke/tmc/SPI.c **** 	// configure default SPI channel_2
+ 383              		.loc 1 127 30 view .LVU145
+ 384 01e0 02F53271 		add	r1, r2, #712
+ 127:hal/Landungsbruecke/tmc/SPI.c **** 	// configure default SPI channel_2
+ 385              		.loc 1 127 28 view .LVU146
+ 386 01e4 5960     		str	r1, [r3, #4]
+ 129:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel_2_default->CSN = &HAL.IOs->pins->SPI2_CSN0;
+ 387              		.loc 1 129 2 is_stmt 1 view .LVU147
+ 129:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel_2_default->CSN = &HAL.IOs->pins->SPI2_CSN0;
+ 388              		.loc 1 129 23 is_stmt 0 view .LVU148
+ 389 01e6 0949     		ldr	r1, .L5+20
+ 129:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel_2_default->CSN = &HAL.IOs->pins->SPI2_CSN0;
+ 390              		.loc 1 129 25 view .LVU149
+ 391 01e8 03F11400 		add	r0, r3, #20
+ 130:hal/Landungsbruecke/tmc/SPI.c **** }
+ 392              		.loc 1 130 30 view .LVU150
+ 393 01ec 02F50272 		add	r2, r2, #520
+ 129:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel_2_default->CSN = &HAL.IOs->pins->SPI2_CSN0;
+ 394              		.loc 1 129 23 view .LVU151
+ 395 01f0 0860     		str	r0, [r1]
+ 130:hal/Landungsbruecke/tmc/SPI.c **** }
+ 396              		.loc 1 130 2 is_stmt 1 view .LVU152
+ 130:hal/Landungsbruecke/tmc/SPI.c **** }
+ 397              		.loc 1 130 28 is_stmt 0 view .LVU153
+ 398 01f2 9A61     		str	r2, [r3, #24]
+ 131:hal/Landungsbruecke/tmc/SPI.c **** 
+ 399              		.loc 1 131 1 view .LVU154
+ 400 01f4 BDE8F087 		pop	{r4, r5, r6, r7, r8, r9, r10, pc}
+ 401              	.L6:
+ 402              		.align	2
+ 403              	.L5:
+ 404 01f8 00700440 		.word	1074032640
+ 405 01fc 00C00240 		.word	1073922048
+ 406 0200 00D00240 		.word	1073926144
+ 407 0204 00C00A40 		.word	1074446336
+ 408 0208 00000000 		.word	SPIChannel_1_default
+ 409 020c 00000000 		.word	SPIChannel_2_default
+ 410 0210 00000000 		.word	HAL
+ 411              		.cfi_endproc
+ 412              	.LFE0:
+ 414              		.align	1
+ 415              		.global	reset_ch1
+ 416              		.syntax unified
+ 417              		.thumb
+ 418              		.thumb_func
+ 419              		.fpu softvfp
+ 421              	reset_ch1:
+ 422              	.LFB2:
+ 158:hal/Landungsbruecke/tmc/SPI.c **** 
+ 159:hal/Landungsbruecke/tmc/SPI.c **** void reset_ch1()
+ 160:hal/Landungsbruecke/tmc/SPI.c **** {
+ 423              		.loc 1 160 1 is_stmt 1 view -0
+ 424              		.cfi_startproc
+ 425              		@ args = 0, pretend = 0, frame = 0
+ 426              		@ frame_needed = 0, uses_anonymous_args = 0
+ 161:hal/Landungsbruecke/tmc/SPI.c **** 	// configure SPI1 pins PORTB_PCR11(SCK), PORTB_PCR17(SDI), PORTB_PCR15(SDO), PORTB_PCR10(CSN)
+ 162:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI1_SCK);
+ 427              		.loc 1 162 2 view .LVU156
+ 160:hal/Landungsbruecke/tmc/SPI.c **** 	// configure SPI1 pins PORTB_PCR11(SCK), PORTB_PCR17(SDI), PORTB_PCR15(SDO), PORTB_PCR10(CSN)
+ 428              		.loc 1 160 1 is_stmt 0 view .LVU157
+ 429 0214 38B5     		push	{r3, r4, r5, lr}
+ 430              	.LCFI1:
+ 431              		.cfi_def_cfa_offset 16
+ 432              		.cfi_offset 3, -16
+ 433              		.cfi_offset 4, -12
+ 434              		.cfi_offset 5, -8
+ 435              		.cfi_offset 14, -4
+ 436              		.loc 1 162 5 view .LVU158
+ 437 0216 0F4B     		ldr	r3, .L8
+ 163:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI1_SDI);
+ 164:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI1_SDO);
+ 165:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(SPI.ch1.CSN);
+ 438              		.loc 1 165 2 view .LVU159
+ 439 0218 0F4D     		ldr	r5, .L8+4
+ 162:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI1_SDI);
+ 440              		.loc 1 162 5 view .LVU160
+ 441 021a DC68     		ldr	r4, [r3, #12]
+ 162:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI1_SDI);
+ 442              		.loc 1 162 17 view .LVU161
+ 443 021c D4E90030 		ldrd	r3, r0, [r4]
+ 162:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI1_SDI);
+ 444              		.loc 1 162 2 view .LVU162
+ 445 0220 9B68     		ldr	r3, [r3, #8]
+ 446 0222 00F53A70 		add	r0, r0, #744
+ 447 0226 9847     		blx	r3
+ 448              	.LVL23:
+ 163:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI1_SDI);
+ 449              		.loc 1 163 2 is_stmt 1 view .LVU163
+ 163:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI1_SDI);
+ 450              		.loc 1 163 17 is_stmt 0 view .LVU164
+ 451 0228 D4E90030 		ldrd	r3, r0, [r4]
+ 163:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI1_SDI);
+ 452              		.loc 1 163 2 view .LVU165
+ 453 022c 9B68     		ldr	r3, [r3, #8]
+ 454 022e 00F54270 		add	r0, r0, #776
+ 455 0232 9847     		blx	r3
+ 456              	.LVL24:
+ 164:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(SPI.ch1.CSN);
+ 457              		.loc 1 164 2 is_stmt 1 view .LVU166
+ 164:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(SPI.ch1.CSN);
+ 458              		.loc 1 164 17 is_stmt 0 view .LVU167
+ 459 0234 D4E90030 		ldrd	r3, r0, [r4]
+ 164:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(SPI.ch1.CSN);
+ 460              		.loc 1 164 2 view .LVU168
+ 461 0238 9B68     		ldr	r3, [r3, #8]
+ 462 023a 00F54A70 		add	r0, r0, #808
+ 463 023e 9847     		blx	r3
+ 464              	.LVL25:
+ 465              		.loc 1 165 2 is_stmt 1 view .LVU169
+ 466              		.loc 1 165 17 is_stmt 0 view .LVU170
+ 467 0240 2368     		ldr	r3, [r4]
+ 468              		.loc 1 165 2 view .LVU171
+ 469 0242 6868     		ldr	r0, [r5, #4]
+ 470 0244 9B68     		ldr	r3, [r3, #8]
+ 471 0246 9847     		blx	r3
+ 472              	.LVL26:
+ 166:hal/Landungsbruecke/tmc/SPI.c **** 
+ 167:hal/Landungsbruecke/tmc/SPI.c **** 	// set SPI0 to master mode, set inactive state of chip select to HIGH, flush both FIFO buffer by c
+ 168:hal/Landungsbruecke/tmc/SPI.c **** 	SPI_MCR_REG(SPI.ch1.periphery) |= SPI_MCR_CLR_RXF_MASK | SPI_MCR_CLR_TXF_MASK;
+ 473              		.loc 1 168 2 is_stmt 1 view .LVU172
+ 474 0248 2A68     		ldr	r2, [r5]
+ 475              		.loc 1 168 33 is_stmt 0 view .LVU173
+ 476 024a 1368     		ldr	r3, [r2]
+ 477 024c 43F44063 		orr	r3, r3, #3072
+ 478 0250 1360     		str	r3, [r2]
+ 169:hal/Landungsbruecke/tmc/SPI.c **** }
+ 479              		.loc 1 169 1 view .LVU174
+ 480 0252 38BD     		pop	{r3, r4, r5, pc}
+ 481              	.L9:
+ 482              		.align	2
+ 483              	.L8:
+ 484 0254 00000000 		.word	HAL
+ 485 0258 00000000 		.word	.LANCHOR0
+ 486              		.cfi_endproc
+ 487              	.LFE2:
+ 489              		.align	1
+ 490              		.global	reset_ch2
+ 491              		.syntax unified
+ 492              		.thumb
+ 493              		.thumb_func
+ 494              		.fpu softvfp
+ 496              	reset_ch2:
+ 497              	.LFB3:
+ 170:hal/Landungsbruecke/tmc/SPI.c **** 
+ 171:hal/Landungsbruecke/tmc/SPI.c **** void reset_ch2()
+ 172:hal/Landungsbruecke/tmc/SPI.c **** {
+ 498              		.loc 1 172 1 is_stmt 1 view -0
+ 499              		.cfi_startproc
+ 500              		@ args = 0, pretend = 0, frame = 0
+ 501              		@ frame_needed = 0, uses_anonymous_args = 0
+ 173:hal/Landungsbruecke/tmc/SPI.c **** //	// configure SPI2 pins PORTB_PCR21(SCK), PORTB_PCR23(SDI), PORTB_PCR22(SDO), PORTC_PCR0(CSN0), P
+ 174:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI2_SCK);
+ 502              		.loc 1 174 2 view .LVU176
+ 172:hal/Landungsbruecke/tmc/SPI.c **** //	// configure SPI2 pins PORTB_PCR21(SCK), PORTB_PCR23(SDI), PORTB_PCR22(SDO), PORTC_PCR0(CSN0), P
+ 503              		.loc 1 172 1 is_stmt 0 view .LVU177
+ 504 025c 38B5     		push	{r3, r4, r5, lr}
+ 505              	.LCFI2:
+ 506              		.cfi_def_cfa_offset 16
+ 507              		.cfi_offset 3, -16
+ 508              		.cfi_offset 4, -12
+ 509              		.cfi_offset 5, -8
+ 510              		.cfi_offset 14, -4
+ 511              		.loc 1 174 5 view .LVU178
+ 512 025e 104B     		ldr	r3, .L11
+ 175:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI2_SDI);
+ 176:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI2_SDO);
+ 177:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(SPI.ch2.CSN);
+ 513              		.loc 1 177 2 view .LVU179
+ 514 0260 104D     		ldr	r5, .L11+4
+ 174:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI2_SDI);
+ 515              		.loc 1 174 5 view .LVU180
+ 516 0262 DC68     		ldr	r4, [r3, #12]
+ 174:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI2_SDI);
+ 517              		.loc 1 174 17 view .LVU181
+ 518 0264 D4E90030 		ldrd	r3, r0, [r4]
+ 174:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI2_SDI);
+ 519              		.loc 1 174 2 view .LVU182
+ 520 0268 9B68     		ldr	r3, [r3, #8]
+ 521 026a 00F51A70 		add	r0, r0, #616
+ 522 026e 9847     		blx	r3
+ 523              	.LVL27:
+ 175:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI2_SDI);
+ 524              		.loc 1 175 2 is_stmt 1 view .LVU183
+ 175:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI2_SDI);
+ 525              		.loc 1 175 17 is_stmt 0 view .LVU184
+ 526 0270 D4E90030 		ldrd	r3, r0, [r4]
+ 175:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI2_SDI);
+ 527              		.loc 1 175 2 view .LVU185
+ 528 0274 9B68     		ldr	r3, [r3, #8]
+ 529 0276 00F52A70 		add	r0, r0, #680
+ 530 027a 9847     		blx	r3
+ 531              	.LVL28:
+ 176:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(SPI.ch2.CSN);
+ 532              		.loc 1 176 2 is_stmt 1 view .LVU186
+ 176:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(SPI.ch2.CSN);
+ 533              		.loc 1 176 17 is_stmt 0 view .LVU187
+ 534 027c D4E90030 		ldrd	r3, r0, [r4]
+ 176:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->reset(SPI.ch2.CSN);
+ 535              		.loc 1 176 2 view .LVU188
+ 536 0280 9B68     		ldr	r3, [r3, #8]
+ 537 0282 00F52270 		add	r0, r0, #648
+ 538 0286 9847     		blx	r3
+ 539              	.LVL29:
+ 540              		.loc 1 177 2 is_stmt 1 view .LVU189
+ 541              		.loc 1 177 17 is_stmt 0 view .LVU190
+ 542 0288 2368     		ldr	r3, [r4]
+ 543              		.loc 1 177 2 view .LVU191
+ 544 028a A869     		ldr	r0, [r5, #24]
+ 545 028c 9B68     		ldr	r3, [r3, #8]
+ 546 028e 9847     		blx	r3
+ 547              	.LVL30:
+ 178:hal/Landungsbruecke/tmc/SPI.c **** 	SPI.ch2.readWrite = spi_ch2_readWrite;
+ 548              		.loc 1 178 2 is_stmt 1 view .LVU192
+ 179:hal/Landungsbruecke/tmc/SPI.c **** 
+ 180:hal/Landungsbruecke/tmc/SPI.c **** 	// set SPI0 to master mode, set inactive state of chip select to HIGH, flush both FIFO buffer by c
+ 181:hal/Landungsbruecke/tmc/SPI.c **** 	SPI_MCR_REG(SPI.ch2.periphery) |= SPI_MCR_CLR_RXF_MASK | SPI_MCR_CLR_TXF_MASK;
+ 549              		.loc 1 181 2 is_stmt 0 view .LVU193
+ 550 0290 6A69     		ldr	r2, [r5, #20]
+ 178:hal/Landungsbruecke/tmc/SPI.c **** 	SPI.ch2.readWrite = spi_ch2_readWrite;
+ 551              		.loc 1 178 20 view .LVU194
+ 552 0292 054B     		ldr	r3, .L11+8
+ 553 0294 EB61     		str	r3, [r5, #28]
+ 554              		.loc 1 181 2 is_stmt 1 view .LVU195
+ 555              		.loc 1 181 33 is_stmt 0 view .LVU196
+ 556 0296 1368     		ldr	r3, [r2]
+ 557 0298 43F44063 		orr	r3, r3, #3072
+ 558 029c 1360     		str	r3, [r2]
+ 182:hal/Landungsbruecke/tmc/SPI.c **** }
+ 559              		.loc 1 182 1 view .LVU197
+ 560 029e 38BD     		pop	{r3, r4, r5, pc}
+ 561              	.L12:
+ 562              		.align	2
+ 563              	.L11:
+ 564 02a0 00000000 		.word	HAL
+ 565 02a4 00000000 		.word	.LANCHOR0
+ 566 02a8 00000000 		.word	spi_ch2_readWrite
+ 567              		.cfi_endproc
+ 568              	.LFE3:
+ 570              		.align	1
+ 571              		.syntax unified
+ 572              		.thumb
+ 573              		.thumb_func
+ 574              		.fpu softvfp
+ 576              	readWrite:
+ 577              	.LVL31:
+ 578              	.LFB15:
+ 183:hal/Landungsbruecke/tmc/SPI.c **** 
+ 184:hal/Landungsbruecke/tmc/SPI.c **** int32_t spi_readInt(SPIChannelTypeDef *SPIChannel, uint8_t address)
+ 185:hal/Landungsbruecke/tmc/SPI.c **** {
+ 186:hal/Landungsbruecke/tmc/SPI.c **** 	// clear write bit
+ 187:hal/Landungsbruecke/tmc/SPI.c **** 	address &= 0x7F;
+ 188:hal/Landungsbruecke/tmc/SPI.c **** 
+ 189:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel->readWrite(address, false);
+ 190:hal/Landungsbruecke/tmc/SPI.c **** 	int value = SPIChannel->readWrite(0, false);
+ 191:hal/Landungsbruecke/tmc/SPI.c **** 	value <<= 8;
+ 192:hal/Landungsbruecke/tmc/SPI.c **** 	value |= SPIChannel->readWrite(0, false);
+ 193:hal/Landungsbruecke/tmc/SPI.c **** 	value <<= 8;
+ 194:hal/Landungsbruecke/tmc/SPI.c **** 	value |= SPIChannel->readWrite(0, false);
+ 195:hal/Landungsbruecke/tmc/SPI.c **** 	value <<= 8;
+ 196:hal/Landungsbruecke/tmc/SPI.c **** 	value |= SPIChannel->readWrite(0, true);
+ 197:hal/Landungsbruecke/tmc/SPI.c **** 
+ 198:hal/Landungsbruecke/tmc/SPI.c **** 	return value;
+ 199:hal/Landungsbruecke/tmc/SPI.c **** }
+ 200:hal/Landungsbruecke/tmc/SPI.c **** 
+ 201:hal/Landungsbruecke/tmc/SPI.c **** int32_t spi_ch1_readInt(uint8_t address)
+ 202:hal/Landungsbruecke/tmc/SPI.c **** {
+ 203:hal/Landungsbruecke/tmc/SPI.c **** 	return spi_readInt(SPIChannel_1_default, address);
+ 204:hal/Landungsbruecke/tmc/SPI.c **** }
+ 205:hal/Landungsbruecke/tmc/SPI.c **** 
+ 206:hal/Landungsbruecke/tmc/SPI.c **** int32_t spi_ch2_readInt(uint8_t address)
+ 207:hal/Landungsbruecke/tmc/SPI.c **** {
+ 208:hal/Landungsbruecke/tmc/SPI.c **** 	return spi_readInt(SPIChannel_2_default, address);
+ 209:hal/Landungsbruecke/tmc/SPI.c **** }
+ 210:hal/Landungsbruecke/tmc/SPI.c **** 
+ 211:hal/Landungsbruecke/tmc/SPI.c **** void spi_writeInt(SPIChannelTypeDef *SPIChannel, uint8_t address, int value)
+ 212:hal/Landungsbruecke/tmc/SPI.c **** {
+ 213:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel->readWrite(address|0x80, false);
+ 214:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel->readWrite(0xFF & (value>>24), false);
+ 215:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel->readWrite(0xFF & (value>>16), false);
+ 216:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel->readWrite(0xFF & (value>>8), false);
+ 217:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel->readWrite(0xFF & (value>>0), true);
+ 218:hal/Landungsbruecke/tmc/SPI.c **** }
+ 219:hal/Landungsbruecke/tmc/SPI.c **** 
+ 220:hal/Landungsbruecke/tmc/SPI.c **** void spi_ch1_writeInt(uint8_t address, int value)
+ 221:hal/Landungsbruecke/tmc/SPI.c **** {
+ 222:hal/Landungsbruecke/tmc/SPI.c **** 	spi_writeInt(SPIChannel_1_default, address, value);
+ 223:hal/Landungsbruecke/tmc/SPI.c **** }
+ 224:hal/Landungsbruecke/tmc/SPI.c **** 
+ 225:hal/Landungsbruecke/tmc/SPI.c **** void spi_ch2_writeInt(uint8_t address, int value)
+ 226:hal/Landungsbruecke/tmc/SPI.c **** {
+ 227:hal/Landungsbruecke/tmc/SPI.c **** 	spi_writeInt(SPIChannel_2_default, address, value);
+ 228:hal/Landungsbruecke/tmc/SPI.c **** }
+ 229:hal/Landungsbruecke/tmc/SPI.c **** 
+ 230:hal/Landungsbruecke/tmc/SPI.c **** uint8_t spi_ch1_readWrite(uint8_t data, uint8_t lastTransfer)
+ 231:hal/Landungsbruecke/tmc/SPI.c **** {
+ 232:hal/Landungsbruecke/tmc/SPI.c **** 	return readWrite(&SPI.ch1, data, lastTransfer);
+ 233:hal/Landungsbruecke/tmc/SPI.c **** }
+ 234:hal/Landungsbruecke/tmc/SPI.c **** 
+ 235:hal/Landungsbruecke/tmc/SPI.c **** uint8_t spi_ch2_readWrite(uint8_t data, uint8_t lastTransfer)
+ 236:hal/Landungsbruecke/tmc/SPI.c **** {
+ 237:hal/Landungsbruecke/tmc/SPI.c **** 	return readWrite(&SPI.ch2, data, lastTransfer);
+ 238:hal/Landungsbruecke/tmc/SPI.c **** }
+ 239:hal/Landungsbruecke/tmc/SPI.c **** 
+ 240:hal/Landungsbruecke/tmc/SPI.c **** static void spi_ch1_readWriteArray(uint8_t *data, size_t length)
+ 241:hal/Landungsbruecke/tmc/SPI.c **** {
+ 242:hal/Landungsbruecke/tmc/SPI.c **** 	for(size_t i = 0; i < length; i++)
+ 243:hal/Landungsbruecke/tmc/SPI.c **** 	{
+ 244:hal/Landungsbruecke/tmc/SPI.c **** 		data[i] = readWrite(&SPI.ch1, data[i], (i == (length - 1))? true:false);
+ 245:hal/Landungsbruecke/tmc/SPI.c **** 	}
+ 246:hal/Landungsbruecke/tmc/SPI.c **** }
+ 247:hal/Landungsbruecke/tmc/SPI.c **** 
+ 248:hal/Landungsbruecke/tmc/SPI.c **** static void spi_ch2_readWriteArray(uint8_t *data, size_t length)
+ 249:hal/Landungsbruecke/tmc/SPI.c **** {
+ 250:hal/Landungsbruecke/tmc/SPI.c **** 	for(size_t i = 0; i < length; i++)
+ 251:hal/Landungsbruecke/tmc/SPI.c **** 	{
+ 252:hal/Landungsbruecke/tmc/SPI.c **** 		data[i] = readWrite(&SPI.ch2, data[i], (i == (length - 1))? true:false);
+ 253:hal/Landungsbruecke/tmc/SPI.c **** 	}
+ 254:hal/Landungsbruecke/tmc/SPI.c **** }
+ 255:hal/Landungsbruecke/tmc/SPI.c **** 
+ 256:hal/Landungsbruecke/tmc/SPI.c **** uint8_t spi_ch1_readWriteByte(uint8_t data, uint8_t lastTransfer)
+ 257:hal/Landungsbruecke/tmc/SPI.c **** {
+ 258:hal/Landungsbruecke/tmc/SPI.c **** 	return readWrite(SPIChannel_1_default, data, lastTransfer);
+ 259:hal/Landungsbruecke/tmc/SPI.c **** }
+ 260:hal/Landungsbruecke/tmc/SPI.c **** 
+ 261:hal/Landungsbruecke/tmc/SPI.c **** uint8_t readWrite(SPIChannelTypeDef *SPIChannel, uint8_t writeData, uint8_t lastTransfer)
+ 262:hal/Landungsbruecke/tmc/SPI.c **** {
+ 579              		.loc 1 262 1 is_stmt 1 view -0
+ 580              		.cfi_startproc
+ 581              		@ args = 0, pretend = 0, frame = 0
+ 582              		@ frame_needed = 0, uses_anonymous_args = 0
+ 263:hal/Landungsbruecke/tmc/SPI.c **** 	uint8_t readData = 0;
+ 583              		.loc 1 263 2 view .LVU199
+ 264:hal/Landungsbruecke/tmc/SPI.c **** 
+ 265:hal/Landungsbruecke/tmc/SPI.c **** 	if(IS_DUMMY_PIN(SPIChannel->CSN))
+ 584              		.loc 1 265 2 view .LVU200
+ 262:hal/Landungsbruecke/tmc/SPI.c **** 	uint8_t readData = 0;
+ 585              		.loc 1 262 1 is_stmt 0 view .LVU201
+ 586 02ac F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 587              	.LCFI3:
+ 588              		.cfi_def_cfa_offset 24
+ 589              		.cfi_offset 3, -24
+ 590              		.cfi_offset 4, -20
+ 591              		.cfi_offset 5, -16
+ 592              		.cfi_offset 6, -12
+ 593              		.cfi_offset 7, -8
+ 594              		.cfi_offset 14, -4
+ 262:hal/Landungsbruecke/tmc/SPI.c **** 	uint8_t readData = 0;
+ 595              		.loc 1 262 1 view .LVU202
+ 596 02ae 0546     		mov	r5, r0
+ 597              		.loc 1 265 5 view .LVU203
+ 598 02b0 4068     		ldr	r0, [r0, #4]
+ 599              	.LVL32:
+ 600              		.loc 1 265 4 view .LVU204
+ 601 02b2 0369     		ldr	r3, [r0, #16]
+ 262:hal/Landungsbruecke/tmc/SPI.c **** 	uint8_t readData = 0;
+ 602              		.loc 1 262 1 view .LVU205
+ 603 02b4 0C46     		mov	r4, r1
+ 604 02b6 1646     		mov	r6, r2
+ 605              		.loc 1 265 4 view .LVU206
+ 606 02b8 002B     		cmp	r3, #0
+ 607 02ba 2FD0     		beq	.L20
+ 266:hal/Landungsbruecke/tmc/SPI.c **** 		return 0;
+ 267:hal/Landungsbruecke/tmc/SPI.c **** 
+ 268:hal/Landungsbruecke/tmc/SPI.c **** 	HAL.IOs->config->setLow(SPIChannel->CSN); // Chip Select
+ 608              		.loc 1 268 2 is_stmt 1 view .LVU207
+ 609              		.loc 1 268 5 is_stmt 0 view .LVU208
+ 610 02bc 184B     		ldr	r3, .L28
+ 611 02be DF68     		ldr	r7, [r3, #12]
+ 612              		.loc 1 268 17 view .LVU209
+ 613 02c0 3B68     		ldr	r3, [r7]
+ 614              		.loc 1 268 2 view .LVU210
+ 615 02c2 9B69     		ldr	r3, [r3, #24]
+ 616 02c4 9847     		blx	r3
+ 617              	.LVL33:
+ 269:hal/Landungsbruecke/tmc/SPI.c **** 
+ 270:hal/Landungsbruecke/tmc/SPI.c **** 	if(lastTransfer)
+ 618              		.loc 1 270 2 is_stmt 1 view .LVU211
+ 619 02c6 2B68     		ldr	r3, [r5]
+ 620              		.loc 1 270 4 is_stmt 0 view .LVU212
+ 621 02c8 CEB1     		cbz	r6, .L15
+ 271:hal/Landungsbruecke/tmc/SPI.c **** 	{
+ 272:hal/Landungsbruecke/tmc/SPI.c **** 		// send last byte
+ 273:hal/Landungsbruecke/tmc/SPI.c **** 		SPI_PUSHR_REG(SPIChannel->periphery) = SPI_PUSHR_EOQ_MASK | SPI_PUSHR_TXDATA(writeData) ;
+ 622              		.loc 1 273 3 is_stmt 1 view .LVU213
+ 623              		.loc 1 273 61 is_stmt 0 view .LVU214
+ 624 02ca 44F00064 		orr	r4, r4, #134217728
+ 625              		.loc 1 273 40 view .LVU215
+ 626 02ce 5C63     		str	r4, [r3, #52]
+ 274:hal/Landungsbruecke/tmc/SPI.c **** 
+ 275:hal/Landungsbruecke/tmc/SPI.c **** 		while(!(SPI_SR_REG(SPIChannel->periphery) & SPI_SR_EOQF_MASK)) {} // wait until End Of Queue flag
+ 627              		.loc 1 275 3 is_stmt 1 view .LVU216
+ 628              	.L16:
+ 629              		.loc 1 275 67 discriminator 1 view .LVU217
+ 630              		.loc 1 275 8 discriminator 1 view .LVU218
+ 631              		.loc 1 275 11 is_stmt 0 discriminator 1 view .LVU219
+ 632 02d0 DA6A     		ldr	r2, [r3, #44]
+ 633              		.loc 1 275 8 discriminator 1 view .LVU220
+ 634 02d2 D200     		lsls	r2, r2, #3
+ 635 02d4 FCD5     		bpl	.L16
+ 276:hal/Landungsbruecke/tmc/SPI.c **** 
+ 277:hal/Landungsbruecke/tmc/SPI.c **** 		SPI_SR_REG(SPIChannel->periphery) |= SPI_SR_EOQF_MASK;   // clear EOQ Flag by writing a 1 to EOQF
+ 636              		.loc 1 277 3 is_stmt 1 view .LVU221
+ 637              		.loc 1 277 37 is_stmt 0 view .LVU222
+ 638 02d6 DA6A     		ldr	r2, [r3, #44]
+ 278:hal/Landungsbruecke/tmc/SPI.c **** 
+ 279:hal/Landungsbruecke/tmc/SPI.c **** 		HAL.IOs->config->setHigh(SPIChannel->CSN); // reset CSN manual, falls Probleme Auftreten, dann di
+ 639              		.loc 1 279 3 view .LVU223
+ 640 02d8 6868     		ldr	r0, [r5, #4]
+ 277:hal/Landungsbruecke/tmc/SPI.c **** 
+ 641              		.loc 1 277 37 view .LVU224
+ 642 02da 42F08052 		orr	r2, r2, #268435456
+ 643 02de DA62     		str	r2, [r3, #44]
+ 644              		.loc 1 279 3 is_stmt 1 view .LVU225
+ 645              		.loc 1 279 18 is_stmt 0 view .LVU226
+ 646 02e0 3B68     		ldr	r3, [r7]
+ 647              		.loc 1 279 3 view .LVU227
+ 648 02e2 5B69     		ldr	r3, [r3, #20]
+ 649 02e4 9847     		blx	r3
+ 650              	.LVL34:
+ 280:hal/Landungsbruecke/tmc/SPI.c **** 
+ 281:hal/Landungsbruecke/tmc/SPI.c **** 		// wait for an answer
+ 282:hal/Landungsbruecke/tmc/SPI.c **** 		while(((SPI_SR_REG(SPIChannel->periphery) & SPI_SR_RXCTR_MASK) >> SPI_SR_RXCTR_SHIFT) == 0) {}
+ 651              		.loc 1 282 3 is_stmt 1 view .LVU228
+ 652              		.loc 1 282 11 is_stmt 0 view .LVU229
+ 653 02e6 2B68     		ldr	r3, [r5]
+ 654              	.L17:
+ 655              		.loc 1 282 96 is_stmt 1 discriminator 1 view .LVU230
+ 656              		.loc 1 282 8 discriminator 1 view .LVU231
+ 657              		.loc 1 282 11 is_stmt 0 discriminator 1 view .LVU232
+ 658 02e8 DA6A     		ldr	r2, [r3, #44]
+ 659              		.loc 1 282 8 discriminator 1 view .LVU233
+ 660 02ea 12F0F00F 		tst	r2, #240
+ 661 02ee FBD0     		beq	.L17
+ 283:hal/Landungsbruecke/tmc/SPI.c **** 
+ 284:hal/Landungsbruecke/tmc/SPI.c **** 		// read the data
+ 285:hal/Landungsbruecke/tmc/SPI.c **** 		readData = SPI_POPR_REG(SPIChannel->periphery);
+ 662              		.loc 1 285 3 is_stmt 1 view .LVU234
+ 663              		.loc 1 285 14 is_stmt 0 view .LVU235
+ 664 02f0 986B     		ldr	r0, [r3, #56]
+ 286:hal/Landungsbruecke/tmc/SPI.c **** 
+ 287:hal/Landungsbruecke/tmc/SPI.c **** 		// clear TXF and RXF
+ 288:hal/Landungsbruecke/tmc/SPI.c **** 		SPI_MCR_REG(SPIChannel->periphery) |= SPI_MCR_CLR_RXF_MASK | SPI_MCR_CLR_TXF_MASK;
+ 665              		.loc 1 288 38 view .LVU236
+ 666 02f2 1A68     		ldr	r2, [r3]
+ 667 02f4 42F44062 		orr	r2, r2, #3072
+ 285:hal/Landungsbruecke/tmc/SPI.c **** 
+ 668              		.loc 1 285 12 view .LVU237
+ 669 02f8 C0B2     		uxtb	r0, r0
+ 670              	.LVL35:
+ 671              		.loc 1 288 3 is_stmt 1 view .LVU238
+ 672              		.loc 1 288 38 is_stmt 0 view .LVU239
+ 673 02fa 1A60     		str	r2, [r3]
+ 674              	.LVL36:
+ 675              	.L14:
+ 289:hal/Landungsbruecke/tmc/SPI.c **** 	} else {
+ 290:hal/Landungsbruecke/tmc/SPI.c **** 		// continuous transfer
+ 291:hal/Landungsbruecke/tmc/SPI.c **** 		SPI_PUSHR_REG(SPIChannel->periphery) = SPI_PUSHR_CONT_MASK | SPI_PUSHR_TXDATA(writeData); // | SP
+ 292:hal/Landungsbruecke/tmc/SPI.c **** 
+ 293:hal/Landungsbruecke/tmc/SPI.c **** 		while(((SPI_SR_REG(SPIChannel->periphery) & SPI_SR_TXCTR_MASK) >> SPI_SR_TXCTR_SHIFT) > 3) {} // 
+ 294:hal/Landungsbruecke/tmc/SPI.c **** 
+ 295:hal/Landungsbruecke/tmc/SPI.c **** 		// wait for an answer
+ 296:hal/Landungsbruecke/tmc/SPI.c **** 		while(((SPI_SR_REG(SPIChannel->periphery) & SPI_SR_RXCTR_MASK) >> SPI_SR_RXCTR_SHIFT) == 0) {}
+ 297:hal/Landungsbruecke/tmc/SPI.c **** 
+ 298:hal/Landungsbruecke/tmc/SPI.c **** 		// read the data
+ 299:hal/Landungsbruecke/tmc/SPI.c **** 		readData = SPI_POPR_REG(SPIChannel->periphery);
+ 300:hal/Landungsbruecke/tmc/SPI.c **** 	}
+ 301:hal/Landungsbruecke/tmc/SPI.c **** 
+ 302:hal/Landungsbruecke/tmc/SPI.c **** 	return readData;
+ 303:hal/Landungsbruecke/tmc/SPI.c **** }
+ 676              		.loc 1 303 1 view .LVU240
+ 677 02fc F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 678              	.LVL37:
+ 679              	.L15:
+ 291:hal/Landungsbruecke/tmc/SPI.c **** 
+ 680              		.loc 1 291 3 is_stmt 1 view .LVU241
+ 291:hal/Landungsbruecke/tmc/SPI.c **** 
+ 681              		.loc 1 291 62 is_stmt 0 view .LVU242
+ 682 02fe 44F00044 		orr	r4, r4, #-2147483648
+ 291:hal/Landungsbruecke/tmc/SPI.c **** 
+ 683              		.loc 1 291 40 view .LVU243
+ 684 0302 5C63     		str	r4, [r3, #52]
+ 293:hal/Landungsbruecke/tmc/SPI.c **** 
+ 685              		.loc 1 293 3 is_stmt 1 view .LVU244
+ 686              	.L18:
+ 293:hal/Landungsbruecke/tmc/SPI.c **** 
+ 687              		.loc 1 293 95 discriminator 1 view .LVU245
+ 293:hal/Landungsbruecke/tmc/SPI.c **** 
+ 688              		.loc 1 293 8 discriminator 1 view .LVU246
+ 293:hal/Landungsbruecke/tmc/SPI.c **** 
+ 689              		.loc 1 293 11 is_stmt 0 discriminator 1 view .LVU247
+ 690 0304 DA6A     		ldr	r2, [r3, #44]
+ 293:hal/Landungsbruecke/tmc/SPI.c **** 
+ 691              		.loc 1 293 66 discriminator 1 view .LVU248
+ 692 0306 120B     		lsrs	r2, r2, #12
+ 293:hal/Landungsbruecke/tmc/SPI.c **** 
+ 693              		.loc 1 293 8 discriminator 1 view .LVU249
+ 694 0308 12F00C0F 		tst	r2, #12
+ 695 030c FAD1     		bne	.L18
+ 696              	.L19:
+ 296:hal/Landungsbruecke/tmc/SPI.c **** 
+ 697              		.loc 1 296 96 is_stmt 1 discriminator 1 view .LVU250
+ 296:hal/Landungsbruecke/tmc/SPI.c **** 
+ 698              		.loc 1 296 8 discriminator 1 view .LVU251
+ 296:hal/Landungsbruecke/tmc/SPI.c **** 
+ 699              		.loc 1 296 11 is_stmt 0 discriminator 1 view .LVU252
+ 700 030e DA6A     		ldr	r2, [r3, #44]
+ 296:hal/Landungsbruecke/tmc/SPI.c **** 
+ 701              		.loc 1 296 8 discriminator 1 view .LVU253
+ 702 0310 12F0F00F 		tst	r2, #240
+ 703 0314 FBD0     		beq	.L19
+ 299:hal/Landungsbruecke/tmc/SPI.c **** 	}
+ 704              		.loc 1 299 3 is_stmt 1 view .LVU254
+ 299:hal/Landungsbruecke/tmc/SPI.c **** 	}
+ 705              		.loc 1 299 14 is_stmt 0 view .LVU255
+ 706 0316 986B     		ldr	r0, [r3, #56]
+ 299:hal/Landungsbruecke/tmc/SPI.c **** 	}
+ 707              		.loc 1 299 12 view .LVU256
+ 708 0318 C0B2     		uxtb	r0, r0
+ 709              	.LVL38:
+ 299:hal/Landungsbruecke/tmc/SPI.c **** 	}
+ 710              		.loc 1 299 12 view .LVU257
+ 711 031a EFE7     		b	.L14
+ 712              	.LVL39:
+ 713              	.L20:
+ 266:hal/Landungsbruecke/tmc/SPI.c **** 
+ 714              		.loc 1 266 10 view .LVU258
+ 715 031c 1846     		mov	r0, r3
+ 716 031e EDE7     		b	.L14
+ 717              	.L29:
+ 718              		.align	2
+ 719              	.L28:
+ 720 0320 00000000 		.word	HAL
+ 721              		.cfi_endproc
+ 722              	.LFE15:
+ 724              		.align	1
+ 725              		.syntax unified
+ 726              		.thumb
+ 727              		.thumb_func
+ 728              		.fpu softvfp
+ 730              	spi_ch2_readWriteArray:
+ 731              	.LVL40:
+ 732              	.LFB13:
+ 249:hal/Landungsbruecke/tmc/SPI.c **** 	for(size_t i = 0; i < length; i++)
+ 733              		.loc 1 249 1 is_stmt 1 view -0
+ 734              		.cfi_startproc
+ 735              		@ args = 0, pretend = 0, frame = 0
+ 736              		@ frame_needed = 0, uses_anonymous_args = 0
+ 250:hal/Landungsbruecke/tmc/SPI.c **** 	{
+ 737              		.loc 1 250 2 view .LVU260
+ 738              	.LBB2:
+ 250:hal/Landungsbruecke/tmc/SPI.c **** 	{
+ 739              		.loc 1 250 6 view .LVU261
+ 250:hal/Landungsbruecke/tmc/SPI.c **** 	{
+ 740              		.loc 1 250 6 is_stmt 0 view .LVU262
+ 741              	.LBE2:
+ 249:hal/Landungsbruecke/tmc/SPI.c **** 	for(size_t i = 0; i < length; i++)
+ 742              		.loc 1 249 1 view .LVU263
+ 743 0324 2DE9F041 		push	{r4, r5, r6, r7, r8, lr}
+ 744              	.LCFI4:
+ 745              		.cfi_def_cfa_offset 24
+ 746              		.cfi_offset 4, -24
+ 747              		.cfi_offset 5, -20
+ 748              		.cfi_offset 6, -16
+ 749              		.cfi_offset 7, -12
+ 750              		.cfi_offset 8, -8
+ 751              		.cfi_offset 14, -4
+ 752              	.LBB3:
+ 252:hal/Landungsbruecke/tmc/SPI.c **** 	}
+ 753              		.loc 1 252 13 view .LVU264
+ 754 0328 DFF82880 		ldr	r8, .L33
+ 755              	.LBE3:
+ 249:hal/Landungsbruecke/tmc/SPI.c **** 	for(size_t i = 0; i < length; i++)
+ 756              		.loc 1 249 1 view .LVU265
+ 757 032c 0446     		mov	r4, r0
+ 758 032e 4618     		adds	r6, r0, r1
+ 759              	.LBB4:
+ 252:hal/Landungsbruecke/tmc/SPI.c **** 	}
+ 760              		.loc 1 252 13 view .LVU266
+ 761 0330 C743     		mvns	r7, r0
+ 252:hal/Landungsbruecke/tmc/SPI.c **** 	}
+ 762              		.loc 1 252 56 view .LVU267
+ 763 0332 4D1E     		subs	r5, r1, #1
+ 764              	.LVL41:
+ 765              	.L31:
+ 250:hal/Landungsbruecke/tmc/SPI.c **** 	{
+ 766              		.loc 1 250 20 is_stmt 1 discriminator 1 view .LVU268
+ 250:hal/Landungsbruecke/tmc/SPI.c **** 	{
+ 767              		.loc 1 250 2 is_stmt 0 discriminator 1 view .LVU269
+ 768 0334 B442     		cmp	r4, r6
+ 769 0336 01D1     		bne	.L32
+ 770              	.LBE4:
+ 254:hal/Landungsbruecke/tmc/SPI.c **** 
+ 771              		.loc 1 254 1 view .LVU270
+ 772 0338 BDE8F081 		pop	{r4, r5, r6, r7, r8, pc}
+ 773              	.LVL42:
+ 774              	.L32:
+ 775              	.LBB5:
+ 252:hal/Landungsbruecke/tmc/SPI.c **** 	}
+ 776              		.loc 1 252 3 is_stmt 1 discriminator 3 view .LVU271
+ 252:hal/Landungsbruecke/tmc/SPI.c **** 	}
+ 777              		.loc 1 252 13 is_stmt 0 discriminator 3 view .LVU272
+ 778 033c 14F8011B 		ldrb	r1, [r4], #1	@ zero_extendqisi2
+ 779              	.LVL43:
+ 252:hal/Landungsbruecke/tmc/SPI.c **** 	}
+ 780              		.loc 1 252 13 discriminator 3 view .LVU273
+ 781 0340 3A19     		adds	r2, r7, r4
+ 782 0342 531B     		subs	r3, r2, r5
+ 783 0344 5A42     		rsbs	r2, r3, #0
+ 784 0346 5A41     		adcs	r2, r2, r3
+ 785 0348 4046     		mov	r0, r8
+ 786 034a FFF7AFFF 		bl	readWrite
+ 787              	.LVL44:
+ 252:hal/Landungsbruecke/tmc/SPI.c **** 	}
+ 788              		.loc 1 252 11 discriminator 3 view .LVU274
+ 789 034e 04F8010C 		strb	r0, [r4, #-1]
+ 250:hal/Landungsbruecke/tmc/SPI.c **** 	{
+ 790              		.loc 1 250 32 is_stmt 1 discriminator 3 view .LVU275
+ 791              	.LVL45:
+ 250:hal/Landungsbruecke/tmc/SPI.c **** 	{
+ 792              		.loc 1 250 32 is_stmt 0 discriminator 3 view .LVU276
+ 793 0352 EFE7     		b	.L31
+ 794              	.L34:
+ 795              		.align	2
+ 796              	.L33:
+ 797 0354 14000000 		.word	.LANCHOR0+20
+ 798              	.LBE5:
+ 799              		.cfi_endproc
+ 800              	.LFE13:
+ 802              		.align	1
+ 803              		.syntax unified
+ 804              		.thumb
+ 805              		.thumb_func
+ 806              		.fpu softvfp
+ 808              	spi_ch2_readWrite:
+ 809              	.LVL46:
+ 810              	.LFB11:
+ 236:hal/Landungsbruecke/tmc/SPI.c **** 	return readWrite(&SPI.ch2, data, lastTransfer);
+ 811              		.loc 1 236 1 is_stmt 1 view -0
+ 812              		.cfi_startproc
+ 813              		@ args = 0, pretend = 0, frame = 0
+ 814              		@ frame_needed = 0, uses_anonymous_args = 0
+ 815              		@ link register save eliminated.
+ 237:hal/Landungsbruecke/tmc/SPI.c **** }
+ 816              		.loc 1 237 2 view .LVU278
+ 236:hal/Landungsbruecke/tmc/SPI.c **** 	return readWrite(&SPI.ch2, data, lastTransfer);
+ 817              		.loc 1 236 1 is_stmt 0 view .LVU279
+ 818 0358 0A46     		mov	r2, r1
+ 237:hal/Landungsbruecke/tmc/SPI.c **** }
+ 819              		.loc 1 237 9 view .LVU280
+ 820 035a 0146     		mov	r1, r0
+ 821              	.LVL47:
+ 237:hal/Landungsbruecke/tmc/SPI.c **** }
+ 822              		.loc 1 237 9 view .LVU281
+ 823 035c 0048     		ldr	r0, .L36
+ 824              	.LVL48:
+ 237:hal/Landungsbruecke/tmc/SPI.c **** }
+ 825              		.loc 1 237 9 view .LVU282
+ 826 035e A5E7     		b	readWrite
+ 827              	.LVL49:
+ 828              	.L37:
+ 829              		.align	2
+ 830              	.L36:
+ 831 0360 14000000 		.word	.LANCHOR0+20
+ 832              		.cfi_endproc
+ 833              	.LFE11:
+ 835              		.align	1
+ 836              		.syntax unified
+ 837              		.thumb
+ 838              		.thumb_func
+ 839              		.fpu softvfp
+ 841              	spi_ch1_readWriteArray:
+ 842              	.LVL50:
+ 843              	.LFB12:
+ 241:hal/Landungsbruecke/tmc/SPI.c **** 	for(size_t i = 0; i < length; i++)
+ 844              		.loc 1 241 1 is_stmt 1 view -0
+ 845              		.cfi_startproc
+ 846              		@ args = 0, pretend = 0, frame = 0
+ 847              		@ frame_needed = 0, uses_anonymous_args = 0
+ 242:hal/Landungsbruecke/tmc/SPI.c **** 	{
+ 848              		.loc 1 242 2 view .LVU284
+ 849              	.LBB6:
+ 242:hal/Landungsbruecke/tmc/SPI.c **** 	{
+ 850              		.loc 1 242 6 view .LVU285
+ 242:hal/Landungsbruecke/tmc/SPI.c **** 	{
+ 851              		.loc 1 242 6 is_stmt 0 view .LVU286
+ 852              	.LBE6:
+ 241:hal/Landungsbruecke/tmc/SPI.c **** 	for(size_t i = 0; i < length; i++)
+ 853              		.loc 1 241 1 view .LVU287
+ 854 0364 2DE9F041 		push	{r4, r5, r6, r7, r8, lr}
+ 855              	.LCFI5:
+ 856              		.cfi_def_cfa_offset 24
+ 857              		.cfi_offset 4, -24
+ 858              		.cfi_offset 5, -20
+ 859              		.cfi_offset 6, -16
+ 860              		.cfi_offset 7, -12
+ 861              		.cfi_offset 8, -8
+ 862              		.cfi_offset 14, -4
+ 863              	.LBB7:
+ 244:hal/Landungsbruecke/tmc/SPI.c **** 	}
+ 864              		.loc 1 244 13 view .LVU288
+ 865 0368 DFF82880 		ldr	r8, .L41
+ 866              	.LBE7:
+ 241:hal/Landungsbruecke/tmc/SPI.c **** 	for(size_t i = 0; i < length; i++)
+ 867              		.loc 1 241 1 view .LVU289
+ 868 036c 0446     		mov	r4, r0
+ 869 036e 4618     		adds	r6, r0, r1
+ 870              	.LBB8:
+ 244:hal/Landungsbruecke/tmc/SPI.c **** 	}
+ 871              		.loc 1 244 13 view .LVU290
+ 872 0370 C743     		mvns	r7, r0
+ 244:hal/Landungsbruecke/tmc/SPI.c **** 	}
+ 873              		.loc 1 244 56 view .LVU291
+ 874 0372 4D1E     		subs	r5, r1, #1
+ 875              	.LVL51:
+ 876              	.L39:
+ 242:hal/Landungsbruecke/tmc/SPI.c **** 	{
+ 877              		.loc 1 242 20 is_stmt 1 discriminator 1 view .LVU292
+ 242:hal/Landungsbruecke/tmc/SPI.c **** 	{
+ 878              		.loc 1 242 2 is_stmt 0 discriminator 1 view .LVU293
+ 879 0374 B442     		cmp	r4, r6
+ 880 0376 01D1     		bne	.L40
+ 881              	.LBE8:
+ 246:hal/Landungsbruecke/tmc/SPI.c **** 
+ 882              		.loc 1 246 1 view .LVU294
+ 883 0378 BDE8F081 		pop	{r4, r5, r6, r7, r8, pc}
+ 884              	.LVL52:
+ 885              	.L40:
+ 886              	.LBB9:
+ 244:hal/Landungsbruecke/tmc/SPI.c **** 	}
+ 887              		.loc 1 244 3 is_stmt 1 discriminator 3 view .LVU295
+ 244:hal/Landungsbruecke/tmc/SPI.c **** 	}
+ 888              		.loc 1 244 13 is_stmt 0 discriminator 3 view .LVU296
+ 889 037c 14F8011B 		ldrb	r1, [r4], #1	@ zero_extendqisi2
+ 890              	.LVL53:
+ 244:hal/Landungsbruecke/tmc/SPI.c **** 	}
+ 891              		.loc 1 244 13 discriminator 3 view .LVU297
+ 892 0380 3A19     		adds	r2, r7, r4
+ 893 0382 531B     		subs	r3, r2, r5
+ 894 0384 5A42     		rsbs	r2, r3, #0
+ 895 0386 5A41     		adcs	r2, r2, r3
+ 896 0388 4046     		mov	r0, r8
+ 897 038a FFF78FFF 		bl	readWrite
+ 898              	.LVL54:
+ 244:hal/Landungsbruecke/tmc/SPI.c **** 	}
+ 899              		.loc 1 244 11 discriminator 3 view .LVU298
+ 900 038e 04F8010C 		strb	r0, [r4, #-1]
+ 242:hal/Landungsbruecke/tmc/SPI.c **** 	{
+ 901              		.loc 1 242 32 is_stmt 1 discriminator 3 view .LVU299
+ 902              	.LVL55:
+ 242:hal/Landungsbruecke/tmc/SPI.c **** 	{
+ 903              		.loc 1 242 32 is_stmt 0 discriminator 3 view .LVU300
+ 904 0392 EFE7     		b	.L39
+ 905              	.L42:
+ 906              		.align	2
+ 907              	.L41:
+ 908 0394 00000000 		.word	.LANCHOR0
+ 909              	.LBE9:
+ 910              		.cfi_endproc
+ 911              	.LFE12:
+ 913              		.align	1
+ 914              		.syntax unified
+ 915              		.thumb
+ 916              		.thumb_func
+ 917              		.fpu softvfp
+ 919              	spi_ch1_readWrite:
+ 920              	.LVL56:
+ 921              	.LFB10:
+ 231:hal/Landungsbruecke/tmc/SPI.c **** 	return readWrite(&SPI.ch1, data, lastTransfer);
+ 922              		.loc 1 231 1 is_stmt 1 view -0
+ 923              		.cfi_startproc
+ 924              		@ args = 0, pretend = 0, frame = 0
+ 925              		@ frame_needed = 0, uses_anonymous_args = 0
+ 926              		@ link register save eliminated.
+ 232:hal/Landungsbruecke/tmc/SPI.c **** }
+ 927              		.loc 1 232 2 view .LVU302
+ 231:hal/Landungsbruecke/tmc/SPI.c **** 	return readWrite(&SPI.ch1, data, lastTransfer);
+ 928              		.loc 1 231 1 is_stmt 0 view .LVU303
+ 929 0398 0A46     		mov	r2, r1
+ 232:hal/Landungsbruecke/tmc/SPI.c **** }
+ 930              		.loc 1 232 9 view .LVU304
+ 931 039a 0146     		mov	r1, r0
+ 932              	.LVL57:
+ 232:hal/Landungsbruecke/tmc/SPI.c **** }
+ 933              		.loc 1 232 9 view .LVU305
+ 934 039c 0048     		ldr	r0, .L44
+ 935              	.LVL58:
+ 232:hal/Landungsbruecke/tmc/SPI.c **** }
+ 936              		.loc 1 232 9 view .LVU306
+ 937 039e 85E7     		b	readWrite
+ 938              	.LVL59:
+ 939              	.L45:
+ 940              		.align	2
+ 941              	.L44:
+ 942 03a0 00000000 		.word	.LANCHOR0
+ 943              		.cfi_endproc
+ 944              	.LFE10:
+ 946              		.align	1
+ 947              		.global	spi_readInt
+ 948              		.syntax unified
+ 949              		.thumb
+ 950              		.thumb_func
+ 951              		.fpu softvfp
+ 953              	spi_readInt:
+ 954              	.LVL60:
+ 955              	.LFB4:
+ 185:hal/Landungsbruecke/tmc/SPI.c **** 	// clear write bit
+ 956              		.loc 1 185 1 is_stmt 1 view -0
+ 957              		.cfi_startproc
+ 958              		@ args = 0, pretend = 0, frame = 0
+ 959              		@ frame_needed = 0, uses_anonymous_args = 0
+ 187:hal/Landungsbruecke/tmc/SPI.c **** 
+ 960              		.loc 1 187 2 view .LVU308
+ 185:hal/Landungsbruecke/tmc/SPI.c **** 	// clear write bit
+ 961              		.loc 1 185 1 is_stmt 0 view .LVU309
+ 962 03a4 38B5     		push	{r3, r4, r5, lr}
+ 963              	.LCFI6:
+ 964              		.cfi_def_cfa_offset 16
+ 965              		.cfi_offset 3, -16
+ 966              		.cfi_offset 4, -12
+ 967              		.cfi_offset 5, -8
+ 968              		.cfi_offset 14, -4
+ 185:hal/Landungsbruecke/tmc/SPI.c **** 	// clear write bit
+ 969              		.loc 1 185 1 view .LVU310
+ 970 03a6 0446     		mov	r4, r0
+ 971 03a8 0846     		mov	r0, r1
+ 972              	.LVL61:
+ 189:hal/Landungsbruecke/tmc/SPI.c **** 	int value = SPIChannel->readWrite(0, false);
+ 973              		.loc 1 189 2 is_stmt 1 view .LVU311
+ 974 03aa A368     		ldr	r3, [r4, #8]
+ 975 03ac 0021     		movs	r1, #0
+ 976 03ae 00F07F00 		and	r0, r0, #127
+ 977              	.LVL62:
+ 189:hal/Landungsbruecke/tmc/SPI.c **** 	int value = SPIChannel->readWrite(0, false);
+ 978              		.loc 1 189 2 is_stmt 0 view .LVU312
+ 979 03b2 9847     		blx	r3
+ 980              	.LVL63:
+ 190:hal/Landungsbruecke/tmc/SPI.c **** 	value <<= 8;
+ 981              		.loc 1 190 2 is_stmt 1 view .LVU313
+ 190:hal/Landungsbruecke/tmc/SPI.c **** 	value <<= 8;
+ 982              		.loc 1 190 14 is_stmt 0 view .LVU314
+ 983 03b4 0021     		movs	r1, #0
+ 984 03b6 A368     		ldr	r3, [r4, #8]
+ 985 03b8 0846     		mov	r0, r1
+ 986 03ba 9847     		blx	r3
+ 987              	.LVL64:
+ 191:hal/Landungsbruecke/tmc/SPI.c **** 	value |= SPIChannel->readWrite(0, false);
+ 988              		.loc 1 191 2 is_stmt 1 view .LVU315
+ 192:hal/Landungsbruecke/tmc/SPI.c **** 	value <<= 8;
+ 989              		.loc 1 192 11 is_stmt 0 view .LVU316
+ 990 03bc 0021     		movs	r1, #0
+ 991 03be A368     		ldr	r3, [r4, #8]
+ 191:hal/Landungsbruecke/tmc/SPI.c **** 	value |= SPIChannel->readWrite(0, false);
+ 992              		.loc 1 191 8 view .LVU317
+ 993 03c0 0502     		lsls	r5, r0, #8
+ 994              	.LVL65:
+ 192:hal/Landungsbruecke/tmc/SPI.c **** 	value <<= 8;
+ 995              		.loc 1 192 2 is_stmt 1 view .LVU318
+ 192:hal/Landungsbruecke/tmc/SPI.c **** 	value <<= 8;
+ 996              		.loc 1 192 11 is_stmt 0 view .LVU319
+ 997 03c2 0846     		mov	r0, r1
+ 998 03c4 9847     		blx	r3
+ 999              	.LVL66:
+ 194:hal/Landungsbruecke/tmc/SPI.c **** 	value <<= 8;
+ 1000              		.loc 1 194 11 view .LVU320
+ 1001 03c6 0021     		movs	r1, #0
+ 1002 03c8 A368     		ldr	r3, [r4, #8]
+ 192:hal/Landungsbruecke/tmc/SPI.c **** 	value <<= 8;
+ 1003              		.loc 1 192 8 view .LVU321
+ 1004 03ca 0543     		orrs	r5, r5, r0
+ 1005              	.LVL67:
+ 193:hal/Landungsbruecke/tmc/SPI.c **** 	value |= SPIChannel->readWrite(0, false);
+ 1006              		.loc 1 193 2 is_stmt 1 view .LVU322
+ 194:hal/Landungsbruecke/tmc/SPI.c **** 	value <<= 8;
+ 1007              		.loc 1 194 11 is_stmt 0 view .LVU323
+ 1008 03cc 0846     		mov	r0, r1
+ 1009 03ce 9847     		blx	r3
+ 1010              	.LVL68:
+ 193:hal/Landungsbruecke/tmc/SPI.c **** 	value |= SPIChannel->readWrite(0, false);
+ 1011              		.loc 1 193 8 view .LVU324
+ 1012 03d0 2D02     		lsls	r5, r5, #8
+ 1013              	.LVL69:
+ 194:hal/Landungsbruecke/tmc/SPI.c **** 	value <<= 8;
+ 1014              		.loc 1 194 2 is_stmt 1 view .LVU325
+ 196:hal/Landungsbruecke/tmc/SPI.c **** 
+ 1015              		.loc 1 196 11 is_stmt 0 view .LVU326
+ 1016 03d2 A368     		ldr	r3, [r4, #8]
+ 194:hal/Landungsbruecke/tmc/SPI.c **** 	value <<= 8;
+ 1017              		.loc 1 194 8 view .LVU327
+ 1018 03d4 0543     		orrs	r5, r5, r0
+ 1019              	.LVL70:
+ 195:hal/Landungsbruecke/tmc/SPI.c **** 	value |= SPIChannel->readWrite(0, true);
+ 1020              		.loc 1 195 2 is_stmt 1 view .LVU328
+ 196:hal/Landungsbruecke/tmc/SPI.c **** 
+ 1021              		.loc 1 196 11 is_stmt 0 view .LVU329
+ 1022 03d6 0121     		movs	r1, #1
+ 1023 03d8 0020     		movs	r0, #0
+ 1024 03da 9847     		blx	r3
+ 1025              	.LVL71:
+ 195:hal/Landungsbruecke/tmc/SPI.c **** 	value |= SPIChannel->readWrite(0, true);
+ 1026              		.loc 1 195 8 view .LVU330
+ 1027 03dc 2D02     		lsls	r5, r5, #8
+ 1028              	.LVL72:
+ 196:hal/Landungsbruecke/tmc/SPI.c **** 
+ 1029              		.loc 1 196 2 is_stmt 1 view .LVU331
+ 198:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1030              		.loc 1 198 2 view .LVU332
+ 199:hal/Landungsbruecke/tmc/SPI.c **** 
+ 1031              		.loc 1 199 1 is_stmt 0 view .LVU333
+ 1032 03de 2843     		orrs	r0, r0, r5
+ 1033              	.LVL73:
+ 199:hal/Landungsbruecke/tmc/SPI.c **** 
+ 1034              		.loc 1 199 1 view .LVU334
+ 1035 03e0 38BD     		pop	{r3, r4, r5, pc}
+ 199:hal/Landungsbruecke/tmc/SPI.c **** 
+ 1036              		.loc 1 199 1 view .LVU335
+ 1037              		.cfi_endproc
+ 1038              	.LFE4:
+ 1040              		.align	1
+ 1041              		.global	spi_ch1_readInt
+ 1042              		.syntax unified
+ 1043              		.thumb
+ 1044              		.thumb_func
+ 1045              		.fpu softvfp
+ 1047              	spi_ch1_readInt:
+ 1048              	.LVL74:
+ 1049              	.LFB5:
+ 202:hal/Landungsbruecke/tmc/SPI.c **** 	return spi_readInt(SPIChannel_1_default, address);
+ 1050              		.loc 1 202 1 is_stmt 1 view -0
+ 1051              		.cfi_startproc
+ 1052              		@ args = 0, pretend = 0, frame = 0
+ 1053              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1054              		@ link register save eliminated.
+ 203:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1055              		.loc 1 203 2 view .LVU337
+ 203:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1056              		.loc 1 203 9 is_stmt 0 view .LVU338
+ 1057 03e2 024B     		ldr	r3, .L48
+ 202:hal/Landungsbruecke/tmc/SPI.c **** 	return spi_readInt(SPIChannel_1_default, address);
+ 1058              		.loc 1 202 1 view .LVU339
+ 1059 03e4 0146     		mov	r1, r0
+ 203:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1060              		.loc 1 203 9 view .LVU340
+ 1061 03e6 1868     		ldr	r0, [r3]
+ 1062              	.LVL75:
+ 203:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1063              		.loc 1 203 9 view .LVU341
+ 1064 03e8 FFF7FEBF 		b	spi_readInt
+ 1065              	.LVL76:
+ 1066              	.L49:
+ 1067              		.align	2
+ 1068              	.L48:
+ 1069 03ec 00000000 		.word	SPIChannel_1_default
+ 1070              		.cfi_endproc
+ 1071              	.LFE5:
+ 1073              		.align	1
+ 1074              		.global	spi_ch2_readInt
+ 1075              		.syntax unified
+ 1076              		.thumb
+ 1077              		.thumb_func
+ 1078              		.fpu softvfp
+ 1080              	spi_ch2_readInt:
+ 1081              	.LVL77:
+ 1082              	.LFB6:
+ 207:hal/Landungsbruecke/tmc/SPI.c **** 	return spi_readInt(SPIChannel_2_default, address);
+ 1083              		.loc 1 207 1 is_stmt 1 view -0
+ 1084              		.cfi_startproc
+ 1085              		@ args = 0, pretend = 0, frame = 0
+ 1086              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1087              		@ link register save eliminated.
+ 208:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1088              		.loc 1 208 2 view .LVU343
+ 208:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1089              		.loc 1 208 9 is_stmt 0 view .LVU344
+ 1090 03f0 024B     		ldr	r3, .L51
+ 207:hal/Landungsbruecke/tmc/SPI.c **** 	return spi_readInt(SPIChannel_2_default, address);
+ 1091              		.loc 1 207 1 view .LVU345
+ 1092 03f2 0146     		mov	r1, r0
+ 208:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1093              		.loc 1 208 9 view .LVU346
+ 1094 03f4 1868     		ldr	r0, [r3]
+ 1095              	.LVL78:
+ 208:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1096              		.loc 1 208 9 view .LVU347
+ 1097 03f6 FFF7FEBF 		b	spi_readInt
+ 1098              	.LVL79:
+ 1099              	.L52:
+ 1100 03fa 00BF     		.align	2
+ 1101              	.L51:
+ 1102 03fc 00000000 		.word	SPIChannel_2_default
+ 1103              		.cfi_endproc
+ 1104              	.LFE6:
+ 1106              		.align	1
+ 1107              		.global	spi_writeInt
+ 1108              		.syntax unified
+ 1109              		.thumb
+ 1110              		.thumb_func
+ 1111              		.fpu softvfp
+ 1113              	spi_writeInt:
+ 1114              	.LVL80:
+ 1115              	.LFB7:
+ 212:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel->readWrite(address|0x80, false);
+ 1116              		.loc 1 212 1 is_stmt 1 view -0
+ 1117              		.cfi_startproc
+ 1118              		@ args = 0, pretend = 0, frame = 0
+ 1119              		@ frame_needed = 0, uses_anonymous_args = 0
+ 213:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel->readWrite(0xFF & (value>>24), false);
+ 1120              		.loc 1 213 2 view .LVU349
+ 212:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel->readWrite(address|0x80, false);
+ 1121              		.loc 1 212 1 is_stmt 0 view .LVU350
+ 1122 0400 70B5     		push	{r4, r5, r6, lr}
+ 1123              	.LCFI7:
+ 1124              		.cfi_def_cfa_offset 16
+ 1125              		.cfi_offset 4, -16
+ 1126              		.cfi_offset 5, -12
+ 1127              		.cfi_offset 6, -8
+ 1128              		.cfi_offset 14, -4
+ 212:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel->readWrite(address|0x80, false);
+ 1129              		.loc 1 212 1 view .LVU351
+ 1130 0402 0446     		mov	r4, r0
+ 1131 0404 0846     		mov	r0, r1
+ 1132              	.LVL81:
+ 212:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel->readWrite(address|0x80, false);
+ 1133              		.loc 1 212 1 view .LVU352
+ 1134 0406 1546     		mov	r5, r2
+ 213:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel->readWrite(0xFF & (value>>24), false);
+ 1135              		.loc 1 213 2 view .LVU353
+ 1136 0408 A368     		ldr	r3, [r4, #8]
+ 1137 040a 0021     		movs	r1, #0
+ 1138              	.LVL82:
+ 213:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel->readWrite(0xFF & (value>>24), false);
+ 1139              		.loc 1 213 2 view .LVU354
+ 1140 040c 40F08000 		orr	r0, r0, #128
+ 1141 0410 9847     		blx	r3
+ 1142              	.LVL83:
+ 214:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel->readWrite(0xFF & (value>>16), false);
+ 1143              		.loc 1 214 2 is_stmt 1 view .LVU355
+ 1144 0412 A368     		ldr	r3, [r4, #8]
+ 1145 0414 0021     		movs	r1, #0
+ 1146 0416 280E     		lsrs	r0, r5, #24
+ 1147 0418 9847     		blx	r3
+ 1148              	.LVL84:
+ 215:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel->readWrite(0xFF & (value>>8), false);
+ 1149              		.loc 1 215 2 view .LVU356
+ 1150 041a A368     		ldr	r3, [r4, #8]
+ 1151 041c 0021     		movs	r1, #0
+ 1152 041e C5F30740 		ubfx	r0, r5, #16, #8
+ 1153 0422 9847     		blx	r3
+ 1154              	.LVL85:
+ 216:hal/Landungsbruecke/tmc/SPI.c **** 	SPIChannel->readWrite(0xFF & (value>>0), true);
+ 1155              		.loc 1 216 2 view .LVU357
+ 1156 0424 A368     		ldr	r3, [r4, #8]
+ 1157 0426 0021     		movs	r1, #0
+ 1158 0428 C5F30720 		ubfx	r0, r5, #8, #8
+ 1159 042c 9847     		blx	r3
+ 1160              	.LVL86:
+ 217:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1161              		.loc 1 217 2 view .LVU358
+ 1162 042e A368     		ldr	r3, [r4, #8]
+ 1163 0430 E8B2     		uxtb	r0, r5
+ 1164 0432 0121     		movs	r1, #1
+ 218:hal/Landungsbruecke/tmc/SPI.c **** 
+ 1165              		.loc 1 218 1 is_stmt 0 view .LVU359
+ 1166 0434 BDE87040 		pop	{r4, r5, r6, lr}
+ 1167              	.LCFI8:
+ 1168              		.cfi_restore 14
+ 1169              		.cfi_restore 6
+ 1170              		.cfi_restore 5
+ 1171              		.cfi_restore 4
+ 1172              		.cfi_def_cfa_offset 0
+ 1173              	.LVL87:
+ 217:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1174              		.loc 1 217 2 view .LVU360
+ 1175 0438 1847     		bx	r3
+ 1176              	.LVL88:
+ 1177              		.cfi_endproc
+ 1178              	.LFE7:
+ 1180              		.align	1
+ 1181              		.global	spi_ch1_writeInt
+ 1182              		.syntax unified
+ 1183              		.thumb
+ 1184              		.thumb_func
+ 1185              		.fpu softvfp
+ 1187              	spi_ch1_writeInt:
+ 1188              	.LVL89:
+ 1189              	.LFB8:
+ 221:hal/Landungsbruecke/tmc/SPI.c **** 	spi_writeInt(SPIChannel_1_default, address, value);
+ 1190              		.loc 1 221 1 is_stmt 1 view -0
+ 1191              		.cfi_startproc
+ 1192              		@ args = 0, pretend = 0, frame = 0
+ 1193              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1194              		@ link register save eliminated.
+ 222:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1195              		.loc 1 222 2 view .LVU362
+ 1196 043a 034B     		ldr	r3, .L55
+ 221:hal/Landungsbruecke/tmc/SPI.c **** 	spi_writeInt(SPIChannel_1_default, address, value);
+ 1197              		.loc 1 221 1 is_stmt 0 view .LVU363
+ 1198 043c 0A46     		mov	r2, r1
+ 222:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1199              		.loc 1 222 2 view .LVU364
+ 1200 043e 0146     		mov	r1, r0
+ 1201              	.LVL90:
+ 222:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1202              		.loc 1 222 2 view .LVU365
+ 1203 0440 1868     		ldr	r0, [r3]
+ 1204              	.LVL91:
+ 222:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1205              		.loc 1 222 2 view .LVU366
+ 1206 0442 FFF7FEBF 		b	spi_writeInt
+ 1207              	.LVL92:
+ 1208              	.L56:
+ 222:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1209              		.loc 1 222 2 view .LVU367
+ 1210 0446 00BF     		.align	2
+ 1211              	.L55:
+ 1212 0448 00000000 		.word	SPIChannel_1_default
+ 1213              		.cfi_endproc
+ 1214              	.LFE8:
+ 1216              		.align	1
+ 1217              		.global	spi_ch2_writeInt
+ 1218              		.syntax unified
+ 1219              		.thumb
+ 1220              		.thumb_func
+ 1221              		.fpu softvfp
+ 1223              	spi_ch2_writeInt:
+ 1224              	.LVL93:
+ 1225              	.LFB9:
+ 226:hal/Landungsbruecke/tmc/SPI.c **** 	spi_writeInt(SPIChannel_2_default, address, value);
+ 1226              		.loc 1 226 1 is_stmt 1 view -0
+ 1227              		.cfi_startproc
+ 1228              		@ args = 0, pretend = 0, frame = 0
+ 1229              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1230              		@ link register save eliminated.
+ 227:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1231              		.loc 1 227 2 view .LVU369
+ 1232 044c 024B     		ldr	r3, .L58
+ 226:hal/Landungsbruecke/tmc/SPI.c **** 	spi_writeInt(SPIChannel_2_default, address, value);
+ 1233              		.loc 1 226 1 is_stmt 0 view .LVU370
+ 1234 044e 0A46     		mov	r2, r1
+ 227:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1235              		.loc 1 227 2 view .LVU371
+ 1236 0450 0146     		mov	r1, r0
+ 1237              	.LVL94:
+ 227:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1238              		.loc 1 227 2 view .LVU372
+ 1239 0452 1868     		ldr	r0, [r3]
+ 1240              	.LVL95:
+ 227:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1241              		.loc 1 227 2 view .LVU373
+ 1242 0454 FFF7FEBF 		b	spi_writeInt
+ 1243              	.LVL96:
+ 1244              	.L59:
+ 227:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1245              		.loc 1 227 2 view .LVU374
+ 1246              		.align	2
+ 1247              	.L58:
+ 1248 0458 00000000 		.word	SPIChannel_2_default
+ 1249              		.cfi_endproc
+ 1250              	.LFE9:
+ 1252              		.align	1
+ 1253              		.global	spi_ch1_readWriteByte
+ 1254              		.syntax unified
+ 1255              		.thumb
+ 1256              		.thumb_func
+ 1257              		.fpu softvfp
+ 1259              	spi_ch1_readWriteByte:
+ 1260              	.LVL97:
+ 1261              	.LFB14:
+ 257:hal/Landungsbruecke/tmc/SPI.c **** 	return readWrite(SPIChannel_1_default, data, lastTransfer);
+ 1262              		.loc 1 257 1 is_stmt 1 view -0
+ 1263              		.cfi_startproc
+ 1264              		@ args = 0, pretend = 0, frame = 0
+ 1265              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1266              		@ link register save eliminated.
+ 258:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1267              		.loc 1 258 2 view .LVU376
+ 258:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1268              		.loc 1 258 9 is_stmt 0 view .LVU377
+ 1269 045c 024B     		ldr	r3, .L61
+ 257:hal/Landungsbruecke/tmc/SPI.c **** 	return readWrite(SPIChannel_1_default, data, lastTransfer);
+ 1270              		.loc 1 257 1 view .LVU378
+ 1271 045e 0A46     		mov	r2, r1
+ 258:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1272              		.loc 1 258 9 view .LVU379
+ 1273 0460 0146     		mov	r1, r0
+ 1274              	.LVL98:
+ 258:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1275              		.loc 1 258 9 view .LVU380
+ 1276 0462 1868     		ldr	r0, [r3]
+ 1277              	.LVL99:
+ 258:hal/Landungsbruecke/tmc/SPI.c **** }
+ 1278              		.loc 1 258 9 view .LVU381
+ 1279 0464 22E7     		b	readWrite
+ 1280              	.LVL100:
+ 1281              	.L62:
+ 1282 0466 00BF     		.align	2
+ 1283              	.L61:
+ 1284 0468 00000000 		.word	SPIChannel_1_default
+ 1285              		.cfi_endproc
+ 1286              	.LFE14:
+ 1288              		.comm	SPIChannel_2_default,4,4
+ 1289              		.comm	SPIChannel_1_default,4,4
+ 1290              		.comm	hwid,1,1
+ 1291              		.comm	HAL,48,4
+ 1292              		.comm	UART,40,4
+ 1293              		.comm	Timer,16,4
+ 1294              		.comm	WLAN,36,4
+ 1295              		.comm	RS232,36,4
+ 1296              		.comm	LEDs,28,4
+ 1297              		.comm	USB,36,4
+ 1298              		.comm	uart0_interrupt,1,1
+ 1299              		.comm	ADCs,32,4
+ 1300              		.global	SPI
+ 1301              		.comm	IOMap,2088,4
+ 1302              		.comm	IOs,52,4
+ 1303              		.comm	Cpu,8,4
+ 1304              		.data
+ 1305              		.align	2
+ 1306              		.set	.LANCHOR0,. + 0
+ 1309              	SPI:
+ 1310 0000 00D00240 		.word	1073926144
+ 1311 0004 00000000 		.word	IODummy
+ 1312 0008 00000000 		.word	spi_ch1_readWrite
+ 1313 000c 00000000 		.word	spi_ch1_readWriteArray
+ 1314 0010 00000000 		.word	reset_ch1
+ 1315 0014 00C00A40 		.word	1074446336
+ 1316 0018 00000000 		.word	IODummy
+ 1317 001c 00000000 		.word	spi_ch2_readWrite
+ 1318 0020 00000000 		.word	spi_ch2_readWriteArray
+ 1319 0024 00000000 		.word	reset_ch2
+ 1320 0028 00000000 		.word	init
+ 1321              		.bss
+ 1322              		.align	2
+ 1325              	IODummy:
+ 1326 0000 00000000 		.space	32
+ 1326      00000000 
+ 1326      00000000 
+ 1326      00000000 
+ 1326      00000000 
+ 1329              	ADCValue:
+ 1330 0020 00000000 		.space	12
+ 1330      00000000 
+ 1330      00000000 
+ 1331              		.text
+ 1332              	.Letext0:
+ 1333              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 1334              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1335              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1336              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 1337              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1338              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1339              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1340              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1341              		.file 10 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 1342              		.file 11 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 1343              		.file 12 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 1344              		.file 13 "./hal/IOs.h"
+ 1345              		.file 14 "./hal/IOMap.h"
+ 1346              		.file 15 "./hal/SPI.h"
+ 1347              		.file 16 "./hal/ADCs.h"
+ 1348              		.file 17 "./hal/RXTX.h"
+ 1349              		.file 18 "./hal/USB.h"
+ 1350              		.file 19 "./hal/LEDs.h"
+ 1351              		.file 20 "./hal/RS232.h"
+ 1352              		.file 21 "./hal/WLAN.h"
+ 1353              		.file 22 "./hal/Timer.h"
+ 1354              		.file 23 "./hal/UART.h"
+ 1355              		.file 24 "./hal/HAL.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 SPI.c
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:22     .text:00000000 setTMCSPIParameters
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:65     .text:00000030 $d
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:69     .text:00000034 $t
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:76     .text:00000034 init
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:404    .text:000001f8 $d
+                            *COM*:00000004 SPIChannel_1_default
+                            *COM*:00000004 SPIChannel_2_default
+                            *COM*:00000030 HAL
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:414    .text:00000214 $t
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:421    .text:00000214 reset_ch1
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:484    .text:00000254 $d
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:489    .text:0000025c $t
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:496    .text:0000025c reset_ch2
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:564    .text:000002a0 $d
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:808    .text:00000358 spi_ch2_readWrite
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:570    .text:000002ac $t
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:576    .text:000002ac readWrite
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:720    .text:00000320 $d
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:724    .text:00000324 $t
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:730    .text:00000324 spi_ch2_readWriteArray
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:797    .text:00000354 $d
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:802    .text:00000358 $t
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:831    .text:00000360 $d
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:835    .text:00000364 $t
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:841    .text:00000364 spi_ch1_readWriteArray
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:908    .text:00000394 $d
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:913    .text:00000398 $t
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:919    .text:00000398 spi_ch1_readWrite
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:942    .text:000003a0 $d
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:946    .text:000003a4 $t
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:953    .text:000003a4 spi_readInt
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:1047   .text:000003e2 spi_ch1_readInt
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:1069   .text:000003ec $d
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:1073   .text:000003f0 $t
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:1080   .text:000003f0 spi_ch2_readInt
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:1102   .text:000003fc $d
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:1106   .text:00000400 $t
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:1113   .text:00000400 spi_writeInt
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:1187   .text:0000043a spi_ch1_writeInt
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:1212   .text:00000448 $d
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:1216   .text:0000044c $t
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:1223   .text:0000044c spi_ch2_writeInt
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:1248   .text:00000458 $d
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:1252   .text:0000045c $t
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:1259   .text:0000045c spi_ch1_readWriteByte
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:1284   .text:00000468 $d
+                            *COM*:00000001 hwid
+                            *COM*:00000028 UART
+                            *COM*:00000010 Timer
+                            *COM*:00000024 WLAN
+                            *COM*:00000024 RS232
+                            *COM*:0000001c LEDs
+                            *COM*:00000024 USB
+                            *COM*:00000001 uart0_interrupt
+                            *COM*:00000020 ADCs
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:1309   .data:00000000 SPI
+                            *COM*:00000828 IOMap
+                            *COM*:00000034 IOs
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:1305   .data:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:1325   .bss:00000000 IODummy
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:1322   .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccZp8pAc.s:1329   .bss:00000020 ADCValue
+
+NO UNDEFINED SYMBOLS

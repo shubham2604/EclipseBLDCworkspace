@@ -1,0 +1,3355 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"StepDir.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.arch armv7e-m
+  17              		.syntax unified
+  18              		.thumb
+  19              		.thumb_func
+  20              		.fpu softvfp
+  22              	StepDir_stop.part.0:
+  23              	.LVL0:
+  24              	.LFB29:
+  25              		.file 1 "tmc/StepDir.c"
+   1:tmc/StepDir.c **** /*
+   2:tmc/StepDir.c ****  * StepDir.c
+   3:tmc/StepDir.c ****  *
+   4:tmc/StepDir.c ****  * This is a basic implementation of a StepDir generator, capable of generating
+   5:tmc/StepDir.c ****  * velocity (reaching a target velocity with linear acceleration) and position
+   6:tmc/StepDir.c ****  * (reach a target position with linear acc-/decceleration and a maximum velocity)
+   7:tmc/StepDir.c ****  * ramps.
+   8:tmc/StepDir.c ****  *
+   9:tmc/StepDir.c ****  * ***** HOW IT WORKS *****
+  10:tmc/StepDir.c ****  *
+  11:tmc/StepDir.c ****  * General:
+  12:tmc/StepDir.c ****  *   A high frequency (2^17 Hz) Interrupt calculates acceleration, velocity and
+  13:tmc/StepDir.c ****  *   position. Position and velocity are calculated with 17 binary decimal places
+  14:tmc/StepDir.c ****  *   of precision.
+  15:tmc/StepDir.c ****  *
+  16:tmc/StepDir.c ****  * Velocity mode:
+  17:tmc/StepDir.c ****  *   In velocity mode, the generator will accelerate towards a target velocity.
+  18:tmc/StepDir.c ****  *   Acceleration and velocity can be changed at any point of the ramp. The position
+  19:tmc/StepDir.c ****  *   is tracked and resettable (useful for setting a reference point via a switch).
+  20:tmc/StepDir.c ****  *
+  21:tmc/StepDir.c ****  * Position mode:
+  22:tmc/StepDir.c ****  *   In position mode, a linearly accelerated ramp is used to reach the position.
+  23:tmc/StepDir.c ****  *   Parameters for the ramp are acceleration and maximum velocity. The generator
+  24:tmc/StepDir.c ****  *   will always increase the velocity towards the maximum velocity until the
+  25:tmc/StepDir.c ****  *   remaining distance to the target is required for the deceleration ramp.
+  26:tmc/StepDir.c ****  *   Acceleration, maximum velocity and target position can all be changed during
+  27:tmc/StepDir.c ****  *   the ramp. Note that decreasing acceleration or changing target position may
+  28:tmc/StepDir.c ****  *   lead to overshooting the target. In that case the generator will start a new
+  29:tmc/StepDir.c ****  *   ramp to the target, while always staying within the bounds of acceleration and
+  30:tmc/StepDir.c ****  *   velocity.
+  31:tmc/StepDir.c ****  *
+  32:tmc/StepDir.c ****  *   Due to imprecision in the deceleration distance calculations, a small tolerance
+  33:tmc/StepDir.c ****  *   window is used, where the motor will set the velocity to zero if the velocity is
+  34:tmc/StepDir.c ****  *   small enough and the position is reached (V_STOP). If the position is barely
+  35:tmc/StepDir.c ****  *   missed (HOMING_DISTANCE) and the velocity is zero, the generator will home in
+  36:tmc/StepDir.c ****  *   towards the target position at a low velocity (V_STOP).
+  37:tmc/StepDir.c ****  *   Changing the actual position value is not possible while in position mode
+  38:tmc/StepDir.c ****  *   the generator is not idle (target position reached, velocity zero).
+  39:tmc/StepDir.c ****  *   Changing the acceleration to zero is not possible in position mode.
+  40:tmc/StepDir.c ****  *   Acceleration value changes require a recalculation of the braking distance.
+  41:tmc/StepDir.c ****  *   This can result in more frequent near-misses of the target position, which the
+  42:tmc/StepDir.c ****  *   generator will compensate with starting new ramps or homing in (see above).
+  43:tmc/StepDir.c ****  *
+  44:tmc/StepDir.c ****  *   If overshooting the target by any step is not permitted, it is recommended to
+  45:tmc/StepDir.c ****  *   drive to the target without changing parameters during the ramp. Alternatively,
+  46:tmc/StepDir.c ****  *   driving to a point shortly before the actual target point and then starting
+  47:tmc/StepDir.c ****  *   another small ramp allows for parameter changes during the first ramp, only
+  48:tmc/StepDir.c ****  *   requiring a small distance drive with 'locked' parameters.
+  49:tmc/StepDir.c ****  *
+  50:tmc/StepDir.c ****  *   Overshooting from calculation errors is mostly limited to single digit
+  51:tmc/StepDir.c ****  *   position differences. Decreasing acceleration or moving the target position
+  52:tmc/StepDir.c ****  *   towards the actual position might result in bigger misses of the target.
+  53:tmc/StepDir.c ****  *
+  54:tmc/StepDir.c ****  * StallGuard:
+  55:tmc/StepDir.c ****  *   The StepDir generator supports the StallGuard feature, either by a input pin
+  56:tmc/StepDir.c ****  *   signal or with external monitoring. The function periodicJob() will check,
+  57:tmc/StepDir.c ****  *   whether the velocity is above the set StallGuard threshold velocity, set a
+  58:tmc/StepDir.c ****  *   status flag (usable for external StallGuard monitoring) and - if present -
+  59:tmc/StepDir.c ****  *   check the input pin for indicated stalls.
+  60:tmc/StepDir.c ****  *   Make sure that periodicJob() is called frequently to allow quick stall
+  61:tmc/StepDir.c ****  *   detection. The function can also be called by an interrupt to guarantee
+  62:tmc/StepDir.c ****  *   quick detection [1]. The interrupt should have a lower priority than the
+  63:tmc/StepDir.c ****  *   Step-Generator interrupt.
+  64:tmc/StepDir.c ****  *
+  65:tmc/StepDir.c ****  *   When using external monitoring, for example by checking a chip register,
+  66:tmc/StepDir.c ****  *   you can use the STATUS_STALLGUARD_ACTIVE bit of getStatus() to see if
+  67:tmc/StepDir.c ****  *   StallGuard is active. In case of a stall, calling stop(STOP_STALL) will
+  68:tmc/StepDir.c ****  *   trigger the stall mechanism, shutting down the generator without loosing
+  69:tmc/StepDir.c ****  *   further steps.
+  70:tmc/StepDir.c ****  *   Clearing a stall condition is done by setting the stall velocity threshold
+  71:tmc/StepDir.c ****  *   to any value.
+  72:tmc/StepDir.c ****  *   Position mode will start a new ramp towards the target after a stall.
+  73:tmc/StepDir.c ****  *
+  74:tmc/StepDir.c ****  * Emergency Stop:
+  75:tmc/StepDir.c ****  *   The stop function implements an emergency stop. This will result in the
+  76:tmc/StepDir.c ****  *   channel immediately stopping any movements. No parameters are updated to
+  77:tmc/StepDir.c ****  *   allow for diagnostics. The only way to clear the emergency stop event is
+  78:tmc/StepDir.c ****  *   to init() the StepDir generator again [2].
+  79:tmc/StepDir.c ****  *
+  80:tmc/StepDir.c ****  * ***** LIMITATIONS  *****
+  81:tmc/StepDir.c ****  *
+  82:tmc/StepDir.c ****  * The frequency of the StepDir generator is limited by the processor. On the
+  83:tmc/StepDir.c ****  * Landungsbrücke, the worst case of two motors/channels (TMC2041) is able to
+  84:tmc/StepDir.c ****  * still run at 2^17 Hz. Since the bulk of the calculation is per-motor/channel,
+  85:tmc/StepDir.c ****  * using a chip with only one motor/channel would allow a frequency of 2^18 Hz.
+  86:tmc/StepDir.c ****  * (Note that quite a few calculations have to divide by the frequency, so
+  87:tmc/StepDir.c ****  *  choosing a power of two simplifies those to right-shifts.)
+  88:tmc/StepDir.c ****  *
+  89:tmc/StepDir.c ****  * The limit on Step pulses is one generated pulse per interrupt.
+  90:tmc/StepDir.c ****  * The maximum velocity therefore is equal to the interrupt frequency:
+  91:tmc/StepDir.c ****  *   Max Velocity: 2^17 pps = 131072 pps
+  92:tmc/StepDir.c ****  *
+  93:tmc/StepDir.c ****  * Each tick the acceleration value gets added to the velocity accumulator
+  94:tmc/StepDir.c ****  * variable (uint32_t). The upper 15 digits are added to the velocity, the lower
+  95:tmc/StepDir.c ****  * 17 digits are kept in the accumulator between ticks. The maximum
+  96:tmc/StepDir.c ****  * acceleration will result in the upper 15 digits being 1 each tick, increasing
+  97:tmc/StepDir.c ****  * the velocity by 32767 (0x7FFF) per tick. The accumulator digits stay unchanged,
+  98:tmc/StepDir.c ****  * otherwise the overflow of the lower 17 accumulator digits into the upper 15
+  99:tmc/StepDir.c ****  * digits would cause the uint32_t to overflow, loosing an acceleration tick.
+ 100:tmc/StepDir.c ****  * In other words: The upper 15 digits are 1, the lower 17 digits are 0:
+ 101:tmc/StepDir.c ****  *   Max Acceleration: 0xFFFE0000 = 4294836224 pps^2
+ 102:tmc/StepDir.c ****  *
+ 103:tmc/StepDir.c ****  * A change from lowest to highest (or vice-versa) velocity would take 9 ticks at
+ 104:tmc/StepDir.c ****  * maximum acceleration:
+ 105:tmc/StepDir.c ****  *   ceil( (VMAX- (-VMAX)) / AMAX) = ceil(8,000244) = 9
+ 106:tmc/StepDir.c ****  *
+ 107:tmc/StepDir.c ****  * ***** Side notes ******
+ 108:tmc/StepDir.c ****  * [1]: Technically periodicJob() is not interrupt-safe, since it updates the
+ 109:tmc/StepDir.c ****  *      haltingCondition bitfield. Read-Modify-Write cycles of the main code
+ 110:tmc/StepDir.c ****  *      could result in the changes of interrupts to the bitfield to be lost.
+ 111:tmc/StepDir.c ****  *      In practice, the interrupt should just rewrite the stall bit on the next
+ 112:tmc/StepDir.c ****  *      check though due to the nature of StallGuard.
+ 113:tmc/StepDir.c ****  * [2]: Emergency stop does not have a graceful recovery method by design.
+ 114:tmc/StepDir.c ****  *      Clearing the emergency stop via init() will result in all channels
+ 115:tmc/StepDir.c ****  *      being reset.
+ 116:tmc/StepDir.c ****  */
+ 117:tmc/StepDir.c **** 
+ 118:tmc/StepDir.c **** #include "StepDir.h"
+ 119:tmc/StepDir.c **** #include "hal/derivative.h"
+ 120:tmc/StepDir.c **** 
+ 121:tmc/StepDir.c **** #if defined(Startrampe)
+ 122:tmc/StepDir.c **** 	#define TIMER_INTERRUPT TIM2_IRQHandler
+ 123:tmc/StepDir.c **** #elif defined(Landungsbruecke)
+ 124:tmc/StepDir.c **** 	#define TIMER_INTERRUPT FTM1_IRQHandler
+ 125:tmc/StepDir.c **** #endif
+ 126:tmc/StepDir.c **** 
+ 127:tmc/StepDir.c **** #define STEP_DIR_CHANNELS 2
+ 128:tmc/StepDir.c **** 
+ 129:tmc/StepDir.c **** // Reset value for stallguard threshold. Since Stallguard is motor/application-specific we can't ch
+ 130:tmc/StepDir.c **** // so this value is rather randomly chosen. Leaving it at zero means stall detection turned off.
+ 131:tmc/StepDir.c **** #define STALLGUARD_THRESHOLD 0
+ 132:tmc/StepDir.c **** 
+ 133:tmc/StepDir.c **** StepDirectionTypedef StepDir[STEP_DIR_CHANNELS];
+ 134:tmc/StepDir.c **** 
+ 135:tmc/StepDir.c **** IOPinTypeDef DummyPin = { .bitWeight = DUMMY_BITWEIGHT };
+ 136:tmc/StepDir.c **** 
+ 137:tmc/StepDir.c **** int32_t calculateStepDifference(int32_t velocity, uint32_t oldAccel, uint32_t newAccel);
+ 138:tmc/StepDir.c **** 
+ 139:tmc/StepDir.c **** void TIMER_INTERRUPT()
+ 140:tmc/StepDir.c **** {
+ 141:tmc/StepDir.c **** #ifdef Startrampe
+ 142:tmc/StepDir.c **** 	if (TIM_GetITStatus(TIM2, TIM_IT_Update) == RESET)
+ 143:tmc/StepDir.c **** 		return;
+ 144:tmc/StepDir.c **** 	TIM_ClearITPendingBit(TIM2, TIM_IT_Update); // clear pending flag
+ 145:tmc/StepDir.c **** #else
+ 146:tmc/StepDir.c **** 	FTM1_SC &= ~FTM_SC_TOF_MASK; // clear timer overflow flag
+ 147:tmc/StepDir.c **** #endif
+ 148:tmc/StepDir.c **** 
+ 149:tmc/StepDir.c **** 	for (uint8_t ch = 0; ch < STEP_DIR_CHANNELS; ch++)
+ 150:tmc/StepDir.c **** 	{
+ 151:tmc/StepDir.c **** 		// Temporary variable for the current channel
+ 152:tmc/StepDir.c **** 		StepDirectionTypedef *currCh = &StepDir[ch];
+ 153:tmc/StepDir.c **** 
+ 154:tmc/StepDir.c **** 		// If any halting condition is present, abort immediately
+ 155:tmc/StepDir.c **** 		if (currCh->haltingCondition)
+ 156:tmc/StepDir.c **** 			continue;
+ 157:tmc/StepDir.c **** 
+ 158:tmc/StepDir.c **** 		// Reset step output (falling edge of last pulse)
+ 159:tmc/StepDir.c **** 		*currCh->stepPin->resetBitRegister = currCh->stepPin->bitWeight;
+ 160:tmc/StepDir.c **** 
+ 161:tmc/StepDir.c **** 		// Check StallGuard pin if one is registered
+ 162:tmc/StepDir.c **** 		if (!IS_DUMMY_PIN(currCh->stallGuardPin))
+ 163:tmc/StepDir.c **** 		{
+ 164:tmc/StepDir.c **** 			StepDir_stallGuard(ch, HAL.IOs->config->isHigh(currCh->stallGuardPin));
+ 165:tmc/StepDir.c **** 		}
+ 166:tmc/StepDir.c **** 
+ 167:tmc/StepDir.c **** 		// Compute ramp
+ 168:tmc/StepDir.c **** 		int32_t dx = tmc_ramp_linear_compute(&currCh->ramp);
+ 169:tmc/StepDir.c **** 
+ 170:tmc/StepDir.c **** 		// Step
+ 171:tmc/StepDir.c **** 		if (dx == 0) // No change in position -> skip step generation
+ 172:tmc/StepDir.c **** 			goto skipStep;
+ 173:tmc/StepDir.c **** 
+ 174:tmc/StepDir.c **** 		// Direction
+ 175:tmc/StepDir.c **** 		*((dx > 0) ? currCh->dirPin->resetBitRegister : currCh->dirPin->setBitRegister) = currCh->dirPin-
+ 176:tmc/StepDir.c **** 
+ 177:tmc/StepDir.c **** 		// Set step output (rising edge of step pulse)
+ 178:tmc/StepDir.c **** 		*currCh->stepPin->setBitRegister = currCh->stepPin->bitWeight;
+ 179:tmc/StepDir.c **** 
+ 180:tmc/StepDir.c **** skipStep:
+ 181:tmc/StepDir.c **** 		// Synchronised Acceleration update
+ 182:tmc/StepDir.c **** 		switch(currCh->syncFlag)
+ 183:tmc/StepDir.c **** 		{
+ 184:tmc/StepDir.c **** 		case SYNC_SNAPSHOT_REQUESTED:
+ 185:tmc/StepDir.c **** 			// Apply the new acceleration
+ 186:tmc/StepDir.c **** 			tmc_ramp_linear_set_acceleration(&currCh->ramp, currCh->newAcceleration);
+ 187:tmc/StepDir.c **** 			// Save a snapshot of the velocity
+ 188:tmc/StepDir.c **** 			currCh->oldVelocity  = tmc_ramp_linear_get_rampVelocity(&currCh->ramp);
+ 189:tmc/StepDir.c **** 
+ 190:tmc/StepDir.c **** 			currCh->syncFlag = SYNC_SNAPSHOT_SAVED;
+ 191:tmc/StepDir.c **** 			break;
+ 192:tmc/StepDir.c **** 		case SYNC_UPDATE_DATA:
+ 193:tmc/StepDir.c **** 			currCh->ramp.accelerationSteps += currCh->stepDifference;
+ 194:tmc/StepDir.c **** 			currCh->syncFlag = SYNC_IDLE;
+ 195:tmc/StepDir.c **** 			break;
+ 196:tmc/StepDir.c **** 		default:
+ 197:tmc/StepDir.c **** 			break;
+ 198:tmc/StepDir.c **** 		}
+ 199:tmc/StepDir.c **** 	}
+ 200:tmc/StepDir.c **** }
+ 201:tmc/StepDir.c **** 
+ 202:tmc/StepDir.c **** void StepDir_rotate(uint8_t channel, int velocity)
+ 203:tmc/StepDir.c **** {
+ 204:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 205:tmc/StepDir.c **** 		return;
+ 206:tmc/StepDir.c **** 
+ 207:tmc/StepDir.c **** 	// Set the rampmode first - other way around might cause issues
+ 208:tmc/StepDir.c **** 	tmc_ramp_linear_set_mode(&StepDir[channel].ramp, TMC_RAMP_LINEAR_MODE_VELOCITY);
+ 209:tmc/StepDir.c **** 	switch(StepDir[channel].mode) {
+ 210:tmc/StepDir.c **** 	case STEPDIR_INTERNAL:
+ 211:tmc/StepDir.c **** 		tmc_ramp_linear_set_targetVelocity(&StepDir[channel].ramp, MIN(STEPDIR_MAX_VELOCITY, velocity));
+ 212:tmc/StepDir.c **** 		break;
+ 213:tmc/StepDir.c **** 	case STEPDIR_EXTERNAL:
+ 214:tmc/StepDir.c **** 	default:
+ 215:tmc/StepDir.c **** 		tmc_ramp_linear_set_targetVelocity(&StepDir[channel].ramp, velocity);
+ 216:tmc/StepDir.c **** 		break;
+ 217:tmc/StepDir.c **** 	}
+ 218:tmc/StepDir.c **** }
+ 219:tmc/StepDir.c **** 
+ 220:tmc/StepDir.c **** void StepDir_moveTo(uint8_t channel, int position)
+ 221:tmc/StepDir.c **** {
+ 222:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 223:tmc/StepDir.c **** 		return;
+ 224:tmc/StepDir.c **** 
+ 225:tmc/StepDir.c **** 	tmc_ramp_linear_set_mode(&StepDir[channel].ramp, TMC_RAMP_LINEAR_MODE_POSITION);
+ 226:tmc/StepDir.c **** 	tmc_ramp_linear_set_targetPosition(&StepDir[channel].ramp, position);
+ 227:tmc/StepDir.c **** }
+ 228:tmc/StepDir.c **** 
+ 229:tmc/StepDir.c **** void StepDir_periodicJob(uint8_t channel)
+ 230:tmc/StepDir.c **** {
+ 231:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 232:tmc/StepDir.c **** 		return;
+ 233:tmc/StepDir.c **** 
+ 234:tmc/StepDir.c **** 	// Check stallguard velocity threshold
+ 235:tmc/StepDir.c **** 	if ((StepDir[channel].stallGuardThreshold != 0) && (abs(tmc_ramp_linear_get_rampVelocity(&StepDir[
+ 236:tmc/StepDir.c **** 	{
+ 237:tmc/StepDir.c **** 		StepDir[channel].stallGuardActive = true;
+ 238:tmc/StepDir.c **** 	}
+ 239:tmc/StepDir.c **** 	else
+ 240:tmc/StepDir.c **** 	{
+ 241:tmc/StepDir.c **** 		StepDir[channel].stallGuardActive = false;
+ 242:tmc/StepDir.c **** 	}
+ 243:tmc/StepDir.c **** }
+ 244:tmc/StepDir.c **** 
+ 245:tmc/StepDir.c **** void StepDir_stop(uint8_t channel, StepDirStop stopType)
+  26              		.loc 1 245 6 view -0
+  27              		.cfi_startproc
+  28              		@ args = 0, pretend = 0, frame = 0
+  29              		@ frame_needed = 0, uses_anonymous_args = 0
+ 246:tmc/StepDir.c **** {
+ 247:tmc/StepDir.c **** 	switch(stopType)
+ 248:tmc/StepDir.c **** 	{
+ 249:tmc/StepDir.c **** 	case STOP_NORMAL:
+ 250:tmc/StepDir.c **** 		tmc_ramp_linear_set_targetVelocity(&StepDir[channel].ramp, 0);
+ 251:tmc/StepDir.c **** 		tmc_ramp_linear_set_mode(&StepDir[channel].ramp, TMC_RAMP_LINEAR_MODE_VELOCITY);
+ 252:tmc/StepDir.c **** 		break;
+ 253:tmc/StepDir.c **** 	case STOP_EMERGENCY:
+ 254:tmc/StepDir.c **** 		StepDir[channel].haltingCondition |= STATUS_EMERGENCY_STOP;
+ 255:tmc/StepDir.c **** 		break;
+ 256:tmc/StepDir.c **** 	case STOP_STALL:
+ 257:tmc/StepDir.c **** 		StepDir[channel].haltingCondition |= STATUS_STALLED;
+  30              		.loc 1 257 3 view .LVU1
+ 245:tmc/StepDir.c **** {
+  31              		.loc 1 245 6 is_stmt 0 view .LVU2
+  32 0000 70B5     		push	{r4, r5, r6, lr}
+  33              	.LCFI0:
+  34              		.cfi_def_cfa_offset 16
+  35              		.cfi_offset 4, -16
+  36              		.cfi_offset 5, -12
+  37              		.cfi_offset 6, -8
+  38              		.cfi_offset 14, -4
+  39              		.loc 1 257 37 view .LVU3
+  40 0002 0B4C     		ldr	r4, .L2
+  41 0004 6822     		movs	r2, #104
+  42 0006 02FB0045 		mla	r5, r2, r0, r4
+ 258:tmc/StepDir.c **** 		tmc_ramp_linear_set_rampVelocity(&StepDir[channel].ramp, 0);
+  43              		.loc 1 258 3 view .LVU4
+  44 000a 05F13004 		add	r4, r5, #48
+ 257:tmc/StepDir.c **** 		tmc_ramp_linear_set_rampVelocity(&StepDir[channel].ramp, 0);
+  45              		.loc 1 257 37 view .LVU5
+  46 000e 6B78     		ldrb	r3, [r5, #1]	@ zero_extendqisi2
+  47 0010 43F00803 		orr	r3, r3, #8
+ 259:tmc/StepDir.c **** 		StepDir[channel].ramp.accumulatorVelocity = 0;
+  48              		.loc 1 259 45 view .LVU6
+  49 0014 0026     		movs	r6, #0
+ 257:tmc/StepDir.c **** 		tmc_ramp_linear_set_rampVelocity(&StepDir[channel].ramp, 0);
+  50              		.loc 1 257 37 view .LVU7
+  51 0016 6B70     		strb	r3, [r5, #1]
+ 258:tmc/StepDir.c **** 		tmc_ramp_linear_set_rampVelocity(&StepDir[channel].ramp, 0);
+  52              		.loc 1 258 3 is_stmt 1 view .LVU8
+  53 0018 0021     		movs	r1, #0
+  54 001a 2046     		mov	r0, r4
+  55              	.LVL1:
+ 258:tmc/StepDir.c **** 		tmc_ramp_linear_set_rampVelocity(&StepDir[channel].ramp, 0);
+  56              		.loc 1 258 3 is_stmt 0 view .LVU9
+  57 001c FFF7FEFF 		bl	tmc_ramp_linear_set_rampVelocity
+  58              	.LVL2:
+  59              		.loc 1 259 3 is_stmt 1 view .LVU10
+  60              		.loc 1 259 45 is_stmt 0 view .LVU11
+  61 0020 EE64     		str	r6, [r5, #76]
+ 260:tmc/StepDir.c **** 		tmc_ramp_linear_set_targetVelocity(&StepDir[channel].ramp, 0);
+  62              		.loc 1 260 3 is_stmt 1 view .LVU12
+  63 0022 3146     		mov	r1, r6
+  64 0024 2046     		mov	r0, r4
+  65 0026 FFF7FEFF 		bl	tmc_ramp_linear_set_targetVelocity
+  66              	.LVL3:
+ 261:tmc/StepDir.c **** 		StepDir[channel].ramp.accelerationSteps = 0;
+  67              		.loc 1 261 3 view .LVU13
+  68              		.loc 1 261 43 is_stmt 0 view .LVU14
+  69 002a AE65     		str	r6, [r5, #88]
+ 262:tmc/StepDir.c **** 		break;
+  70              		.loc 1 262 3 is_stmt 1 view .LVU15
+ 263:tmc/StepDir.c **** 	}
+ 264:tmc/StepDir.c **** }
+  71              		.loc 1 264 1 is_stmt 0 view .LVU16
+  72 002c 70BD     		pop	{r4, r5, r6, pc}
+  73              	.L3:
+  74 002e 00BF     		.align	2
+  75              	.L2:
+  76 0030 00000000 		.word	StepDir
+  77              		.cfi_endproc
+  78              	.LFE29:
+  80              		.align	1
+  81              		.global	StepDir_rotate
+  82              		.syntax unified
+  83              		.thumb
+  84              		.thumb_func
+  85              		.fpu softvfp
+  87              	StepDir_rotate:
+  88              	.LVL4:
+  89              	.LFB1:
+ 203:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+  90              		.loc 1 203 1 is_stmt 1 view -0
+  91              		.cfi_startproc
+  92              		@ args = 0, pretend = 0, frame = 0
+  93              		@ frame_needed = 0, uses_anonymous_args = 0
+ 204:tmc/StepDir.c **** 		return;
+  94              		.loc 1 204 2 view .LVU18
+ 204:tmc/StepDir.c **** 		return;
+  95              		.loc 1 204 5 is_stmt 0 view .LVU19
+  96 0034 0128     		cmp	r0, #1
+ 203:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+  97              		.loc 1 203 1 view .LVU20
+  98 0036 2DE9F041 		push	{r4, r5, r6, r7, r8, lr}
+  99              	.LCFI1:
+ 100              		.cfi_def_cfa_offset 24
+ 101              		.cfi_offset 4, -24
+ 102              		.cfi_offset 5, -20
+ 103              		.cfi_offset 6, -16
+ 104              		.cfi_offset 7, -12
+ 105              		.cfi_offset 8, -8
+ 106              		.cfi_offset 14, -4
+ 203:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 107              		.loc 1 203 1 view .LVU21
+ 108 003a 0546     		mov	r5, r0
+ 109 003c 0E46     		mov	r6, r1
+ 204:tmc/StepDir.c **** 		return;
+ 110              		.loc 1 204 5 view .LVU22
+ 111 003e 1AD8     		bhi	.L4
+ 208:tmc/StepDir.c **** 	switch(StepDir[channel].mode) {
+ 112              		.loc 1 208 2 is_stmt 1 view .LVU23
+ 113 0040 0E4F     		ldr	r7, .L7
+ 114 0042 4FF06808 		mov	r8, #104
+ 115 0046 3024     		movs	r4, #48
+ 116 0048 18FB0044 		smlabb	r4, r8, r0, r4
+ 117 004c 3C44     		add	r4, r4, r7
+ 209:tmc/StepDir.c **** 	case STEPDIR_INTERNAL:
+ 118              		.loc 1 209 25 is_stmt 0 view .LVU24
+ 119 004e 08FB0575 		mla	r5, r8, r5, r7
+ 208:tmc/StepDir.c **** 	switch(StepDir[channel].mode) {
+ 120              		.loc 1 208 2 view .LVU25
+ 121 0052 0021     		movs	r1, #0
+ 122              	.LVL5:
+ 208:tmc/StepDir.c **** 	switch(StepDir[channel].mode) {
+ 123              		.loc 1 208 2 view .LVU26
+ 124 0054 2046     		mov	r0, r4
+ 125              	.LVL6:
+ 208:tmc/StepDir.c **** 	switch(StepDir[channel].mode) {
+ 126              		.loc 1 208 2 view .LVU27
+ 127 0056 FFF7FEFF 		bl	tmc_ramp_linear_set_mode
+ 128              	.LVL7:
+ 209:tmc/StepDir.c **** 	case STEPDIR_INTERNAL:
+ 129              		.loc 1 209 2 is_stmt 1 view .LVU28
+ 130 005a 95F82830 		ldrb	r3, [r5, #40]	@ zero_extendqisi2
+ 215:tmc/StepDir.c **** 		break;
+ 131              		.loc 1 215 3 is_stmt 0 view .LVU29
+ 132 005e 3146     		mov	r1, r6
+ 209:tmc/StepDir.c **** 	case STEPDIR_INTERNAL:
+ 133              		.loc 1 209 2 view .LVU30
+ 134 0060 23B9     		cbnz	r3, .L6
+ 211:tmc/StepDir.c **** 		break;
+ 135              		.loc 1 211 3 is_stmt 1 view .LVU31
+ 136 0062 B6F5003F 		cmp	r6, #131072
+ 137 0066 A8BF     		it	ge
+ 138 0068 4FF40031 		movge	r1, #131072
+ 139              	.L6:
+ 215:tmc/StepDir.c **** 		break;
+ 140              		.loc 1 215 3 view .LVU32
+ 141 006c 2046     		mov	r0, r4
+ 218:tmc/StepDir.c **** 
+ 142              		.loc 1 218 1 is_stmt 0 view .LVU33
+ 143 006e BDE8F041 		pop	{r4, r5, r6, r7, r8, lr}
+ 144              	.LCFI2:
+ 145              		.cfi_remember_state
+ 146              		.cfi_restore 14
+ 147              		.cfi_restore 8
+ 148              		.cfi_restore 7
+ 149              		.cfi_restore 6
+ 150              		.cfi_restore 5
+ 151              		.cfi_restore 4
+ 152              		.cfi_def_cfa_offset 0
+ 153              	.LVL8:
+ 215:tmc/StepDir.c **** 		break;
+ 154              		.loc 1 215 3 view .LVU34
+ 155 0072 FFF7FEBF 		b	tmc_ramp_linear_set_targetVelocity
+ 156              	.LVL9:
+ 157              	.L4:
+ 158              	.LCFI3:
+ 159              		.cfi_restore_state
+ 218:tmc/StepDir.c **** 
+ 160              		.loc 1 218 1 view .LVU35
+ 161 0076 BDE8F081 		pop	{r4, r5, r6, r7, r8, pc}
+ 162              	.L8:
+ 163 007a 00BF     		.align	2
+ 164              	.L7:
+ 165 007c 00000000 		.word	StepDir
+ 166              		.cfi_endproc
+ 167              	.LFE1:
+ 169              		.align	1
+ 170              		.global	StepDir_moveTo
+ 171              		.syntax unified
+ 172              		.thumb
+ 173              		.thumb_func
+ 174              		.fpu softvfp
+ 176              	StepDir_moveTo:
+ 177              	.LVL10:
+ 178              	.LFB2:
+ 221:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 179              		.loc 1 221 1 is_stmt 1 view -0
+ 180              		.cfi_startproc
+ 181              		@ args = 0, pretend = 0, frame = 0
+ 182              		@ frame_needed = 0, uses_anonymous_args = 0
+ 222:tmc/StepDir.c **** 		return;
+ 183              		.loc 1 222 2 view .LVU37
+ 222:tmc/StepDir.c **** 		return;
+ 184              		.loc 1 222 5 is_stmt 0 view .LVU38
+ 185 0080 0128     		cmp	r0, #1
+ 221:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 186              		.loc 1 221 1 view .LVU39
+ 187 0082 38B5     		push	{r3, r4, r5, lr}
+ 188              	.LCFI4:
+ 189              		.cfi_def_cfa_offset 16
+ 190              		.cfi_offset 3, -16
+ 191              		.cfi_offset 4, -12
+ 192              		.cfi_offset 5, -8
+ 193              		.cfi_offset 14, -4
+ 221:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 194              		.loc 1 221 1 view .LVU40
+ 195 0084 0D46     		mov	r5, r1
+ 222:tmc/StepDir.c **** 		return;
+ 196              		.loc 1 222 5 view .LVU41
+ 197 0086 0FD8     		bhi	.L9
+ 225:tmc/StepDir.c **** 	tmc_ramp_linear_set_targetPosition(&StepDir[channel].ramp, position);
+ 198              		.loc 1 225 2 is_stmt 1 view .LVU42
+ 199 0088 3023     		movs	r3, #48
+ 200 008a 6824     		movs	r4, #104
+ 201 008c 14FB0030 		smlabb	r0, r4, r0, r3
+ 202              	.LVL11:
+ 225:tmc/StepDir.c **** 	tmc_ramp_linear_set_targetPosition(&StepDir[channel].ramp, position);
+ 203              		.loc 1 225 2 is_stmt 0 view .LVU43
+ 204 0090 064C     		ldr	r4, .L11
+ 205 0092 0444     		add	r4, r4, r0
+ 206 0094 2046     		mov	r0, r4
+ 207 0096 0121     		movs	r1, #1
+ 208              	.LVL12:
+ 225:tmc/StepDir.c **** 	tmc_ramp_linear_set_targetPosition(&StepDir[channel].ramp, position);
+ 209              		.loc 1 225 2 view .LVU44
+ 210 0098 FFF7FEFF 		bl	tmc_ramp_linear_set_mode
+ 211              	.LVL13:
+ 226:tmc/StepDir.c **** }
+ 212              		.loc 1 226 2 is_stmt 1 view .LVU45
+ 213 009c 2946     		mov	r1, r5
+ 214 009e 2046     		mov	r0, r4
+ 227:tmc/StepDir.c **** 
+ 215              		.loc 1 227 1 is_stmt 0 view .LVU46
+ 216 00a0 BDE83840 		pop	{r3, r4, r5, lr}
+ 217              	.LCFI5:
+ 218              		.cfi_remember_state
+ 219              		.cfi_restore 14
+ 220              		.cfi_restore 5
+ 221              		.cfi_restore 4
+ 222              		.cfi_restore 3
+ 223              		.cfi_def_cfa_offset 0
+ 224              	.LVL14:
+ 226:tmc/StepDir.c **** }
+ 225              		.loc 1 226 2 view .LVU47
+ 226 00a4 FFF7FEBF 		b	tmc_ramp_linear_set_targetPosition
+ 227              	.LVL15:
+ 228              	.L9:
+ 229              	.LCFI6:
+ 230              		.cfi_restore_state
+ 227:tmc/StepDir.c **** 
+ 231              		.loc 1 227 1 view .LVU48
+ 232 00a8 38BD     		pop	{r3, r4, r5, pc}
+ 233              	.L12:
+ 234 00aa 00BF     		.align	2
+ 235              	.L11:
+ 236 00ac 00000000 		.word	StepDir
+ 237              		.cfi_endproc
+ 238              	.LFE2:
+ 240              		.align	1
+ 241              		.global	StepDir_periodicJob
+ 242              		.syntax unified
+ 243              		.thumb
+ 244              		.thumb_func
+ 245              		.fpu softvfp
+ 247              	StepDir_periodicJob:
+ 248              	.LVL16:
+ 249              	.LFB3:
+ 230:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 250              		.loc 1 230 1 is_stmt 1 view -0
+ 251              		.cfi_startproc
+ 252              		@ args = 0, pretend = 0, frame = 0
+ 253              		@ frame_needed = 0, uses_anonymous_args = 0
+ 231:tmc/StepDir.c **** 		return;
+ 254              		.loc 1 231 2 view .LVU50
+ 231:tmc/StepDir.c **** 		return;
+ 255              		.loc 1 231 5 is_stmt 0 view .LVU51
+ 256 00b0 0128     		cmp	r0, #1
+ 230:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 257              		.loc 1 230 1 view .LVU52
+ 258 00b2 70B5     		push	{r4, r5, r6, lr}
+ 259              	.LCFI7:
+ 260              		.cfi_def_cfa_offset 16
+ 261              		.cfi_offset 4, -16
+ 262              		.cfi_offset 5, -12
+ 263              		.cfi_offset 6, -8
+ 264              		.cfi_offset 14, -4
+ 230:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 265              		.loc 1 230 1 view .LVU53
+ 266 00b4 0446     		mov	r4, r0
+ 231:tmc/StepDir.c **** 		return;
+ 267              		.loc 1 231 5 view .LVU54
+ 268 00b6 12D8     		bhi	.L13
+ 235:tmc/StepDir.c **** 	{
+ 269              		.loc 1 235 2 is_stmt 1 view .LVU55
+ 235:tmc/StepDir.c **** 	{
+ 270              		.loc 1 235 23 is_stmt 0 view .LVU56
+ 271 00b8 0C4B     		ldr	r3, .L19
+ 272 00ba 6820     		movs	r0, #104
+ 273              	.LVL17:
+ 235:tmc/StepDir.c **** 	{
+ 274              		.loc 1 235 23 view .LVU57
+ 275 00bc 00FB0435 		mla	r5, r0, r4, r3
+ 276 00c0 1E46     		mov	r6, r3
+ 235:tmc/StepDir.c **** 	{
+ 277              		.loc 1 235 5 view .LVU58
+ 278 00c2 6A68     		ldr	r2, [r5, #4]
+ 279 00c4 62B1     		cbz	r2, .L15
+ 235:tmc/StepDir.c **** 	{
+ 280              		.loc 1 235 58 discriminator 1 view .LVU59
+ 281 00c6 2846     		mov	r0, r5
+ 282 00c8 3030     		adds	r0, r0, #48
+ 283 00ca FFF7FEFF 		bl	tmc_ramp_linear_get_rampVelocity
+ 284              	.LVL18:
+ 235:tmc/StepDir.c **** 	{
+ 285              		.loc 1 235 50 discriminator 1 view .LVU60
+ 286 00ce 6B68     		ldr	r3, [r5, #4]
+ 235:tmc/StepDir.c **** 	{
+ 287              		.loc 1 235 54 discriminator 1 view .LVU61
+ 288 00d0 0028     		cmp	r0, #0
+ 289 00d2 B8BF     		it	lt
+ 290 00d4 4042     		rsblt	r0, r0, #0
+ 235:tmc/StepDir.c **** 	{
+ 291              		.loc 1 235 50 discriminator 1 view .LVU62
+ 292 00d6 9842     		cmp	r0, r3
+ 293 00d8 02DB     		blt	.L15
+ 237:tmc/StepDir.c **** 	}
+ 294              		.loc 1 237 3 is_stmt 1 view .LVU63
+ 237:tmc/StepDir.c **** 	}
+ 295              		.loc 1 237 37 is_stmt 0 view .LVU64
+ 296 00da 0123     		movs	r3, #1
+ 297 00dc AB70     		strb	r3, [r5, #2]
+ 298              	.L13:
+ 243:tmc/StepDir.c **** 
+ 299              		.loc 1 243 1 view .LVU65
+ 300 00de 70BD     		pop	{r4, r5, r6, pc}
+ 301              	.L15:
+ 241:tmc/StepDir.c **** 	}
+ 302              		.loc 1 241 3 is_stmt 1 view .LVU66
+ 241:tmc/StepDir.c **** 	}
+ 303              		.loc 1 241 37 is_stmt 0 view .LVU67
+ 304 00e0 6820     		movs	r0, #104
+ 305 00e2 00FB0464 		mla	r4, r0, r4, r6
+ 306 00e6 0023     		movs	r3, #0
+ 307 00e8 A370     		strb	r3, [r4, #2]
+ 308 00ea F8E7     		b	.L13
+ 309              	.L20:
+ 310              		.align	2
+ 311              	.L19:
+ 312 00ec 00000000 		.word	StepDir
+ 313              		.cfi_endproc
+ 314              	.LFE3:
+ 316              		.align	1
+ 317              		.global	StepDir_stop
+ 318              		.syntax unified
+ 319              		.thumb
+ 320              		.thumb_func
+ 321              		.fpu softvfp
+ 323              	StepDir_stop:
+ 324              	.LVL19:
+ 325              	.LFB4:
+ 246:tmc/StepDir.c **** 	switch(stopType)
+ 326              		.loc 1 246 1 is_stmt 1 view -0
+ 327              		.cfi_startproc
+ 328              		@ args = 0, pretend = 0, frame = 0
+ 329              		@ frame_needed = 0, uses_anonymous_args = 0
+ 247:tmc/StepDir.c **** 	{
+ 330              		.loc 1 247 2 view .LVU69
+ 331 00f0 0129     		cmp	r1, #1
+ 246:tmc/StepDir.c **** 	switch(stopType)
+ 332              		.loc 1 246 1 is_stmt 0 view .LVU70
+ 333 00f2 38B5     		push	{r3, r4, r5, lr}
+ 334              	.LCFI8:
+ 335              		.cfi_def_cfa_offset 16
+ 336              		.cfi_offset 3, -16
+ 337              		.cfi_offset 4, -12
+ 338              		.cfi_offset 5, -8
+ 339              		.cfi_offset 14, -4
+ 246:tmc/StepDir.c **** 	switch(stopType)
+ 340              		.loc 1 246 1 view .LVU71
+ 341 00f4 0346     		mov	r3, r0
+ 342 00f6 0D46     		mov	r5, r1
+ 247:tmc/StepDir.c **** 	{
+ 343              		.loc 1 247 2 view .LVU72
+ 344 00f8 11D0     		beq	.L22
+ 345 00fa 0229     		cmp	r1, #2
+ 346 00fc 18D0     		beq	.L23
+ 347 00fe B1B9     		cbnz	r1, .L21
+ 250:tmc/StepDir.c **** 		tmc_ramp_linear_set_mode(&StepDir[channel].ramp, TMC_RAMP_LINEAR_MODE_VELOCITY);
+ 348              		.loc 1 250 3 is_stmt 1 view .LVU73
+ 349 0100 6824     		movs	r4, #104
+ 350 0102 3020     		movs	r0, #48
+ 351              	.LVL20:
+ 250:tmc/StepDir.c **** 		tmc_ramp_linear_set_mode(&StepDir[channel].ramp, TMC_RAMP_LINEAR_MODE_VELOCITY);
+ 352              		.loc 1 250 3 is_stmt 0 view .LVU74
+ 353 0104 14FB0303 		smlabb	r3, r4, r3, r0
+ 354 0108 0B4C     		ldr	r4, .L25
+ 355 010a 1C44     		add	r4, r4, r3
+ 356 010c 2046     		mov	r0, r4
+ 357 010e FFF7FEFF 		bl	tmc_ramp_linear_set_targetVelocity
+ 358              	.LVL21:
+ 251:tmc/StepDir.c **** 		break;
+ 359              		.loc 1 251 3 is_stmt 1 view .LVU75
+ 360 0112 2946     		mov	r1, r5
+ 361 0114 2046     		mov	r0, r4
+ 362              		.loc 1 264 1 is_stmt 0 view .LVU76
+ 363 0116 BDE83840 		pop	{r3, r4, r5, lr}
+ 364              	.LCFI9:
+ 365              		.cfi_remember_state
+ 366              		.cfi_restore 14
+ 367              		.cfi_restore 5
+ 368              		.cfi_restore 4
+ 369              		.cfi_restore 3
+ 370              		.cfi_def_cfa_offset 0
+ 251:tmc/StepDir.c **** 		break;
+ 371              		.loc 1 251 3 view .LVU77
+ 372 011a FFF7FEBF 		b	tmc_ramp_linear_set_mode
+ 373              	.LVL22:
+ 374              	.L22:
+ 375              	.LCFI10:
+ 376              		.cfi_restore_state
+ 254:tmc/StepDir.c **** 		break;
+ 377              		.loc 1 254 3 is_stmt 1 view .LVU78
+ 254:tmc/StepDir.c **** 		break;
+ 378              		.loc 1 254 37 is_stmt 0 view .LVU79
+ 379 011e 0648     		ldr	r0, .L25
+ 380              	.LVL23:
+ 254:tmc/StepDir.c **** 		break;
+ 381              		.loc 1 254 37 view .LVU80
+ 382 0120 6822     		movs	r2, #104
+ 383 0122 02FB0303 		mla	r3, r2, r3, r0
+ 384 0126 5A78     		ldrb	r2, [r3, #1]	@ zero_extendqisi2
+ 385 0128 42F00102 		orr	r2, r2, #1
+ 386 012c 5A70     		strb	r2, [r3, #1]
+ 255:tmc/StepDir.c **** 	case STOP_STALL:
+ 387              		.loc 1 255 3 is_stmt 1 view .LVU81
+ 388              	.L21:
+ 389              		.loc 1 264 1 is_stmt 0 view .LVU82
+ 390 012e 38BD     		pop	{r3, r4, r5, pc}
+ 391              	.LVL24:
+ 392              	.L23:
+ 393              		.loc 1 264 1 view .LVU83
+ 394 0130 BDE83840 		pop	{r3, r4, r5, lr}
+ 395              	.LCFI11:
+ 396              		.cfi_restore 14
+ 397              		.cfi_restore 5
+ 398              		.cfi_restore 4
+ 399              		.cfi_restore 3
+ 400              		.cfi_def_cfa_offset 0
+ 401 0134 64E7     		b	StepDir_stop.part.0
+ 402              	.LVL25:
+ 403              	.L26:
+ 404              		.loc 1 264 1 view .LVU84
+ 405 0136 00BF     		.align	2
+ 406              	.L25:
+ 407 0138 00000000 		.word	StepDir
+ 408              		.cfi_endproc
+ 409              	.LFE4:
+ 411              		.align	1
+ 412              		.global	StepDir_getStatus
+ 413              		.syntax unified
+ 414              		.thumb
+ 415              		.thumb_func
+ 416              		.fpu softvfp
+ 418              	StepDir_getStatus:
+ 419              	.LVL26:
+ 420              	.LFB5:
+ 265:tmc/StepDir.c **** 
+ 266:tmc/StepDir.c **** uint8_t StepDir_getStatus(uint8_t channel)
+ 267:tmc/StepDir.c **** {
+ 421              		.loc 1 267 1 is_stmt 1 view -0
+ 422              		.cfi_startproc
+ 423              		@ args = 0, pretend = 0, frame = 0
+ 424              		@ frame_needed = 0, uses_anonymous_args = 0
+ 268:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 425              		.loc 1 268 2 view .LVU86
+ 426              		.loc 1 268 5 is_stmt 0 view .LVU87
+ 427 013c 0128     		cmp	r0, #1
+ 267:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 428              		.loc 1 267 1 view .LVU88
+ 429 013e 70B5     		push	{r4, r5, r6, lr}
+ 430              	.LCFI12:
+ 431              		.cfi_def_cfa_offset 16
+ 432              		.cfi_offset 4, -16
+ 433              		.cfi_offset 5, -12
+ 434              		.cfi_offset 6, -8
+ 435              		.cfi_offset 14, -4
+ 436              		.loc 1 268 5 view .LVU89
+ 437 0140 1FD8     		bhi	.L32
+ 269:tmc/StepDir.c **** 		return -1;
+ 270:tmc/StepDir.c **** 
+ 271:tmc/StepDir.c **** 	uint8_t status = StepDir[channel].haltingCondition;
+ 438              		.loc 1 271 2 is_stmt 1 view .LVU90
+ 439              		.loc 1 271 10 is_stmt 0 view .LVU91
+ 440 0142 6822     		movs	r2, #104
+ 441 0144 104B     		ldr	r3, .L36
+ 442 0146 02FB00F5 		mul	r5, r2, r0
+ 443 014a 5919     		adds	r1, r3, r5
+ 272:tmc/StepDir.c **** 
+ 273:tmc/StepDir.c **** 	status |= (StepDir[channel].targetReached) ? STATUS_TARGET_REACHED : 0;
+ 444              		.loc 1 273 9 view .LVU92
+ 445 014c 5C5D     		ldrb	r4, [r3, r5]	@ zero_extendqisi2
+ 271:tmc/StepDir.c **** 
+ 446              		.loc 1 271 10 view .LVU93
+ 447 014e 4E78     		ldrb	r6, [r1, #1]	@ zero_extendqisi2
+ 448              	.LVL27:
+ 449              		.loc 1 273 2 is_stmt 1 view .LVU94
+ 274:tmc/StepDir.c **** 	status |= (StepDir[channel].stallGuardActive) ? STATUS_STALLGUARD_ACTIVE : 0;
+ 450              		.loc 1 274 9 is_stmt 0 view .LVU95
+ 451 0150 8978     		ldrb	r1, [r1, #2]	@ zero_extendqisi2
+ 273:tmc/StepDir.c **** 	status |= (StepDir[channel].stallGuardActive) ? STATUS_STALLGUARD_ACTIVE : 0;
+ 452              		.loc 1 273 9 view .LVU96
+ 453 0152 002C     		cmp	r4, #0
+ 454 0154 14BF     		ite	ne
+ 455 0156 1024     		movne	r4, #16
+ 456 0158 0024     		moveq	r4, #0
+ 275:tmc/StepDir.c **** 	status |= (tmc_ramp_linear_get_mode(&StepDir[channel].ramp) == TMC_RAMP_LINEAR_MODE_VELOCITY) ? ST
+ 457              		.loc 1 275 13 view .LVU97
+ 458 015a 02FB0030 		mla	r0, r2, r0, r3
+ 459              	.LVL28:
+ 274:tmc/StepDir.c **** 	status |= (StepDir[channel].stallGuardActive) ? STATUS_STALLGUARD_ACTIVE : 0;
+ 460              		.loc 1 274 9 view .LVU98
+ 461 015e 0029     		cmp	r1, #0
+ 273:tmc/StepDir.c **** 	status |= (StepDir[channel].stallGuardActive) ? STATUS_STALLGUARD_ACTIVE : 0;
+ 462              		.loc 1 273 9 view .LVU99
+ 463 0160 44EA0604 		orr	r4, r4, r6
+ 274:tmc/StepDir.c **** 	status |= (StepDir[channel].stallGuardActive) ? STATUS_STALLGUARD_ACTIVE : 0;
+ 464              		.loc 1 274 9 view .LVU100
+ 465 0164 14BF     		ite	ne
+ 466 0166 2021     		movne	r1, #32
+ 467 0168 0021     		moveq	r1, #0
+ 273:tmc/StepDir.c **** 	status |= (StepDir[channel].stallGuardActive) ? STATUS_STALLGUARD_ACTIVE : 0;
+ 468              		.loc 1 273 9 view .LVU101
+ 469 016a 64B2     		sxtb	r4, r4
+ 470              	.LVL29:
+ 274:tmc/StepDir.c **** 	status |= (StepDir[channel].stallGuardActive) ? STATUS_STALLGUARD_ACTIVE : 0;
+ 471              		.loc 1 274 2 is_stmt 1 view .LVU102
+ 472              		.loc 1 275 13 is_stmt 0 view .LVU103
+ 473 016c 3030     		adds	r0, r0, #48
+ 274:tmc/StepDir.c **** 	status |= (StepDir[channel].stallGuardActive) ? STATUS_STALLGUARD_ACTIVE : 0;
+ 474              		.loc 1 274 9 view .LVU104
+ 475 016e 0C43     		orrs	r4, r4, r1
+ 476              	.LVL30:
+ 477              		.loc 1 275 2 is_stmt 1 view .LVU105
+ 478              		.loc 1 275 13 is_stmt 0 view .LVU106
+ 479 0170 FFF7FEFF 		bl	tmc_ramp_linear_get_mode
+ 480              	.LVL31:
+ 481              		.loc 1 275 110 view .LVU107
+ 482 0174 0028     		cmp	r0, #0
+ 483 0176 0CBF     		ite	eq
+ 484 0178 4020     		moveq	r0, #64
+ 485 017a 0020     		movne	r0, #0
+ 486              		.loc 1 275 9 view .LVU108
+ 487 017c 2043     		orrs	r0, r0, r4
+ 488 017e C0B2     		uxtb	r0, r0
+ 489              	.LVL32:
+ 276:tmc/StepDir.c **** 
+ 277:tmc/StepDir.c **** 	return status;
+ 490              		.loc 1 277 2 is_stmt 1 view .LVU109
+ 491              	.L28:
+ 278:tmc/StepDir.c **** }
+ 492              		.loc 1 278 1 is_stmt 0 view .LVU110
+ 493 0180 70BD     		pop	{r4, r5, r6, pc}
+ 494              	.LVL33:
+ 495              	.L32:
+ 269:tmc/StepDir.c **** 
+ 496              		.loc 1 269 10 view .LVU111
+ 497 0182 FF20     		movs	r0, #255
+ 498              	.LVL34:
+ 269:tmc/StepDir.c **** 
+ 499              		.loc 1 269 10 view .LVU112
+ 500 0184 FCE7     		b	.L28
+ 501              	.L37:
+ 502 0186 00BF     		.align	2
+ 503              	.L36:
+ 504 0188 00000000 		.word	StepDir
+ 505              		.cfi_endproc
+ 506              	.LFE5:
+ 508              		.align	1
+ 509              		.global	StepDir_setPins
+ 510              		.syntax unified
+ 511              		.thumb
+ 512              		.thumb_func
+ 513              		.fpu softvfp
+ 515              	StepDir_setPins:
+ 516              	.LVL35:
+ 517              	.LFB6:
+ 279:tmc/StepDir.c **** 
+ 280:tmc/StepDir.c **** // Register the pins to be used by a StepDir channel. NULL will leave the pin unchanged
+ 281:tmc/StepDir.c **** void StepDir_setPins(uint8_t channel, IOPinTypeDef *stepPin, IOPinTypeDef *dirPin, IOPinTypeDef *st
+ 282:tmc/StepDir.c **** {
+ 518              		.loc 1 282 1 is_stmt 1 view -0
+ 519              		.cfi_startproc
+ 520              		@ args = 0, pretend = 0, frame = 0
+ 521              		@ frame_needed = 0, uses_anonymous_args = 0
+ 283:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 522              		.loc 1 283 2 view .LVU114
+ 523              		.loc 1 283 5 is_stmt 0 view .LVU115
+ 524 018c 0128     		cmp	r0, #1
+ 282:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 525              		.loc 1 282 1 view .LVU116
+ 526 018e F0B5     		push	{r4, r5, r6, r7, lr}
+ 527              	.LCFI13:
+ 528              		.cfi_def_cfa_offset 20
+ 529              		.cfi_offset 4, -20
+ 530              		.cfi_offset 5, -16
+ 531              		.cfi_offset 6, -12
+ 532              		.cfi_offset 7, -8
+ 533              		.cfi_offset 14, -4
+ 534              		.loc 1 283 5 view .LVU117
+ 535 0190 2ED8     		bhi	.L38
+ 284:tmc/StepDir.c **** 		return;
+ 285:tmc/StepDir.c **** 
+ 286:tmc/StepDir.c **** 	if (stepPin)
+ 536              		.loc 1 286 2 is_stmt 1 view .LVU118
+ 537              		.loc 1 286 5 is_stmt 0 view .LVU119
+ 538 0192 99B1     		cbz	r1, .L42
+ 287:tmc/StepDir.c **** 	{
+ 288:tmc/StepDir.c **** 		if (IS_DUMMY_PIN(stepPin))
+ 539              		.loc 1 288 3 is_stmt 1 view .LVU120
+ 540              		.loc 1 288 7 is_stmt 0 view .LVU121
+ 541 0194 0F69     		ldr	r7, [r1, #16]
+ 542 0196 DFF85CC0 		ldr	ip, .L59
+ 543              		.loc 1 288 6 view .LVU122
+ 544 019a 37B9     		cbnz	r7, .L43
+ 289:tmc/StepDir.c **** 		{
+ 290:tmc/StepDir.c **** 			// Set the halting condition before changing the pin
+ 291:tmc/StepDir.c **** 			StepDir[channel].haltingCondition |= STATUS_NO_STEP_PIN;
+ 545              		.loc 1 291 4 is_stmt 1 view .LVU123
+ 546              		.loc 1 291 38 is_stmt 0 view .LVU124
+ 547 019c 6825     		movs	r5, #104
+ 548 019e 05FB00C5 		mla	r5, r5, r0, ip
+ 549 01a2 6E78     		ldrb	r6, [r5, #1]	@ zero_extendqisi2
+ 550 01a4 46F00206 		orr	r6, r6, #2
+ 551 01a8 6E70     		strb	r6, [r5, #1]
+ 552              	.L43:
+ 292:tmc/StepDir.c **** 		}
+ 293:tmc/StepDir.c **** 		StepDir[channel].stepPin = stepPin;
+ 553              		.loc 1 293 3 is_stmt 1 view .LVU125
+ 554              		.loc 1 293 28 is_stmt 0 view .LVU126
+ 555 01aa 6824     		movs	r4, #104
+ 556 01ac 04FB00C4 		mla	r4, r4, r0, ip
+ 557 01b0 E160     		str	r1, [r4, #12]
+ 294:tmc/StepDir.c **** 		if (!IS_DUMMY_PIN(stepPin))
+ 558              		.loc 1 294 3 is_stmt 1 view .LVU127
+ 559              		.loc 1 294 6 is_stmt 0 view .LVU128
+ 560 01b2 1FB1     		cbz	r7, .L42
+ 295:tmc/StepDir.c **** 		{
+ 296:tmc/StepDir.c **** 			// Clear the halting condition after setting the pin
+ 297:tmc/StepDir.c **** 			StepDir[channel].haltingCondition &= ~STATUS_NO_STEP_PIN;
+ 561              		.loc 1 297 4 is_stmt 1 view .LVU129
+ 562              		.loc 1 297 38 is_stmt 0 view .LVU130
+ 563 01b4 6178     		ldrb	r1, [r4, #1]	@ zero_extendqisi2
+ 564              	.LVL36:
+ 565              		.loc 1 297 38 view .LVU131
+ 566 01b6 21F00201 		bic	r1, r1, #2
+ 567 01ba 6170     		strb	r1, [r4, #1]
+ 568              	.LVL37:
+ 569              	.L42:
+ 298:tmc/StepDir.c **** 		}
+ 299:tmc/StepDir.c **** 	}
+ 300:tmc/StepDir.c **** 
+ 301:tmc/StepDir.c **** 	if (dirPin)
+ 570              		.loc 1 301 2 is_stmt 1 view .LVU132
+ 571              		.loc 1 301 5 is_stmt 0 view .LVU133
+ 572 01bc 92B1     		cbz	r2, .L46
+ 302:tmc/StepDir.c **** 	{
+ 303:tmc/StepDir.c **** 		if (IS_DUMMY_PIN(dirPin))
+ 573              		.loc 1 303 3 is_stmt 1 view .LVU134
+ 574              		.loc 1 303 7 is_stmt 0 view .LVU135
+ 575 01be 1669     		ldr	r6, [r2, #16]
+ 576 01c0 0C4F     		ldr	r7, .L59
+ 577              		.loc 1 303 6 view .LVU136
+ 578 01c2 36B9     		cbnz	r6, .L47
+ 304:tmc/StepDir.c **** 		{
+ 305:tmc/StepDir.c **** 			// Set the halting condition before changing the pin
+ 306:tmc/StepDir.c **** 			StepDir[channel].haltingCondition |= STATUS_NO_DIR_PIN;
+ 579              		.loc 1 306 4 is_stmt 1 view .LVU137
+ 580              		.loc 1 306 38 is_stmt 0 view .LVU138
+ 581 01c4 6824     		movs	r4, #104
+ 582 01c6 04FB0074 		mla	r4, r4, r0, r7
+ 583 01ca 6578     		ldrb	r5, [r4, #1]	@ zero_extendqisi2
+ 584 01cc 45F00405 		orr	r5, r5, #4
+ 585 01d0 6570     		strb	r5, [r4, #1]
+ 586              	.L47:
+ 307:tmc/StepDir.c **** 		}
+ 308:tmc/StepDir.c **** 		StepDir[channel].dirPin = dirPin;
+ 587              		.loc 1 308 3 is_stmt 1 view .LVU139
+ 588              		.loc 1 308 27 is_stmt 0 view .LVU140
+ 589 01d2 6821     		movs	r1, #104
+ 590 01d4 01FB0071 		mla	r1, r1, r0, r7
+ 591 01d8 0A61     		str	r2, [r1, #16]
+ 309:tmc/StepDir.c **** 		if (!IS_DUMMY_PIN(dirPin))
+ 592              		.loc 1 309 3 is_stmt 1 view .LVU141
+ 593              		.loc 1 309 6 is_stmt 0 view .LVU142
+ 594 01da 1EB1     		cbz	r6, .L46
+ 310:tmc/StepDir.c **** 		{
+ 311:tmc/StepDir.c **** 			// Clear the halting condition after setting the pin
+ 312:tmc/StepDir.c **** 			StepDir[channel].haltingCondition &= ~STATUS_NO_DIR_PIN;
+ 595              		.loc 1 312 4 is_stmt 1 view .LVU143
+ 596              		.loc 1 312 38 is_stmt 0 view .LVU144
+ 597 01dc 4A78     		ldrb	r2, [r1, #1]	@ zero_extendqisi2
+ 598              	.LVL38:
+ 599              		.loc 1 312 38 view .LVU145
+ 600 01de 22F00402 		bic	r2, r2, #4
+ 601 01e2 4A70     		strb	r2, [r1, #1]
+ 602              	.LVL39:
+ 603              	.L46:
+ 313:tmc/StepDir.c **** 		}
+ 314:tmc/StepDir.c **** 	}
+ 315:tmc/StepDir.c **** 
+ 316:tmc/StepDir.c **** 	if (stallPin)
+ 604              		.loc 1 316 2 is_stmt 1 view .LVU146
+ 605              		.loc 1 316 5 is_stmt 0 view .LVU147
+ 606 01e4 23B1     		cbz	r3, .L38
+ 317:tmc/StepDir.c **** 	{
+ 318:tmc/StepDir.c **** 		StepDir[channel].stallGuardPin = stallPin;
+ 607              		.loc 1 318 3 is_stmt 1 view .LVU148
+ 608              		.loc 1 318 34 is_stmt 0 view .LVU149
+ 609 01e6 034A     		ldr	r2, .L59
+ 610 01e8 6821     		movs	r1, #104
+ 611 01ea 01FB0020 		mla	r0, r1, r0, r2
+ 612              	.LVL40:
+ 613              		.loc 1 318 34 view .LVU150
+ 614 01ee 8360     		str	r3, [r0, #8]
+ 615              	.L38:
+ 319:tmc/StepDir.c **** 	}
+ 320:tmc/StepDir.c **** }
+ 616              		.loc 1 320 1 view .LVU151
+ 617 01f0 F0BD     		pop	{r4, r5, r6, r7, pc}
+ 618              	.L60:
+ 619 01f2 00BF     		.align	2
+ 620              	.L59:
+ 621 01f4 00000000 		.word	StepDir
+ 622              		.cfi_endproc
+ 623              	.LFE6:
+ 625              		.align	1
+ 626              		.global	StepDir_stallGuard
+ 627              		.syntax unified
+ 628              		.thumb
+ 629              		.thumb_func
+ 630              		.fpu softvfp
+ 632              	StepDir_stallGuard:
+ 633              	.LVL41:
+ 634              	.LFB7:
+ 321:tmc/StepDir.c **** 
+ 322:tmc/StepDir.c **** void StepDir_stallGuard(uint8_t channel, bool stall)
+ 323:tmc/StepDir.c **** {
+ 635              		.loc 1 323 1 is_stmt 1 view -0
+ 636              		.cfi_startproc
+ 637              		@ args = 0, pretend = 0, frame = 0
+ 638              		@ frame_needed = 0, uses_anonymous_args = 0
+ 639              		@ link register save eliminated.
+ 324:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 640              		.loc 1 324 2 view .LVU153
+ 641              		.loc 1 324 5 is_stmt 0 view .LVU154
+ 642 01f8 0128     		cmp	r0, #1
+ 323:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 643              		.loc 1 323 1 view .LVU155
+ 644 01fa 10B4     		push	{r4}
+ 645              	.LCFI14:
+ 646              		.cfi_def_cfa_offset 4
+ 647              		.cfi_offset 4, -4
+ 648              		.loc 1 324 5 view .LVU156
+ 649 01fc 08D8     		bhi	.L61
+ 650              	.LVL42:
+ 651              	.LBB12:
+ 652              	.LBI12:
+ 322:tmc/StepDir.c **** {
+ 653              		.loc 1 322 6 is_stmt 1 view .LVU157
+ 654              	.LBB13:
+ 325:tmc/StepDir.c **** 		return;
+ 326:tmc/StepDir.c **** 
+ 327:tmc/StepDir.c **** 	if (StepDir[channel].stallGuardActive && stall)
+ 655              		.loc 1 327 2 view .LVU158
+ 656              		.loc 1 327 22 is_stmt 0 view .LVU159
+ 657 01fe 054A     		ldr	r2, .L69
+ 658 0200 6824     		movs	r4, #104
+ 659 0202 04FB0023 		mla	r3, r4, r0, r2
+ 660              		.loc 1 327 5 view .LVU160
+ 661 0206 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 662 0208 13B1     		cbz	r3, .L61
+ 663              		.loc 1 327 40 view .LVU161
+ 664 020a 09B1     		cbz	r1, .L61
+ 328:tmc/StepDir.c **** 	{
+ 329:tmc/StepDir.c **** 		StepDir_stop(channel, STOP_STALL);
+ 665              		.loc 1 329 3 is_stmt 1 view .LVU162
+ 666              	.LVL43:
+ 667              	.LBB14:
+ 668              	.LBI14:
+ 245:tmc/StepDir.c **** {
+ 669              		.loc 1 245 6 view .LVU163
+ 670              	.LBB15:
+ 247:tmc/StepDir.c **** 	{
+ 671              		.loc 1 247 2 view .LVU164
+ 672              	.LBE15:
+ 673              	.LBE14:
+ 674              	.LBE13:
+ 675              	.LBE12:
+ 330:tmc/StepDir.c **** 	}
+ 331:tmc/StepDir.c **** }
+ 676              		.loc 1 331 1 is_stmt 0 view .LVU165
+ 677 020c 10BC     		pop	{r4}
+ 678              	.LCFI15:
+ 679              		.cfi_remember_state
+ 680              		.cfi_restore 4
+ 681              		.cfi_def_cfa_offset 0
+ 682              	.LBB19:
+ 683              	.LBB18:
+ 684              	.LBB17:
+ 685              	.LBB16:
+ 686 020e F7E6     		b	StepDir_stop.part.0
+ 687              	.LVL44:
+ 688              	.L61:
+ 689              	.LCFI16:
+ 690              		.cfi_restore_state
+ 691              		.loc 1 331 1 view .LVU166
+ 692              	.LBE16:
+ 693              	.LBE17:
+ 694              	.LBE18:
+ 695              	.LBE19:
+ 696 0210 10BC     		pop	{r4}
+ 697              	.LCFI17:
+ 698              		.cfi_restore 4
+ 699              		.cfi_def_cfa_offset 0
+ 700 0212 7047     		bx	lr
+ 701              	.L70:
+ 702              		.align	2
+ 703              	.L69:
+ 704 0214 00000000 		.word	StepDir
+ 705              		.cfi_endproc
+ 706              	.LFE7:
+ 708              		.align	1
+ 709              		.global	FTM1_IRQHandler
+ 710              		.syntax unified
+ 711              		.thumb
+ 712              		.thumb_func
+ 713              		.fpu softvfp
+ 715              	FTM1_IRQHandler:
+ 716              	.LFB0:
+ 140:tmc/StepDir.c **** #ifdef Startrampe
+ 717              		.loc 1 140 1 is_stmt 1 view -0
+ 718              		.cfi_startproc
+ 719              		@ args = 0, pretend = 0, frame = 0
+ 720              		@ frame_needed = 0, uses_anonymous_args = 0
+ 146:tmc/StepDir.c **** #endif
+ 721              		.loc 1 146 2 view .LVU168
+ 146:tmc/StepDir.c **** #endif
+ 722              		.loc 1 146 10 is_stmt 0 view .LVU169
+ 723 0218 274A     		ldr	r2, .L86
+ 140:tmc/StepDir.c **** #ifdef Startrampe
+ 724              		.loc 1 140 1 view .LVU170
+ 725 021a 2DE9F843 		push	{r3, r4, r5, r6, r7, r8, r9, lr}
+ 726              	.LCFI18:
+ 727              		.cfi_def_cfa_offset 32
+ 728              		.cfi_offset 3, -32
+ 729              		.cfi_offset 4, -28
+ 730              		.cfi_offset 5, -24
+ 731              		.cfi_offset 6, -20
+ 732              		.cfi_offset 7, -16
+ 733              		.cfi_offset 8, -12
+ 734              		.cfi_offset 9, -8
+ 735              		.cfi_offset 14, -4
+ 146:tmc/StepDir.c **** #endif
+ 736              		.loc 1 146 10 view .LVU171
+ 737 021e 1368     		ldr	r3, [r2]
+ 738 0220 264C     		ldr	r4, .L86+4
+ 739              	.LBB20:
+ 740              	.LBB21:
+ 164:tmc/StepDir.c **** 		}
+ 741              		.loc 1 164 30 view .LVU172
+ 742 0222 DFF89C90 		ldr	r9, .L86+8
+ 743              	.LBE21:
+ 744              	.LBE20:
+ 146:tmc/StepDir.c **** #endif
+ 745              		.loc 1 146 10 view .LVU173
+ 746 0226 23F08003 		bic	r3, r3, #128
+ 747 022a 0025     		movs	r5, #0
+ 748 022c 1360     		str	r3, [r2]
+ 149:tmc/StepDir.c **** 	{
+ 749              		.loc 1 149 2 is_stmt 1 view .LVU174
+ 750              	.LBB24:
+ 149:tmc/StepDir.c **** 	{
+ 751              		.loc 1 149 7 view .LVU175
+ 752              	.LVL45:
+ 149:tmc/StepDir.c **** 	{
+ 753              		.loc 1 149 23 view .LVU176
+ 754              	.LBB22:
+ 190:tmc/StepDir.c **** 			break;
+ 755              		.loc 1 190 21 is_stmt 0 view .LVU177
+ 756 022e 0227     		movs	r7, #2
+ 194:tmc/StepDir.c **** 			break;
+ 757              		.loc 1 194 21 view .LVU178
+ 758 0230 A846     		mov	r8, r5
+ 759              	.LVL46:
+ 760              	.L78:
+ 155:tmc/StepDir.c **** 			continue;
+ 761              		.loc 1 155 6 view .LVU179
+ 762 0232 6378     		ldrb	r3, [r4, #1]	@ zero_extendqisi2
+ 763 0234 EEB2     		uxtb	r6, r5
+ 764              	.LVL47:
+ 152:tmc/StepDir.c **** 
+ 765              		.loc 1 152 3 is_stmt 1 view .LVU180
+ 155:tmc/StepDir.c **** 			continue;
+ 766              		.loc 1 155 3 view .LVU181
+ 155:tmc/StepDir.c **** 			continue;
+ 767              		.loc 1 155 6 is_stmt 0 view .LVU182
+ 768 0236 43BB     		cbnz	r3, .L72
+ 159:tmc/StepDir.c **** 
+ 769              		.loc 1 159 3 is_stmt 1 view .LVU183
+ 159:tmc/StepDir.c **** 
+ 770              		.loc 1 159 46 is_stmt 0 view .LVU184
+ 771 0238 E368     		ldr	r3, [r4, #12]
+ 159:tmc/StepDir.c **** 
+ 772              		.loc 1 159 55 view .LVU185
+ 773 023a D3E90323 		ldrd	r2, r3, [r3, #12]
+ 159:tmc/StepDir.c **** 
+ 774              		.loc 1 159 38 view .LVU186
+ 775 023e 1360     		str	r3, [r2]
+ 162:tmc/StepDir.c **** 		{
+ 776              		.loc 1 162 3 is_stmt 1 view .LVU187
+ 162:tmc/StepDir.c **** 		{
+ 777              		.loc 1 162 8 is_stmt 0 view .LVU188
+ 778 0240 A068     		ldr	r0, [r4, #8]
+ 162:tmc/StepDir.c **** 		{
+ 779              		.loc 1 162 6 view .LVU189
+ 780 0242 0369     		ldr	r3, [r0, #16]
+ 781 0244 53B1     		cbz	r3, .L73
+ 164:tmc/StepDir.c **** 		}
+ 782              		.loc 1 164 4 is_stmt 1 view .LVU190
+ 164:tmc/StepDir.c **** 		}
+ 783              		.loc 1 164 34 is_stmt 0 view .LVU191
+ 784 0246 D9F80C30 		ldr	r3, [r9, #12]
+ 164:tmc/StepDir.c **** 		}
+ 785              		.loc 1 164 42 view .LVU192
+ 786 024a 1B68     		ldr	r3, [r3]
+ 164:tmc/StepDir.c **** 		}
+ 787              		.loc 1 164 27 view .LVU193
+ 788 024c 5B6A     		ldr	r3, [r3, #36]
+ 789 024e 9847     		blx	r3
+ 790              	.LVL48:
+ 164:tmc/StepDir.c **** 		}
+ 791              		.loc 1 164 4 view .LVU194
+ 792 0250 011E     		subs	r1, r0, #0
+ 793 0252 18BF     		it	ne
+ 794 0254 0121     		movne	r1, #1
+ 795 0256 3046     		mov	r0, r6
+ 796 0258 FFF7FEFF 		bl	StepDir_stallGuard
+ 797              	.LVL49:
+ 798              	.L73:
+ 168:tmc/StepDir.c **** 
+ 799              		.loc 1 168 3 is_stmt 1 view .LVU195
+ 800 025c 04F13006 		add	r6, r4, #48
+ 801              	.LVL50:
+ 168:tmc/StepDir.c **** 
+ 802              		.loc 1 168 16 is_stmt 0 view .LVU196
+ 803 0260 3046     		mov	r0, r6
+ 804 0262 FFF7FEFF 		bl	tmc_ramp_linear_compute
+ 805              	.LVL51:
+ 171:tmc/StepDir.c **** 			goto skipStep;
+ 806              		.loc 1 171 3 is_stmt 1 view .LVU197
+ 171:tmc/StepDir.c **** 			goto skipStep;
+ 807              		.loc 1 171 6 is_stmt 0 view .LVU198
+ 808 0266 0028     		cmp	r0, #0
+ 809 0268 0AD0     		beq	.L74
+ 175:tmc/StepDir.c **** 
+ 810              		.loc 1 175 3 is_stmt 1 view .LVU199
+ 175:tmc/StepDir.c **** 
+ 811              		.loc 1 175 91 is_stmt 0 view .LVU200
+ 812 026a 2369     		ldr	r3, [r4, #16]
+ 175:tmc/StepDir.c **** 
+ 813              		.loc 1 175 49 view .LVU201
+ 814 026c D3E90212 		ldrd	r1, r2, [r3, #8]
+ 815 0270 D8BF     		it	le
+ 816 0272 0A46     		movle	r2, r1
+ 175:tmc/StepDir.c **** 
+ 817              		.loc 1 175 99 view .LVU202
+ 818 0274 1B69     		ldr	r3, [r3, #16]
+ 175:tmc/StepDir.c **** 
+ 819              		.loc 1 175 83 view .LVU203
+ 820 0276 1360     		str	r3, [r2]
+ 178:tmc/StepDir.c **** 
+ 821              		.loc 1 178 3 is_stmt 1 view .LVU204
+ 178:tmc/StepDir.c **** 
+ 822              		.loc 1 178 44 is_stmt 0 view .LVU205
+ 823 0278 E368     		ldr	r3, [r4, #12]
+ 178:tmc/StepDir.c **** 
+ 824              		.loc 1 178 19 view .LVU206
+ 825 027a 9A68     		ldr	r2, [r3, #8]
+ 178:tmc/StepDir.c **** 
+ 826              		.loc 1 178 53 view .LVU207
+ 827 027c 1B69     		ldr	r3, [r3, #16]
+ 178:tmc/StepDir.c **** 
+ 828              		.loc 1 178 36 view .LVU208
+ 829 027e 1360     		str	r3, [r2]
+ 830              	.L74:
+ 182:tmc/StepDir.c **** 		{
+ 831              		.loc 1 182 3 is_stmt 1 view .LVU209
+ 182:tmc/StepDir.c **** 		{
+ 832              		.loc 1 182 16 is_stmt 0 view .LVU210
+ 833 0280 237D     		ldrb	r3, [r4, #20]	@ zero_extendqisi2
+ 182:tmc/StepDir.c **** 		{
+ 834              		.loc 1 182 3 view .LVU211
+ 835 0282 012B     		cmp	r3, #1
+ 836 0284 07D0     		beq	.L76
+ 837 0286 032B     		cmp	r3, #3
+ 838 0288 0FD0     		beq	.L77
+ 839              	.LVL52:
+ 840              	.L72:
+ 182:tmc/StepDir.c **** 		{
+ 841              		.loc 1 182 3 view .LVU212
+ 842              	.LBE22:
+ 149:tmc/StepDir.c **** 	{
+ 843              		.loc 1 149 47 is_stmt 1 discriminator 2 view .LVU213
+ 149:tmc/StepDir.c **** 	{
+ 844              		.loc 1 149 23 discriminator 2 view .LVU214
+ 845 028a 6834     		adds	r4, r4, #104
+ 149:tmc/StepDir.c **** 	{
+ 846              		.loc 1 149 2 is_stmt 0 discriminator 2 view .LVU215
+ 847 028c 0DB1     		cbz	r5, .L79
+ 848              	.LBE24:
+ 200:tmc/StepDir.c **** 
+ 849              		.loc 1 200 1 view .LVU216
+ 850 028e BDE8F883 		pop	{r3, r4, r5, r6, r7, r8, r9, pc}
+ 851              	.LVL53:
+ 852              	.L79:
+ 853              	.LBB25:
+ 200:tmc/StepDir.c **** 
+ 854              		.loc 1 200 1 view .LVU217
+ 855 0292 0125     		movs	r5, #1
+ 856              	.LVL54:
+ 200:tmc/StepDir.c **** 
+ 857              		.loc 1 200 1 view .LVU218
+ 858 0294 CDE7     		b	.L78
+ 859              	.LVL55:
+ 860              	.L76:
+ 861              	.LBB23:
+ 186:tmc/StepDir.c **** 			// Save a snapshot of the velocity
+ 862              		.loc 1 186 4 is_stmt 1 view .LVU219
+ 863 0296 216A     		ldr	r1, [r4, #32]
+ 864 0298 3046     		mov	r0, r6
+ 865              	.LVL56:
+ 186:tmc/StepDir.c **** 			// Save a snapshot of the velocity
+ 866              		.loc 1 186 4 is_stmt 0 view .LVU220
+ 867 029a FFF7FEFF 		bl	tmc_ramp_linear_set_acceleration
+ 868              	.LVL57:
+ 188:tmc/StepDir.c **** 
+ 869              		.loc 1 188 4 is_stmt 1 view .LVU221
+ 188:tmc/StepDir.c **** 
+ 870              		.loc 1 188 27 is_stmt 0 view .LVU222
+ 871 029e 3046     		mov	r0, r6
+ 872 02a0 FFF7FEFF 		bl	tmc_ramp_linear_get_rampVelocity
+ 873              	.LVL58:
+ 190:tmc/StepDir.c **** 			break;
+ 874              		.loc 1 190 21 view .LVU223
+ 875 02a4 2775     		strb	r7, [r4, #20]
+ 188:tmc/StepDir.c **** 
+ 876              		.loc 1 188 25 view .LVU224
+ 877 02a6 A061     		str	r0, [r4, #24]
+ 190:tmc/StepDir.c **** 			break;
+ 878              		.loc 1 190 4 is_stmt 1 view .LVU225
+ 191:tmc/StepDir.c **** 		case SYNC_UPDATE_DATA:
+ 879              		.loc 1 191 4 view .LVU226
+ 880 02a8 EFE7     		b	.L72
+ 881              	.LVL59:
+ 882              	.L77:
+ 193:tmc/StepDir.c **** 			currCh->syncFlag = SYNC_IDLE;
+ 883              		.loc 1 193 4 view .LVU227
+ 193:tmc/StepDir.c **** 			currCh->syncFlag = SYNC_IDLE;
+ 884              		.loc 1 193 35 is_stmt 0 view .LVU228
+ 885 02aa A36D     		ldr	r3, [r4, #88]
+ 886 02ac 626A     		ldr	r2, [r4, #36]
+ 194:tmc/StepDir.c **** 			break;
+ 887              		.loc 1 194 21 view .LVU229
+ 888 02ae 84F81480 		strb	r8, [r4, #20]
+ 193:tmc/StepDir.c **** 			currCh->syncFlag = SYNC_IDLE;
+ 889              		.loc 1 193 35 view .LVU230
+ 890 02b2 1344     		add	r3, r3, r2
+ 891 02b4 A365     		str	r3, [r4, #88]
+ 194:tmc/StepDir.c **** 			break;
+ 892              		.loc 1 194 4 is_stmt 1 view .LVU231
+ 195:tmc/StepDir.c **** 		default:
+ 893              		.loc 1 195 4 view .LVU232
+ 894 02b6 E8E7     		b	.L72
+ 895              	.L87:
+ 896              		.align	2
+ 897              	.L86:
+ 898 02b8 00900340 		.word	1073975296
+ 899 02bc 00000000 		.word	StepDir
+ 900 02c0 00000000 		.word	HAL
+ 901              	.LBE23:
+ 902              	.LBE25:
+ 903              		.cfi_endproc
+ 904              	.LFE0:
+ 906              		.align	1
+ 907              		.global	StepDir_setActualPosition
+ 908              		.syntax unified
+ 909              		.thumb
+ 910              		.thumb_func
+ 911              		.fpu softvfp
+ 913              	StepDir_setActualPosition:
+ 914              	.LVL60:
+ 915              	.LFB8:
+ 332:tmc/StepDir.c **** 
+ 333:tmc/StepDir.c **** // ===== Setters =====
+ 334:tmc/StepDir.c **** // The setters are responsible to access their respective variables while keeping the ramp generati
+ 335:tmc/StepDir.c **** 
+ 336:tmc/StepDir.c **** // Set actual and target position (Not during an active position ramp)
+ 337:tmc/StepDir.c **** void StepDir_setActualPosition(uint8_t channel, int actualPosition)
+ 338:tmc/StepDir.c **** {
+ 916              		.loc 1 338 1 view -0
+ 917              		.cfi_startproc
+ 918              		@ args = 0, pretend = 0, frame = 0
+ 919              		@ frame_needed = 0, uses_anonymous_args = 0
+ 339:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 920              		.loc 1 339 2 view .LVU234
+ 921              		.loc 1 339 5 is_stmt 0 view .LVU235
+ 922 02c4 0128     		cmp	r0, #1
+ 338:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 923              		.loc 1 338 1 view .LVU236
+ 924 02c6 38B5     		push	{r3, r4, r5, lr}
+ 925              	.LCFI19:
+ 926              		.cfi_def_cfa_offset 16
+ 927              		.cfi_offset 3, -16
+ 928              		.cfi_offset 4, -12
+ 929              		.cfi_offset 5, -8
+ 930              		.cfi_offset 14, -4
+ 338:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 931              		.loc 1 338 1 view .LVU237
+ 932 02c8 0D46     		mov	r5, r1
+ 933              		.loc 1 339 5 view .LVU238
+ 934 02ca 14D8     		bhi	.L88
+ 340:tmc/StepDir.c **** 		return;
+ 341:tmc/StepDir.c **** 
+ 342:tmc/StepDir.c **** 	if (tmc_ramp_linear_get_mode(&StepDir[channel].ramp) == TMC_RAMP_LINEAR_MODE_POSITION)
+ 935              		.loc 1 342 2 is_stmt 1 view .LVU239
+ 936              		.loc 1 342 6 is_stmt 0 view .LVU240
+ 937 02cc 3023     		movs	r3, #48
+ 938 02ce 6824     		movs	r4, #104
+ 939 02d0 14FB0034 		smlabb	r4, r4, r0, r3
+ 940 02d4 0848     		ldr	r0, .L91
+ 941              	.LVL61:
+ 942              		.loc 1 342 6 view .LVU241
+ 943 02d6 0444     		add	r4, r4, r0
+ 944 02d8 2046     		mov	r0, r4
+ 945 02da FFF7FEFF 		bl	tmc_ramp_linear_get_mode
+ 946              	.LVL62:
+ 947              		.loc 1 342 5 view .LVU242
+ 948 02de 0128     		cmp	r0, #1
+ 343:tmc/StepDir.c **** 	{
+ 344:tmc/StepDir.c **** 		// In position mode: If we're not idle -> abort
+ 345:tmc/StepDir.c **** //		if ((StepDir[channel].actualVelocity != 0) ||
+ 346:tmc/StepDir.c **** //		   (StepDir[channel].actualPosition != StepDir[channel].targetPosition))
+ 347:tmc/StepDir.c **** //		{
+ 348:tmc/StepDir.c **** //			return;
+ 349:tmc/StepDir.c **** //		}
+ 350:tmc/StepDir.c **** 
+ 351:tmc/StepDir.c **** 		// todo CHECK 2: Use a haltingCondition to prevent movement instead of VMAX? (LH)
+ 352:tmc/StepDir.c **** 		// Temporarity set VMAX to 0 to prevent movement between setting actualPosition and targetPositio
+ 353:tmc/StepDir.c **** //		uint32_t tmp = StepDir[channel].velocityMax;
+ 354:tmc/StepDir.c **** //		StepDir[channel].velocityMax = 0;
+ 355:tmc/StepDir.c **** 
+ 356:tmc/StepDir.c **** 		// Also update target position to prevent movement
+ 357:tmc/StepDir.c **** 		tmc_ramp_linear_set_targetPosition(&StepDir[channel].ramp, actualPosition);
+ 949              		.loc 1 357 3 view .LVU243
+ 950 02e0 2946     		mov	r1, r5
+ 951 02e2 2046     		mov	r0, r4
+ 342:tmc/StepDir.c **** 	{
+ 952              		.loc 1 342 5 view .LVU244
+ 953 02e4 03D1     		bne	.L90
+ 954              		.loc 1 357 3 is_stmt 1 view .LVU245
+ 955 02e6 FFF7FEFF 		bl	tmc_ramp_linear_set_targetPosition
+ 956              	.LVL63:
+ 358:tmc/StepDir.c **** 		tmc_ramp_linear_set_rampPosition(&StepDir[channel].ramp, actualPosition);
+ 957              		.loc 1 358 3 view .LVU246
+ 958 02ea 2946     		mov	r1, r5
+ 959 02ec 2046     		mov	r0, r4
+ 960              	.L90:
+ 359:tmc/StepDir.c **** 
+ 360:tmc/StepDir.c **** 		// Restore VMAX
+ 361:tmc/StepDir.c **** //		StepDir[channel].velocityMax = tmp;
+ 362:tmc/StepDir.c **** 	}
+ 363:tmc/StepDir.c **** 	else
+ 364:tmc/StepDir.c **** 	{
+ 365:tmc/StepDir.c **** 		// In velocity mode the position is not relevant so we can just update it without precautions
+ 366:tmc/StepDir.c **** 		tmc_ramp_linear_set_rampPosition(&StepDir[channel].ramp, actualPosition);
+ 961              		.loc 1 366 3 view .LVU247
+ 367:tmc/StepDir.c **** 	}
+ 368:tmc/StepDir.c **** }
+ 962              		.loc 1 368 1 is_stmt 0 view .LVU248
+ 963 02ee BDE83840 		pop	{r3, r4, r5, lr}
+ 964              	.LCFI20:
+ 965              		.cfi_remember_state
+ 966              		.cfi_restore 14
+ 967              		.cfi_restore 5
+ 968              		.cfi_restore 4
+ 969              		.cfi_restore 3
+ 970              		.cfi_def_cfa_offset 0
+ 971              	.LVL64:
+ 366:tmc/StepDir.c **** 	}
+ 972              		.loc 1 366 3 view .LVU249
+ 973 02f2 FFF7FEBF 		b	tmc_ramp_linear_set_rampPosition
+ 974              	.LVL65:
+ 975              	.L88:
+ 976              	.LCFI21:
+ 977              		.cfi_restore_state
+ 978              		.loc 1 368 1 view .LVU250
+ 979 02f6 38BD     		pop	{r3, r4, r5, pc}
+ 980              	.L92:
+ 981              		.align	2
+ 982              	.L91:
+ 983 02f8 00000000 		.word	StepDir
+ 984              		.cfi_endproc
+ 985              	.LFE8:
+ 987              		.align	1
+ 988              		.global	StepDir_setVelocityMax
+ 989              		.syntax unified
+ 990              		.thumb
+ 991              		.thumb_func
+ 992              		.fpu softvfp
+ 994              	StepDir_setVelocityMax:
+ 995              	.LVL66:
+ 996              	.LFB10:
+ 369:tmc/StepDir.c **** 
+ 370:tmc/StepDir.c **** void StepDir_setAcceleration(uint8_t channel, uint32_t acceleration)
+ 371:tmc/StepDir.c **** {
+ 372:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 373:tmc/StepDir.c **** 		return;
+ 374:tmc/StepDir.c **** 
+ 375:tmc/StepDir.c **** 	if (tmc_ramp_linear_get_mode(&StepDir[channel].ramp) == TMC_RAMP_LINEAR_MODE_VELOCITY)
+ 376:tmc/StepDir.c **** 	{	// Velocity mode does not require any special actions
+ 377:tmc/StepDir.c **** 		tmc_ramp_linear_set_acceleration(&StepDir[channel].ramp, acceleration);
+ 378:tmc/StepDir.c **** 		return;
+ 379:tmc/StepDir.c **** 	}
+ 380:tmc/StepDir.c **** 
+ 381:tmc/StepDir.c **** 	// Position mode does not allow acceleration 0
+ 382:tmc/StepDir.c **** 	if (acceleration == 0)
+ 383:tmc/StepDir.c **** 		return;
+ 384:tmc/StepDir.c **** 
+ 385:tmc/StepDir.c **** 	tmc_ramp_linear_set_acceleration(&StepDir[channel].ramp, acceleration);
+ 386:tmc/StepDir.c **** 
+ 387:tmc/StepDir.c **** 	// Store the old acceleration
+ 388:tmc/StepDir.c **** 	uint32_t oldAcceleration = tmc_ramp_linear_get_acceleration(&StepDir[channel].ramp);
+ 389:tmc/StepDir.c **** 
+ 390:tmc/StepDir.c **** 	// If the channel is not halted we need to synchronise with the interrupt
+ 391:tmc/StepDir.c **** 	if (StepDir[channel].haltingCondition == 0)
+ 392:tmc/StepDir.c **** 	{
+ 393:tmc/StepDir.c **** 		// Sync mechanism: store the new acceleration value and request
+ 394:tmc/StepDir.c **** 		// a snapshot from the interrupt
+ 395:tmc/StepDir.c **** 		StepDir[channel].newAcceleration = acceleration;
+ 396:tmc/StepDir.c **** 		StepDir[channel].syncFlag = SYNC_SNAPSHOT_REQUESTED;
+ 397:tmc/StepDir.c **** 		// Wait for the flag update from the interrupt.
+ 398:tmc/StepDir.c **** 		while (ACCESS_ONCE(StepDir[channel].syncFlag) != SYNC_SNAPSHOT_SAVED); // todo CHECK 2: Timeout t
+ 399:tmc/StepDir.c **** 	}
+ 400:tmc/StepDir.c **** 	else
+ 401:tmc/StepDir.c **** 	{	// Channel is halted -> access data directly without sync mechanism
+ 402:tmc/StepDir.c **** 		//StepDir[channel].acceleration = acceleration;
+ 403:tmc/StepDir.c **** 		tmc_ramp_linear_set_acceleration(&StepDir[channel].ramp, acceleration);
+ 404:tmc/StepDir.c **** 		StepDir[channel].oldVelocity = tmc_ramp_linear_get_rampVelocity(&StepDir[channel].ramp);
+ 405:tmc/StepDir.c **** 	}
+ 406:tmc/StepDir.c **** 
+ 407:tmc/StepDir.c **** 	int32_t stepDifference = calculateStepDifference(StepDir[channel].oldVelocity, oldAcceleration, ac
+ 408:tmc/StepDir.c **** 
+ 409:tmc/StepDir.c **** 	if (StepDir[channel].haltingCondition == 0)
+ 410:tmc/StepDir.c **** 	{
+ 411:tmc/StepDir.c **** 		StepDir[channel].stepDifference = stepDifference;
+ 412:tmc/StepDir.c **** 		StepDir[channel].syncFlag = SYNC_UPDATE_DATA;
+ 413:tmc/StepDir.c **** 
+ 414:tmc/StepDir.c **** 		// Wait for interrupt to set flag to SYNC_IDLE
+ 415:tmc/StepDir.c **** 		while (ACCESS_ONCE(StepDir[channel].syncFlag) != SYNC_IDLE); // todo CHECK 2: Timeout to prevent 
+ 416:tmc/StepDir.c **** 	}
+ 417:tmc/StepDir.c **** 	else
+ 418:tmc/StepDir.c **** 	{	// Channel is halted -> access data directly without sync mechanism
+ 419:tmc/StepDir.c **** 		StepDir[channel].ramp.accelerationSteps += stepDifference;
+ 420:tmc/StepDir.c **** 	}
+ 421:tmc/StepDir.c **** }
+ 422:tmc/StepDir.c **** 
+ 423:tmc/StepDir.c **** void StepDir_setVelocityMax(uint8_t channel, int velocityMax)
+ 424:tmc/StepDir.c **** {
+ 997              		.loc 1 424 1 is_stmt 1 view -0
+ 998              		.cfi_startproc
+ 999              		@ args = 0, pretend = 0, frame = 0
+ 1000              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1001              		@ link register save eliminated.
+ 425:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 1002              		.loc 1 425 2 view .LVU252
+ 1003              		.loc 1 425 5 is_stmt 0 view .LVU253
+ 1004 02fc 0128     		cmp	r0, #1
+ 1005 02fe 07D8     		bhi	.L93
+ 426:tmc/StepDir.c **** 		return;
+ 427:tmc/StepDir.c **** 
+ 428:tmc/StepDir.c **** 	tmc_ramp_linear_set_maxVelocity(&StepDir[channel].ramp, velocityMax);
+ 1006              		.loc 1 428 2 is_stmt 1 view .LVU254
+ 1007 0300 6823     		movs	r3, #104
+ 1008 0302 3022     		movs	r2, #48
+ 1009 0304 13FB0020 		smlabb	r0, r3, r0, r2
+ 1010              	.LVL67:
+ 1011              		.loc 1 428 2 is_stmt 0 view .LVU255
+ 1012 0308 024B     		ldr	r3, .L95
+ 1013 030a 1844     		add	r0, r0, r3
+ 1014 030c FFF7FEBF 		b	tmc_ramp_linear_set_maxVelocity
+ 1015              	.LVL68:
+ 1016              	.L93:
+ 429:tmc/StepDir.c **** }
+ 1017              		.loc 1 429 1 view .LVU256
+ 1018 0310 7047     		bx	lr
+ 1019              	.L96:
+ 1020 0312 00BF     		.align	2
+ 1021              	.L95:
+ 1022 0314 00000000 		.word	StepDir
+ 1023              		.cfi_endproc
+ 1024              	.LFE10:
+ 1026              		.align	1
+ 1027              		.global	StepDir_setStallGuardThreshold
+ 1028              		.syntax unified
+ 1029              		.thumb
+ 1030              		.thumb_func
+ 1031              		.fpu softvfp
+ 1033              	StepDir_setStallGuardThreshold:
+ 1034              	.LVL69:
+ 1035              	.LFB11:
+ 430:tmc/StepDir.c **** 
+ 431:tmc/StepDir.c **** // Set the velocity threshold for active StallGuard. Also reset the stall flag
+ 432:tmc/StepDir.c **** void StepDir_setStallGuardThreshold(uint8_t channel, int stallGuardThreshold)
+ 433:tmc/StepDir.c **** {
+ 1036              		.loc 1 433 1 is_stmt 1 view -0
+ 1037              		.cfi_startproc
+ 1038              		@ args = 0, pretend = 0, frame = 0
+ 1039              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1040              		@ link register save eliminated.
+ 434:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 1041              		.loc 1 434 2 view .LVU258
+ 1042              		.loc 1 434 5 is_stmt 0 view .LVU259
+ 1043 0318 0128     		cmp	r0, #1
+ 1044 031a 08D8     		bhi	.L97
+ 435:tmc/StepDir.c **** 		return;
+ 436:tmc/StepDir.c **** 
+ 437:tmc/StepDir.c **** 	StepDir[channel].stallGuardThreshold = stallGuardThreshold;
+ 1045              		.loc 1 437 2 is_stmt 1 view .LVU260
+ 1046              		.loc 1 437 39 is_stmt 0 view .LVU261
+ 1047 031c 044B     		ldr	r3, .L99
+ 1048 031e 6822     		movs	r2, #104
+ 1049 0320 02FB0030 		mla	r0, r2, r0, r3
+ 1050              	.LVL70:
+ 438:tmc/StepDir.c **** 	StepDir[channel].haltingCondition &= ~STATUS_STALLED;
+ 1051              		.loc 1 438 36 view .LVU262
+ 1052 0324 4378     		ldrb	r3, [r0, #1]	@ zero_extendqisi2
+ 437:tmc/StepDir.c **** 	StepDir[channel].haltingCondition &= ~STATUS_STALLED;
+ 1053              		.loc 1 437 39 view .LVU263
+ 1054 0326 4160     		str	r1, [r0, #4]
+ 1055              		.loc 1 438 2 is_stmt 1 view .LVU264
+ 1056              		.loc 1 438 36 is_stmt 0 view .LVU265
+ 1057 0328 23F00803 		bic	r3, r3, #8
+ 1058 032c 4370     		strb	r3, [r0, #1]
+ 1059              	.L97:
+ 439:tmc/StepDir.c **** }
+ 1060              		.loc 1 439 1 view .LVU266
+ 1061 032e 7047     		bx	lr
+ 1062              	.L100:
+ 1063              		.align	2
+ 1064              	.L99:
+ 1065 0330 00000000 		.word	StepDir
+ 1066              		.cfi_endproc
+ 1067              	.LFE11:
+ 1069              		.align	1
+ 1070              		.global	StepDir_setMode
+ 1071              		.syntax unified
+ 1072              		.thumb
+ 1073              		.thumb_func
+ 1074              		.fpu softvfp
+ 1076              	StepDir_setMode:
+ 1077              	.LVL71:
+ 1078              	.LFB12:
+ 440:tmc/StepDir.c **** 
+ 441:tmc/StepDir.c **** void StepDir_setMode(uint8_t channel, StepDirMode mode)
+ 442:tmc/StepDir.c **** {
+ 1079              		.loc 1 442 1 is_stmt 1 view -0
+ 1080              		.cfi_startproc
+ 1081              		@ args = 0, pretend = 0, frame = 0
+ 1082              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1083              		@ link register save eliminated.
+ 443:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 1084              		.loc 1 443 2 view .LVU268
+ 1085              		.loc 1 443 5 is_stmt 0 view .LVU269
+ 1086 0334 0128     		cmp	r0, #1
+ 1087 0336 09D8     		bhi	.L101
+ 444:tmc/StepDir.c **** 		return;
+ 445:tmc/StepDir.c **** 
+ 446:tmc/StepDir.c **** 	StepDir[channel].mode = mode;
+ 1088              		.loc 1 446 2 is_stmt 1 view .LVU270
+ 1089              		.loc 1 446 24 is_stmt 0 view .LVU271
+ 1090 0338 054B     		ldr	r3, .L105
+ 1091 033a 6822     		movs	r2, #104
+ 1092 033c 02FB0030 		mla	r0, r2, r0, r3
+ 1093              	.LVL72:
+ 1094              		.loc 1 446 24 view .LVU272
+ 1095 0340 80F82810 		strb	r1, [r0, #40]
+ 447:tmc/StepDir.c **** 
+ 448:tmc/StepDir.c **** 	if (mode == STEPDIR_INTERNAL)
+ 1096              		.loc 1 448 2 is_stmt 1 view .LVU273
+ 1097              		.loc 1 448 5 is_stmt 0 view .LVU274
+ 1098 0344 11B9     		cbnz	r1, .L101
+ 449:tmc/StepDir.c **** 	{
+ 450:tmc/StepDir.c **** 		StepDir_setFrequency(channel, STEPDIR_FREQUENCY);
+ 1099              		.loc 1 450 3 is_stmt 1 view .LVU275
+ 1100              	.LVL73:
+ 1101              	.LBB26:
+ 1102              	.LBI26:
+ 451:tmc/StepDir.c **** 	}
+ 452:tmc/StepDir.c **** }
+ 453:tmc/StepDir.c **** 
+ 454:tmc/StepDir.c **** void StepDir_setFrequency(uint8_t channel, uint32_t frequency)
+ 1103              		.loc 1 454 6 view .LVU276
+ 1104              	.LBB27:
+ 455:tmc/StepDir.c **** {
+ 456:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 1105              		.loc 1 456 2 view .LVU277
+ 457:tmc/StepDir.c **** 		return;
+ 458:tmc/StepDir.c **** 
+ 459:tmc/StepDir.c **** 	StepDir[channel].frequency = frequency;
+ 1106              		.loc 1 459 2 view .LVU278
+ 1107              		.loc 1 459 29 is_stmt 0 view .LVU279
+ 1108 0346 4FF40033 		mov	r3, #131072
+ 1109 034a C362     		str	r3, [r0, #44]
+ 1110              	.LVL74:
+ 1111              	.L101:
+ 1112              		.loc 1 459 29 view .LVU280
+ 1113              	.LBE27:
+ 1114              	.LBE26:
+ 452:tmc/StepDir.c **** 
+ 1115              		.loc 1 452 1 view .LVU281
+ 1116 034c 7047     		bx	lr
+ 1117              	.L106:
+ 1118 034e 00BF     		.align	2
+ 1119              	.L105:
+ 1120 0350 00000000 		.word	StepDir
+ 1121              		.cfi_endproc
+ 1122              	.LFE12:
+ 1124              		.align	1
+ 1125              		.global	StepDir_setFrequency
+ 1126              		.syntax unified
+ 1127              		.thumb
+ 1128              		.thumb_func
+ 1129              		.fpu softvfp
+ 1131              	StepDir_setFrequency:
+ 1132              	.LVL75:
+ 1133              	.LFB13:
+ 455:tmc/StepDir.c **** {
+ 1134              		.loc 1 455 1 is_stmt 1 view -0
+ 1135              		.cfi_startproc
+ 1136              		@ args = 0, pretend = 0, frame = 0
+ 1137              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1138              		@ link register save eliminated.
+ 456:tmc/StepDir.c **** 		return;
+ 1139              		.loc 1 456 2 view .LVU283
+ 456:tmc/StepDir.c **** 		return;
+ 1140              		.loc 1 456 5 is_stmt 0 view .LVU284
+ 1141 0354 0128     		cmp	r0, #1
+ 1142              		.loc 1 459 2 is_stmt 1 view .LVU285
+ 1143              		.loc 1 459 29 is_stmt 0 view .LVU286
+ 1144 0356 9FBF     		itttt	ls
+ 1145 0358 024B     		ldrls	r3, .L109
+ 1146 035a 6822     		movls	r2, #104
+ 1147 035c 02FB0030 		mlals	r0, r2, r0, r3
+ 1148              	.LVL76:
+ 1149              		.loc 1 459 29 view .LVU287
+ 1150 0360 C162     		strls	r1, [r0, #44]
+ 460:tmc/StepDir.c **** }
+ 1151              		.loc 1 460 1 view .LVU288
+ 1152 0362 7047     		bx	lr
+ 1153              	.L110:
+ 1154              		.align	2
+ 1155              	.L109:
+ 1156 0364 00000000 		.word	StepDir
+ 1157              		.cfi_endproc
+ 1158              	.LFE13:
+ 1160              		.align	1
+ 1161              		.global	StepDir_setPrecision
+ 1162              		.syntax unified
+ 1163              		.thumb
+ 1164              		.thumb_func
+ 1165              		.fpu softvfp
+ 1167              	StepDir_setPrecision:
+ 1168              	.LVL77:
+ 1169              	.LFB14:
+ 461:tmc/StepDir.c **** 
+ 462:tmc/StepDir.c **** void StepDir_setPrecision(uint8_t channel, uint32_t precision)
+ 463:tmc/StepDir.c **** {
+ 1170              		.loc 1 463 1 is_stmt 1 view -0
+ 1171              		.cfi_startproc
+ 1172              		@ args = 0, pretend = 0, frame = 0
+ 1173              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1174              		@ link register save eliminated.
+ 464:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 1175              		.loc 1 464 2 view .LVU290
+ 1176              		.loc 1 464 5 is_stmt 0 view .LVU291
+ 1177 0368 0128     		cmp	r0, #1
+ 1178 036a 07D8     		bhi	.L111
+ 465:tmc/StepDir.c **** 		return;
+ 466:tmc/StepDir.c **** 
+ 467:tmc/StepDir.c **** 	tmc_ramp_linear_set_precision(&StepDir[channel].ramp, precision);
+ 1179              		.loc 1 467 2 is_stmt 1 view .LVU292
+ 1180 036c 6823     		movs	r3, #104
+ 1181 036e 3022     		movs	r2, #48
+ 1182 0370 13FB0020 		smlabb	r0, r3, r0, r2
+ 1183              	.LVL78:
+ 1184              		.loc 1 467 2 is_stmt 0 view .LVU293
+ 1185 0374 024B     		ldr	r3, .L113
+ 1186 0376 1844     		add	r0, r0, r3
+ 1187 0378 FFF7FEBF 		b	tmc_ramp_linear_set_precision
+ 1188              	.LVL79:
+ 1189              	.L111:
+ 468:tmc/StepDir.c **** }
+ 1190              		.loc 1 468 1 view .LVU294
+ 1191 037c 7047     		bx	lr
+ 1192              	.L114:
+ 1193 037e 00BF     		.align	2
+ 1194              	.L113:
+ 1195 0380 00000000 		.word	StepDir
+ 1196              		.cfi_endproc
+ 1197              	.LFE14:
+ 1199              		.align	1
+ 1200              		.global	StepDir_getActualPosition
+ 1201              		.syntax unified
+ 1202              		.thumb
+ 1203              		.thumb_func
+ 1204              		.fpu softvfp
+ 1206              	StepDir_getActualPosition:
+ 1207              	.LVL80:
+ 1208              	.LFB15:
+ 469:tmc/StepDir.c **** 
+ 470:tmc/StepDir.c **** // ===== Getters =====
+ 471:tmc/StepDir.c **** int StepDir_getActualPosition(uint8_t channel)
+ 472:tmc/StepDir.c **** {
+ 1209              		.loc 1 472 1 is_stmt 1 view -0
+ 1210              		.cfi_startproc
+ 1211              		@ args = 0, pretend = 0, frame = 0
+ 1212              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1213              		@ link register save eliminated.
+ 473:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 1214              		.loc 1 473 2 view .LVU296
+ 1215              		.loc 1 473 5 is_stmt 0 view .LVU297
+ 1216 0384 0128     		cmp	r0, #1
+ 1217 0386 07D8     		bhi	.L116
+ 474:tmc/StepDir.c **** 		return -1;
+ 475:tmc/StepDir.c **** 
+ 476:tmc/StepDir.c **** 	return tmc_ramp_linear_get_rampPosition(&StepDir[channel].ramp);
+ 1218              		.loc 1 476 2 is_stmt 1 view .LVU298
+ 1219              		.loc 1 476 9 is_stmt 0 view .LVU299
+ 1220 0388 6823     		movs	r3, #104
+ 1221 038a 3022     		movs	r2, #48
+ 1222 038c 13FB0020 		smlabb	r0, r3, r0, r2
+ 1223              	.LVL81:
+ 1224              		.loc 1 476 9 view .LVU300
+ 1225 0390 034B     		ldr	r3, .L117
+ 1226 0392 1844     		add	r0, r0, r3
+ 1227 0394 FFF7FEBF 		b	tmc_ramp_linear_get_rampPosition
+ 1228              	.LVL82:
+ 1229              	.L116:
+ 477:tmc/StepDir.c **** }
+ 1230              		.loc 1 477 1 view .LVU301
+ 1231 0398 4FF0FF30 		mov	r0, #-1
+ 1232              	.LVL83:
+ 1233              		.loc 1 477 1 view .LVU302
+ 1234 039c 7047     		bx	lr
+ 1235              	.L118:
+ 1236 039e 00BF     		.align	2
+ 1237              	.L117:
+ 1238 03a0 00000000 		.word	StepDir
+ 1239              		.cfi_endproc
+ 1240              	.LFE15:
+ 1242              		.align	1
+ 1243              		.global	StepDir_getTargetPosition
+ 1244              		.syntax unified
+ 1245              		.thumb
+ 1246              		.thumb_func
+ 1247              		.fpu softvfp
+ 1249              	StepDir_getTargetPosition:
+ 1250              	.LVL84:
+ 1251              	.LFB16:
+ 478:tmc/StepDir.c **** 
+ 479:tmc/StepDir.c **** int StepDir_getTargetPosition(uint8_t channel)
+ 480:tmc/StepDir.c **** {
+ 1252              		.loc 1 480 1 is_stmt 1 view -0
+ 1253              		.cfi_startproc
+ 1254              		@ args = 0, pretend = 0, frame = 0
+ 1255              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1256              		@ link register save eliminated.
+ 481:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 1257              		.loc 1 481 2 view .LVU304
+ 1258              		.loc 1 481 5 is_stmt 0 view .LVU305
+ 1259 03a4 0128     		cmp	r0, #1
+ 1260 03a6 07D8     		bhi	.L120
+ 482:tmc/StepDir.c **** 		return -1;
+ 483:tmc/StepDir.c **** 
+ 484:tmc/StepDir.c **** 	return tmc_ramp_linear_get_targetPosition(&StepDir[channel].ramp);
+ 1261              		.loc 1 484 2 is_stmt 1 view .LVU306
+ 1262              		.loc 1 484 9 is_stmt 0 view .LVU307
+ 1263 03a8 6823     		movs	r3, #104
+ 1264 03aa 3022     		movs	r2, #48
+ 1265 03ac 13FB0020 		smlabb	r0, r3, r0, r2
+ 1266              	.LVL85:
+ 1267              		.loc 1 484 9 view .LVU308
+ 1268 03b0 034B     		ldr	r3, .L121
+ 1269 03b2 1844     		add	r0, r0, r3
+ 1270 03b4 FFF7FEBF 		b	tmc_ramp_linear_get_targetPosition
+ 1271              	.LVL86:
+ 1272              	.L120:
+ 485:tmc/StepDir.c **** }
+ 1273              		.loc 1 485 1 view .LVU309
+ 1274 03b8 4FF0FF30 		mov	r0, #-1
+ 1275              	.LVL87:
+ 1276              		.loc 1 485 1 view .LVU310
+ 1277 03bc 7047     		bx	lr
+ 1278              	.L122:
+ 1279 03be 00BF     		.align	2
+ 1280              	.L121:
+ 1281 03c0 00000000 		.word	StepDir
+ 1282              		.cfi_endproc
+ 1283              	.LFE16:
+ 1285              		.align	1
+ 1286              		.global	StepDir_getActualVelocity
+ 1287              		.syntax unified
+ 1288              		.thumb
+ 1289              		.thumb_func
+ 1290              		.fpu softvfp
+ 1292              	StepDir_getActualVelocity:
+ 1293              	.LVL88:
+ 1294              	.LFB17:
+ 486:tmc/StepDir.c **** 
+ 487:tmc/StepDir.c **** int StepDir_getActualVelocity(uint8_t channel)
+ 488:tmc/StepDir.c **** {
+ 1295              		.loc 1 488 1 is_stmt 1 view -0
+ 1296              		.cfi_startproc
+ 1297              		@ args = 0, pretend = 0, frame = 0
+ 1298              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1299              		@ link register save eliminated.
+ 489:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 1300              		.loc 1 489 2 view .LVU312
+ 1301              		.loc 1 489 5 is_stmt 0 view .LVU313
+ 1302 03c4 0128     		cmp	r0, #1
+ 1303 03c6 07D8     		bhi	.L124
+ 490:tmc/StepDir.c **** 		return -1;
+ 491:tmc/StepDir.c **** 
+ 492:tmc/StepDir.c **** 	return tmc_ramp_linear_get_rampVelocity(&StepDir[channel].ramp);
+ 1304              		.loc 1 492 2 is_stmt 1 view .LVU314
+ 1305              		.loc 1 492 9 is_stmt 0 view .LVU315
+ 1306 03c8 6823     		movs	r3, #104
+ 1307 03ca 3022     		movs	r2, #48
+ 1308 03cc 13FB0020 		smlabb	r0, r3, r0, r2
+ 1309              	.LVL89:
+ 1310              		.loc 1 492 9 view .LVU316
+ 1311 03d0 034B     		ldr	r3, .L125
+ 1312 03d2 1844     		add	r0, r0, r3
+ 1313 03d4 FFF7FEBF 		b	tmc_ramp_linear_get_rampVelocity
+ 1314              	.LVL90:
+ 1315              	.L124:
+ 493:tmc/StepDir.c **** }
+ 1316              		.loc 1 493 1 view .LVU317
+ 1317 03d8 4FF0FF30 		mov	r0, #-1
+ 1318              	.LVL91:
+ 1319              		.loc 1 493 1 view .LVU318
+ 1320 03dc 7047     		bx	lr
+ 1321              	.L126:
+ 1322 03de 00BF     		.align	2
+ 1323              	.L125:
+ 1324 03e0 00000000 		.word	StepDir
+ 1325              		.cfi_endproc
+ 1326              	.LFE17:
+ 1328              		.align	1
+ 1329              		.global	StepDir_getTargetVelocity
+ 1330              		.syntax unified
+ 1331              		.thumb
+ 1332              		.thumb_func
+ 1333              		.fpu softvfp
+ 1335              	StepDir_getTargetVelocity:
+ 1336              	.LVL92:
+ 1337              	.LFB18:
+ 494:tmc/StepDir.c **** 
+ 495:tmc/StepDir.c **** int StepDir_getTargetVelocity(uint8_t channel)
+ 496:tmc/StepDir.c **** {
+ 1338              		.loc 1 496 1 is_stmt 1 view -0
+ 1339              		.cfi_startproc
+ 1340              		@ args = 0, pretend = 0, frame = 0
+ 1341              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1342              		@ link register save eliminated.
+ 497:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 1343              		.loc 1 497 2 view .LVU320
+ 1344              		.loc 1 497 5 is_stmt 0 view .LVU321
+ 1345 03e4 0128     		cmp	r0, #1
+ 1346 03e6 07D8     		bhi	.L128
+ 498:tmc/StepDir.c **** 		return -1;
+ 499:tmc/StepDir.c **** 
+ 500:tmc/StepDir.c **** 	return tmc_ramp_linear_get_targetVelocity(&StepDir[channel].ramp);
+ 1347              		.loc 1 500 2 is_stmt 1 view .LVU322
+ 1348              		.loc 1 500 9 is_stmt 0 view .LVU323
+ 1349 03e8 6823     		movs	r3, #104
+ 1350 03ea 3022     		movs	r2, #48
+ 1351 03ec 13FB0020 		smlabb	r0, r3, r0, r2
+ 1352              	.LVL93:
+ 1353              		.loc 1 500 9 view .LVU324
+ 1354 03f0 034B     		ldr	r3, .L129
+ 1355 03f2 1844     		add	r0, r0, r3
+ 1356 03f4 FFF7FEBF 		b	tmc_ramp_linear_get_targetVelocity
+ 1357              	.LVL94:
+ 1358              	.L128:
+ 501:tmc/StepDir.c **** }
+ 1359              		.loc 1 501 1 view .LVU325
+ 1360 03f8 4FF0FF30 		mov	r0, #-1
+ 1361              	.LVL95:
+ 1362              		.loc 1 501 1 view .LVU326
+ 1363 03fc 7047     		bx	lr
+ 1364              	.L130:
+ 1365 03fe 00BF     		.align	2
+ 1366              	.L129:
+ 1367 0400 00000000 		.word	StepDir
+ 1368              		.cfi_endproc
+ 1369              	.LFE18:
+ 1371              		.align	1
+ 1372              		.global	StepDir_getAcceleration
+ 1373              		.syntax unified
+ 1374              		.thumb
+ 1375              		.thumb_func
+ 1376              		.fpu softvfp
+ 1378              	StepDir_getAcceleration:
+ 1379              	.LVL96:
+ 1380              	.LFB19:
+ 502:tmc/StepDir.c **** 
+ 503:tmc/StepDir.c **** uint32_t StepDir_getAcceleration(uint8_t channel)
+ 504:tmc/StepDir.c **** {
+ 1381              		.loc 1 504 1 is_stmt 1 view -0
+ 1382              		.cfi_startproc
+ 1383              		@ args = 0, pretend = 0, frame = 0
+ 1384              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1385              		@ link register save eliminated.
+ 505:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 1386              		.loc 1 505 2 view .LVU328
+ 1387              		.loc 1 505 5 is_stmt 0 view .LVU329
+ 1388 0404 0128     		cmp	r0, #1
+ 1389 0406 07D8     		bhi	.L132
+ 506:tmc/StepDir.c **** 		return -1;
+ 507:tmc/StepDir.c **** 
+ 508:tmc/StepDir.c **** 	return tmc_ramp_linear_get_acceleration(&StepDir[channel].ramp);
+ 1390              		.loc 1 508 2 is_stmt 1 view .LVU330
+ 1391              		.loc 1 508 9 is_stmt 0 view .LVU331
+ 1392 0408 6823     		movs	r3, #104
+ 1393 040a 3022     		movs	r2, #48
+ 1394 040c 13FB0020 		smlabb	r0, r3, r0, r2
+ 1395              	.LVL97:
+ 1396              		.loc 1 508 9 view .LVU332
+ 1397 0410 034B     		ldr	r3, .L133
+ 1398 0412 1844     		add	r0, r0, r3
+ 1399 0414 FFF7FEBF 		b	tmc_ramp_linear_get_acceleration
+ 1400              	.LVL98:
+ 1401              	.L132:
+ 509:tmc/StepDir.c **** }
+ 1402              		.loc 1 509 1 view .LVU333
+ 1403 0418 4FF0FF30 		mov	r0, #-1
+ 1404              	.LVL99:
+ 1405              		.loc 1 509 1 view .LVU334
+ 1406 041c 7047     		bx	lr
+ 1407              	.L134:
+ 1408 041e 00BF     		.align	2
+ 1409              	.L133:
+ 1410 0420 00000000 		.word	StepDir
+ 1411              		.cfi_endproc
+ 1412              	.LFE19:
+ 1414              		.align	1
+ 1415              		.global	StepDir_getVelocityMax
+ 1416              		.syntax unified
+ 1417              		.thumb
+ 1418              		.thumb_func
+ 1419              		.fpu softvfp
+ 1421              	StepDir_getVelocityMax:
+ 1422              	.LVL100:
+ 1423              	.LFB20:
+ 510:tmc/StepDir.c **** 
+ 511:tmc/StepDir.c **** int StepDir_getVelocityMax(uint8_t channel)
+ 512:tmc/StepDir.c **** {
+ 1424              		.loc 1 512 1 is_stmt 1 view -0
+ 1425              		.cfi_startproc
+ 1426              		@ args = 0, pretend = 0, frame = 0
+ 1427              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1428              		@ link register save eliminated.
+ 513:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 1429              		.loc 1 513 2 view .LVU336
+ 1430              		.loc 1 513 5 is_stmt 0 view .LVU337
+ 1431 0424 0128     		cmp	r0, #1
+ 1432 0426 07D8     		bhi	.L136
+ 514:tmc/StepDir.c **** 		return -1;
+ 515:tmc/StepDir.c **** 
+ 516:tmc/StepDir.c **** 	return tmc_ramp_linear_get_maxVelocity(&StepDir[channel].ramp);
+ 1433              		.loc 1 516 2 is_stmt 1 view .LVU338
+ 1434              		.loc 1 516 9 is_stmt 0 view .LVU339
+ 1435 0428 6823     		movs	r3, #104
+ 1436 042a 3022     		movs	r2, #48
+ 1437 042c 13FB0020 		smlabb	r0, r3, r0, r2
+ 1438              	.LVL101:
+ 1439              		.loc 1 516 9 view .LVU340
+ 1440 0430 034B     		ldr	r3, .L137
+ 1441 0432 1844     		add	r0, r0, r3
+ 1442 0434 FFF7FEBF 		b	tmc_ramp_linear_get_maxVelocity
+ 1443              	.LVL102:
+ 1444              	.L136:
+ 517:tmc/StepDir.c **** }
+ 1445              		.loc 1 517 1 view .LVU341
+ 1446 0438 4FF0FF30 		mov	r0, #-1
+ 1447              	.LVL103:
+ 1448              		.loc 1 517 1 view .LVU342
+ 1449 043c 7047     		bx	lr
+ 1450              	.L138:
+ 1451 043e 00BF     		.align	2
+ 1452              	.L137:
+ 1453 0440 00000000 		.word	StepDir
+ 1454              		.cfi_endproc
+ 1455              	.LFE20:
+ 1457              		.align	1
+ 1458              		.global	StepDir_getStallGuardThreshold
+ 1459              		.syntax unified
+ 1460              		.thumb
+ 1461              		.thumb_func
+ 1462              		.fpu softvfp
+ 1464              	StepDir_getStallGuardThreshold:
+ 1465              	.LVL104:
+ 1466              	.LFB21:
+ 518:tmc/StepDir.c **** 
+ 519:tmc/StepDir.c **** int StepDir_getStallGuardThreshold(uint8_t channel)
+ 520:tmc/StepDir.c **** {
+ 1467              		.loc 1 520 1 is_stmt 1 view -0
+ 1468              		.cfi_startproc
+ 1469              		@ args = 0, pretend = 0, frame = 0
+ 1470              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1471              		@ link register save eliminated.
+ 521:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 1472              		.loc 1 521 2 view .LVU344
+ 1473              		.loc 1 521 5 is_stmt 0 view .LVU345
+ 1474 0444 0128     		cmp	r0, #1
+ 522:tmc/StepDir.c **** 		return -1;
+ 523:tmc/StepDir.c **** 
+ 524:tmc/StepDir.c **** 	return StepDir[channel].stallGuardThreshold;
+ 1475              		.loc 1 524 2 is_stmt 1 view .LVU346
+ 1476              		.loc 1 524 25 is_stmt 0 view .LVU347
+ 1477 0446 9FBF     		itttt	ls
+ 1478 0448 044B     		ldrls	r3, .L142
+ 1479 044a 6822     		movls	r2, #104
+ 1480 044c 02FB0030 		mlals	r0, r2, r0, r3
+ 1481              	.LVL105:
+ 1482              		.loc 1 524 25 view .LVU348
+ 1483 0450 4068     		ldrls	r0, [r0, #4]
+ 522:tmc/StepDir.c **** 		return -1;
+ 1484              		.loc 1 522 10 view .LVU349
+ 1485 0452 88BF     		it	hi
+ 1486 0454 4FF0FF30 		movhi	r0, #-1
+ 525:tmc/StepDir.c **** }
+ 1487              		.loc 1 525 1 view .LVU350
+ 1488 0458 7047     		bx	lr
+ 1489              	.L143:
+ 1490 045a 00BF     		.align	2
+ 1491              	.L142:
+ 1492 045c 00000000 		.word	StepDir
+ 1493              		.cfi_endproc
+ 1494              	.LFE21:
+ 1496              		.align	1
+ 1497              		.global	StepDir_getMode
+ 1498              		.syntax unified
+ 1499              		.thumb
+ 1500              		.thumb_func
+ 1501              		.fpu softvfp
+ 1503              	StepDir_getMode:
+ 1504              	.LVL106:
+ 1505              	.LFB22:
+ 526:tmc/StepDir.c **** 
+ 527:tmc/StepDir.c **** StepDirMode StepDir_getMode(uint8_t channel)
+ 528:tmc/StepDir.c **** {
+ 1506              		.loc 1 528 1 is_stmt 1 view -0
+ 1507              		.cfi_startproc
+ 1508              		@ args = 0, pretend = 0, frame = 0
+ 1509              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1510              		@ link register save eliminated.
+ 529:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 1511              		.loc 1 529 2 view .LVU352
+ 1512              		.loc 1 529 5 is_stmt 0 view .LVU353
+ 1513 0460 0128     		cmp	r0, #1
+ 530:tmc/StepDir.c **** 		return -1;
+ 531:tmc/StepDir.c **** 
+ 532:tmc/StepDir.c **** 	return StepDir[channel].mode;
+ 1514              		.loc 1 532 2 is_stmt 1 view .LVU354
+ 1515              		.loc 1 532 25 is_stmt 0 view .LVU355
+ 1516 0462 9FBF     		itttt	ls
+ 1517 0464 044B     		ldrls	r3, .L147
+ 1518 0466 6822     		movls	r2, #104
+ 1519 0468 02FB0030 		mlals	r0, r2, r0, r3
+ 1520              	.LVL107:
+ 1521              		.loc 1 532 25 view .LVU356
+ 1522 046c 90F82800 		ldrbls	r0, [r0, #40]	@ zero_extendqisi2
+ 530:tmc/StepDir.c **** 		return -1;
+ 1523              		.loc 1 530 10 view .LVU357
+ 1524 0470 88BF     		it	hi
+ 1525 0472 FF20     		movhi	r0, #255
+ 533:tmc/StepDir.c **** }
+ 1526              		.loc 1 533 1 view .LVU358
+ 1527 0474 7047     		bx	lr
+ 1528              	.L148:
+ 1529 0476 00BF     		.align	2
+ 1530              	.L147:
+ 1531 0478 00000000 		.word	StepDir
+ 1532              		.cfi_endproc
+ 1533              	.LFE22:
+ 1535              		.align	1
+ 1536              		.global	StepDir_getFrequency
+ 1537              		.syntax unified
+ 1538              		.thumb
+ 1539              		.thumb_func
+ 1540              		.fpu softvfp
+ 1542              	StepDir_getFrequency:
+ 1543              	.LVL108:
+ 1544              	.LFB23:
+ 534:tmc/StepDir.c **** 
+ 535:tmc/StepDir.c **** uint32_t StepDir_getFrequency(uint8_t channel)
+ 536:tmc/StepDir.c **** {
+ 1545              		.loc 1 536 1 is_stmt 1 view -0
+ 1546              		.cfi_startproc
+ 1547              		@ args = 0, pretend = 0, frame = 0
+ 1548              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1549              		@ link register save eliminated.
+ 537:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 1550              		.loc 1 537 2 view .LVU360
+ 1551              		.loc 1 537 5 is_stmt 0 view .LVU361
+ 1552 047c 0128     		cmp	r0, #1
+ 538:tmc/StepDir.c **** 		return -1;
+ 539:tmc/StepDir.c **** 
+ 540:tmc/StepDir.c **** 	return StepDir[channel].frequency;
+ 1553              		.loc 1 540 2 is_stmt 1 view .LVU362
+ 1554              		.loc 1 540 25 is_stmt 0 view .LVU363
+ 1555 047e 9FBF     		itttt	ls
+ 1556 0480 044B     		ldrls	r3, .L152
+ 1557 0482 6822     		movls	r2, #104
+ 1558 0484 02FB0030 		mlals	r0, r2, r0, r3
+ 1559              	.LVL109:
+ 1560              		.loc 1 540 25 view .LVU364
+ 1561 0488 C06A     		ldrls	r0, [r0, #44]
+ 538:tmc/StepDir.c **** 		return -1;
+ 1562              		.loc 1 538 10 view .LVU365
+ 1563 048a 88BF     		it	hi
+ 1564 048c 4FF0FF30 		movhi	r0, #-1
+ 541:tmc/StepDir.c **** }
+ 1565              		.loc 1 541 1 view .LVU366
+ 1566 0490 7047     		bx	lr
+ 1567              	.L153:
+ 1568 0492 00BF     		.align	2
+ 1569              	.L152:
+ 1570 0494 00000000 		.word	StepDir
+ 1571              		.cfi_endproc
+ 1572              	.LFE23:
+ 1574              		.align	1
+ 1575              		.global	StepDir_getPrecision
+ 1576              		.syntax unified
+ 1577              		.thumb
+ 1578              		.thumb_func
+ 1579              		.fpu softvfp
+ 1581              	StepDir_getPrecision:
+ 1582              	.LVL110:
+ 1583              	.LFB24:
+ 542:tmc/StepDir.c **** 
+ 543:tmc/StepDir.c **** uint32_t StepDir_getPrecision(uint8_t channel)
+ 544:tmc/StepDir.c **** {
+ 1584              		.loc 1 544 1 is_stmt 1 view -0
+ 1585              		.cfi_startproc
+ 1586              		@ args = 0, pretend = 0, frame = 0
+ 1587              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1588              		@ link register save eliminated.
+ 545:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 1589              		.loc 1 545 2 view .LVU368
+ 1590              		.loc 1 545 5 is_stmt 0 view .LVU369
+ 1591 0498 0128     		cmp	r0, #1
+ 1592 049a 07D8     		bhi	.L155
+ 546:tmc/StepDir.c **** 		return 0;
+ 547:tmc/StepDir.c **** 
+ 548:tmc/StepDir.c **** 	return tmc_ramp_linear_get_precision(&StepDir[channel].ramp);
+ 1593              		.loc 1 548 2 is_stmt 1 view .LVU370
+ 1594              		.loc 1 548 9 is_stmt 0 view .LVU371
+ 1595 049c 6823     		movs	r3, #104
+ 1596 049e 3022     		movs	r2, #48
+ 1597 04a0 13FB0020 		smlabb	r0, r3, r0, r2
+ 1598              	.LVL111:
+ 1599              		.loc 1 548 9 view .LVU372
+ 1600 04a4 024B     		ldr	r3, .L156
+ 1601 04a6 1844     		add	r0, r0, r3
+ 1602 04a8 FFF7FEBF 		b	tmc_ramp_linear_get_precision
+ 1603              	.LVL112:
+ 1604              	.L155:
+ 549:tmc/StepDir.c **** }
+ 1605              		.loc 1 549 1 view .LVU373
+ 1606 04ac 0020     		movs	r0, #0
+ 1607              	.LVL113:
+ 1608              		.loc 1 549 1 view .LVU374
+ 1609 04ae 7047     		bx	lr
+ 1610              	.L157:
+ 1611              		.align	2
+ 1612              	.L156:
+ 1613 04b0 00000000 		.word	StepDir
+ 1614              		.cfi_endproc
+ 1615              	.LFE24:
+ 1617              		.align	1
+ 1618              		.global	StepDir_getMaxAcceleration
+ 1619              		.syntax unified
+ 1620              		.thumb
+ 1621              		.thumb_func
+ 1622              		.fpu softvfp
+ 1624              	StepDir_getMaxAcceleration:
+ 1625              	.LVL114:
+ 1626              	.LFB25:
+ 550:tmc/StepDir.c **** 
+ 551:tmc/StepDir.c **** int32_t StepDir_getMaxAcceleration(uint8_t channel)
+ 552:tmc/StepDir.c **** {
+ 1627              		.loc 1 552 1 is_stmt 1 view -0
+ 1628              		.cfi_startproc
+ 1629              		@ args = 0, pretend = 0, frame = 0
+ 1630              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1631              		@ link register save eliminated.
+ 553:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 1632              		.loc 1 553 2 view .LVU376
+ 1633              		.loc 1 553 5 is_stmt 0 view .LVU377
+ 1634 04b4 0128     		cmp	r0, #1
+ 1635 04b6 0BD8     		bhi	.L160
+ 554:tmc/StepDir.c **** 		return -1;
+ 555:tmc/StepDir.c **** 
+ 556:tmc/StepDir.c **** 	if (StepDir[channel].mode == STEPDIR_INTERNAL)
+ 1636              		.loc 1 556 2 is_stmt 1 view .LVU378
+ 1637              		.loc 1 556 22 is_stmt 0 view .LVU379
+ 1638 04b8 074B     		ldr	r3, .L162
+ 1639 04ba 6822     		movs	r2, #104
+ 1640 04bc 02FB0030 		mla	r0, r2, r0, r3
+ 1641              	.LVL115:
+ 1642              		.loc 1 556 5 view .LVU380
+ 1643 04c0 90F82830 		ldrb	r3, [r0, #40]	@ zero_extendqisi2
+ 557:tmc/StepDir.c **** 		return STEPDIR_MAX_ACCELERATION;
+ 1644              		.loc 1 557 10 view .LVU381
+ 1645 04c4 0548     		ldr	r0, .L162+4
+ 556:tmc/StepDir.c **** 		return STEPDIR_MAX_ACCELERATION;
+ 1646              		.loc 1 556 5 view .LVU382
+ 1647 04c6 002B     		cmp	r3, #0
+ 1648              		.loc 1 557 10 view .LVU383
+ 1649 04c8 18BF     		it	ne
+ 1650 04ca 6FF00040 		mvnne	r0, #-2147483648
+ 1651 04ce 7047     		bx	lr
+ 1652              	.LVL116:
+ 1653              	.L160:
+ 554:tmc/StepDir.c **** 		return -1;
+ 1654              		.loc 1 554 10 view .LVU384
+ 1655 04d0 4FF0FF30 		mov	r0, #-1
+ 1656              	.LVL117:
+ 558:tmc/StepDir.c **** 
+ 559:tmc/StepDir.c **** 	// STEPDIR_EXTERNAL -> no limitation from this generator
+ 560:tmc/StepDir.c **** 	return s32_MAX;
+ 561:tmc/StepDir.c **** }
+ 1657              		.loc 1 561 1 view .LVU385
+ 1658 04d4 7047     		bx	lr
+ 1659              	.L163:
+ 1660 04d6 00BF     		.align	2
+ 1661              	.L162:
+ 1662 04d8 00000000 		.word	StepDir
+ 1663 04dc FFFFFE7F 		.word	2147418111
+ 1664              		.cfi_endproc
+ 1665              	.LFE25:
+ 1667              		.align	1
+ 1668              		.global	StepDir_init
+ 1669              		.syntax unified
+ 1670              		.thumb
+ 1671              		.thumb_func
+ 1672              		.fpu softvfp
+ 1674              	StepDir_init:
+ 1675              	.LVL118:
+ 1676              	.LFB26:
+ 562:tmc/StepDir.c **** 
+ 563:tmc/StepDir.c **** // ===================
+ 564:tmc/StepDir.c **** 
+ 565:tmc/StepDir.c **** void StepDir_init(uint32_t precision)
+ 566:tmc/StepDir.c **** {
+ 1677              		.loc 1 566 1 is_stmt 1 view -0
+ 1678              		.cfi_startproc
+ 1679              		@ args = 0, pretend = 0, frame = 0
+ 1680              		@ frame_needed = 0, uses_anonymous_args = 0
+ 567:tmc/StepDir.c **** 	if (precision == 0)
+ 1681              		.loc 1 567 2 view .LVU387
+ 566:tmc/StepDir.c **** 	if (precision == 0)
+ 1682              		.loc 1 566 1 is_stmt 0 view .LVU388
+ 1683 04e0 2DE9F041 		push	{r4, r5, r6, r7, r8, lr}
+ 1684              	.LCFI22:
+ 1685              		.cfi_def_cfa_offset 24
+ 1686              		.cfi_offset 4, -24
+ 1687              		.cfi_offset 5, -20
+ 1688              		.cfi_offset 6, -16
+ 1689              		.cfi_offset 7, -12
+ 1690              		.cfi_offset 8, -8
+ 1691              		.cfi_offset 14, -4
+ 1692              	.LBB28:
+ 568:tmc/StepDir.c **** 	{
+ 569:tmc/StepDir.c **** 		// Use default precision
+ 570:tmc/StepDir.c **** 		precision = STEPDIR_FREQUENCY;
+ 571:tmc/StepDir.c **** 	}
+ 572:tmc/StepDir.c **** 
+ 573:tmc/StepDir.c **** 	// StepDir Channel initialisation
+ 574:tmc/StepDir.c **** 	for (int i = 0; i < STEP_DIR_CHANNELS; i++)
+ 575:tmc/StepDir.c **** 	{
+ 576:tmc/StepDir.c **** 		StepDir[i].oldVelAccu           = 0;
+ 1693              		.loc 1 576 35 view .LVU389
+ 1694 04e4 344C     		ldr	r4, .L166
+ 577:tmc/StepDir.c **** 		StepDir[i].oldVelocity          = 0;
+ 578:tmc/StepDir.c **** 		StepDir[i].newAcceleration      = 0;
+ 579:tmc/StepDir.c **** 
+ 580:tmc/StepDir.c **** 		// Set the no-pin halting conditions before changing the pins
+ 581:tmc/StepDir.c **** 		// to avoid a race condition with the interrupt
+ 582:tmc/StepDir.c **** 		StepDir[i].haltingCondition     = STATUS_NO_STEP_PIN | STATUS_NO_DIR_PIN;
+ 583:tmc/StepDir.c **** 		StepDir[i].stallGuardPin        = &DummyPin;
+ 1695              		.loc 1 583 35 view .LVU390
+ 1696 04e6 354F     		ldr	r7, .L166+4
+ 584:tmc/StepDir.c **** 		StepDir[i].stepPin              = &DummyPin;
+ 585:tmc/StepDir.c **** 		StepDir[i].dirPin               = &DummyPin;
+ 1697              		.loc 1 585 35 view .LVU391
+ 1698 04e8 2761     		str	r7, [r4, #16]
+ 1699              	.LBE28:
+ 567:tmc/StepDir.c **** 	{
+ 1700              		.loc 1 567 5 view .LVU392
+ 1701 04ea 061E     		subs	r6, r0, #0
+ 570:tmc/StepDir.c **** 	}
+ 1702              		.loc 1 570 13 view .LVU393
+ 1703 04ec 08BF     		it	eq
+ 1704 04ee 4FF40036 		moveq	r6, #131072
+ 1705              	.LVL119:
+ 574:tmc/StepDir.c **** 	{
+ 1706              		.loc 1 574 2 is_stmt 1 view .LVU394
+ 1707              	.LBB29:
+ 574:tmc/StepDir.c **** 	{
+ 1708              		.loc 1 574 7 view .LVU395
+ 574:tmc/StepDir.c **** 	{
+ 1709              		.loc 1 574 18 view .LVU396
+ 576:tmc/StepDir.c **** 		StepDir[i].oldVelocity          = 0;
+ 1710              		.loc 1 576 3 view .LVU397
+ 576:tmc/StepDir.c **** 		StepDir[i].oldVelocity          = 0;
+ 1711              		.loc 1 576 35 is_stmt 0 view .LVU398
+ 1712 04f2 0025     		movs	r5, #0
+ 582:tmc/StepDir.c **** 		StepDir[i].stallGuardPin        = &DummyPin;
+ 1713              		.loc 1 582 35 view .LVU399
+ 1714 04f4 4FF00608 		mov	r8, #6
+ 586:tmc/StepDir.c **** 
+ 587:tmc/StepDir.c **** 		StepDir[i].stallGuardThreshold  = STALLGUARD_THRESHOLD;
+ 588:tmc/StepDir.c **** 
+ 589:tmc/StepDir.c **** 		StepDir[i].mode                 = STEPDIR_INTERNAL;
+ 590:tmc/StepDir.c **** 		StepDir[i].frequency            = precision;
+ 591:tmc/StepDir.c **** 
+ 592:tmc/StepDir.c **** 		tmc_ramp_linear_init(&StepDir[i].ramp);
+ 1715              		.loc 1 592 3 view .LVU400
+ 1716 04f8 04F13000 		add	r0, r4, #48
+ 590:tmc/StepDir.c **** 
+ 1717              		.loc 1 590 35 view .LVU401
+ 1718 04fc E662     		str	r6, [r4, #44]
+ 577:tmc/StepDir.c **** 		StepDir[i].newAcceleration      = 0;
+ 1719              		.loc 1 577 35 view .LVU402
+ 1720 04fe C4E90655 		strd	r5, r5, [r4, #24]
+ 578:tmc/StepDir.c **** 
+ 1721              		.loc 1 578 3 is_stmt 1 view .LVU403
+ 584:tmc/StepDir.c **** 		StepDir[i].dirPin               = &DummyPin;
+ 1722              		.loc 1 584 35 is_stmt 0 view .LVU404
+ 1723 0502 C4E90277 		strd	r7, r7, [r4, #8]
+ 578:tmc/StepDir.c **** 
+ 1724              		.loc 1 578 35 view .LVU405
+ 1725 0506 2562     		str	r5, [r4, #32]
+ 582:tmc/StepDir.c **** 		StepDir[i].stallGuardPin        = &DummyPin;
+ 1726              		.loc 1 582 3 is_stmt 1 view .LVU406
+ 582:tmc/StepDir.c **** 		StepDir[i].stallGuardPin        = &DummyPin;
+ 1727              		.loc 1 582 35 is_stmt 0 view .LVU407
+ 1728 0508 84F80180 		strb	r8, [r4, #1]
+ 583:tmc/StepDir.c **** 		StepDir[i].stepPin              = &DummyPin;
+ 1729              		.loc 1 583 3 is_stmt 1 view .LVU408
+ 585:tmc/StepDir.c **** 
+ 1730              		.loc 1 585 3 view .LVU409
+ 587:tmc/StepDir.c **** 
+ 1731              		.loc 1 587 3 view .LVU410
+ 587:tmc/StepDir.c **** 
+ 1732              		.loc 1 587 35 is_stmt 0 view .LVU411
+ 1733 050c 6560     		str	r5, [r4, #4]
+ 589:tmc/StepDir.c **** 		StepDir[i].frequency            = precision;
+ 1734              		.loc 1 589 3 is_stmt 1 view .LVU412
+ 589:tmc/StepDir.c **** 		StepDir[i].frequency            = precision;
+ 1735              		.loc 1 589 35 is_stmt 0 view .LVU413
+ 1736 050e 84F82850 		strb	r5, [r4, #40]
+ 590:tmc/StepDir.c **** 
+ 1737              		.loc 1 590 3 is_stmt 1 view .LVU414
+ 1738              		.loc 1 592 3 view .LVU415
+ 1739 0512 FFF7FEFF 		bl	tmc_ramp_linear_init
+ 1740              	.LVL120:
+ 593:tmc/StepDir.c **** 		tmc_ramp_linear_set_precision(&StepDir[i].ramp, precision);
+ 1741              		.loc 1 593 3 view .LVU416
+ 1742 0516 3146     		mov	r1, r6
+ 1743 0518 04F13000 		add	r0, r4, #48
+ 1744 051c FFF7FEFF 		bl	tmc_ramp_linear_set_precision
+ 1745              	.LVL121:
+ 594:tmc/StepDir.c **** 		tmc_ramp_linear_set_maxVelocity(&StepDir[i].ramp, STEPDIR_DEFAULT_VELOCITY);
+ 1746              		.loc 1 594 3 view .LVU417
+ 1747 0520 04F13000 		add	r0, r4, #48
+ 1748 0524 4FF40031 		mov	r1, #131072
+ 1749 0528 FFF7FEFF 		bl	tmc_ramp_linear_set_maxVelocity
+ 1750              	.LVL122:
+ 595:tmc/StepDir.c **** 		tmc_ramp_linear_set_acceleration(&StepDir[i].ramp, STEPDIR_DEFAULT_ACCELERATION);
+ 1751              		.loc 1 595 3 view .LVU418
+ 1752 052c 2449     		ldr	r1, .L166+8
+ 1753 052e 04F13000 		add	r0, r4, #48
+ 1754 0532 FFF7FEFF 		bl	tmc_ramp_linear_set_acceleration
+ 1755              	.LVL123:
+ 574:tmc/StepDir.c **** 	{
+ 1756              		.loc 1 574 41 view .LVU419
+ 574:tmc/StepDir.c **** 	{
+ 1757              		.loc 1 574 18 view .LVU420
+ 576:tmc/StepDir.c **** 		StepDir[i].oldVelocity          = 0;
+ 1758              		.loc 1 576 3 view .LVU421
+ 592:tmc/StepDir.c **** 		tmc_ramp_linear_set_precision(&StepDir[i].ramp, precision);
+ 1759              		.loc 1 592 3 is_stmt 0 view .LVU422
+ 1760 0536 04F19800 		add	r0, r4, #152
+ 590:tmc/StepDir.c **** 
+ 1761              		.loc 1 590 35 view .LVU423
+ 1762 053a C4F89460 		str	r6, [r4, #148]
+ 577:tmc/StepDir.c **** 		StepDir[i].newAcceleration      = 0;
+ 1763              		.loc 1 577 35 view .LVU424
+ 1764 053e C4E92055 		strd	r5, r5, [r4, #128]
+ 578:tmc/StepDir.c **** 
+ 1765              		.loc 1 578 3 is_stmt 1 view .LVU425
+ 584:tmc/StepDir.c **** 		StepDir[i].dirPin               = &DummyPin;
+ 1766              		.loc 1 584 35 is_stmt 0 view .LVU426
+ 1767 0542 C4E91C77 		strd	r7, r7, [r4, #112]
+ 578:tmc/StepDir.c **** 
+ 1768              		.loc 1 578 35 view .LVU427
+ 1769 0546 C4F88850 		str	r5, [r4, #136]
+ 582:tmc/StepDir.c **** 		StepDir[i].stallGuardPin        = &DummyPin;
+ 1770              		.loc 1 582 3 is_stmt 1 view .LVU428
+ 582:tmc/StepDir.c **** 		StepDir[i].stallGuardPin        = &DummyPin;
+ 1771              		.loc 1 582 35 is_stmt 0 view .LVU429
+ 1772 054a 84F86980 		strb	r8, [r4, #105]
+ 583:tmc/StepDir.c **** 		StepDir[i].stepPin              = &DummyPin;
+ 1773              		.loc 1 583 3 is_stmt 1 view .LVU430
+ 585:tmc/StepDir.c **** 
+ 1774              		.loc 1 585 3 view .LVU431
+ 585:tmc/StepDir.c **** 
+ 1775              		.loc 1 585 35 is_stmt 0 view .LVU432
+ 1776 054e A767     		str	r7, [r4, #120]
+ 587:tmc/StepDir.c **** 
+ 1777              		.loc 1 587 3 is_stmt 1 view .LVU433
+ 587:tmc/StepDir.c **** 
+ 1778              		.loc 1 587 35 is_stmt 0 view .LVU434
+ 1779 0550 E566     		str	r5, [r4, #108]
+ 589:tmc/StepDir.c **** 		StepDir[i].frequency            = precision;
+ 1780              		.loc 1 589 3 is_stmt 1 view .LVU435
+ 589:tmc/StepDir.c **** 		StepDir[i].frequency            = precision;
+ 1781              		.loc 1 589 35 is_stmt 0 view .LVU436
+ 1782 0552 84F89050 		strb	r5, [r4, #144]
+ 590:tmc/StepDir.c **** 
+ 1783              		.loc 1 590 3 is_stmt 1 view .LVU437
+ 592:tmc/StepDir.c **** 		tmc_ramp_linear_set_precision(&StepDir[i].ramp, precision);
+ 1784              		.loc 1 592 3 view .LVU438
+ 1785 0556 FFF7FEFF 		bl	tmc_ramp_linear_init
+ 1786              	.LVL124:
+ 593:tmc/StepDir.c **** 		tmc_ramp_linear_set_maxVelocity(&StepDir[i].ramp, STEPDIR_DEFAULT_VELOCITY);
+ 1787              		.loc 1 593 3 view .LVU439
+ 1788 055a 3146     		mov	r1, r6
+ 1789 055c 04F19800 		add	r0, r4, #152
+ 1790 0560 FFF7FEFF 		bl	tmc_ramp_linear_set_precision
+ 1791              	.LVL125:
+ 594:tmc/StepDir.c **** 		tmc_ramp_linear_set_acceleration(&StepDir[i].ramp, STEPDIR_DEFAULT_ACCELERATION);
+ 1792              		.loc 1 594 3 view .LVU440
+ 1793 0564 04F19800 		add	r0, r4, #152
+ 1794 0568 4FF40031 		mov	r1, #131072
+ 1795 056c FFF7FEFF 		bl	tmc_ramp_linear_set_maxVelocity
+ 1796              	.LVL126:
+ 1797              		.loc 1 595 3 view .LVU441
+ 1798 0570 04F19800 		add	r0, r4, #152
+ 1799 0574 1249     		ldr	r1, .L166+8
+ 1800 0576 FFF7FEFF 		bl	tmc_ramp_linear_set_acceleration
+ 1801              	.LVL127:
+ 574:tmc/StepDir.c **** 	{
+ 1802              		.loc 1 574 41 view .LVU442
+ 574:tmc/StepDir.c **** 	{
+ 1803              		.loc 1 574 18 view .LVU443
+ 1804              	.LBE29:
+ 596:tmc/StepDir.c **** 	}
+ 597:tmc/StepDir.c **** 
+ 598:tmc/StepDir.c **** 	// Chip-specific hardware peripheral initialisation
+ 599:tmc/StepDir.c **** 	#if defined(Startrampe)
+ 600:tmc/StepDir.c **** 		TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
+ 601:tmc/StepDir.c **** 		NVIC_InitTypeDef NVIC_InitStructure;
+ 602:tmc/StepDir.c **** 
+ 603:tmc/StepDir.c **** 		// Timer 2 konfigurieren (zum Erzeugen von Geschwindigkeiten)
+ 604:tmc/StepDir.c **** 		RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+ 605:tmc/StepDir.c **** 		TIM_DeInit(TIM2);
+ 606:tmc/StepDir.c **** 		TIM_TimeBaseStructure.TIM_Period         = 457; // for 120MHz clock -> 60MHz
+ 607:tmc/StepDir.c **** 		TIM_TimeBaseStructure.TIM_Prescaler      = 0;
+ 608:tmc/StepDir.c **** 		TIM_TimeBaseStructure.TIM_ClockDivision  = 0;
+ 609:tmc/StepDir.c **** 		TIM_TimeBaseStructure.TIM_CounterMode    = TIM_CounterMode_Up;
+ 610:tmc/StepDir.c **** 		TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
+ 611:tmc/StepDir.c **** 		TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);
+ 612:tmc/StepDir.c **** 		TIM_Cmd(TIM2, ENABLE);
+ 613:tmc/StepDir.c **** 
+ 614:tmc/StepDir.c **** 		// Timer-Interrupt im NVIC freischalten
+ 615:tmc/StepDir.c **** 		NVIC_InitStructure.NVIC_IRQChannel                    = TIM2_IRQn;
+ 616:tmc/StepDir.c **** 		NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority  = 1;
+ 617:tmc/StepDir.c **** 		NVIC_InitStructure.NVIC_IRQChannelSubPriority         = 1;
+ 618:tmc/StepDir.c **** 		NVIC_InitStructure.NVIC_IRQChannelCmd                 = ENABLE;
+ 619:tmc/StepDir.c **** 		NVIC_Init(&NVIC_InitStructure);
+ 620:tmc/StepDir.c **** 	#elif defined(Landungsbruecke)
+ 621:tmc/StepDir.c **** 		// enable clock for FTM1
+ 622:tmc/StepDir.c **** 		SIM_SCGC6 |= SIM_SCGC6_FTM1_MASK;
+ 1805              		.loc 1 622 3 view .LVU444
+ 1806              		.loc 1 622 13 is_stmt 0 view .LVU445
+ 1807 057a 41F23C02 		movw	r2, #4156
+ 1808 057e 1149     		ldr	r1, .L166+12
+ 623:tmc/StepDir.c **** 
+ 624:tmc/StepDir.c **** 		FTM1_MODE |= FTM_MODE_WPDIS_MASK; // disable write protection, FTM specific register are availabl
+ 625:tmc/StepDir.c **** 
+ 626:tmc/StepDir.c **** 		FTM1_MODE |= FTM_MODE_FTMEN_MASK | FTM_MODE_FAULTM_MASK; //enable interrupt and select all faults
+ 627:tmc/StepDir.c **** 
+ 628:tmc/StepDir.c **** 		// Timer frequency = Bus clk frequency / (MOD - CNTIN + 1)
+ 629:tmc/StepDir.c **** 		//     => MOD = (f_bus / f_timer) + CNTIN - 1
+ 630:tmc/StepDir.c **** 		// The datasheet documents the FTM using the system/core clock, but it's
+ 631:tmc/StepDir.c **** 		// actually using the bus clock
+ 632:tmc/StepDir.c **** 		FTM1_CNTIN = 0;
+ 633:tmc/StepDir.c **** 		FTM1_MOD   = (48000000 / precision) - 1;
+ 1809              		.loc 1 633 26 view .LVU446
+ 1810 0580 1148     		ldr	r0, .L166+16
+ 622:tmc/StepDir.c **** 
+ 1811              		.loc 1 622 13 view .LVU447
+ 1812 0582 8B58     		ldr	r3, [r1, r2]
+ 1813              		.loc 1 633 26 view .LVU448
+ 1814 0584 B0FBF6F6 		udiv	r6, r0, r6
+ 1815              	.LVL128:
+ 622:tmc/StepDir.c **** 
+ 1816              		.loc 1 622 13 view .LVU449
+ 1817 0588 43F00073 		orr	r3, r3, #33554432
+ 1818 058c 8B50     		str	r3, [r1, r2]
+ 624:tmc/StepDir.c **** 
+ 1819              		.loc 1 624 3 is_stmt 1 view .LVU450
+ 624:tmc/StepDir.c **** 
+ 1820              		.loc 1 624 13 is_stmt 0 view .LVU451
+ 1821 058e 0F4B     		ldr	r3, .L166+20
+ 1822 0590 5A6D     		ldr	r2, [r3, #84]
+ 1823 0592 42F00402 		orr	r2, r2, #4
+ 1824 0596 5A65     		str	r2, [r3, #84]
+ 626:tmc/StepDir.c **** 
+ 1825              		.loc 1 626 3 is_stmt 1 view .LVU452
+ 626:tmc/StepDir.c **** 
+ 1826              		.loc 1 626 13 is_stmt 0 view .LVU453
+ 1827 0598 5A6D     		ldr	r2, [r3, #84]
+ 1828              		.loc 1 633 39 view .LVU454
+ 1829 059a 013E     		subs	r6, r6, #1
+ 626:tmc/StepDir.c **** 
+ 1830              		.loc 1 626 13 view .LVU455
+ 1831 059c 42F06102 		orr	r2, r2, #97
+ 1832 05a0 5A65     		str	r2, [r3, #84]
+ 632:tmc/StepDir.c **** 		FTM1_MOD   = (48000000 / precision) - 1;
+ 1833              		.loc 1 632 3 is_stmt 1 view .LVU456
+ 632:tmc/StepDir.c **** 		FTM1_MOD   = (48000000 / precision) - 1;
+ 1834              		.loc 1 632 14 is_stmt 0 view .LVU457
+ 1835 05a2 DD64     		str	r5, [r3, #76]
+ 1836              		.loc 1 633 3 is_stmt 1 view .LVU458
+ 1837              		.loc 1 633 14 is_stmt 0 view .LVU459
+ 1838 05a4 9E60     		str	r6, [r3, #8]
+ 634:tmc/StepDir.c **** 
+ 635:tmc/StepDir.c **** 		// Select Bus clock as clock source, set prescaler divisor to 2^0 = 1,
+ 636:tmc/StepDir.c **** 		// enable timer overflow interrupt
+ 637:tmc/StepDir.c **** 		FTM1_SC |= FTM_SC_CLKS(1) | FTM_SC_PS(0) | FTM_SC_TOIE_MASK;
+ 1839              		.loc 1 637 3 is_stmt 1 view .LVU460
+ 1840              		.loc 1 637 11 is_stmt 0 view .LVU461
+ 1841 05a6 1A68     		ldr	r2, [r3]
+ 1842 05a8 42F04802 		orr	r2, r2, #72
+ 638:tmc/StepDir.c **** 
+ 639:tmc/StepDir.c **** 		// set FTM1 interrupt handler
+ 640:tmc/StepDir.c **** 		enable_irq(INT_FTM1-16);
+ 641:tmc/StepDir.c **** 	#endif
+ 642:tmc/StepDir.c **** }
+ 1843              		.loc 1 642 1 view .LVU462
+ 1844 05ac BDE8F041 		pop	{r4, r5, r6, r7, r8, lr}
+ 1845              	.LCFI23:
+ 1846              		.cfi_restore 14
+ 1847              		.cfi_restore 8
+ 1848              		.cfi_restore 7
+ 1849              		.cfi_restore 6
+ 1850              		.cfi_restore 5
+ 1851              		.cfi_restore 4
+ 1852              		.cfi_def_cfa_offset 0
+ 637:tmc/StepDir.c **** 
+ 1853              		.loc 1 637 11 view .LVU463
+ 1854 05b0 1A60     		str	r2, [r3]
+ 640:tmc/StepDir.c **** 	#endif
+ 1855              		.loc 1 640 3 is_stmt 1 view .LVU464
+ 1856 05b2 3F20     		movs	r0, #63
+ 1857 05b4 FFF7FEBF 		b	enable_irq
+ 1858              	.LVL129:
+ 1859              	.L167:
+ 1860              		.align	2
+ 1861              	.L166:
+ 1862 05b8 00000000 		.word	StepDir
+ 1863 05bc 00000000 		.word	.LANCHOR0
+ 1864 05c0 A0860100 		.word	100000
+ 1865 05c4 00700440 		.word	1074032640
+ 1866 05c8 006CDC02 		.word	48000000
+ 1867 05cc 00900340 		.word	1073975296
+ 1868              		.cfi_endproc
+ 1869              	.LFE26:
+ 1871              		.align	1
+ 1872              		.global	StepDir_deInit
+ 1873              		.syntax unified
+ 1874              		.thumb
+ 1875              		.thumb_func
+ 1876              		.fpu softvfp
+ 1878              	StepDir_deInit:
+ 1879              	.LFB27:
+ 643:tmc/StepDir.c **** 
+ 644:tmc/StepDir.c **** void StepDir_deInit()
+ 645:tmc/StepDir.c **** {
+ 1880              		.loc 1 645 1 view -0
+ 1881              		.cfi_startproc
+ 1882              		@ args = 0, pretend = 0, frame = 0
+ 1883              		@ frame_needed = 0, uses_anonymous_args = 0
+ 646:tmc/StepDir.c **** 	#if defined(Startrampe)
+ 647:tmc/StepDir.c **** 		TIM_DeInit(TIM2);
+ 648:tmc/StepDir.c **** 	#elif defined(Landungsbruecke)
+ 649:tmc/StepDir.c **** 		// Only disable the module if it has been enabled before
+ 650:tmc/StepDir.c **** 		if (SIM_SCGC6 & SIM_SCGC6_FTM1_MASK)
+ 1884              		.loc 1 650 3 view .LVU466
+ 645:tmc/StepDir.c **** 	#if defined(Startrampe)
+ 1885              		.loc 1 645 1 is_stmt 0 view .LVU467
+ 1886 05d0 38B5     		push	{r3, r4, r5, lr}
+ 1887              	.LCFI24:
+ 1888              		.cfi_def_cfa_offset 16
+ 1889              		.cfi_offset 3, -16
+ 1890              		.cfi_offset 4, -12
+ 1891              		.cfi_offset 5, -8
+ 1892              		.cfi_offset 14, -4
+ 1893              		.loc 1 650 7 view .LVU468
+ 1894 05d2 0E4D     		ldr	r5, .L173
+ 1895 05d4 41F23C04 		movw	r4, #4156
+ 1896 05d8 2B59     		ldr	r3, [r5, r4]
+ 1897              		.loc 1 650 6 view .LVU469
+ 1898 05da 9B01     		lsls	r3, r3, #6
+ 1899 05dc 15D5     		bpl	.L168
+ 651:tmc/StepDir.c **** 		{
+ 652:tmc/StepDir.c **** 			// Disable interrupt in FTM module
+ 653:tmc/StepDir.c **** 			FTM1_SC &= ~FTM_SC_TOIE_MASK;
+ 1900              		.loc 1 653 4 is_stmt 1 view .LVU470
+ 1901              		.loc 1 653 12 is_stmt 0 view .LVU471
+ 1902 05de 0C4B     		ldr	r3, .L173+4
+ 1903 05e0 1A68     		ldr	r2, [r3]
+ 1904 05e2 22F04002 		bic	r2, r2, #64
+ 1905 05e6 1A60     		str	r2, [r3]
+ 654:tmc/StepDir.c **** 
+ 655:tmc/StepDir.c **** 			// Disable the FTM module
+ 656:tmc/StepDir.c **** 			FTM1_MODE &= ~FTM_MODE_FTMEN_MASK;
+ 1906              		.loc 1 656 4 is_stmt 1 view .LVU472
+ 1907              		.loc 1 656 14 is_stmt 0 view .LVU473
+ 1908 05e8 5A6D     		ldr	r2, [r3, #84]
+ 1909 05ea 22F00102 		bic	r2, r2, #1
+ 1910 05ee 5A65     		str	r2, [r3, #84]
+ 657:tmc/StepDir.c **** 
+ 658:tmc/StepDir.c **** 			// Disable the interrupt
+ 659:tmc/StepDir.c **** 			disable_irq(INT_FTM1-16);
+ 1911              		.loc 1 659 4 is_stmt 1 view .LVU474
+ 1912 05f0 3F20     		movs	r0, #63
+ 1913 05f2 FFF7FEFF 		bl	disable_irq
+ 1914              	.LVL130:
+ 660:tmc/StepDir.c **** 
+ 661:tmc/StepDir.c **** 			// Ensure that the module is disabled BEFORE clock gating gets disabled.
+ 662:tmc/StepDir.c **** 			// Without this the processor can crash under heavy FTM interrupt load.
+ 663:tmc/StepDir.c **** 			asm volatile("DMB");
+ 1915              		.loc 1 663 4 view .LVU475
+ 1916              		.syntax unified
+ 1917              	@ 663 "tmc/StepDir.c" 1
+ 1918 05f6 BFF35F8F 		DMB
+ 1919              	@ 0 "" 2
+ 664:tmc/StepDir.c **** 
+ 665:tmc/StepDir.c **** 			// Disable clock gating for the FTM module
+ 666:tmc/StepDir.c **** 			SIM_SCGC6 |= SIM_SCGC6_FTM1_MASK;
+ 1920              		.loc 1 666 4 view .LVU476
+ 1921              		.loc 1 666 14 is_stmt 0 view .LVU477
+ 1922              		.thumb
+ 1923              		.syntax unified
+ 1924 05fa 2B59     		ldr	r3, [r5, r4]
+ 1925 05fc 43F00073 		orr	r3, r3, #33554432
+ 1926 0600 2B51     		str	r3, [r5, r4]
+ 667:tmc/StepDir.c **** 			SIM_SCGC6 &= ~SIM_SCGC6_FTM1_MASK;
+ 1927              		.loc 1 667 4 is_stmt 1 view .LVU478
+ 1928              		.loc 1 667 14 is_stmt 0 view .LVU479
+ 1929 0602 2B59     		ldr	r3, [r5, r4]
+ 1930 0604 23F00073 		bic	r3, r3, #33554432
+ 1931 0608 2B51     		str	r3, [r5, r4]
+ 1932              	.L168:
+ 668:tmc/StepDir.c **** 		}
+ 669:tmc/StepDir.c **** 	#endif
+ 670:tmc/StepDir.c **** }
+ 1933              		.loc 1 670 1 view .LVU480
+ 1934 060a 38BD     		pop	{r3, r4, r5, pc}
+ 1935              	.L174:
+ 1936              		.align	2
+ 1937              	.L173:
+ 1938 060c 00700440 		.word	1074032640
+ 1939 0610 00900340 		.word	1073975296
+ 1940              		.cfi_endproc
+ 1941              	.LFE27:
+ 1943              		.global	__aeabi_ldivmod
+ 1944              		.align	1
+ 1945              		.global	calculateStepDifference
+ 1946              		.syntax unified
+ 1947              		.thumb
+ 1948              		.thumb_func
+ 1949              		.fpu softvfp
+ 1951              	calculateStepDifference:
+ 1952              	.LVL131:
+ 1953              	.LFB28:
+ 671:tmc/StepDir.c **** 
+ 672:tmc/StepDir.c **** // ===== Helper function =====
+ 673:tmc/StepDir.c **** /* The required calculation to do is the difference of the required
+ 674:tmc/StepDir.c ****  * amount of steps to reach a given velocity, using two different
+ 675:tmc/StepDir.c ****  * given accelerations with an evenly accelerated ramp.
+ 676:tmc/StepDir.c ****  *
+ 677:tmc/StepDir.c ****  * Calculation:
+ 678:tmc/StepDir.c ****  *   v1: Start velocity
+ 679:tmc/StepDir.c ****  *   v2: Target velocity
+ 680:tmc/StepDir.c ****  *   a:  Acceleration
+ 681:tmc/StepDir.c ****  *   t:  Time required to reach the target velocity
+ 682:tmc/StepDir.c ****  *   s:  distance traveled while accelerating
+ 683:tmc/StepDir.c ****  *
+ 684:tmc/StepDir.c ****  *   t = (v2 - v1) / a
+ 685:tmc/StepDir.c ****  * The distance can be calculated with the average velocity v_avrg:
+ 686:tmc/StepDir.c ****  *   v_avrg = (v2 + v1) / 2
+ 687:tmc/StepDir.c ****  *   s = v_avrg * t
+ 688:tmc/StepDir.c ****  *     = (v2 + v1) / 2 * (v2 - v1) / a
+ 689:tmc/StepDir.c ****  *     = (v2 + v1) * (v2 - v1) / (2*a)
+ 690:tmc/StepDir.c ****  *     = (v2^2 - v1^2) / (2*a)
+ 691:tmc/StepDir.c ****  *
+ 692:tmc/StepDir.c ****  * Our calculation assumes that the starting velocity v1 is zero:
+ 693:tmc/StepDir.c ****  *   v1 := 0
+ 694:tmc/StepDir.c ****  *   s = (v2^2 - 0^2) / (2*a)
+ 695:tmc/StepDir.c ****  *     = v2^2 / (2*a)
+ 696:tmc/StepDir.c ****  *
+ 697:tmc/StepDir.c ****  * Calculating velocities with an accumulator results in the velocity
+ 698:tmc/StepDir.c ****  * being equal or up to 1 below the theoretical velocity (distributed evenly).
+ 699:tmc/StepDir.c ****  * To reduce the maximum error in the result of the step calculation,
+ 700:tmc/StepDir.c ****  * the velocity will be increased by 0.5, so that the velocity error
+ 701:tmc/StepDir.c ****  * will be within [0.5, -0.5).
+ 702:tmc/StepDir.c ****  *   s = (v+0.5)^2 / (2*a)
+ 703:tmc/StepDir.c ****  * Change to using integer math:
+ 704:tmc/StepDir.c ****  *   s = ((v+0.5)*2/2)^2 / (2*a)
+ 705:tmc/StepDir.c ****  *     = ((v*2 + 1)/2)^2 / (2*a)
+ 706:tmc/StepDir.c ****  *     = (v*2 + 1)^2 / 2^2 / (2*a)
+ 707:tmc/StepDir.c ****  *     = (v*2 + 1)^2 / (8a)
+ 708:tmc/StepDir.c ****  *
+ 709:tmc/StepDir.c ****  * The result we need is the difference s2 - s1, using a2 and a1 respectively.
+ 710:tmc/StepDir.c ****  * Only changing the acceleration allows us to reuse most of the calculation:
+ 711:tmc/StepDir.c ****  * We define
+ 712:tmc/StepDir.c ****  *   x := (v*2 + 1)^2 / 8
+ 713:tmc/StepDir.c ****  * so that
+ 714:tmc/StepDir.c ****  *   s = x/a
+ 715:tmc/StepDir.c ****  *
+ 716:tmc/StepDir.c ****  * Variables <=> Formula:
+ 717:tmc/StepDir.c ****  *   oldAccel: a2
+ 718:tmc/StepDir.c ****  *   newAccel: a1
+ 719:tmc/StepDir.c ****  *   velocity: v
+ 720:tmc/StepDir.c ****  *   oldSteps: s1
+ 721:tmc/StepDir.c ****  *   newSteps: s2
+ 722:tmc/StepDir.c ****  */
+ 723:tmc/StepDir.c **** int32_t calculateStepDifference(int32_t velocity, uint32_t oldAccel, uint32_t newAccel)
+ 724:tmc/StepDir.c **** {
+ 1954              		.loc 1 724 1 is_stmt 1 view -0
+ 1955              		.cfi_startproc
+ 1956              		@ args = 0, pretend = 0, frame = 0
+ 1957              		@ frame_needed = 0, uses_anonymous_args = 0
+ 725:tmc/StepDir.c **** 	int64_t tmp = velocity;
+ 1958              		.loc 1 725 2 view .LVU482
+ 726:tmc/StepDir.c **** 	tmp = tmp * 2 + 1;
+ 1959              		.loc 1 726 2 view .LVU483
+ 724:tmc/StepDir.c **** 	int64_t tmp = velocity;
+ 1960              		.loc 1 724 1 is_stmt 0 view .LVU484
+ 1961 0614 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 1962              	.LCFI25:
+ 1963              		.cfi_def_cfa_offset 24
+ 1964              		.cfi_offset 3, -24
+ 1965              		.cfi_offset 4, -20
+ 1966              		.cfi_offset 5, -16
+ 1967              		.cfi_offset 6, -12
+ 1968              		.cfi_offset 7, -8
+ 1969              		.cfi_offset 14, -4
+ 1970              		.loc 1 726 6 view .LVU485
+ 1971 0616 0223     		movs	r3, #2
+ 1972 0618 0126     		movs	r6, #1
+ 1973 061a 0027     		movs	r7, #0
+ 1974 061c C3FB0067 		smlal	r6, r7, r3, r0
+ 1975              	.LVL132:
+ 727:tmc/StepDir.c **** 	tmp = (tmp * tmp) / 4;
+ 1976              		.loc 1 727 2 is_stmt 1 view .LVU486
+ 1977              		.loc 1 727 13 is_stmt 0 view .LVU487
+ 1978 0620 06FB07F3 		mul	r3, r6, r7
+ 724:tmc/StepDir.c **** 	int64_t tmp = velocity;
+ 1979              		.loc 1 724 1 view .LVU488
+ 1980 0624 0C46     		mov	r4, r1
+ 1981              		.loc 1 727 13 view .LVU489
+ 1982 0626 A6FB0601 		umull	r0, r1, r6, r6
+ 1983              	.LVL133:
+ 1984              		.loc 1 727 13 view .LVU490
+ 1985 062a 01EB4301 		add	r1, r1, r3, lsl #1
+ 1986              	.LVL134:
+ 728:tmc/StepDir.c **** 	tmp = tmp / 2;
+ 1987              		.loc 1 728 2 is_stmt 1 view .LVU491
+ 1988              		.loc 1 728 6 is_stmt 0 view .LVU492
+ 1989 062e 0028     		cmp	r0, #0
+ 1990 0630 71F10003 		sbcs	r3, r1, #0
+ 1991 0634 02DA     		bge	.L176
+ 1992 0636 0730     		adds	r0, r0, #7
+ 1993              	.LVL135:
+ 1994              		.loc 1 728 6 view .LVU493
+ 1995 0638 41F10001 		adc	r1, r1, #0
+ 1996              	.L176:
+ 1997 063c C508     		lsrs	r5, r0, #3
+ 1998 063e 45EA4175 		orr	r5, r5, r1, lsl #29
+ 1999 0642 CF10     		asrs	r7, r1, #3
+ 2000              	.LVL136:
+ 729:tmc/StepDir.c **** 	uint32_t oldSteps = tmp / oldAccel;
+ 2001              		.loc 1 729 2 is_stmt 1 view .LVU494
+ 730:tmc/StepDir.c **** 	uint32_t newSteps = tmp / newAccel;
+ 2002              		.loc 1 730 2 view .LVU495
+ 731:tmc/StepDir.c **** 
+ 732:tmc/StepDir.c **** 	return newSteps - oldSteps;
+ 2003              		.loc 1 732 2 view .LVU496
+ 730:tmc/StepDir.c **** 	uint32_t newSteps = tmp / newAccel;
+ 2004              		.loc 1 730 26 is_stmt 0 view .LVU497
+ 2005 0644 0023     		movs	r3, #0
+ 2006 0646 2846     		mov	r0, r5
+ 2007 0648 3946     		mov	r1, r7
+ 2008 064a FFF7FEFF 		bl	__aeabi_ldivmod
+ 2009              	.LVL137:
+ 729:tmc/StepDir.c **** 	uint32_t newSteps = tmp / newAccel;
+ 2010              		.loc 1 729 26 view .LVU498
+ 2011 064e 2246     		mov	r2, r4
+ 730:tmc/StepDir.c **** 	uint32_t newSteps = tmp / newAccel;
+ 2012              		.loc 1 730 26 view .LVU499
+ 2013 0650 0646     		mov	r6, r0
+ 729:tmc/StepDir.c **** 	uint32_t newSteps = tmp / newAccel;
+ 2014              		.loc 1 729 26 view .LVU500
+ 2015 0652 0023     		movs	r3, #0
+ 2016 0654 2846     		mov	r0, r5
+ 2017 0656 3946     		mov	r1, r7
+ 2018 0658 FFF7FEFF 		bl	__aeabi_ldivmod
+ 2019              	.LVL138:
+ 733:tmc/StepDir.c **** }
+ 2020              		.loc 1 733 1 view .LVU501
+ 2021 065c 301A     		subs	r0, r6, r0
+ 2022 065e F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 2023              		.loc 1 733 1 view .LVU502
+ 2024              		.cfi_endproc
+ 2025              	.LFE28:
+ 2027              		.align	1
+ 2028              		.global	StepDir_setAcceleration
+ 2029              		.syntax unified
+ 2030              		.thumb
+ 2031              		.thumb_func
+ 2032              		.fpu softvfp
+ 2034              	StepDir_setAcceleration:
+ 2035              	.LVL139:
+ 2036              	.LFB9:
+ 371:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 2037              		.loc 1 371 1 is_stmt 1 view -0
+ 2038              		.cfi_startproc
+ 2039              		@ args = 0, pretend = 0, frame = 0
+ 2040              		@ frame_needed = 0, uses_anonymous_args = 0
+ 372:tmc/StepDir.c **** 		return;
+ 2041              		.loc 1 372 2 view .LVU504
+ 372:tmc/StepDir.c **** 		return;
+ 2042              		.loc 1 372 5 is_stmt 0 view .LVU505
+ 2043 0660 0128     		cmp	r0, #1
+ 371:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 2044              		.loc 1 371 1 view .LVU506
+ 2045 0662 2DE9F843 		push	{r3, r4, r5, r6, r7, r8, r9, lr}
+ 2046              	.LCFI26:
+ 2047              		.cfi_def_cfa_offset 32
+ 2048              		.cfi_offset 3, -32
+ 2049              		.cfi_offset 4, -28
+ 2050              		.cfi_offset 5, -24
+ 2051              		.cfi_offset 6, -20
+ 2052              		.cfi_offset 7, -16
+ 2053              		.cfi_offset 8, -12
+ 2054              		.cfi_offset 9, -8
+ 2055              		.cfi_offset 14, -4
+ 371:tmc/StepDir.c **** 	if (channel >= STEP_DIR_CHANNELS)
+ 2056              		.loc 1 371 1 view .LVU507
+ 2057 0666 0546     		mov	r5, r0
+ 2058 0668 8846     		mov	r8, r1
+ 372:tmc/StepDir.c **** 		return;
+ 2059              		.loc 1 372 5 view .LVU508
+ 2060 066a 35D8     		bhi	.L177
+ 375:tmc/StepDir.c **** 	{	// Velocity mode does not require any special actions
+ 2061              		.loc 1 375 2 is_stmt 1 view .LVU509
+ 375:tmc/StepDir.c **** 	{	// Velocity mode does not require any special actions
+ 2062              		.loc 1 375 6 is_stmt 0 view .LVU510
+ 2063 066c 224C     		ldr	r4, .L192
+ 2064 066e 6826     		movs	r6, #104
+ 2065 0670 3027     		movs	r7, #48
+ 2066 0672 16FB0077 		smlabb	r7, r6, r0, r7
+ 2067 0676 2744     		add	r7, r7, r4
+ 2068 0678 3846     		mov	r0, r7
+ 2069              	.LVL140:
+ 375:tmc/StepDir.c **** 	{	// Velocity mode does not require any special actions
+ 2070              		.loc 1 375 6 view .LVU511
+ 2071 067a FFF7FEFF 		bl	tmc_ramp_linear_get_mode
+ 2072              	.LVL141:
+ 375:tmc/StepDir.c **** 	{	// Velocity mode does not require any special actions
+ 2073              		.loc 1 375 5 view .LVU512
+ 2074 067e 28B9     		cbnz	r0, .L180
+ 377:tmc/StepDir.c **** 		return;
+ 2075              		.loc 1 377 3 is_stmt 1 view .LVU513
+ 2076 0680 4146     		mov	r1, r8
+ 2077 0682 3846     		mov	r0, r7
+ 421:tmc/StepDir.c **** 
+ 2078              		.loc 1 421 1 is_stmt 0 view .LVU514
+ 2079 0684 BDE8F843 		pop	{r3, r4, r5, r6, r7, r8, r9, lr}
+ 2080              	.LCFI27:
+ 2081              		.cfi_remember_state
+ 2082              		.cfi_restore 14
+ 2083              		.cfi_restore 9
+ 2084              		.cfi_restore 8
+ 2085              		.cfi_restore 7
+ 2086              		.cfi_restore 6
+ 2087              		.cfi_restore 5
+ 2088              		.cfi_restore 4
+ 2089              		.cfi_restore 3
+ 2090              		.cfi_def_cfa_offset 0
+ 2091              	.LVL142:
+ 377:tmc/StepDir.c **** 		return;
+ 2092              		.loc 1 377 3 view .LVU515
+ 2093 0688 FFF7FEBF 		b	tmc_ramp_linear_set_acceleration
+ 2094              	.LVL143:
+ 2095              	.L180:
+ 2096              	.LCFI28:
+ 2097              		.cfi_restore_state
+ 382:tmc/StepDir.c **** 		return;
+ 2098              		.loc 1 382 2 is_stmt 1 view .LVU516
+ 382:tmc/StepDir.c **** 		return;
+ 2099              		.loc 1 382 5 is_stmt 0 view .LVU517
+ 2100 068c B8F1000F 		cmp	r8, #0
+ 2101 0690 22D0     		beq	.L177
+ 385:tmc/StepDir.c **** 
+ 2102              		.loc 1 385 2 is_stmt 1 view .LVU518
+ 2103 0692 4146     		mov	r1, r8
+ 2104 0694 3846     		mov	r0, r7
+ 2105 0696 FFF7FEFF 		bl	tmc_ramp_linear_set_acceleration
+ 2106              	.LVL144:
+ 388:tmc/StepDir.c **** 
+ 2107              		.loc 1 388 2 view .LVU519
+ 391:tmc/StepDir.c **** 	{
+ 2108              		.loc 1 391 22 is_stmt 0 view .LVU520
+ 2109 069a 06FB0546 		mla	r6, r6, r5, r4
+ 388:tmc/StepDir.c **** 
+ 2110              		.loc 1 388 29 view .LVU521
+ 2111 069e 3846     		mov	r0, r7
+ 2112 06a0 FFF7FEFF 		bl	tmc_ramp_linear_get_acceleration
+ 2113              	.LVL145:
+ 391:tmc/StepDir.c **** 	{
+ 2114              		.loc 1 391 5 view .LVU522
+ 2115 06a4 7378     		ldrb	r3, [r6, #1]	@ zero_extendqisi2
+ 388:tmc/StepDir.c **** 
+ 2116              		.loc 1 388 29 view .LVU523
+ 2117 06a6 8146     		mov	r9, r0
+ 2118              	.LVL146:
+ 391:tmc/StepDir.c **** 	{
+ 2119              		.loc 1 391 2 is_stmt 1 view .LVU524
+ 391:tmc/StepDir.c **** 	{
+ 2120              		.loc 1 391 5 is_stmt 0 view .LVU525
+ 2121 06a8 C3B9     		cbnz	r3, .L182
+ 395:tmc/StepDir.c **** 		StepDir[channel].syncFlag = SYNC_SNAPSHOT_REQUESTED;
+ 2122              		.loc 1 395 3 is_stmt 1 view .LVU526
+ 396:tmc/StepDir.c **** 		// Wait for the flag update from the interrupt.
+ 2123              		.loc 1 396 29 is_stmt 0 view .LVU527
+ 2124 06aa 0123     		movs	r3, #1
+ 395:tmc/StepDir.c **** 		StepDir[channel].syncFlag = SYNC_SNAPSHOT_REQUESTED;
+ 2125              		.loc 1 395 36 view .LVU528
+ 2126 06ac C6F82080 		str	r8, [r6, #32]
+ 396:tmc/StepDir.c **** 		// Wait for the flag update from the interrupt.
+ 2127              		.loc 1 396 3 is_stmt 1 view .LVU529
+ 396:tmc/StepDir.c **** 		// Wait for the flag update from the interrupt.
+ 2128              		.loc 1 396 29 is_stmt 0 view .LVU530
+ 2129 06b0 3375     		strb	r3, [r6, #20]
+ 398:tmc/StepDir.c **** 	}
+ 2130              		.loc 1 398 3 is_stmt 1 view .LVU531
+ 2131              	.L183:
+ 398:tmc/StepDir.c **** 	}
+ 2132              		.loc 1 398 72 discriminator 1 view .LVU532
+ 398:tmc/StepDir.c **** 	}
+ 2133              		.loc 1 398 9 discriminator 1 view .LVU533
+ 398:tmc/StepDir.c **** 	}
+ 2134              		.loc 1 398 10 is_stmt 0 discriminator 1 view .LVU534
+ 2135 06b2 337D     		ldrb	r3, [r6, #20]	@ zero_extendqisi2
+ 398:tmc/StepDir.c **** 	}
+ 2136              		.loc 1 398 9 discriminator 1 view .LVU535
+ 2137 06b4 022B     		cmp	r3, #2
+ 2138 06b6 FCD1     		bne	.L183
+ 2139              	.LVL147:
+ 2140              	.L184:
+ 407:tmc/StepDir.c **** 
+ 2141              		.loc 1 407 2 is_stmt 1 view .LVU536
+ 407:tmc/StepDir.c **** 
+ 2142              		.loc 1 407 27 is_stmt 0 view .LVU537
+ 2143 06b8 6820     		movs	r0, #104
+ 2144 06ba 00FB0544 		mla	r4, r0, r5, r4
+ 2145 06be 4246     		mov	r2, r8
+ 2146 06c0 A069     		ldr	r0, [r4, #24]
+ 2147 06c2 4946     		mov	r1, r9
+ 2148 06c4 FFF7FEFF 		bl	calculateStepDifference
+ 2149              	.LVL148:
+ 409:tmc/StepDir.c **** 	{
+ 2150              		.loc 1 409 2 is_stmt 1 view .LVU538
+ 409:tmc/StepDir.c **** 	{
+ 2151              		.loc 1 409 5 is_stmt 0 view .LVU539
+ 2152 06c8 6378     		ldrb	r3, [r4, #1]	@ zero_extendqisi2
+ 2153 06ca 83B9     		cbnz	r3, .L185
+ 411:tmc/StepDir.c **** 		StepDir[channel].syncFlag = SYNC_UPDATE_DATA;
+ 2154              		.loc 1 411 3 is_stmt 1 view .LVU540
+ 412:tmc/StepDir.c **** 
+ 2155              		.loc 1 412 29 is_stmt 0 view .LVU541
+ 2156 06cc 0323     		movs	r3, #3
+ 411:tmc/StepDir.c **** 		StepDir[channel].syncFlag = SYNC_UPDATE_DATA;
+ 2157              		.loc 1 411 35 view .LVU542
+ 2158 06ce 6062     		str	r0, [r4, #36]
+ 412:tmc/StepDir.c **** 
+ 2159              		.loc 1 412 3 is_stmt 1 view .LVU543
+ 412:tmc/StepDir.c **** 
+ 2160              		.loc 1 412 29 is_stmt 0 view .LVU544
+ 2161 06d0 2375     		strb	r3, [r4, #20]
+ 415:tmc/StepDir.c **** 	}
+ 2162              		.loc 1 415 3 is_stmt 1 view .LVU545
+ 2163              	.L186:
+ 415:tmc/StepDir.c **** 	}
+ 2164              		.loc 1 415 62 discriminator 1 view .LVU546
+ 415:tmc/StepDir.c **** 	}
+ 2165              		.loc 1 415 9 discriminator 1 view .LVU547
+ 415:tmc/StepDir.c **** 	}
+ 2166              		.loc 1 415 10 is_stmt 0 discriminator 1 view .LVU548
+ 2167 06d2 237D     		ldrb	r3, [r4, #20]	@ zero_extendqisi2
+ 415:tmc/StepDir.c **** 	}
+ 2168              		.loc 1 415 9 discriminator 1 view .LVU549
+ 2169 06d4 002B     		cmp	r3, #0
+ 2170 06d6 FCD1     		bne	.L186
+ 2171              	.LVL149:
+ 2172              	.L177:
+ 421:tmc/StepDir.c **** 
+ 2173              		.loc 1 421 1 view .LVU550
+ 2174 06d8 BDE8F883 		pop	{r3, r4, r5, r6, r7, r8, r9, pc}
+ 2175              	.LVL150:
+ 2176              	.L182:
+ 403:tmc/StepDir.c **** 		StepDir[channel].oldVelocity = tmc_ramp_linear_get_rampVelocity(&StepDir[channel].ramp);
+ 2177              		.loc 1 403 3 is_stmt 1 view .LVU551
+ 2178 06dc 4146     		mov	r1, r8
+ 2179 06de 3846     		mov	r0, r7
+ 2180              	.LVL151:
+ 403:tmc/StepDir.c **** 		StepDir[channel].oldVelocity = tmc_ramp_linear_get_rampVelocity(&StepDir[channel].ramp);
+ 2181              		.loc 1 403 3 is_stmt 0 view .LVU552
+ 2182 06e0 FFF7FEFF 		bl	tmc_ramp_linear_set_acceleration
+ 2183              	.LVL152:
+ 404:tmc/StepDir.c **** 	}
+ 2184              		.loc 1 404 3 is_stmt 1 view .LVU553
+ 404:tmc/StepDir.c **** 	}
+ 2185              		.loc 1 404 34 is_stmt 0 view .LVU554
+ 2186 06e4 3846     		mov	r0, r7
+ 2187 06e6 FFF7FEFF 		bl	tmc_ramp_linear_get_rampVelocity
+ 2188              	.LVL153:
+ 404:tmc/StepDir.c **** 	}
+ 2189              		.loc 1 404 32 view .LVU555
+ 2190 06ea B061     		str	r0, [r6, #24]
+ 2191 06ec E4E7     		b	.L184
+ 2192              	.LVL154:
+ 2193              	.L185:
+ 419:tmc/StepDir.c **** 	}
+ 2194              		.loc 1 419 3 is_stmt 1 view .LVU556
+ 419:tmc/StepDir.c **** 	}
+ 2195              		.loc 1 419 43 is_stmt 0 view .LVU557
+ 2196 06ee A36D     		ldr	r3, [r4, #88]
+ 2197 06f0 1844     		add	r0, r0, r3
+ 2198              	.LVL155:
+ 419:tmc/StepDir.c **** 	}
+ 2199              		.loc 1 419 43 view .LVU558
+ 2200 06f2 A065     		str	r0, [r4, #88]
+ 2201 06f4 F0E7     		b	.L177
+ 2202              	.L193:
+ 2203 06f6 00BF     		.align	2
+ 2204              	.L192:
+ 2205 06f8 00000000 		.word	StepDir
+ 2206              		.cfi_endproc
+ 2207              	.LFE9:
+ 2209              		.global	DummyPin
+ 2210              		.comm	StepDir,208,4
+ 2211              		.comm	hwid,1,1
+ 2212              		.comm	HAL,48,4
+ 2213              		.comm	UART,40,4
+ 2214              		.comm	Timer,16,4
+ 2215              		.comm	WLAN,36,4
+ 2216              		.comm	RS232,36,4
+ 2217              		.comm	LEDs,28,4
+ 2218              		.comm	USB,36,4
+ 2219              		.comm	uart0_interrupt,1,1
+ 2220              		.comm	ADCs,32,4
+ 2221              		.comm	SPI,44,4
+ 2222              		.comm	IOMap,2088,4
+ 2223              		.comm	IOs,52,4
+ 2224              		.comm	Cpu,8,4
+ 2225              		.bss
+ 2226              		.align	2
+ 2227              		.set	.LANCHOR0,. + 0
+ 2230              	DummyPin:
+ 2231 0000 00000000 		.space	32
+ 2231      00000000 
+ 2231      00000000 
+ 2231      00000000 
+ 2231      00000000 
+ 2234              	ADCValue:
+ 2235 0020 00000000 		.space	12
+ 2235      00000000 
+ 2235      00000000 
+ 2236              		.text
+ 2237              	.Letext0:
+ 2238              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 2239              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 2240              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 2241              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 2242              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 2243              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 2244              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 2245              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 2246              		.file 10 "TMC-API/tmc/ramp/LinearRamp1.h"
+ 2247              		.file 11 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 2248              		.file 12 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 2249              		.file 13 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 2250              		.file 14 "./hal/IOs.h"
+ 2251              		.file 15 "./hal/IOMap.h"
+ 2252              		.file 16 "./hal/SPI.h"
+ 2253              		.file 17 "./hal/ADCs.h"
+ 2254              		.file 18 "./hal/RXTX.h"
+ 2255              		.file 19 "./hal/USB.h"
+ 2256              		.file 20 "./hal/LEDs.h"
+ 2257              		.file 21 "./hal/RS232.h"
+ 2258              		.file 22 "./hal/WLAN.h"
+ 2259              		.file 23 "./hal/Timer.h"
+ 2260              		.file 24 "./hal/UART.h"
+ 2261              		.file 25 "./hal/HAL.h"
+ 2262              		.file 26 "tmc/StepDir.h"
+ 2263              		.file 27 "./hal/Landungsbruecke/freescale/nvic.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 StepDir.c
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:22     .text:00000000 StepDir_stop.part.0
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:76     .text:00000030 $d
+                            *COM*:000000d0 StepDir
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:80     .text:00000034 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:87     .text:00000034 StepDir_rotate
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:165    .text:0000007c $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:169    .text:00000080 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:176    .text:00000080 StepDir_moveTo
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:236    .text:000000ac $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:240    .text:000000b0 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:247    .text:000000b0 StepDir_periodicJob
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:312    .text:000000ec $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:316    .text:000000f0 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:323    .text:000000f0 StepDir_stop
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:407    .text:00000138 $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:411    .text:0000013c $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:418    .text:0000013c StepDir_getStatus
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:504    .text:00000188 $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:508    .text:0000018c $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:515    .text:0000018c StepDir_setPins
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:621    .text:000001f4 $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:625    .text:000001f8 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:632    .text:000001f8 StepDir_stallGuard
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:704    .text:00000214 $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:708    .text:00000218 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:715    .text:00000218 FTM1_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:898    .text:000002b8 $d
+                            *COM*:00000030 HAL
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:906    .text:000002c4 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:913    .text:000002c4 StepDir_setActualPosition
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:983    .text:000002f8 $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:987    .text:000002fc $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:994    .text:000002fc StepDir_setVelocityMax
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1022   .text:00000314 $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1026   .text:00000318 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1033   .text:00000318 StepDir_setStallGuardThreshold
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1065   .text:00000330 $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1069   .text:00000334 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1076   .text:00000334 StepDir_setMode
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1120   .text:00000350 $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1124   .text:00000354 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1131   .text:00000354 StepDir_setFrequency
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1156   .text:00000364 $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1160   .text:00000368 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1167   .text:00000368 StepDir_setPrecision
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1195   .text:00000380 $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1199   .text:00000384 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1206   .text:00000384 StepDir_getActualPosition
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1238   .text:000003a0 $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1242   .text:000003a4 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1249   .text:000003a4 StepDir_getTargetPosition
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1281   .text:000003c0 $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1285   .text:000003c4 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1292   .text:000003c4 StepDir_getActualVelocity
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1324   .text:000003e0 $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1328   .text:000003e4 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1335   .text:000003e4 StepDir_getTargetVelocity
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1367   .text:00000400 $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1371   .text:00000404 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1378   .text:00000404 StepDir_getAcceleration
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1410   .text:00000420 $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1414   .text:00000424 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1421   .text:00000424 StepDir_getVelocityMax
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1453   .text:00000440 $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1457   .text:00000444 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1464   .text:00000444 StepDir_getStallGuardThreshold
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1492   .text:0000045c $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1496   .text:00000460 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1503   .text:00000460 StepDir_getMode
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1531   .text:00000478 $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1535   .text:0000047c $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1542   .text:0000047c StepDir_getFrequency
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1570   .text:00000494 $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1574   .text:00000498 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1581   .text:00000498 StepDir_getPrecision
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1613   .text:000004b0 $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1617   .text:000004b4 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1624   .text:000004b4 StepDir_getMaxAcceleration
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1662   .text:000004d8 $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1667   .text:000004e0 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1674   .text:000004e0 StepDir_init
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1862   .text:000005b8 $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1871   .text:000005d0 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1878   .text:000005d0 StepDir_deInit
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1938   .text:0000060c $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1944   .text:00000614 $t
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:1951   .text:00000614 calculateStepDifference
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:2034   .text:00000660 StepDir_setAcceleration
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:2205   .text:000006f8 $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:2230   .bss:00000000 DummyPin
+                            *COM*:00000001 hwid
+                            *COM*:00000028 UART
+                            *COM*:00000010 Timer
+                            *COM*:00000024 WLAN
+                            *COM*:00000024 RS232
+                            *COM*:0000001c LEDs
+                            *COM*:00000024 USB
+                            *COM*:00000001 uart0_interrupt
+                            *COM*:00000020 ADCs
+                            *COM*:0000002c SPI
+                            *COM*:00000828 IOMap
+                            *COM*:00000034 IOs
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:2226   .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccvPPM7L.s:2234   .bss:00000020 ADCValue
+
+UNDEFINED SYMBOLS
+tmc_ramp_linear_set_rampVelocity
+tmc_ramp_linear_set_targetVelocity
+tmc_ramp_linear_set_mode
+tmc_ramp_linear_set_targetPosition
+tmc_ramp_linear_get_rampVelocity
+tmc_ramp_linear_get_mode
+tmc_ramp_linear_compute
+tmc_ramp_linear_set_acceleration
+tmc_ramp_linear_set_rampPosition
+tmc_ramp_linear_set_maxVelocity
+tmc_ramp_linear_set_precision
+tmc_ramp_linear_get_rampPosition
+tmc_ramp_linear_get_targetPosition
+tmc_ramp_linear_get_targetVelocity
+tmc_ramp_linear_get_acceleration
+tmc_ramp_linear_get_maxVelocity
+tmc_ramp_linear_get_precision
+tmc_ramp_linear_init
+enable_irq
+disable_irq
+__aeabi_ldivmod

@@ -1,0 +1,697 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"TMC2224.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.global	tmc2224_initConfig
+  17              		.arch armv7e-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	tmc2224_initConfig:
+  24              	.LVL0:
+  25              	.LFB0:
+  26              		.file 1 "TMC-API/tmc/ic/TMC2224/TMC2224.c"
+   1:TMC-API/tmc/ic/TMC2224/TMC2224.c **** /*
+   2:TMC-API/tmc/ic/TMC2224/TMC2224.c ****  * TMC2224.c
+   3:TMC-API/tmc/ic/TMC2224/TMC2224.c ****  *
+   4:TMC-API/tmc/ic/TMC2224/TMC2224.c ****  *  Created on: 07.07.2017
+   5:TMC-API/tmc/ic/TMC2224/TMC2224.c ****  *      Author: LK
+   6:TMC-API/tmc/ic/TMC2224/TMC2224.c ****  */
+   7:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 
+   8:TMC-API/tmc/ic/TMC2224/TMC2224.c **** #include "TMC2224.h"
+   9:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 
+  10:TMC-API/tmc/ic/TMC2224/TMC2224.c **** // Default Register values
+  11:TMC-API/tmc/ic/TMC2224/TMC2224.c **** #define R00 0x00000141  // GCONF
+  12:TMC-API/tmc/ic/TMC2224/TMC2224.c **** #define R10 0x00001F00  // IHOLD_IRUN
+  13:TMC-API/tmc/ic/TMC2224/TMC2224.c **** #define R11 0x00000014  // TPOWERDOWN
+  14:TMC-API/tmc/ic/TMC2224/TMC2224.c **** #define R6C 0x10000053  // CHOPCONF
+  15:TMC-API/tmc/ic/TMC2224/TMC2224.c **** #define R70 0xC10D0024  // PWMCONF
+  16:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 
+  17:TMC-API/tmc/ic/TMC2224/TMC2224.c **** /* Register access permissions:
+  18:TMC-API/tmc/ic/TMC2224/TMC2224.c ****  * 0: none (reserved)
+  19:TMC-API/tmc/ic/TMC2224/TMC2224.c ****  * 1: read
+  20:TMC-API/tmc/ic/TMC2224/TMC2224.c ****  * 2: write
+  21:TMC-API/tmc/ic/TMC2224/TMC2224.c ****  * 3: read/write
+  22:TMC-API/tmc/ic/TMC2224/TMC2224.c ****  * 7: read^write (seperate functions/values)
+  23:TMC-API/tmc/ic/TMC2224/TMC2224.c ****  */
+  24:TMC-API/tmc/ic/TMC2224/TMC2224.c **** const uint8_t tmc2224_defaultRegisterAccess[TMC2224_REGISTER_COUNT] =
+  25:TMC-API/tmc/ic/TMC2224/TMC2224.c **** {
+  26:TMC-API/tmc/ic/TMC2224/TMC2224.c **** //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+  27:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	3, 3, 1, 2, 2, 1, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, // 0x00 - 0x0F
+  28:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	2, 2, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x10 - 0x1F
+  29:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x20 - 0x2F
+  30:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x30 - 0x3F
+  31:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x40 - 0x4F
+  32:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x50 - 0x5F
+  33:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 3, 0, 0, 1, // 0x60 - 0x6F
+  34:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  // 0x70 - 0x7F
+  35:TMC-API/tmc/ic/TMC2224/TMC2224.c **** };
+  36:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 
+  37:TMC-API/tmc/ic/TMC2224/TMC2224.c **** const int32_t tmc2224_defaultRegisterResetState[TMC2224_REGISTER_COUNT] = {
+  38:TMC-API/tmc/ic/TMC2224/TMC2224.c **** //	0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
+  39:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	R00, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, // 0x00 - 0x0F
+  40:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	R10, R11, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, // 0x10 - 0x1F
+  41:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, // 0x20 - 0x2F
+  42:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, // 0x30 - 0x3F
+  43:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, // 0x40 - 0x4F
+  44:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, // 0x50 - 0x5F
+  45:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   R6C, 0,   0,   0, // 0x60 - 0x6F
+  46:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	R70, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0  // 0x70 - 0x7F
+  47:TMC-API/tmc/ic/TMC2224/TMC2224.c **** };
+  48:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 
+  49:TMC-API/tmc/ic/TMC2224/TMC2224.c **** // => SPI wrapper
+  50:TMC-API/tmc/ic/TMC2224/TMC2224.c **** extern void tmc2224_writeRegister(uint8_t motor, uint8_t address, int32_t value);
+  51:TMC-API/tmc/ic/TMC2224/TMC2224.c **** extern void tmc2224_readRegister(uint8_t motor, uint8_t address, int32_t *value);
+  52:TMC-API/tmc/ic/TMC2224/TMC2224.c **** // <= SPI wrapper
+  53:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 
+  54:TMC-API/tmc/ic/TMC2224/TMC2224.c **** void tmc2224_initConfig(TMC2224TypeDef *tmc2224)
+  55:TMC-API/tmc/ic/TMC2224/TMC2224.c **** {
+  27              		.loc 1 55 1 view -0
+  28              		.cfi_startproc
+  29              		@ args = 0, pretend = 0, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  56:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	tmc2224->velocity      = 0;
+  31              		.loc 1 56 2 view .LVU1
+  32 0000 0D4A     		ldr	r2, .L4
+  33              		.loc 1 56 25 is_stmt 0 view .LVU2
+  34 0002 0023     		movs	r3, #0
+  55:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	tmc2224->velocity      = 0;
+  35              		.loc 1 55 1 view .LVU3
+  36 0004 30B5     		push	{r4, r5, lr}
+  37              	.LCFI0:
+  38              		.cfi_def_cfa_offset 12
+  39              		.cfi_offset 4, -12
+  40              		.cfi_offset 5, -8
+  41              		.cfi_offset 14, -4
+  42 0006 00F10C01 		add	r1, r0, #12
+  57:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	tmc2224->oldTick       = 0;
+  58:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	tmc2224->oldX          = 0;
+  43              		.loc 1 58 25 view .LVU4
+  44 000a C0E90133 		strd	r3, r3, [r0, #4]
+  56:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	tmc2224->oldTick       = 0;
+  45              		.loc 1 56 25 view .LVU5
+  46 000e 0360     		str	r3, [r0]
+  57:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	tmc2224->oldTick       = 0;
+  47              		.loc 1 57 2 is_stmt 1 view .LVU6
+  59:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	tmc2224->vMaxModified  = false;
+  48              		.loc 1 59 2 view .LVU7
+  49              		.loc 1 59 25 is_stmt 0 view .LVU8
+  50 0010 80F88C32 		strb	r3, [r0, #652]
+  60:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 
+  61:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	int i;
+  51              		.loc 1 61 2 is_stmt 1 view .LVU9
+  62:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	for(i = 0; i < TMC2224_REGISTER_COUNT; i++)
+  52              		.loc 1 62 2 view .LVU10
+  53              	.LVL1:
+  54              		.loc 1 62 13 view .LVU11
+  55 0014 02F18004 		add	r4, r2, #128
+  56 0018 00F50373 		add	r3, r0, #524
+  57 001c 00F52370 		add	r0, r0, #652
+  58              	.LVL2:
+  59              	.L2:
+  63:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	{
+  64:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 		tmc2224->registerAccess[i]      = tmc2224_defaultRegisterAccess[i];
+  60              		.loc 1 64 3 discriminator 3 view .LVU12
+  61              		.loc 1 64 66 is_stmt 0 discriminator 3 view .LVU13
+  62 0020 12F8015B 		ldrb	r5, [r2], #1	@ zero_extendqisi2
+  63              	.LVL3:
+  64              		.loc 1 64 35 discriminator 3 view .LVU14
+  65 0024 03F8015B 		strb	r5, [r3], #1
+  65:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 		tmc2224->registerResetState[i]  = tmc2224_defaultRegisterResetState[i];
+  66              		.loc 1 65 3 is_stmt 1 discriminator 3 view .LVU15
+  67              		.loc 1 65 70 is_stmt 0 discriminator 3 view .LVU16
+  68 0028 54F8045B 		ldr	r5, [r4], #4
+  69              		.loc 1 65 35 discriminator 3 view .LVU17
+  70 002c 41F8045B 		str	r5, [r1], #4
+  62:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	for(i = 0; i < TMC2224_REGISTER_COUNT; i++)
+  71              		.loc 1 62 41 is_stmt 1 discriminator 3 view .LVU18
+  72              	.LVL4:
+  62:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	for(i = 0; i < TMC2224_REGISTER_COUNT; i++)
+  73              		.loc 1 62 13 discriminator 3 view .LVU19
+  62:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	for(i = 0; i < TMC2224_REGISTER_COUNT; i++)
+  74              		.loc 1 62 2 is_stmt 0 discriminator 3 view .LVU20
+  75 0030 8342     		cmp	r3, r0
+  76 0032 F5D1     		bne	.L2
+  66:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	}
+  67:TMC-API/tmc/ic/TMC2224/TMC2224.c **** }
+  77              		.loc 1 67 1 view .LVU21
+  78 0034 30BD     		pop	{r4, r5, pc}
+  79              	.L5:
+  80 0036 00BF     		.align	2
+  81              	.L4:
+  82 0038 00000000 		.word	.LANCHOR0
+  83              		.cfi_endproc
+  84              	.LFE0:
+  86              		.align	1
+  87              		.global	tmc2224_writeConfiguration
+  88              		.syntax unified
+  89              		.thumb
+  90              		.thumb_func
+  91              		.fpu softvfp
+  93              	tmc2224_writeConfiguration:
+  94              	.LVL5:
+  95              	.LFB1:
+  68:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 
+  69:TMC-API/tmc/ic/TMC2224/TMC2224.c **** void tmc2224_writeConfiguration(TMC2224TypeDef *tmc2224, ConfigurationTypeDef *TMC2224_config)
+  70:TMC-API/tmc/ic/TMC2224/TMC2224.c **** {
+  96              		.loc 1 70 1 is_stmt 1 view -0
+  97              		.cfi_startproc
+  98              		@ args = 0, pretend = 0, frame = 0
+  99              		@ frame_needed = 0, uses_anonymous_args = 0
+  71:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	uint8_t *ptr = &TMC2224_config->configIndex;
+ 100              		.loc 1 71 2 view .LVU23
+  72:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	const int32_t *settings = (TMC2224_config->state == CONFIG_RESTORE) ? TMC2224_config->shadowRegist
+ 101              		.loc 1 72 2 view .LVU24
+  70:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	uint8_t *ptr = &TMC2224_config->configIndex;
+ 102              		.loc 1 70 1 is_stmt 0 view .LVU25
+ 103 003c 10B5     		push	{r4, lr}
+ 104              	.LCFI1:
+ 105              		.cfi_def_cfa_offset 8
+ 106              		.cfi_offset 4, -8
+ 107              		.cfi_offset 14, -4
+ 108              		.loc 1 72 17 view .LVU26
+ 109 003e 0B78     		ldrb	r3, [r1]	@ zero_extendqisi2
+ 110 0040 022B     		cmp	r3, #2
+  70:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	uint8_t *ptr = &TMC2224_config->configIndex;
+ 111              		.loc 1 70 1 view .LVU27
+ 112 0042 0C46     		mov	r4, r1
+ 113              		.loc 1 72 17 view .LVU28
+ 114 0044 0CBF     		ite	eq
+ 115 0046 0B1D     		addeq	r3, r1, #4
+ 116 0048 00F10C03 		addne	r3, r0, #12
+ 117              	.LVL6:
+  73:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 
+  74:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	while((*ptr < TMC2224_REGISTER_COUNT) && !TMC_IS_WRITABLE(tmc2224->registerAccess[*ptr]))
+ 118              		.loc 1 74 2 is_stmt 1 view .LVU29
+ 119              	.L9:
+ 120              		.loc 1 74 7 view .LVU30
+ 121 004c 94F90120 		ldrsb	r2, [r4, #1]
+ 122              		.loc 1 74 9 is_stmt 0 view .LVU31
+ 123 0050 6178     		ldrb	r1, [r4, #1]	@ zero_extendqisi2
+ 124              		.loc 1 74 7 view .LVU32
+ 125 0052 002A     		cmp	r2, #0
+ 126 0054 10DB     		blt	.L10
+ 127              		.loc 1 74 44 discriminator 1 view .LVU33
+ 128 0056 4218     		adds	r2, r0, r1
+ 129              		.loc 1 74 40 discriminator 1 view .LVU34
+ 130 0058 92F80C22 		ldrb	r2, [r2, #524]	@ zero_extendqisi2
+ 131 005c 9207     		lsls	r2, r2, #30
+ 132 005e 08D5     		bpl	.L11
+  75:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 		(*ptr)++;
+  76:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 
+  77:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	if(*ptr < TMC2224_REGISTER_COUNT)
+ 133              		.loc 1 77 2 is_stmt 1 view .LVU35
+  78:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	{
+  79:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 		tmc2224_writeRegister(0, *ptr, settings[*ptr]);
+ 134              		.loc 1 79 3 view .LVU36
+ 135 0060 53F82120 		ldr	r2, [r3, r1, lsl #2]
+ 136 0064 0020     		movs	r0, #0
+ 137              	.LVL7:
+ 138              		.loc 1 79 3 is_stmt 0 view .LVU37
+ 139 0066 FFF7FEFF 		bl	tmc2224_writeRegister
+ 140              	.LVL8:
+  80:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 		(*ptr)++;
+ 141              		.loc 1 80 3 is_stmt 1 view .LVU38
+ 142              		.loc 1 80 9 is_stmt 0 view .LVU39
+ 143 006a 6378     		ldrb	r3, [r4, #1]	@ zero_extendqisi2
+ 144 006c 0133     		adds	r3, r3, #1
+ 145 006e 6370     		strb	r3, [r4, #1]
+ 146              	.L6:
+  81:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	}
+  82:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	else
+  83:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	{
+  84:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 		TMC2224_config->state = CONFIG_READY;
+  85:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	}
+  86:TMC-API/tmc/ic/TMC2224/TMC2224.c **** }
+ 147              		.loc 1 86 1 view .LVU40
+ 148 0070 10BD     		pop	{r4, pc}
+ 149              	.LVL9:
+ 150              	.L11:
+  75:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 
+ 151              		.loc 1 75 3 is_stmt 1 view .LVU41
+  75:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 
+ 152              		.loc 1 75 9 is_stmt 0 view .LVU42
+ 153 0072 0131     		adds	r1, r1, #1
+ 154 0074 6170     		strb	r1, [r4, #1]
+ 155 0076 E9E7     		b	.L9
+ 156              	.L10:
+  77:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	{
+ 157              		.loc 1 77 2 is_stmt 1 view .LVU43
+  84:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	}
+ 158              		.loc 1 84 3 view .LVU44
+  84:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	}
+ 159              		.loc 1 84 25 is_stmt 0 view .LVU45
+ 160 0078 0023     		movs	r3, #0
+ 161              	.LVL10:
+  84:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	}
+ 162              		.loc 1 84 25 view .LVU46
+ 163 007a 2370     		strb	r3, [r4]
+ 164              	.LVL11:
+  84:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	}
+ 165              		.loc 1 84 25 view .LVU47
+ 166 007c F8E7     		b	.L6
+ 167              		.cfi_endproc
+ 168              	.LFE1:
+ 170              		.align	1
+ 171              		.global	tmc2224_periodicJob
+ 172              		.syntax unified
+ 173              		.thumb
+ 174              		.thumb_func
+ 175              		.fpu softvfp
+ 177              	tmc2224_periodicJob:
+ 178              	.LVL12:
+ 179              	.LFB2:
+  87:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 
+  88:TMC-API/tmc/ic/TMC2224/TMC2224.c **** void tmc2224_periodicJob(uint8_t motor, uint32_t tick, TMC2224TypeDef *tmc2224, ConfigurationTypeDe
+  89:TMC-API/tmc/ic/TMC2224/TMC2224.c **** {
+ 180              		.loc 1 89 1 is_stmt 1 view -0
+ 181              		.cfi_startproc
+ 182              		@ args = 0, pretend = 0, frame = 0
+ 183              		@ frame_needed = 0, uses_anonymous_args = 0
+  90:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	UNUSED(motor);
+ 184              		.loc 1 90 2 view .LVU49
+  91:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 
+  92:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	if(TMC2224_config->state != CONFIG_READY && (tick - tmc2224->oldTick) > 2)
+ 185              		.loc 1 92 2 view .LVU50
+  89:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	UNUSED(motor);
+ 186              		.loc 1 89 1 is_stmt 0 view .LVU51
+ 187 007e 38B5     		push	{r3, r4, r5, lr}
+ 188              	.LCFI2:
+ 189              		.cfi_def_cfa_offset 16
+ 190              		.cfi_offset 3, -16
+ 191              		.cfi_offset 4, -12
+ 192              		.cfi_offset 5, -8
+ 193              		.cfi_offset 14, -4
+  89:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	UNUSED(motor);
+ 194              		.loc 1 89 1 view .LVU52
+ 195 0080 0D46     		mov	r5, r1
+ 196 0082 1946     		mov	r1, r3
+ 197              	.LVL13:
+ 198              		.loc 1 92 4 view .LVU53
+ 199 0084 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 200              	.LVL14:
+  89:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	UNUSED(motor);
+ 201              		.loc 1 89 1 view .LVU54
+ 202 0086 1446     		mov	r4, r2
+ 203              		.loc 1 92 4 view .LVU55
+ 204 0088 3BB1     		cbz	r3, .L14
+ 205              		.loc 1 92 52 discriminator 1 view .LVU56
+ 206 008a 9368     		ldr	r3, [r2, #8]
+ 207 008c EB1A     		subs	r3, r5, r3
+ 208              		.loc 1 92 43 discriminator 1 view .LVU57
+ 209 008e 022B     		cmp	r3, #2
+ 210 0090 03D9     		bls	.L14
+  93:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	{
+  94:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 		tmc2224_writeConfiguration(tmc2224, TMC2224_config);
+ 211              		.loc 1 94 3 is_stmt 1 view .LVU58
+ 212 0092 1046     		mov	r0, r2
+ 213              	.LVL15:
+ 214              		.loc 1 94 3 is_stmt 0 view .LVU59
+ 215 0094 FFF7FEFF 		bl	tmc2224_writeConfiguration
+ 216              	.LVL16:
+  95:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 		tmc2224->oldTick = tick;
+ 217              		.loc 1 95 3 is_stmt 1 view .LVU60
+ 218              		.loc 1 95 20 is_stmt 0 view .LVU61
+ 219 0098 A560     		str	r5, [r4, #8]
+ 220              	.L14:
+  96:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	}
+  97:TMC-API/tmc/ic/TMC2224/TMC2224.c **** }
+ 221              		.loc 1 97 1 view .LVU62
+ 222 009a 38BD     		pop	{r3, r4, r5, pc}
+ 223              		.loc 1 97 1 view .LVU63
+ 224              		.cfi_endproc
+ 225              	.LFE2:
+ 227              		.align	1
+ 228              		.global	tmc2224_reset
+ 229              		.syntax unified
+ 230              		.thumb
+ 231              		.thumb_func
+ 232              		.fpu softvfp
+ 234              	tmc2224_reset:
+ 235              	.LVL17:
+ 236              	.LFB3:
+  98:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 
+  99:TMC-API/tmc/ic/TMC2224/TMC2224.c **** uint8_t tmc2224_reset(ConfigurationTypeDef *TMC2224_config)
+ 100:TMC-API/tmc/ic/TMC2224/TMC2224.c **** {
+ 237              		.loc 1 100 1 is_stmt 1 view -0
+ 238              		.cfi_startproc
+ 239              		@ args = 0, pretend = 0, frame = 0
+ 240              		@ frame_needed = 0, uses_anonymous_args = 0
+ 241              		@ link register save eliminated.
+ 101:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	if(TMC2224_config->state != CONFIG_READY)
+ 242              		.loc 1 101 2 view .LVU65
+ 243              		.loc 1 101 4 is_stmt 0 view .LVU66
+ 244 009c 0278     		ldrb	r2, [r0]	@ zero_extendqisi2
+ 100:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	if(TMC2224_config->state != CONFIG_READY)
+ 245              		.loc 1 100 1 view .LVU67
+ 246 009e 0346     		mov	r3, r0
+ 247              		.loc 1 101 4 view .LVU68
+ 248 00a0 12B9     		cbnz	r2, .L21
+ 102:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 		return 0;
+ 103:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 
+ 104:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	TMC2224_config->state        = CONFIG_RESET;
+ 249              		.loc 1 104 2 is_stmt 1 view .LVU69
+ 105:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	TMC2224_config->configIndex  = 0;
+ 250              		.loc 1 105 2 view .LVU70
+ 104:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	TMC2224_config->configIndex  = 0;
+ 251              		.loc 1 104 31 is_stmt 0 view .LVU71
+ 252 00a2 0120     		movs	r0, #1
+ 253              	.LVL18:
+ 104:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	TMC2224_config->configIndex  = 0;
+ 254              		.loc 1 104 31 view .LVU72
+ 255 00a4 1880     		strh	r0, [r3]	@ movhi
+ 106:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 
+ 107:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	return 1;
+ 256              		.loc 1 107 2 is_stmt 1 view .LVU73
+ 257              		.loc 1 107 9 is_stmt 0 view .LVU74
+ 258 00a6 7047     		bx	lr
+ 259              	.LVL19:
+ 260              	.L21:
+ 102:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 
+ 261              		.loc 1 102 10 view .LVU75
+ 262 00a8 0020     		movs	r0, #0
+ 263              	.LVL20:
+ 108:TMC-API/tmc/ic/TMC2224/TMC2224.c **** }
+ 264              		.loc 1 108 1 view .LVU76
+ 265 00aa 7047     		bx	lr
+ 266              		.cfi_endproc
+ 267              	.LFE3:
+ 269              		.align	1
+ 270              		.global	tmc2224_restore
+ 271              		.syntax unified
+ 272              		.thumb
+ 273              		.thumb_func
+ 274              		.fpu softvfp
+ 276              	tmc2224_restore:
+ 277              	.LVL21:
+ 278              	.LFB4:
+ 109:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 
+ 110:TMC-API/tmc/ic/TMC2224/TMC2224.c **** uint8_t tmc2224_restore(ConfigurationTypeDef *TMC2224_config)
+ 111:TMC-API/tmc/ic/TMC2224/TMC2224.c **** {
+ 279              		.loc 1 111 1 is_stmt 1 view -0
+ 280              		.cfi_startproc
+ 281              		@ args = 0, pretend = 0, frame = 0
+ 282              		@ frame_needed = 0, uses_anonymous_args = 0
+ 283              		@ link register save eliminated.
+ 112:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	if(TMC2224_config->state != CONFIG_READY)
+ 284              		.loc 1 112 2 view .LVU78
+ 285              		.loc 1 112 4 is_stmt 0 view .LVU79
+ 286 00ac 0378     		ldrb	r3, [r0]	@ zero_extendqisi2
+ 287 00ae 1BB9     		cbnz	r3, .L24
+ 113:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 		return 0;
+ 114:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 
+ 115:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	TMC2224_config->state        = CONFIG_RESTORE;
+ 288              		.loc 1 115 2 is_stmt 1 view .LVU80
+ 116:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	TMC2224_config->configIndex  = 0;
+ 289              		.loc 1 116 2 view .LVU81
+ 115:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	TMC2224_config->configIndex  = 0;
+ 290              		.loc 1 115 31 is_stmt 0 view .LVU82
+ 291 00b0 0223     		movs	r3, #2
+ 292 00b2 0380     		strh	r3, [r0]	@ movhi
+ 117:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 
+ 118:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	return 1;
+ 293              		.loc 1 118 2 is_stmt 1 view .LVU83
+ 294              		.loc 1 118 9 is_stmt 0 view .LVU84
+ 295 00b4 0120     		movs	r0, #1
+ 296              	.LVL22:
+ 297              		.loc 1 118 9 view .LVU85
+ 298 00b6 7047     		bx	lr
+ 299              	.LVL23:
+ 300              	.L24:
+ 113:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 
+ 301              		.loc 1 113 10 view .LVU86
+ 302 00b8 0020     		movs	r0, #0
+ 303              	.LVL24:
+ 119:TMC-API/tmc/ic/TMC2224/TMC2224.c **** }
+ 304              		.loc 1 119 1 view .LVU87
+ 305 00ba 7047     		bx	lr
+ 306              		.cfi_endproc
+ 307              	.LFE4:
+ 309              		.align	1
+ 310              		.global	tmc2224_get_slave
+ 311              		.syntax unified
+ 312              		.thumb
+ 313              		.thumb_func
+ 314              		.fpu softvfp
+ 316              	tmc2224_get_slave:
+ 317              	.LVL25:
+ 318              	.LFB5:
+ 120:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 
+ 121:TMC-API/tmc/ic/TMC2224/TMC2224.c **** uint8_t tmc2224_get_slave(TMC2224TypeDef *tmc2224)
+ 122:TMC-API/tmc/ic/TMC2224/TMC2224.c **** {
+ 319              		.loc 1 122 1 is_stmt 1 view -0
+ 320              		.cfi_startproc
+ 321              		@ args = 0, pretend = 0, frame = 0
+ 322              		@ frame_needed = 0, uses_anonymous_args = 0
+ 323              		@ link register save eliminated.
+ 123:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	return tmc2224->slave;
+ 324              		.loc 1 123 2 view .LVU89
+ 124:TMC-API/tmc/ic/TMC2224/TMC2224.c **** }
+ 325              		.loc 1 124 1 is_stmt 0 view .LVU90
+ 326 00bc 90F88D02 		ldrb	r0, [r0, #653]	@ zero_extendqisi2
+ 327              	.LVL26:
+ 328              		.loc 1 124 1 view .LVU91
+ 329 00c0 7047     		bx	lr
+ 330              		.cfi_endproc
+ 331              	.LFE5:
+ 333              		.align	1
+ 334              		.global	tmc2224_set_slave
+ 335              		.syntax unified
+ 336              		.thumb
+ 337              		.thumb_func
+ 338              		.fpu softvfp
+ 340              	tmc2224_set_slave:
+ 341              	.LVL27:
+ 342              	.LFB6:
+ 125:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 
+ 126:TMC-API/tmc/ic/TMC2224/TMC2224.c **** void tmc2224_set_slave(TMC2224TypeDef *tmc2224, uint8_t slave)
+ 127:TMC-API/tmc/ic/TMC2224/TMC2224.c **** {
+ 343              		.loc 1 127 1 is_stmt 1 view -0
+ 344              		.cfi_startproc
+ 345              		@ args = 0, pretend = 0, frame = 0
+ 346              		@ frame_needed = 0, uses_anonymous_args = 0
+ 347              		@ link register save eliminated.
+ 128:TMC-API/tmc/ic/TMC2224/TMC2224.c **** 	tmc2224->slave = slave;
+ 348              		.loc 1 128 2 view .LVU93
+ 349              		.loc 1 128 17 is_stmt 0 view .LVU94
+ 350 00c2 80F88D12 		strb	r1, [r0, #653]
+ 129:TMC-API/tmc/ic/TMC2224/TMC2224.c **** }
+ 351              		.loc 1 129 1 view .LVU95
+ 352 00c6 7047     		bx	lr
+ 353              		.cfi_endproc
+ 354              	.LFE6:
+ 356              		.global	tmc2224_defaultRegisterResetState
+ 357              		.global	tmc2224_defaultRegisterAccess
+ 358              		.section	.rodata
+ 359              		.align	2
+ 360              		.set	.LANCHOR0,. + 0
+ 363              	tmc2224_defaultRegisterAccess:
+ 364 0000 03030102 		.ascii	"\003\003\001\002\002\001\001\003\000\000\000\000\000"
+ 364      02010103 
+ 364      00000000 
+ 364      00
+ 365 000d 00000002 		.ascii	"\000\000\000\002\002\001\002\000\000\000\000\000\000"
+ 365      02010200 
+ 365      00000000 
+ 365      00
+ 366 001a 00000000 		.ascii	"\000\000\000\000\000\000\000\000\002\000\000\000\000"
+ 366      00000000 
+ 366      02000000 
+ 366      00
+ 367 0027 00000000 		.ascii	"\000\000\000\000\000\000\000\000\000\000\000\000\000"
+ 367      00000000 
+ 367      00000000 
+ 367      00
+ 368 0034 00000000 		.ascii	"\000\000\000\000\000\000\000\000\000\000\000\000\000"
+ 368      00000000 
+ 368      00000000 
+ 368      00
+ 369 0041 00000000 		.ascii	"\000\000\000\000\000\000\000\000\000\000\000\000\000"
+ 369      00000000 
+ 369      00000000 
+ 369      00
+ 370 004e 00000000 		.ascii	"\000\000\000\000\000\000\000\000\000\000\000\000\000"
+ 370      00000000 
+ 370      00000000 
+ 370      00
+ 371 005b 00000000 		.ascii	"\000\000\000\000\000\000\000\000\000\000\000\000\000"
+ 371      00000000 
+ 371      00000000 
+ 371      00
+ 372 0068 00000101 		.ascii	"\000\000\001\001\003\000\000\001\003\001\001\000\000"
+ 372      03000001 
+ 372      03010100 
+ 372      00
+ 373 0075 00000000 		.ascii	"\000\000\000\000\000\000\000\000\000\000\000"
+ 373      00000000 
+ 373      000000
+ 376              	tmc2224_defaultRegisterResetState:
+ 377 0080 41010000 		.word	321
+ 378 0084 00000000 		.word	0
+ 379 0088 00000000 		.word	0
+ 380 008c 00000000 		.word	0
+ 381 0090 00000000 		.word	0
+ 382 0094 00000000 		.word	0
+ 383 0098 00000000 		.word	0
+ 384 009c 00000000 		.word	0
+ 385 00a0 00000000 		.word	0
+ 386 00a4 00000000 		.word	0
+ 387 00a8 00000000 		.word	0
+ 388 00ac 00000000 		.word	0
+ 389 00b0 00000000 		.word	0
+ 390 00b4 00000000 		.word	0
+ 391 00b8 00000000 		.word	0
+ 392 00bc 00000000 		.word	0
+ 393 00c0 001F0000 		.word	7936
+ 394 00c4 14000000 		.word	20
+ 395 00c8 00000000 		.word	0
+ 396 00cc 00000000 		.word	0
+ 397 00d0 00000000 		.word	0
+ 398 00d4 00000000 		.word	0
+ 399 00d8 00000000 		.word	0
+ 400 00dc 00000000 		.word	0
+ 401 00e0 00000000 		.word	0
+ 402 00e4 00000000 		.word	0
+ 403 00e8 00000000 		.word	0
+ 404 00ec 00000000 		.word	0
+ 405 00f0 00000000 		.word	0
+ 406 00f4 00000000 		.word	0
+ 407 00f8 00000000 		.word	0
+ 408 00fc 00000000 		.word	0
+ 409 0100 00000000 		.word	0
+ 410 0104 00000000 		.word	0
+ 411 0108 00000000 		.word	0
+ 412 010c 00000000 		.word	0
+ 413 0110 00000000 		.word	0
+ 414 0114 00000000 		.word	0
+ 415 0118 00000000 		.word	0
+ 416 011c 00000000 		.word	0
+ 417 0120 00000000 		.word	0
+ 418 0124 00000000 		.word	0
+ 419 0128 00000000 		.word	0
+ 420 012c 00000000 		.word	0
+ 421 0130 00000000 		.word	0
+ 422 0134 00000000 		.word	0
+ 423 0138 00000000 		.word	0
+ 424 013c 00000000 		.word	0
+ 425 0140 00000000 		.word	0
+ 426 0144 00000000 		.word	0
+ 427 0148 00000000 		.word	0
+ 428 014c 00000000 		.word	0
+ 429 0150 00000000 		.word	0
+ 430 0154 00000000 		.word	0
+ 431 0158 00000000 		.word	0
+ 432 015c 00000000 		.word	0
+ 433 0160 00000000 		.word	0
+ 434 0164 00000000 		.word	0
+ 435 0168 00000000 		.word	0
+ 436 016c 00000000 		.word	0
+ 437 0170 00000000 		.word	0
+ 438 0174 00000000 		.word	0
+ 439 0178 00000000 		.word	0
+ 440 017c 00000000 		.word	0
+ 441 0180 00000000 		.word	0
+ 442 0184 00000000 		.word	0
+ 443 0188 00000000 		.word	0
+ 444 018c 00000000 		.word	0
+ 445 0190 00000000 		.word	0
+ 446 0194 00000000 		.word	0
+ 447 0198 00000000 		.word	0
+ 448 019c 00000000 		.word	0
+ 449 01a0 00000000 		.word	0
+ 450 01a4 00000000 		.word	0
+ 451 01a8 00000000 		.word	0
+ 452 01ac 00000000 		.word	0
+ 453 01b0 00000000 		.word	0
+ 454 01b4 00000000 		.word	0
+ 455 01b8 00000000 		.word	0
+ 456 01bc 00000000 		.word	0
+ 457 01c0 00000000 		.word	0
+ 458 01c4 00000000 		.word	0
+ 459 01c8 00000000 		.word	0
+ 460 01cc 00000000 		.word	0
+ 461 01d0 00000000 		.word	0
+ 462 01d4 00000000 		.word	0
+ 463 01d8 00000000 		.word	0
+ 464 01dc 00000000 		.word	0
+ 465 01e0 00000000 		.word	0
+ 466 01e4 00000000 		.word	0
+ 467 01e8 00000000 		.word	0
+ 468 01ec 00000000 		.word	0
+ 469 01f0 00000000 		.word	0
+ 470 01f4 00000000 		.word	0
+ 471 01f8 00000000 		.word	0
+ 472 01fc 00000000 		.word	0
+ 473 0200 00000000 		.word	0
+ 474 0204 00000000 		.word	0
+ 475 0208 00000000 		.word	0
+ 476 020c 00000000 		.word	0
+ 477 0210 00000000 		.word	0
+ 478 0214 00000000 		.word	0
+ 479 0218 00000000 		.word	0
+ 480 021c 00000000 		.word	0
+ 481 0220 00000000 		.word	0
+ 482 0224 00000000 		.word	0
+ 483 0228 00000000 		.word	0
+ 484 022c 00000000 		.word	0
+ 485 0230 53000010 		.word	268435539
+ 486 0234 00000000 		.word	0
+ 487 0238 00000000 		.word	0
+ 488 023c 00000000 		.word	0
+ 489 0240 24000DC1 		.word	-1056112604
+ 490 0244 00000000 		.word	0
+ 491 0248 00000000 		.word	0
+ 492 024c 00000000 		.word	0
+ 493 0250 00000000 		.word	0
+ 494 0254 00000000 		.word	0
+ 495 0258 00000000 		.word	0
+ 496 025c 00000000 		.word	0
+ 497 0260 00000000 		.word	0
+ 498 0264 00000000 		.word	0
+ 499 0268 00000000 		.word	0
+ 500 026c 00000000 		.word	0
+ 501 0270 00000000 		.word	0
+ 502 0274 00000000 		.word	0
+ 503 0278 00000000 		.word	0
+ 504 027c 00000000 		.word	0
+ 505              		.text
+ 506              	.Letext0:
+ 507              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 508              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 509              		.file 4 "TMC-API/tmc/helpers/Config.h"
+ 510              		.file 5 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 511              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 512              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 513              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 514              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 515              		.file 10 "TMC-API/tmc/ic/TMC2224/TMC2224.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 TMC2224.c
+C:\Users\Shubham\AppData\Local\Temp\cc2fiEHP.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\cc2fiEHP.s:23     .text:00000000 tmc2224_initConfig
+C:\Users\Shubham\AppData\Local\Temp\cc2fiEHP.s:82     .text:00000038 $d
+C:\Users\Shubham\AppData\Local\Temp\cc2fiEHP.s:86     .text:0000003c $t
+C:\Users\Shubham\AppData\Local\Temp\cc2fiEHP.s:93     .text:0000003c tmc2224_writeConfiguration
+C:\Users\Shubham\AppData\Local\Temp\cc2fiEHP.s:177    .text:0000007e tmc2224_periodicJob
+C:\Users\Shubham\AppData\Local\Temp\cc2fiEHP.s:234    .text:0000009c tmc2224_reset
+C:\Users\Shubham\AppData\Local\Temp\cc2fiEHP.s:276    .text:000000ac tmc2224_restore
+C:\Users\Shubham\AppData\Local\Temp\cc2fiEHP.s:316    .text:000000bc tmc2224_get_slave
+C:\Users\Shubham\AppData\Local\Temp\cc2fiEHP.s:340    .text:000000c2 tmc2224_set_slave
+C:\Users\Shubham\AppData\Local\Temp\cc2fiEHP.s:376    .rodata:00000080 tmc2224_defaultRegisterResetState
+C:\Users\Shubham\AppData\Local\Temp\cc2fiEHP.s:363    .rodata:00000000 tmc2224_defaultRegisterAccess
+C:\Users\Shubham\AppData\Local\Temp\cc2fiEHP.s:359    .rodata:00000000 $d
+
+UNDEFINED SYMBOLS
+tmc2224_writeRegister

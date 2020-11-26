@@ -1,0 +1,864 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"CRC.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.arch armv7e-m
+  17              		.syntax unified
+  18              		.thumb
+  19              		.thumb_func
+  20              		.fpu softvfp
+  22              	flipBitsInBytes:
+  23              	.LVL0:
+  24              	.LFB5:
+  25              		.file 1 "TMC-API/tmc/helpers/CRC.c"
+   1:TMC-API/tmc/helpers/CRC.c **** /*
+   2:TMC-API/tmc/helpers/CRC.c ****  * CRC.c
+   3:TMC-API/tmc/helpers/CRC.c ****  *
+   4:TMC-API/tmc/helpers/CRC.c ****  *  Created on: 04.12.2017
+   5:TMC-API/tmc/helpers/CRC.c ****  *      Author: LH
+   6:TMC-API/tmc/helpers/CRC.c ****  *
+   7:TMC-API/tmc/helpers/CRC.c ****  *  This is a generic implementation for a CRC8 generator supporting
+   8:TMC-API/tmc/helpers/CRC.c ****  *  both compile-time (1) and run-time initialized Lookup tables for efficient CRC8 calculation.
+   9:TMC-API/tmc/helpers/CRC.c ****  *  You can store multiple tables for different polynomials and (non-)reflected CRCs.
+  10:TMC-API/tmc/helpers/CRC.c ****  *  The different tables are referenced by an index, with an upper limit set at compile time (CRC_T
+  11:TMC-API/tmc/helpers/CRC.c ****  *
+  12:TMC-API/tmc/helpers/CRC.c ****  *  To generate CRCs you must first generate the Lookup-table by calling fillCRCTable()
+  13:TMC-API/tmc/helpers/CRC.c ****  *  with any index. CRCs can then be generated from any data buffer by calling CRC()
+  14:TMC-API/tmc/helpers/CRC.c ****  *  with the same index previously given to fillCRCTable().
+  15:TMC-API/tmc/helpers/CRC.c ****  *
+  16:TMC-API/tmc/helpers/CRC.c ****  *  The table generation has been optimized for speed so that the runtime
+  17:TMC-API/tmc/helpers/CRC.c ****  *  table generation can even be done during normal operation if required.
+  18:TMC-API/tmc/helpers/CRC.c ****  *  However, as long as the required polynomials are known on initialization,
+  19:TMC-API/tmc/helpers/CRC.c ****  *  the table generation should be done at that time.
+  20:TMC-API/tmc/helpers/CRC.c ****  *  On the Landungsbruecke the initialization of a CRC table takes ~250µs. (2)
+  21:TMC-API/tmc/helpers/CRC.c ****  *  Should your application still have problems with the table calculation time,
+  22:TMC-API/tmc/helpers/CRC.c ****  *  this algorithm could probably be speed up by preparing a 2- or 4-bit lookup table
+  23:TMC-API/tmc/helpers/CRC.c ****  *  to speed up the actual table generation.
+  24:TMC-API/tmc/helpers/CRC.c ****  *
+  25:TMC-API/tmc/helpers/CRC.c ****  *  (1): For compile-time CRC tables, just fill the table(s) by initializing CRCTables[] to the pro
+  26:TMC-API/tmc/helpers/CRC.c ****  *  (2): Tested by toggling a GPIO pin, generating a table in-between and measuring the GPIO pulse 
+  27:TMC-API/tmc/helpers/CRC.c ****  */
+  28:TMC-API/tmc/helpers/CRC.c **** 
+  29:TMC-API/tmc/helpers/CRC.c **** #include "CRC.h"
+  30:TMC-API/tmc/helpers/CRC.c **** 
+  31:TMC-API/tmc/helpers/CRC.c **** typedef struct {
+  32:TMC-API/tmc/helpers/CRC.c **** 	uint8_t table[256];
+  33:TMC-API/tmc/helpers/CRC.c **** 	uint8_t polynomial;
+  34:TMC-API/tmc/helpers/CRC.c **** 	bool isReflected;
+  35:TMC-API/tmc/helpers/CRC.c **** } CRCTypeDef;
+  36:TMC-API/tmc/helpers/CRC.c **** 
+  37:TMC-API/tmc/helpers/CRC.c **** CRCTypeDef CRCTables[CRC_TABLE_COUNT] = { 0 };
+  38:TMC-API/tmc/helpers/CRC.c **** 
+  39:TMC-API/tmc/helpers/CRC.c **** static uint8_t flipByte(uint8_t value);
+  40:TMC-API/tmc/helpers/CRC.c **** static uint32_t flipBitsInBytes(uint32_t value);
+  41:TMC-API/tmc/helpers/CRC.c **** 
+  42:TMC-API/tmc/helpers/CRC.c **** /* This function generates the Lookup table used for CRC calculations.
+  43:TMC-API/tmc/helpers/CRC.c ****  *
+  44:TMC-API/tmc/helpers/CRC.c ****  * Arguments:
+  45:TMC-API/tmc/helpers/CRC.c ****  *     uint8_t polynomial: The CRC polynomial for which the table will be generated.
+  46:TMC-API/tmc/helpers/CRC.c ****  *     bool isReflected: Indicator whether the CRC table will be reflected or not.
+  47:TMC-API/tmc/helpers/CRC.c ****  *     uint8_t index: The index of the table to be filled.
+  48:TMC-API/tmc/helpers/CRC.c ****  *
+  49:TMC-API/tmc/helpers/CRC.c ****  * How it works:
+  50:TMC-API/tmc/helpers/CRC.c ****  *     A CRC calculation of a byte can be done by taking the byte to be CRC'd,
+  51:TMC-API/tmc/helpers/CRC.c ****  *     shifting it left by one (appending a 0) and - if a 1 has been shifted out -
+  52:TMC-API/tmc/helpers/CRC.c ****  *     XOR-ing in the CRC polynomial. After 8 iterations the result will be the
+  53:TMC-API/tmc/helpers/CRC.c ****  *     CRC of the Byte.
+  54:TMC-API/tmc/helpers/CRC.c ****  *
+  55:TMC-API/tmc/helpers/CRC.c ****  *     The function below does this in a compact way, by using all 4 bytes of a
+  56:TMC-API/tmc/helpers/CRC.c ****  *     uint32_t to do 4 separate CRC bytes at once.
+  57:TMC-API/tmc/helpers/CRC.c ****  *     For this to work without the Byte shifting interfering with adjacent bytes,
+  58:TMC-API/tmc/helpers/CRC.c ****  *     the polynomial has the 8th bit (0x100) set. That way, if the shifted-out bit
+  59:TMC-API/tmc/helpers/CRC.c ****  *     is 1, the following XOR-ing with the CRC polynomial will set that 1 to a 0,
+  60:TMC-API/tmc/helpers/CRC.c ****  *     resulting in the shifted-in 0 for the adjacent byte.
+  61:TMC-API/tmc/helpers/CRC.c ****  *     This process will go from the the lowest to the highest byte, resulting in
+  62:TMC-API/tmc/helpers/CRC.c ****  *     fully independent byte-wise CRC calculations. For the highest byte, the value
+  63:TMC-API/tmc/helpers/CRC.c ****  *     of the shifted-out byte needs to be stored before shifting the bytes (isMSBSet).
+  64:TMC-API/tmc/helpers/CRC.c ****  *
+  65:TMC-API/tmc/helpers/CRC.c ****  *     The for-loop that iterates over all uint8_t values starts out with the
+  66:TMC-API/tmc/helpers/CRC.c ****  *     uint8_t values 3 to 0 stored in one uint32_t: 0x03020100
+  67:TMC-API/tmc/helpers/CRC.c ****  *     for each iteration each uint8_t value will increase by 4..
+  68:TMC-API/tmc/helpers/CRC.c ****  *     0 -> 4 -> 8 -> C -> ...
+  69:TMC-API/tmc/helpers/CRC.c ****  *     1 -> 5 -> 9 -> D -> ...
+  70:TMC-API/tmc/helpers/CRC.c ****  *     2 -> 6 -> A -> E -> ...
+  71:TMC-API/tmc/helpers/CRC.c ****  *     3 -> 7 -> B -> F -> ...
+  72:TMC-API/tmc/helpers/CRC.c ****  *     ..resulting in an increase of the uint32_t by 0x04040404:
+  73:TMC-API/tmc/helpers/CRC.c ****  *     0x03020100 -> 0x07060504 -> 0x0B0A0908 -> 0x0F0E0D0C -> ...
+  74:TMC-API/tmc/helpers/CRC.c ****  *     The loop ends as soon as we have iterated over all uint8_t values.
+  75:TMC-API/tmc/helpers/CRC.c ****  *     We detect that by looking for the byte-wise overflow into the next byte:
+  76:TMC-API/tmc/helpers/CRC.c ****  *     0xFFFEFDFC                  <- last uint32_t value to be calculated
+  77:TMC-API/tmc/helpers/CRC.c ****  *     0xFF,  0xFE,  0xFD,  0xFC   <- the corresponding uint8_t values
+  78:TMC-API/tmc/helpers/CRC.c ****  *     0x103, 0x102, 0x101, 0x100  <- incremented uint8_t values (overflow into the next byte!)
+  79:TMC-API/tmc/helpers/CRC.c ****  *     0x04030200                  <- uint32_t value with the overflowed bytes
+  80:TMC-API/tmc/helpers/CRC.c ****  *
+  81:TMC-API/tmc/helpers/CRC.c ****  *     We have the lower uint8_t values at the lower bytes of the uint32_t.
+  82:TMC-API/tmc/helpers/CRC.c ****  *     This allows us to simply store the lowest byte of the uint32_t,
+  83:TMC-API/tmc/helpers/CRC.c ****  *     right-shift the uint32_t by 8 and increment the table pointer.
+  84:TMC-API/tmc/helpers/CRC.c ****  *     After 4 iterations of that all 4 bytes of the uint32_t are stored in the table.
+  85:TMC-API/tmc/helpers/CRC.c ****  */
+  86:TMC-API/tmc/helpers/CRC.c **** uint8_t tmc_fillCRC8Table(uint8_t polynomial, bool isReflected, uint8_t index)
+  87:TMC-API/tmc/helpers/CRC.c **** {
+  88:TMC-API/tmc/helpers/CRC.c **** 	uint32_t CRCdata;
+  89:TMC-API/tmc/helpers/CRC.c **** 	// Helper pointer for traversing the result table
+  90:TMC-API/tmc/helpers/CRC.c **** 	uint8_t *table;
+  91:TMC-API/tmc/helpers/CRC.c **** 
+  92:TMC-API/tmc/helpers/CRC.c **** 	if(index >= CRC_TABLE_COUNT)
+  93:TMC-API/tmc/helpers/CRC.c **** 		return 0;
+  94:TMC-API/tmc/helpers/CRC.c **** 
+  95:TMC-API/tmc/helpers/CRC.c **** 	CRCTables[index].polynomial   = polynomial;
+  96:TMC-API/tmc/helpers/CRC.c **** 	CRCTables[index].isReflected  = isReflected;
+  97:TMC-API/tmc/helpers/CRC.c **** 	table = &CRCTables[index].table[0];
+  98:TMC-API/tmc/helpers/CRC.c **** 
+  99:TMC-API/tmc/helpers/CRC.c **** 	// Extend the polynomial to correct byte MSBs shifting into next bytes
+ 100:TMC-API/tmc/helpers/CRC.c **** 	uint32_t poly = (uint32_t) polynomial | 0x0100;
+ 101:TMC-API/tmc/helpers/CRC.c **** 
+ 102:TMC-API/tmc/helpers/CRC.c **** 	// Iterate over all 256 possible uint8_t values, compressed into a uint32_t (see detailed explanat
+ 103:TMC-API/tmc/helpers/CRC.c **** 	uint32_t i;
+ 104:TMC-API/tmc/helpers/CRC.c **** 	for(i = 0x03020100; i != 0x04030200; i+=0x04040404)
+ 105:TMC-API/tmc/helpers/CRC.c **** 	{
+ 106:TMC-API/tmc/helpers/CRC.c **** 		// For reflected table: Flip the bits of each input byte
+ 107:TMC-API/tmc/helpers/CRC.c **** 		CRCdata = (isReflected)? flipBitsInBytes(i) : i;
+ 108:TMC-API/tmc/helpers/CRC.c **** 
+ 109:TMC-API/tmc/helpers/CRC.c **** 		// Iterate over 8 Bits
+ 110:TMC-API/tmc/helpers/CRC.c **** 		int j;
+ 111:TMC-API/tmc/helpers/CRC.c **** 		for(j = 0; j < 8; j++)
+ 112:TMC-API/tmc/helpers/CRC.c **** 		{
+ 113:TMC-API/tmc/helpers/CRC.c **** 			// Store value of soon-to-be shifted out byte
+ 114:TMC-API/tmc/helpers/CRC.c **** 			uint8_t isMSBSet = (CRCdata & 0x80000000)? 1:0;
+ 115:TMC-API/tmc/helpers/CRC.c **** 
+ 116:TMC-API/tmc/helpers/CRC.c **** 			// CRC Shift
+ 117:TMC-API/tmc/helpers/CRC.c **** 			CRCdata <<= 1;
+ 118:TMC-API/tmc/helpers/CRC.c **** 
+ 119:TMC-API/tmc/helpers/CRC.c **** 			// XOR the bytes when required, lowest to highest
+ 120:TMC-API/tmc/helpers/CRC.c **** 			CRCdata ^= (CRCdata & 0x00000100)? (poly      ) : 0;
+ 121:TMC-API/tmc/helpers/CRC.c **** 			CRCdata ^= (CRCdata & 0x00010000)? (poly << 8 ) : 0;
+ 122:TMC-API/tmc/helpers/CRC.c **** 			CRCdata ^= (CRCdata & 0x01000000)? (poly << 16) : 0;
+ 123:TMC-API/tmc/helpers/CRC.c **** 			CRCdata ^= (isMSBSet)?             (poly << 24) : 0;
+ 124:TMC-API/tmc/helpers/CRC.c **** 		}
+ 125:TMC-API/tmc/helpers/CRC.c **** 
+ 126:TMC-API/tmc/helpers/CRC.c **** 		// For reflected table: Flip the bits of each output byte
+ 127:TMC-API/tmc/helpers/CRC.c **** 		CRCdata = (isReflected)? flipBitsInBytes(CRCdata) : CRCdata;
+ 128:TMC-API/tmc/helpers/CRC.c **** 		// Store the CRC result bytes in the table array
+ 129:TMC-API/tmc/helpers/CRC.c **** 		*table++ = (uint8_t) CRCdata;
+ 130:TMC-API/tmc/helpers/CRC.c **** 		CRCdata >>= 8;
+ 131:TMC-API/tmc/helpers/CRC.c **** 		*table++ = (uint8_t) CRCdata;
+ 132:TMC-API/tmc/helpers/CRC.c **** 		CRCdata >>= 8;
+ 133:TMC-API/tmc/helpers/CRC.c **** 		*table++ = (uint8_t) CRCdata;
+ 134:TMC-API/tmc/helpers/CRC.c **** 		CRCdata >>= 8;
+ 135:TMC-API/tmc/helpers/CRC.c **** 		*table++ = (uint8_t) CRCdata;
+ 136:TMC-API/tmc/helpers/CRC.c **** 	}
+ 137:TMC-API/tmc/helpers/CRC.c **** 
+ 138:TMC-API/tmc/helpers/CRC.c **** 	return 1;
+ 139:TMC-API/tmc/helpers/CRC.c **** }
+ 140:TMC-API/tmc/helpers/CRC.c **** 
+ 141:TMC-API/tmc/helpers/CRC.c **** /* This function calculates the CRC from a data buffer
+ 142:TMC-API/tmc/helpers/CRC.c ****  *
+ 143:TMC-API/tmc/helpers/CRC.c ****  * Arguments:
+ 144:TMC-API/tmc/helpers/CRC.c ****  *     uint8_t *data: A pointer to the data that will be CRC'd.
+ 145:TMC-API/tmc/helpers/CRC.c ****  *     uint32_t bytes: The length of the data buffer.
+ 146:TMC-API/tmc/helpers/CRC.c ****  *     uint8_t index: The index of the CRC table to be used.
+ 147:TMC-API/tmc/helpers/CRC.c ****  */
+ 148:TMC-API/tmc/helpers/CRC.c **** uint8_t tmc_CRC8(uint8_t *data, uint32_t bytes, uint8_t index)
+ 149:TMC-API/tmc/helpers/CRC.c **** {
+ 150:TMC-API/tmc/helpers/CRC.c **** 	uint8_t result = 0;
+ 151:TMC-API/tmc/helpers/CRC.c **** 	uint8_t *table;
+ 152:TMC-API/tmc/helpers/CRC.c **** 
+ 153:TMC-API/tmc/helpers/CRC.c **** 	if(index >= CRC_TABLE_COUNT)
+ 154:TMC-API/tmc/helpers/CRC.c **** 		return 0;
+ 155:TMC-API/tmc/helpers/CRC.c **** 
+ 156:TMC-API/tmc/helpers/CRC.c **** 	table = &CRCTables[index].table[0];
+ 157:TMC-API/tmc/helpers/CRC.c **** 
+ 158:TMC-API/tmc/helpers/CRC.c **** 	while(bytes--)
+ 159:TMC-API/tmc/helpers/CRC.c **** 		result = table[result ^ *data++];
+ 160:TMC-API/tmc/helpers/CRC.c **** 
+ 161:TMC-API/tmc/helpers/CRC.c **** 	return (CRCTables[index].isReflected)? flipByte(result) : result;
+ 162:TMC-API/tmc/helpers/CRC.c **** }
+ 163:TMC-API/tmc/helpers/CRC.c **** 
+ 164:TMC-API/tmc/helpers/CRC.c **** uint8_t tmc_tableGetPolynomial(uint8_t index)
+ 165:TMC-API/tmc/helpers/CRC.c **** {
+ 166:TMC-API/tmc/helpers/CRC.c **** 	if(index >= CRC_TABLE_COUNT)
+ 167:TMC-API/tmc/helpers/CRC.c **** 		return 0;
+ 168:TMC-API/tmc/helpers/CRC.c **** 
+ 169:TMC-API/tmc/helpers/CRC.c **** 	return CRCTables[index].polynomial;
+ 170:TMC-API/tmc/helpers/CRC.c **** }
+ 171:TMC-API/tmc/helpers/CRC.c **** 
+ 172:TMC-API/tmc/helpers/CRC.c **** bool tmc_tableIsReflected(uint8_t index)
+ 173:TMC-API/tmc/helpers/CRC.c **** {
+ 174:TMC-API/tmc/helpers/CRC.c **** 	if(index >= CRC_TABLE_COUNT)
+ 175:TMC-API/tmc/helpers/CRC.c **** 		return false;
+ 176:TMC-API/tmc/helpers/CRC.c **** 
+ 177:TMC-API/tmc/helpers/CRC.c **** 	return CRCTables[index].isReflected;
+ 178:TMC-API/tmc/helpers/CRC.c **** }
+ 179:TMC-API/tmc/helpers/CRC.c **** 
+ 180:TMC-API/tmc/helpers/CRC.c **** // Helper functions
+ 181:TMC-API/tmc/helpers/CRC.c **** static uint8_t flipByte(uint8_t value)
+ 182:TMC-API/tmc/helpers/CRC.c **** {
+ 183:TMC-API/tmc/helpers/CRC.c **** 	// swap odd and even bits
+ 184:TMC-API/tmc/helpers/CRC.c **** 	value = ((value >> 1) & 0x55) | ((value & 0x55) << 1);
+ 185:TMC-API/tmc/helpers/CRC.c **** 	// swap consecutive pairs
+ 186:TMC-API/tmc/helpers/CRC.c **** 	value = ((value >> 2) & 0x33) | ((value & 0x33) << 2);
+ 187:TMC-API/tmc/helpers/CRC.c **** 	// swap nibbles ...
+ 188:TMC-API/tmc/helpers/CRC.c **** 	value = ((value >> 4) & 0x0F) | ((value & 0x0F) << 4);
+ 189:TMC-API/tmc/helpers/CRC.c **** 
+ 190:TMC-API/tmc/helpers/CRC.c **** 	return value;
+ 191:TMC-API/tmc/helpers/CRC.c **** }
+ 192:TMC-API/tmc/helpers/CRC.c **** 
+ 193:TMC-API/tmc/helpers/CRC.c **** /* This helper function switches all bits within each byte.
+ 194:TMC-API/tmc/helpers/CRC.c ****  * The byte order remains the same:
+ 195:TMC-API/tmc/helpers/CRC.c ****  * [b31 b30 b29 b28 b27 b26 b25 b24 .. b7 b6 b5 b4 b3 b2 b1 b0]
+ 196:TMC-API/tmc/helpers/CRC.c ****  *                                  ||
+ 197:TMC-API/tmc/helpers/CRC.c ****  *                                 \||/
+ 198:TMC-API/tmc/helpers/CRC.c ****  *                                  \/
+ 199:TMC-API/tmc/helpers/CRC.c ****  * [b24 b25 b26 b27 b28 b29 b30 b31 .. b0 b1 b2 b3 b4 b5 b6 b7]
+ 200:TMC-API/tmc/helpers/CRC.c ****  */
+ 201:TMC-API/tmc/helpers/CRC.c **** static uint32_t flipBitsInBytes(uint32_t value)
+ 202:TMC-API/tmc/helpers/CRC.c **** {
+  26              		.loc 1 202 1 view -0
+  27              		.cfi_startproc
+  28              		@ args = 0, pretend = 0, frame = 0
+  29              		@ frame_needed = 0, uses_anonymous_args = 0
+  30              		@ link register save eliminated.
+ 203:TMC-API/tmc/helpers/CRC.c **** 	// swap odd and even bits
+ 204:TMC-API/tmc/helpers/CRC.c **** 	value = ((value >> 1) & 0x55555555) | ((value & 0x55555555) << 1);
+  31              		.loc 1 204 2 view .LVU1
+  32              		.loc 1 204 18 is_stmt 0 view .LVU2
+  33 0000 4208     		lsrs	r2, r0, #1
+  34              		.loc 1 204 62 view .LVU3
+  35 0002 4000     		lsls	r0, r0, #1
+  36              	.LVL1:
+  37              		.loc 1 204 62 view .LVU4
+  38 0004 00F0AA30 		and	r0, r0, #-1431655766
+  39              		.loc 1 204 24 view .LVU5
+  40 0008 02F05532 		and	r2, r2, #1431655765
+  41              		.loc 1 204 8 view .LVU6
+  42 000c 0243     		orrs	r2, r2, r0
+  43              	.LVL2:
+ 205:TMC-API/tmc/helpers/CRC.c **** 	// swap consecutive pairs
+ 206:TMC-API/tmc/helpers/CRC.c **** 	value = ((value >> 2) & 0x33333333) | ((value & 0x33333333) << 2);
+  44              		.loc 1 206 2 is_stmt 1 view .LVU7
+  45              		.loc 1 206 18 is_stmt 0 view .LVU8
+  46 000e 9308     		lsrs	r3, r2, #2
+  47              		.loc 1 206 62 view .LVU9
+  48 0010 9200     		lsls	r2, r2, #2
+  49              	.LVL3:
+  50              		.loc 1 206 62 view .LVU10
+  51 0012 02F0CC32 		and	r2, r2, #-858993460
+  52              		.loc 1 206 24 view .LVU11
+  53 0016 03F03333 		and	r3, r3, #858993459
+  54              		.loc 1 206 8 view .LVU12
+  55 001a 1343     		orrs	r3, r3, r2
+  56              	.LVL4:
+ 207:TMC-API/tmc/helpers/CRC.c **** 	// swap nibbles ...
+ 208:TMC-API/tmc/helpers/CRC.c **** 	value = ((value >> 4) & 0x0F0F0F0F) | ((value & 0x0F0F0F0F) << 4);
+  57              		.loc 1 208 2 is_stmt 1 view .LVU13
+  58              		.loc 1 208 18 is_stmt 0 view .LVU14
+  59 001c 1809     		lsrs	r0, r3, #4
+  60              		.loc 1 208 62 view .LVU15
+  61 001e 1B01     		lsls	r3, r3, #4
+  62              	.LVL5:
+  63              		.loc 1 208 62 view .LVU16
+  64 0020 03F0F033 		and	r3, r3, #-252645136
+  65              		.loc 1 208 24 view .LVU17
+  66 0024 00F00F30 		and	r0, r0, #252645135
+  67              	.LVL6:
+ 209:TMC-API/tmc/helpers/CRC.c **** 
+ 210:TMC-API/tmc/helpers/CRC.c **** 	return value;
+  68              		.loc 1 210 2 is_stmt 1 view .LVU18
+ 211:TMC-API/tmc/helpers/CRC.c **** }
+  69              		.loc 1 211 1 is_stmt 0 view .LVU19
+  70 0028 1843     		orrs	r0, r0, r3
+  71              	.LVL7:
+  72              		.loc 1 211 1 view .LVU20
+  73 002a 7047     		bx	lr
+  74              		.cfi_endproc
+  75              	.LFE5:
+  77              		.align	1
+  78              		.global	tmc_fillCRC8Table
+  79              		.syntax unified
+  80              		.thumb
+  81              		.thumb_func
+  82              		.fpu softvfp
+  84              	tmc_fillCRC8Table:
+  85              	.LVL8:
+  86              	.LFB0:
+  87:TMC-API/tmc/helpers/CRC.c **** 	uint32_t CRCdata;
+  87              		.loc 1 87 1 is_stmt 1 view -0
+  88              		.cfi_startproc
+  89              		@ args = 0, pretend = 0, frame = 0
+  90              		@ frame_needed = 0, uses_anonymous_args = 0
+  88:TMC-API/tmc/helpers/CRC.c **** 	// Helper pointer for traversing the result table
+  91              		.loc 1 88 2 view .LVU22
+  90:TMC-API/tmc/helpers/CRC.c **** 
+  92              		.loc 1 90 2 view .LVU23
+  92:TMC-API/tmc/helpers/CRC.c **** 		return 0;
+  93              		.loc 1 92 2 view .LVU24
+  92:TMC-API/tmc/helpers/CRC.c **** 		return 0;
+  94              		.loc 1 92 4 is_stmt 0 view .LVU25
+  95 002c 012A     		cmp	r2, #1
+  87:TMC-API/tmc/helpers/CRC.c **** 	uint32_t CRCdata;
+  96              		.loc 1 87 1 view .LVU26
+  97 002e 2DE9F047 		push	{r4, r5, r6, r7, r8, r9, r10, lr}
+  98              	.LCFI0:
+  99              		.cfi_def_cfa_offset 32
+ 100              		.cfi_offset 4, -32
+ 101              		.cfi_offset 5, -28
+ 102              		.cfi_offset 6, -24
+ 103              		.cfi_offset 7, -20
+ 104              		.cfi_offset 8, -16
+ 105              		.cfi_offset 9, -12
+ 106              		.cfi_offset 10, -8
+ 107              		.cfi_offset 14, -4
+  92:TMC-API/tmc/helpers/CRC.c **** 		return 0;
+ 108              		.loc 1 92 4 view .LVU27
+ 109 0032 4DD8     		bhi	.L12
+  95:TMC-API/tmc/helpers/CRC.c **** 	CRCTables[index].isReflected  = isReflected;
+ 110              		.loc 1 95 2 is_stmt 1 view .LVU28
+  95:TMC-API/tmc/helpers/CRC.c **** 	CRCTables[index].isReflected  = isReflected;
+ 111              		.loc 1 95 32 is_stmt 0 view .LVU29
+ 112 0034 274C     		ldr	r4, .L25
+ 104:TMC-API/tmc/helpers/CRC.c **** 	{
+ 113              		.loc 1 104 8 view .LVU30
+ 114 0036 DFF8A4A0 		ldr	r10, .L25+8
+ 104:TMC-API/tmc/helpers/CRC.c **** 	{
+ 115              		.loc 1 104 2 view .LVU31
+ 116 003a 274E     		ldr	r6, .L25+4
+  95:TMC-API/tmc/helpers/CRC.c **** 	CRCTables[index].isReflected  = isReflected;
+ 117              		.loc 1 95 32 view .LVU32
+ 118 003c 4FF48173 		mov	r3, #258
+ 119 0040 5A43     		muls	r2, r3, r2
+ 120              	.LVL9:
+  95:TMC-API/tmc/helpers/CRC.c **** 	CRCTables[index].isReflected  = isReflected;
+ 121              		.loc 1 95 32 view .LVU33
+ 122 0042 A318     		adds	r3, r4, r2
+ 100:TMC-API/tmc/helpers/CRC.c **** 
+ 123              		.loc 1 100 11 view .LVU34
+ 124 0044 40F48075 		orr	r5, r0, #256
+ 125 0048 0432     		adds	r2, r2, #4
+  95:TMC-API/tmc/helpers/CRC.c **** 	CRCTables[index].isReflected  = isReflected;
+ 126              		.loc 1 95 32 view .LVU35
+ 127 004a 83F80001 		strb	r0, [r3, #256]
+  96:TMC-API/tmc/helpers/CRC.c **** 	table = &CRCTables[index].table[0];
+ 128              		.loc 1 96 2 is_stmt 1 view .LVU36
+  96:TMC-API/tmc/helpers/CRC.c **** 	table = &CRCTables[index].table[0];
+ 129              		.loc 1 96 32 is_stmt 0 view .LVU37
+ 130 004e 83F80111 		strb	r1, [r3, #257]
+  97:TMC-API/tmc/helpers/CRC.c **** 
+ 131              		.loc 1 97 2 is_stmt 1 view .LVU38
+ 132              	.LVL10:
+ 100:TMC-API/tmc/helpers/CRC.c **** 
+ 133              		.loc 1 100 2 view .LVU39
+ 103:TMC-API/tmc/helpers/CRC.c **** 	for(i = 0x03020100; i != 0x04030200; i+=0x04040404)
+ 134              		.loc 1 103 2 view .LVU40
+ 104:TMC-API/tmc/helpers/CRC.c **** 	{
+ 135              		.loc 1 104 2 view .LVU41
+ 104:TMC-API/tmc/helpers/CRC.c **** 	{
+ 136              		.loc 1 104 22 view .LVU42
+ 137              	.LBB2:
+ 138              	.LBB3:
+ 121:TMC-API/tmc/helpers/CRC.c **** 			CRCdata ^= (CRCdata & 0x01000000)? (poly << 16) : 0;
+ 139              		.loc 1 121 52 is_stmt 0 view .LVU43
+ 140 0052 2F02     		lsls	r7, r5, #8
+ 122:TMC-API/tmc/helpers/CRC.c **** 			CRCdata ^= (isMSBSet)?             (poly << 24) : 0;
+ 141              		.loc 1 122 52 view .LVU44
+ 142 0054 4FEA0548 		lsl	r8, r5, #16
+ 123:TMC-API/tmc/helpers/CRC.c **** 		}
+ 143              		.loc 1 123 52 view .LVU45
+ 144 0058 4FEA0569 		lsl	r9, r5, #24
+ 145 005c 1444     		add	r4, r4, r2
+ 146              	.LVL11:
+ 147              	.L11:
+ 123:TMC-API/tmc/helpers/CRC.c **** 		}
+ 148              		.loc 1 123 52 view .LVU46
+ 149              	.LBE3:
+ 107:TMC-API/tmc/helpers/CRC.c **** 
+ 150              		.loc 1 107 3 is_stmt 1 view .LVU47
+ 107:TMC-API/tmc/helpers/CRC.c **** 
+ 151              		.loc 1 107 28 is_stmt 0 view .LVU48
+ 152 005e 5046     		mov	r0, r10
+ 107:TMC-API/tmc/helpers/CRC.c **** 
+ 153              		.loc 1 107 47 view .LVU49
+ 154 0060 09B1     		cbz	r1, .L4
+ 107:TMC-API/tmc/helpers/CRC.c **** 
+ 155              		.loc 1 107 28 discriminator 1 view .LVU50
+ 156 0062 FFF7CDFF 		bl	flipBitsInBytes
+ 157              	.LVL12:
+ 158              	.L4:
+ 159 0066 0822     		movs	r2, #8
+ 160              	.L9:
+ 161              	.LVL13:
+ 162              	.LBB4:
+ 114:TMC-API/tmc/helpers/CRC.c **** 
+ 163              		.loc 1 114 4 is_stmt 1 view .LVU51
+ 117:TMC-API/tmc/helpers/CRC.c **** 
+ 164              		.loc 1 117 4 view .LVU52
+ 117:TMC-API/tmc/helpers/CRC.c **** 
+ 165              		.loc 1 117 12 is_stmt 0 view .LVU53
+ 166 0068 4FEA400C 		lsl	ip, r0, #1
+ 167              	.LVL14:
+ 120:TMC-API/tmc/helpers/CRC.c **** 			CRCdata ^= (CRCdata & 0x00010000)? (poly << 8 ) : 0;
+ 168              		.loc 1 120 4 is_stmt 1 view .LVU54
+ 120:TMC-API/tmc/helpers/CRC.c **** 			CRCdata ^= (CRCdata & 0x00010000)? (poly << 8 ) : 0;
+ 169              		.loc 1 120 52 is_stmt 0 view .LVU55
+ 170 006c 1CF48073 		ands	r3, ip, #256
+ 171 0070 18BF     		it	ne
+ 172 0072 2B46     		movne	r3, r5
+ 120:TMC-API/tmc/helpers/CRC.c **** 			CRCdata ^= (CRCdata & 0x00010000)? (poly << 8 ) : 0;
+ 173              		.loc 1 120 12 view .LVU56
+ 174 0074 83EA0C03 		eor	r3, r3, ip
+ 175              	.LVL15:
+ 121:TMC-API/tmc/helpers/CRC.c **** 			CRCdata ^= (CRCdata & 0x01000000)? (poly << 16) : 0;
+ 176              		.loc 1 121 4 is_stmt 1 view .LVU57
+ 121:TMC-API/tmc/helpers/CRC.c **** 			CRCdata ^= (CRCdata & 0x01000000)? (poly << 16) : 0;
+ 177              		.loc 1 121 52 is_stmt 0 view .LVU58
+ 178 0078 1CF4803C 		ands	ip, ip, #65536
+ 179 007c 18BF     		it	ne
+ 180 007e BC46     		movne	ip, r7
+ 121:TMC-API/tmc/helpers/CRC.c **** 			CRCdata ^= (CRCdata & 0x01000000)? (poly << 16) : 0;
+ 181              		.loc 1 121 12 view .LVU59
+ 182 0080 8CEA030C 		eor	ip, ip, r3
+ 183              	.LVL16:
+ 122:TMC-API/tmc/helpers/CRC.c **** 			CRCdata ^= (isMSBSet)?             (poly << 24) : 0;
+ 184              		.loc 1 122 4 is_stmt 1 view .LVU60
+ 122:TMC-API/tmc/helpers/CRC.c **** 			CRCdata ^= (isMSBSet)?             (poly << 24) : 0;
+ 185              		.loc 1 122 52 is_stmt 0 view .LVU61
+ 186 0084 13F08073 		ands	r3, r3, #16777216
+ 187 0088 18BF     		it	ne
+ 188 008a 4346     		movne	r3, r8
+ 123:TMC-API/tmc/helpers/CRC.c **** 		}
+ 189              		.loc 1 123 52 view .LVU62
+ 190 008c C00F     		lsrs	r0, r0, #31
+ 191              	.LVL17:
+ 123:TMC-API/tmc/helpers/CRC.c **** 		}
+ 192              		.loc 1 123 52 view .LVU63
+ 193 008e 18BF     		it	ne
+ 194 0090 4846     		movne	r0, r9
+ 122:TMC-API/tmc/helpers/CRC.c **** 			CRCdata ^= (isMSBSet)?             (poly << 24) : 0;
+ 195              		.loc 1 122 12 view .LVU64
+ 196 0092 83EA0C03 		eor	r3, r3, ip
+ 197              	.LVL18:
+ 123:TMC-API/tmc/helpers/CRC.c **** 		}
+ 198              		.loc 1 123 4 is_stmt 1 view .LVU65
+ 199              	.LBE4:
+ 111:TMC-API/tmc/helpers/CRC.c **** 		{
+ 200              		.loc 1 111 3 is_stmt 0 view .LVU66
+ 201 0096 013A     		subs	r2, r2, #1
+ 202              	.LVL19:
+ 203              	.LBB5:
+ 123:TMC-API/tmc/helpers/CRC.c **** 		}
+ 204              		.loc 1 123 12 view .LVU67
+ 205 0098 80EA0300 		eor	r0, r0, r3
+ 206              	.LVL20:
+ 123:TMC-API/tmc/helpers/CRC.c **** 		}
+ 207              		.loc 1 123 12 view .LVU68
+ 208              	.LBE5:
+ 111:TMC-API/tmc/helpers/CRC.c **** 		{
+ 209              		.loc 1 111 21 is_stmt 1 view .LVU69
+ 111:TMC-API/tmc/helpers/CRC.c **** 		{
+ 210              		.loc 1 111 14 view .LVU70
+ 111:TMC-API/tmc/helpers/CRC.c **** 		{
+ 211              		.loc 1 111 3 is_stmt 0 view .LVU71
+ 212 009c E4D1     		bne	.L9
+ 127:TMC-API/tmc/helpers/CRC.c **** 		// Store the CRC result bytes in the table array
+ 213              		.loc 1 127 3 is_stmt 1 view .LVU72
+ 127:TMC-API/tmc/helpers/CRC.c **** 		// Store the CRC result bytes in the table array
+ 214              		.loc 1 127 53 is_stmt 0 view .LVU73
+ 215 009e 09B1     		cbz	r1, .L10
+ 127:TMC-API/tmc/helpers/CRC.c **** 		// Store the CRC result bytes in the table array
+ 216              		.loc 1 127 28 discriminator 1 view .LVU74
+ 217 00a0 FFF7AEFF 		bl	flipBitsInBytes
+ 218              	.LVL21:
+ 219              	.L10:
+ 129:TMC-API/tmc/helpers/CRC.c **** 		CRCdata >>= 8;
+ 220              		.loc 1 129 3 is_stmt 1 discriminator 4 view .LVU75
+ 130:TMC-API/tmc/helpers/CRC.c **** 		*table++ = (uint8_t) CRCdata;
+ 221              		.loc 1 130 11 is_stmt 0 discriminator 4 view .LVU76
+ 222 00a4 030A     		lsrs	r3, r0, #8
+ 223              	.LBE2:
+ 104:TMC-API/tmc/helpers/CRC.c **** 	{
+ 224              		.loc 1 104 40 discriminator 4 view .LVU77
+ 225 00a6 0AF1043A 		add	r10, r10, #67372036
+ 226              	.LVL22:
+ 227              	.LBB6:
+ 129:TMC-API/tmc/helpers/CRC.c **** 		CRCdata >>= 8;
+ 228              		.loc 1 129 14 discriminator 4 view .LVU78
+ 229 00aa 04F8040C 		strb	r0, [r4, #-4]
+ 130:TMC-API/tmc/helpers/CRC.c **** 		*table++ = (uint8_t) CRCdata;
+ 230              		.loc 1 130 3 is_stmt 1 discriminator 4 view .LVU79
+ 231              	.LVL23:
+ 131:TMC-API/tmc/helpers/CRC.c **** 		CRCdata >>= 8;
+ 232              		.loc 1 131 3 discriminator 4 view .LVU80
+ 131:TMC-API/tmc/helpers/CRC.c **** 		CRCdata >>= 8;
+ 233              		.loc 1 131 14 is_stmt 0 discriminator 4 view .LVU81
+ 234 00ae 04F8033C 		strb	r3, [r4, #-3]
+ 132:TMC-API/tmc/helpers/CRC.c **** 		*table++ = (uint8_t) CRCdata;
+ 235              		.loc 1 132 3 is_stmt 1 discriminator 4 view .LVU82
+ 236              	.LVL24:
+ 133:TMC-API/tmc/helpers/CRC.c **** 		CRCdata >>= 8;
+ 237              		.loc 1 133 3 discriminator 4 view .LVU83
+ 133:TMC-API/tmc/helpers/CRC.c **** 		CRCdata >>= 8;
+ 238              		.loc 1 133 3 is_stmt 0 discriminator 4 view .LVU84
+ 239              	.LBE6:
+ 104:TMC-API/tmc/helpers/CRC.c **** 	{
+ 240              		.loc 1 104 2 discriminator 4 view .LVU85
+ 241 00b2 B245     		cmp	r10, r6
+ 242              	.LBB7:
+ 132:TMC-API/tmc/helpers/CRC.c **** 		*table++ = (uint8_t) CRCdata;
+ 243              		.loc 1 132 11 discriminator 4 view .LVU86
+ 244 00b4 4FEA1043 		lsr	r3, r0, #16
+ 245              	.LVL25:
+ 134:TMC-API/tmc/helpers/CRC.c **** 		*table++ = (uint8_t) CRCdata;
+ 246              		.loc 1 134 11 discriminator 4 view .LVU87
+ 247 00b8 4FEA1060 		lsr	r0, r0, #24
+ 133:TMC-API/tmc/helpers/CRC.c **** 		CRCdata >>= 8;
+ 248              		.loc 1 133 14 discriminator 4 view .LVU88
+ 249 00bc 04F8023C 		strb	r3, [r4, #-2]
+ 134:TMC-API/tmc/helpers/CRC.c **** 		*table++ = (uint8_t) CRCdata;
+ 250              		.loc 1 134 3 is_stmt 1 discriminator 4 view .LVU89
+ 251              	.LVL26:
+ 135:TMC-API/tmc/helpers/CRC.c **** 	}
+ 252              		.loc 1 135 3 discriminator 4 view .LVU90
+ 135:TMC-API/tmc/helpers/CRC.c **** 	}
+ 253              		.loc 1 135 14 is_stmt 0 discriminator 4 view .LVU91
+ 254 00c0 04F8010C 		strb	r0, [r4, #-1]
+ 255              	.LBE7:
+ 104:TMC-API/tmc/helpers/CRC.c **** 	{
+ 256              		.loc 1 104 39 is_stmt 1 discriminator 4 view .LVU92
+ 257              	.LVL27:
+ 104:TMC-API/tmc/helpers/CRC.c **** 	{
+ 258              		.loc 1 104 22 discriminator 4 view .LVU93
+ 259 00c4 04F10404 		add	r4, r4, #4
+ 260              	.LVL28:
+ 104:TMC-API/tmc/helpers/CRC.c **** 	{
+ 261              		.loc 1 104 2 is_stmt 0 discriminator 4 view .LVU94
+ 262 00c8 C9D1     		bne	.L11
+ 138:TMC-API/tmc/helpers/CRC.c **** }
+ 263              		.loc 1 138 9 view .LVU95
+ 264 00ca 0120     		movs	r0, #1
+ 265              	.LVL29:
+ 266              	.L3:
+ 139:TMC-API/tmc/helpers/CRC.c **** 
+ 267              		.loc 1 139 1 view .LVU96
+ 268 00cc BDE8F087 		pop	{r4, r5, r6, r7, r8, r9, r10, pc}
+ 269              	.LVL30:
+ 270              	.L12:
+  93:TMC-API/tmc/helpers/CRC.c **** 
+ 271              		.loc 1 93 10 view .LVU97
+ 272 00d0 0020     		movs	r0, #0
+ 273              	.LVL31:
+  93:TMC-API/tmc/helpers/CRC.c **** 
+ 274              		.loc 1 93 10 view .LVU98
+ 275 00d2 FBE7     		b	.L3
+ 276              	.L26:
+ 277              		.align	2
+ 278              	.L25:
+ 279 00d4 00000000 		.word	.LANCHOR0
+ 280 00d8 00020304 		.word	67305984
+ 281 00dc 00010203 		.word	50462976
+ 282              		.cfi_endproc
+ 283              	.LFE0:
+ 285              		.align	1
+ 286              		.global	tmc_CRC8
+ 287              		.syntax unified
+ 288              		.thumb
+ 289              		.thumb_func
+ 290              		.fpu softvfp
+ 292              	tmc_CRC8:
+ 293              	.LVL32:
+ 294              	.LFB1:
+ 149:TMC-API/tmc/helpers/CRC.c **** 	uint8_t result = 0;
+ 295              		.loc 1 149 1 is_stmt 1 view -0
+ 296              		.cfi_startproc
+ 297              		@ args = 0, pretend = 0, frame = 0
+ 298              		@ frame_needed = 0, uses_anonymous_args = 0
+ 153:TMC-API/tmc/helpers/CRC.c **** 		return 0;
+ 299              		.loc 1 153 4 is_stmt 0 view .LVU100
+ 300 00e0 012A     		cmp	r2, #1
+ 149:TMC-API/tmc/helpers/CRC.c **** 	uint8_t result = 0;
+ 301              		.loc 1 149 1 view .LVU101
+ 302 00e2 70B5     		push	{r4, r5, r6, lr}
+ 303              	.LCFI1:
+ 304              		.cfi_def_cfa_offset 16
+ 305              		.cfi_offset 4, -16
+ 306              		.cfi_offset 5, -12
+ 307              		.cfi_offset 6, -8
+ 308              		.cfi_offset 14, -4
+ 149:TMC-API/tmc/helpers/CRC.c **** 	uint8_t result = 0;
+ 309              		.loc 1 149 1 view .LVU102
+ 310 00e4 0446     		mov	r4, r0
+ 150:TMC-API/tmc/helpers/CRC.c **** 	uint8_t *table;
+ 311              		.loc 1 150 2 is_stmt 1 view .LVU103
+ 312              	.LVL33:
+ 151:TMC-API/tmc/helpers/CRC.c **** 
+ 313              		.loc 1 151 2 view .LVU104
+ 153:TMC-API/tmc/helpers/CRC.c **** 		return 0;
+ 314              		.loc 1 153 2 view .LVU105
+ 153:TMC-API/tmc/helpers/CRC.c **** 		return 0;
+ 315              		.loc 1 153 4 is_stmt 0 view .LVU106
+ 316 00e6 27D8     		bhi	.L31
+ 156:TMC-API/tmc/helpers/CRC.c **** 
+ 317              		.loc 1 156 2 is_stmt 1 view .LVU107
+ 318 00e8 4FF48175 		mov	r5, #258
+ 319 00ec 134E     		ldr	r6, .L35
+ 320 00ee 0144     		add	r1, r1, r0
+ 321              	.LVL34:
+ 156:TMC-API/tmc/helpers/CRC.c **** 
+ 322              		.loc 1 156 2 is_stmt 0 view .LVU108
+ 323 00f0 5543     		muls	r5, r2, r5
+ 324              	.LVL35:
+ 158:TMC-API/tmc/helpers/CRC.c **** 		result = table[result ^ *data++];
+ 325              		.loc 1 158 2 is_stmt 1 view .LVU109
+ 150:TMC-API/tmc/helpers/CRC.c **** 	uint8_t *table;
+ 326              		.loc 1 150 10 is_stmt 0 view .LVU110
+ 327 00f2 0020     		movs	r0, #0
+ 328              	.LVL36:
+ 329              	.L29:
+ 158:TMC-API/tmc/helpers/CRC.c **** 		result = table[result ^ *data++];
+ 330              		.loc 1 158 7 is_stmt 1 view .LVU111
+ 158:TMC-API/tmc/helpers/CRC.c **** 		result = table[result ^ *data++];
+ 331              		.loc 1 158 7 is_stmt 0 view .LVU112
+ 332 00f4 8C42     		cmp	r4, r1
+ 333 00f6 19D1     		bne	.L30
+ 161:TMC-API/tmc/helpers/CRC.c **** }
+ 334              		.loc 1 161 2 is_stmt 1 view .LVU113
+ 161:TMC-API/tmc/helpers/CRC.c **** }
+ 335              		.loc 1 161 26 is_stmt 0 view .LVU114
+ 336 00f8 4FF48173 		mov	r3, #258
+ 337 00fc 03FB0262 		mla	r2, r3, r2, r6
+ 338              	.LVL37:
+ 161:TMC-API/tmc/helpers/CRC.c **** }
+ 339              		.loc 1 161 58 view .LVU115
+ 340 0100 92F80131 		ldrb	r3, [r2, #257]	@ zero_extendqisi2
+ 341 0104 8BB1     		cbz	r3, .L28
+ 342              	.LVL38:
+ 343              	.LBB10:
+ 344              	.LBI10:
+ 181:TMC-API/tmc/helpers/CRC.c **** {
+ 345              		.loc 1 181 16 is_stmt 1 view .LVU116
+ 346              	.LBB11:
+ 184:TMC-API/tmc/helpers/CRC.c **** 	// swap consecutive pairs
+ 347              		.loc 1 184 2 view .LVU117
+ 184:TMC-API/tmc/helpers/CRC.c **** 	// swap consecutive pairs
+ 348              		.loc 1 184 24 is_stmt 0 view .LVU118
+ 349 0106 4308     		lsrs	r3, r0, #1
+ 350 0108 03F05502 		and	r2, r3, #85
+ 184:TMC-API/tmc/helpers/CRC.c **** 	// swap consecutive pairs
+ 351              		.loc 1 184 50 view .LVU119
+ 352 010c 4300     		lsls	r3, r0, #1
+ 184:TMC-API/tmc/helpers/CRC.c **** 	// swap consecutive pairs
+ 353              		.loc 1 184 32 view .LVU120
+ 354 010e 03F0AA03 		and	r3, r3, #170
+ 184:TMC-API/tmc/helpers/CRC.c **** 	// swap consecutive pairs
+ 355              		.loc 1 184 8 view .LVU121
+ 356 0112 1343     		orrs	r3, r3, r2
+ 357              	.LVL39:
+ 186:TMC-API/tmc/helpers/CRC.c **** 	// swap nibbles ...
+ 358              		.loc 1 186 2 is_stmt 1 view .LVU122
+ 186:TMC-API/tmc/helpers/CRC.c **** 	// swap nibbles ...
+ 359              		.loc 1 186 24 is_stmt 0 view .LVU123
+ 360 0114 9808     		lsrs	r0, r3, #2
+ 361              	.LVL40:
+ 186:TMC-API/tmc/helpers/CRC.c **** 	// swap nibbles ...
+ 362              		.loc 1 186 24 view .LVU124
+ 363 0116 00F03302 		and	r2, r0, #51
+ 186:TMC-API/tmc/helpers/CRC.c **** 	// swap nibbles ...
+ 364              		.loc 1 186 50 view .LVU125
+ 365 011a 9800     		lsls	r0, r3, #2
+ 186:TMC-API/tmc/helpers/CRC.c **** 	// swap nibbles ...
+ 366              		.loc 1 186 32 view .LVU126
+ 367 011c 00F0CC00 		and	r0, r0, #204
+ 186:TMC-API/tmc/helpers/CRC.c **** 	// swap nibbles ...
+ 368              		.loc 1 186 8 view .LVU127
+ 369 0120 1043     		orrs	r0, r0, r2
+ 370              	.LVL41:
+ 188:TMC-API/tmc/helpers/CRC.c **** 
+ 371              		.loc 1 188 2 is_stmt 1 view .LVU128
+ 188:TMC-API/tmc/helpers/CRC.c **** 
+ 372              		.loc 1 188 50 is_stmt 0 view .LVU129
+ 373 0122 0301     		lsls	r3, r0, #4
+ 188:TMC-API/tmc/helpers/CRC.c **** 
+ 374              		.loc 1 188 32 view .LVU130
+ 375 0124 43EA1010 		orr	r0, r3, r0, lsr #4
+ 376              	.LVL42:
+ 188:TMC-API/tmc/helpers/CRC.c **** 
+ 377              		.loc 1 188 8 view .LVU131
+ 378 0128 C0B2     		uxtb	r0, r0
+ 379              	.LVL43:
+ 190:TMC-API/tmc/helpers/CRC.c **** }
+ 380              		.loc 1 190 2 is_stmt 1 view .LVU132
+ 381              	.L28:
+ 190:TMC-API/tmc/helpers/CRC.c **** }
+ 382              		.loc 1 190 2 is_stmt 0 view .LVU133
+ 383              	.LBE11:
+ 384              	.LBE10:
+ 162:TMC-API/tmc/helpers/CRC.c **** 
+ 385              		.loc 1 162 1 view .LVU134
+ 386 012a 70BD     		pop	{r4, r5, r6, pc}
+ 387              	.LVL44:
+ 388              	.L30:
+ 159:TMC-API/tmc/helpers/CRC.c **** 
+ 389              		.loc 1 159 3 is_stmt 1 view .LVU135
+ 159:TMC-API/tmc/helpers/CRC.c **** 
+ 390              		.loc 1 159 25 is_stmt 0 view .LVU136
+ 391 012c 14F8013B 		ldrb	r3, [r4], #1	@ zero_extendqisi2
+ 392              	.LVL45:
+ 159:TMC-API/tmc/helpers/CRC.c **** 
+ 393              		.loc 1 159 25 view .LVU137
+ 394 0130 4340     		eors	r3, r3, r0
+ 159:TMC-API/tmc/helpers/CRC.c **** 
+ 395              		.loc 1 159 17 view .LVU138
+ 396 0132 2B44     		add	r3, r3, r5
+ 159:TMC-API/tmc/helpers/CRC.c **** 
+ 397              		.loc 1 159 10 view .LVU139
+ 398 0134 F05C     		ldrb	r0, [r6, r3]	@ zero_extendqisi2
+ 399              	.LVL46:
+ 159:TMC-API/tmc/helpers/CRC.c **** 
+ 400              		.loc 1 159 10 view .LVU140
+ 401 0136 DDE7     		b	.L29
+ 402              	.LVL47:
+ 403              	.L31:
+ 154:TMC-API/tmc/helpers/CRC.c **** 
+ 404              		.loc 1 154 10 view .LVU141
+ 405 0138 0020     		movs	r0, #0
+ 406              	.LVL48:
+ 154:TMC-API/tmc/helpers/CRC.c **** 
+ 407              		.loc 1 154 10 view .LVU142
+ 408 013a F6E7     		b	.L28
+ 409              	.L36:
+ 410              		.align	2
+ 411              	.L35:
+ 412 013c 00000000 		.word	.LANCHOR0
+ 413              		.cfi_endproc
+ 414              	.LFE1:
+ 416              		.align	1
+ 417              		.global	tmc_tableGetPolynomial
+ 418              		.syntax unified
+ 419              		.thumb
+ 420              		.thumb_func
+ 421              		.fpu softvfp
+ 423              	tmc_tableGetPolynomial:
+ 424              	.LVL49:
+ 425              	.LFB2:
+ 165:TMC-API/tmc/helpers/CRC.c **** 	if(index >= CRC_TABLE_COUNT)
+ 426              		.loc 1 165 1 is_stmt 1 view -0
+ 427              		.cfi_startproc
+ 428              		@ args = 0, pretend = 0, frame = 0
+ 429              		@ frame_needed = 0, uses_anonymous_args = 0
+ 430              		@ link register save eliminated.
+ 166:TMC-API/tmc/helpers/CRC.c **** 		return 0;
+ 431              		.loc 1 166 2 view .LVU144
+ 166:TMC-API/tmc/helpers/CRC.c **** 		return 0;
+ 432              		.loc 1 166 4 is_stmt 0 view .LVU145
+ 433 0140 0128     		cmp	r0, #1
+ 169:TMC-API/tmc/helpers/CRC.c **** }
+ 434              		.loc 1 169 2 is_stmt 1 view .LVU146
+ 169:TMC-API/tmc/helpers/CRC.c **** }
+ 435              		.loc 1 169 25 is_stmt 0 view .LVU147
+ 436 0142 9FBF     		itttt	ls
+ 437 0144 044B     		ldrls	r3, .L40
+ 438 0146 4FF48172 		movls	r2, #258
+ 439 014a 02FB0030 		mlals	r0, r2, r0, r3
+ 440              	.LVL50:
+ 169:TMC-API/tmc/helpers/CRC.c **** }
+ 441              		.loc 1 169 25 view .LVU148
+ 442 014e 90F80001 		ldrbls	r0, [r0, #256]	@ zero_extendqisi2
+ 167:TMC-API/tmc/helpers/CRC.c **** 
+ 443              		.loc 1 167 10 view .LVU149
+ 444 0152 88BF     		it	hi
+ 445 0154 0020     		movhi	r0, #0
+ 170:TMC-API/tmc/helpers/CRC.c **** 
+ 446              		.loc 1 170 1 view .LVU150
+ 447 0156 7047     		bx	lr
+ 448              	.L41:
+ 449              		.align	2
+ 450              	.L40:
+ 451 0158 00000000 		.word	.LANCHOR0
+ 452              		.cfi_endproc
+ 453              	.LFE2:
+ 455              		.align	1
+ 456              		.global	tmc_tableIsReflected
+ 457              		.syntax unified
+ 458              		.thumb
+ 459              		.thumb_func
+ 460              		.fpu softvfp
+ 462              	tmc_tableIsReflected:
+ 463              	.LVL51:
+ 464              	.LFB3:
+ 173:TMC-API/tmc/helpers/CRC.c **** 	if(index >= CRC_TABLE_COUNT)
+ 465              		.loc 1 173 1 is_stmt 1 view -0
+ 466              		.cfi_startproc
+ 467              		@ args = 0, pretend = 0, frame = 0
+ 468              		@ frame_needed = 0, uses_anonymous_args = 0
+ 469              		@ link register save eliminated.
+ 174:TMC-API/tmc/helpers/CRC.c **** 		return false;
+ 470              		.loc 1 174 2 view .LVU152
+ 174:TMC-API/tmc/helpers/CRC.c **** 		return false;
+ 471              		.loc 1 174 4 is_stmt 0 view .LVU153
+ 472 015c 0128     		cmp	r0, #1
+ 177:TMC-API/tmc/helpers/CRC.c **** }
+ 473              		.loc 1 177 2 is_stmt 1 view .LVU154
+ 177:TMC-API/tmc/helpers/CRC.c **** }
+ 474              		.loc 1 177 25 is_stmt 0 view .LVU155
+ 475 015e 9FBF     		itttt	ls
+ 476 0160 044B     		ldrls	r3, .L45
+ 477 0162 4FF48172 		movls	r2, #258
+ 478 0166 02FB0030 		mlals	r0, r2, r0, r3
+ 479              	.LVL52:
+ 177:TMC-API/tmc/helpers/CRC.c **** }
+ 480              		.loc 1 177 25 view .LVU156
+ 481 016a 90F80101 		ldrbls	r0, [r0, #257]	@ zero_extendqisi2
+ 175:TMC-API/tmc/helpers/CRC.c **** 
+ 482              		.loc 1 175 10 view .LVU157
+ 483 016e 88BF     		it	hi
+ 484 0170 0020     		movhi	r0, #0
+ 178:TMC-API/tmc/helpers/CRC.c **** 
+ 485              		.loc 1 178 1 view .LVU158
+ 486 0172 7047     		bx	lr
+ 487              	.L46:
+ 488              		.align	2
+ 489              	.L45:
+ 490 0174 00000000 		.word	.LANCHOR0
+ 491              		.cfi_endproc
+ 492              	.LFE3:
+ 494              		.global	CRCTables
+ 495              		.bss
+ 496              		.set	.LANCHOR0,. + 0
+ 499              	CRCTables:
+ 500 0000 00000000 		.space	516
+ 500      00000000 
+ 500      00000000 
+ 500      00000000 
+ 500      00000000 
+ 501              		.text
+ 502              	.Letext0:
+ 503              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 504              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+DEFINED SYMBOLS
+                            *ABS*:00000000 CRC.c
+C:\Users\Shubham\AppData\Local\Temp\ccnxZib5.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccnxZib5.s:22     .text:00000000 flipBitsInBytes
+C:\Users\Shubham\AppData\Local\Temp\ccnxZib5.s:84     .text:0000002c tmc_fillCRC8Table
+C:\Users\Shubham\AppData\Local\Temp\ccnxZib5.s:279    .text:000000d4 $d
+C:\Users\Shubham\AppData\Local\Temp\ccnxZib5.s:285    .text:000000e0 $t
+C:\Users\Shubham\AppData\Local\Temp\ccnxZib5.s:292    .text:000000e0 tmc_CRC8
+C:\Users\Shubham\AppData\Local\Temp\ccnxZib5.s:412    .text:0000013c $d
+C:\Users\Shubham\AppData\Local\Temp\ccnxZib5.s:416    .text:00000140 $t
+C:\Users\Shubham\AppData\Local\Temp\ccnxZib5.s:423    .text:00000140 tmc_tableGetPolynomial
+C:\Users\Shubham\AppData\Local\Temp\ccnxZib5.s:451    .text:00000158 $d
+C:\Users\Shubham\AppData\Local\Temp\ccnxZib5.s:455    .text:0000015c $t
+C:\Users\Shubham\AppData\Local\Temp\ccnxZib5.s:462    .text:0000015c tmc_tableIsReflected
+C:\Users\Shubham\AppData\Local\Temp\ccnxZib5.s:490    .text:00000174 $d
+C:\Users\Shubham\AppData\Local\Temp\ccnxZib5.s:499    .bss:00000000 CRCTables
+C:\Users\Shubham\AppData\Local\Temp\ccnxZib5.s:500    .bss:00000000 $d
+
+NO UNDEFINED SYMBOLS

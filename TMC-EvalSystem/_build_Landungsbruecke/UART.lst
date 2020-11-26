@@ -1,0 +1,2298 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"UART.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.arch armv7e-m
+  17              		.syntax unified
+  18              		.thumb
+  19              		.thumb_func
+  20              		.fpu softvfp
+  22              	rx:
+  23              	.LVL0:
+  24              	.LFB8:
+  25              		.file 1 "hal/Landungsbruecke/tmc/UART.c"
+   1:hal/Landungsbruecke/tmc/UART.c **** #include "hal/HAL.h"
+   2:hal/Landungsbruecke/tmc/UART.c **** #include "hal/UART.h"
+   3:hal/Landungsbruecke/tmc/UART.c **** #include "hal/Landungsbruecke/freescale/Cpu.h"
+   4:hal/Landungsbruecke/tmc/UART.c **** 
+   5:hal/Landungsbruecke/tmc/UART.c **** #define BUFFER_SIZE         32
+   6:hal/Landungsbruecke/tmc/UART.c **** #define INTR_PRI            6
+   7:hal/Landungsbruecke/tmc/UART.c **** #define UART_TIMEOUT_VALUE  10
+   8:hal/Landungsbruecke/tmc/UART.c **** 
+   9:hal/Landungsbruecke/tmc/UART.c **** static void init();
+  10:hal/Landungsbruecke/tmc/UART.c **** static void deInit();
+  11:hal/Landungsbruecke/tmc/UART.c **** static void tx(uint8_t ch);
+  12:hal/Landungsbruecke/tmc/UART.c **** static uint8_t rx(uint8_t *ch);
+  13:hal/Landungsbruecke/tmc/UART.c **** static void txN(uint8_t *str, uint8_t number);
+  14:hal/Landungsbruecke/tmc/UART.c **** static uint8_t rxN(uint8_t *ch, uint8_t number);
+  15:hal/Landungsbruecke/tmc/UART.c **** static void clearBuffers(void);
+  16:hal/Landungsbruecke/tmc/UART.c **** static uint32_t bytesAvailable();
+  17:hal/Landungsbruecke/tmc/UART.c **** 
+  18:hal/Landungsbruecke/tmc/UART.c **** static volatile uint8_t
+  19:hal/Landungsbruecke/tmc/UART.c **** 	rxBuffer[BUFFER_SIZE],
+  20:hal/Landungsbruecke/tmc/UART.c **** 	txBuffer[BUFFER_SIZE];
+  21:hal/Landungsbruecke/tmc/UART.c **** 
+  22:hal/Landungsbruecke/tmc/UART.c **** static volatile uint32_t available = 0;
+  23:hal/Landungsbruecke/tmc/UART.c **** 
+  24:hal/Landungsbruecke/tmc/UART.c **** UART_Config UART =
+  25:hal/Landungsbruecke/tmc/UART.c **** {
+  26:hal/Landungsbruecke/tmc/UART.c **** 	.mode = UART_MODE_DUAL_WIRE,
+  27:hal/Landungsbruecke/tmc/UART.c **** 	.pinout = UART_PINS_1,
+  28:hal/Landungsbruecke/tmc/UART.c **** 	.rxtx =
+  29:hal/Landungsbruecke/tmc/UART.c **** 	{
+  30:hal/Landungsbruecke/tmc/UART.c **** 		.init            = init,
+  31:hal/Landungsbruecke/tmc/UART.c **** 		.deInit          = deInit,
+  32:hal/Landungsbruecke/tmc/UART.c **** 		.rx              = rx,
+  33:hal/Landungsbruecke/tmc/UART.c **** 		.tx              = tx,
+  34:hal/Landungsbruecke/tmc/UART.c **** 		.rxN             = rxN,
+  35:hal/Landungsbruecke/tmc/UART.c **** 		.txN             = txN,
+  36:hal/Landungsbruecke/tmc/UART.c **** 		.clearBuffers    = clearBuffers,
+  37:hal/Landungsbruecke/tmc/UART.c **** 		.baudRate        = 115200,
+  38:hal/Landungsbruecke/tmc/UART.c **** 		.bytesAvailable  = bytesAvailable
+  39:hal/Landungsbruecke/tmc/UART.c **** 	}
+  40:hal/Landungsbruecke/tmc/UART.c **** };
+  41:hal/Landungsbruecke/tmc/UART.c **** 
+  42:hal/Landungsbruecke/tmc/UART.c **** static RXTXBufferingTypeDef buffers =
+  43:hal/Landungsbruecke/tmc/UART.c **** {
+  44:hal/Landungsbruecke/tmc/UART.c **** 	.rx =
+  45:hal/Landungsbruecke/tmc/UART.c **** 	{
+  46:hal/Landungsbruecke/tmc/UART.c **** 		.read    = 0,
+  47:hal/Landungsbruecke/tmc/UART.c **** 		.wrote   = 0,
+  48:hal/Landungsbruecke/tmc/UART.c **** 		.buffer  = rxBuffer
+  49:hal/Landungsbruecke/tmc/UART.c **** 	},
+  50:hal/Landungsbruecke/tmc/UART.c **** 
+  51:hal/Landungsbruecke/tmc/UART.c **** 	.tx =
+  52:hal/Landungsbruecke/tmc/UART.c **** 	{
+  53:hal/Landungsbruecke/tmc/UART.c **** 		.read    = 0,
+  54:hal/Landungsbruecke/tmc/UART.c **** 		.wrote   = 0,
+  55:hal/Landungsbruecke/tmc/UART.c **** 		.buffer  = txBuffer
+  56:hal/Landungsbruecke/tmc/UART.c **** 	}
+  57:hal/Landungsbruecke/tmc/UART.c **** };
+  58:hal/Landungsbruecke/tmc/UART.c **** 
+  59:hal/Landungsbruecke/tmc/UART.c **** static void init()
+  60:hal/Landungsbruecke/tmc/UART.c **** {
+  61:hal/Landungsbruecke/tmc/UART.c **** 	register uint16_t ubd = (CPU_BUS_CLK_HZ / 16) / UART.rxtx.baudRate;
+  62:hal/Landungsbruecke/tmc/UART.c **** 
+  63:hal/Landungsbruecke/tmc/UART.c **** 	// One wire UART communication needs the TxD pin to be in open drain mode
+  64:hal/Landungsbruecke/tmc/UART.c **** 	// and a pull-up resistor on the RxD pin.
+  65:hal/Landungsbruecke/tmc/UART.c **** 	switch(UART.pinout) {
+  66:hal/Landungsbruecke/tmc/UART.c **** 	case UART_PINS_2:
+  67:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->pins->DIO10.configuration.GPIO_Mode  = GPIO_Mode_AF3;  // TxD (DIO10)
+  68:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->pins->DIO11.configuration.GPIO_Mode  = GPIO_Mode_AF3;  // RxD (DIO11)
+  69:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->pins->DIO10.configuration.GPIO_OType = GPIO_OType_OD;  // TxD as open drain output
+  70:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->pins->DIO11.configuration.GPIO_PuPd  = GPIO_PuPd_UP;   // RxD with pull-up resistor
+  71:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->config->set(&HAL.IOs->pins->DIO10);
+  72:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->config->set(&HAL.IOs->pins->DIO11);
+  73:hal/Landungsbruecke/tmc/UART.c **** 		SIM_SCGC4 |= SIM_SCGC4_UART0_MASK;
+  74:hal/Landungsbruecke/tmc/UART.c **** 		UART_C2_REG(UART0_BASE_PTR) &= ~(UART_C2_TE_MASK | UART_C2_RE_MASK );
+  75:hal/Landungsbruecke/tmc/UART.c **** 		UART_C1_REG(UART0_BASE_PTR) = 0;
+  76:hal/Landungsbruecke/tmc/UART.c **** 		UART_BDH_REG(UART0_BASE_PTR) = (ubd >> 8) & UART_BDH_SBR_MASK;
+  77:hal/Landungsbruecke/tmc/UART.c **** 		UART_BDL_REG(UART0_BASE_PTR) = (ubd & UART_BDL_SBR_MASK);
+  78:hal/Landungsbruecke/tmc/UART.c **** 		UART_C2_REG(UART0_BASE_PTR) |= (UART_C2_TE_MASK | UART_C2_RE_MASK | UART_C2_RIE_MASK);
+  79:hal/Landungsbruecke/tmc/UART.c **** 		enable_irq(INT_UART0_RX_TX-16);
+  80:hal/Landungsbruecke/tmc/UART.c **** 		break;
+  81:hal/Landungsbruecke/tmc/UART.c **** 	case UART_PINS_1:
+  82:hal/Landungsbruecke/tmc/UART.c **** 	default:
+  83:hal/Landungsbruecke/tmc/UART.c **** 		SIM_SCGC4 |= SIM_SCGC4_UART2_MASK;
+  84:hal/Landungsbruecke/tmc/UART.c **** 		UART_C1_REG(UART2_BASE_PTR) = 0;
+  85:hal/Landungsbruecke/tmc/UART.c **** 		switch(UART.mode) {
+  86:hal/Landungsbruecke/tmc/UART.c **** 		case UART_MODE_SINGLE_WIRE:
+  87:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->pins->DIO17.configuration.GPIO_Mode  = GPIO_Mode_AF3;  // TxD (DIO17)
+  88:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->pins->DIO18.configuration.GPIO_Mode  = GPIO_Mode_AF3;  // RxD (DIO18)
+  89:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->pins->DIO18.configuration.GPIO_OType = GPIO_OType_OD;  // TxD as open drain output
+  90:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->pins->DIO17.configuration.GPIO_PuPd  = GPIO_PuPd_UP;   // RxD with pull-up resistor
+  91:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->config->set(&HAL.IOs->pins->DIO17);
+  92:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->config->set(&HAL.IOs->pins->DIO18);
+  93:hal/Landungsbruecke/tmc/UART.c **** 			// Enable single wire UART
+  94:hal/Landungsbruecke/tmc/UART.c **** 			UART_C1_REG(UART2_BASE_PTR) |= (UART_C1_LOOPS_MASK | UART_C1_RSRC_MASK);
+  95:hal/Landungsbruecke/tmc/UART.c **** 			// Set TxD as output in single wire UART
+  96:hal/Landungsbruecke/tmc/UART.c **** 			UART_C3_REG(UART2_BASE_PTR) |= UART_C3_TXDIR_MASK;
+  97:hal/Landungsbruecke/tmc/UART.c **** 			break;
+  98:hal/Landungsbruecke/tmc/UART.c **** 		case UART_MODE_DUAL_WIRE:
+  99:hal/Landungsbruecke/tmc/UART.c **** 		default:
+ 100:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->pins->DIO17.configuration.GPIO_Mode  = GPIO_Mode_AF3;  // TxD (DIO17)
+ 101:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->pins->DIO18.configuration.GPIO_Mode  = GPIO_Mode_AF3;  // RxD (DIO18)
+ 102:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->pins->DIO17.configuration.GPIO_OType = GPIO_OType_OD;  // TxD as open drain output
+ 103:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->pins->DIO18.configuration.GPIO_PuPd  = GPIO_PuPd_UP;   // RxD with pull-up resistor
+ 104:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->config->set(&HAL.IOs->pins->DIO17);
+ 105:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->config->set(&HAL.IOs->pins->DIO18);
+ 106:hal/Landungsbruecke/tmc/UART.c **** 			break;
+ 107:hal/Landungsbruecke/tmc/UART.c **** 		}
+ 108:hal/Landungsbruecke/tmc/UART.c **** 		UART_C2_REG(UART2_BASE_PTR) &= ~(UART_C2_TE_MASK | UART_C2_RE_MASK );
+ 109:hal/Landungsbruecke/tmc/UART.c **** 		UART_BDH_REG(UART2_BASE_PTR) = (ubd >> 8) & UART_BDH_SBR_MASK;
+ 110:hal/Landungsbruecke/tmc/UART.c **** 		UART_BDL_REG(UART2_BASE_PTR) = (ubd & UART_BDL_SBR_MASK);
+ 111:hal/Landungsbruecke/tmc/UART.c **** 		UART_C2_REG(UART2_BASE_PTR) |= (UART_C2_TE_MASK | UART_C2_RE_MASK | UART_C2_RIE_MASK);
+ 112:hal/Landungsbruecke/tmc/UART.c **** 		enable_irq(INT_UART2_RX_TX-16);
+ 113:hal/Landungsbruecke/tmc/UART.c **** 		break;
+ 114:hal/Landungsbruecke/tmc/UART.c **** 	}
+ 115:hal/Landungsbruecke/tmc/UART.c **** 
+ 116:hal/Landungsbruecke/tmc/UART.c **** //	/* Disable the transmitter and receiver */
+ 117:hal/Landungsbruecke/tmc/UART.c **** //	UART_C2_REG(UART0_BASE_PTR) &= ~(UART_C2_TE_MASK | UART_C2_RE_MASK );
+ 118:hal/Landungsbruecke/tmc/UART.c **** //
+ 119:hal/Landungsbruecke/tmc/UART.c **** //	/* Configure the UART for 8-bit mode, no parity */
+ 120:hal/Landungsbruecke/tmc/UART.c **** //	/* We need all default settings, so entire register is cleared */
+ 121:hal/Landungsbruecke/tmc/UART.c **** //	UART_C1_REG(UART0_BASE_PTR) = 0;
+ 122:hal/Landungsbruecke/tmc/UART.c **** //
+ 123:hal/Landungsbruecke/tmc/UART.c **** //	ubd = (CPU_BUS_CLK_HZ / 16) / UART.baudRate;
+ 124:hal/Landungsbruecke/tmc/UART.c **** //
+ 125:hal/Landungsbruecke/tmc/UART.c **** //	UART_BDH_REG(UART0_BASE_PTR) = (ubd >> 8) & UART_BDH_SBR_MASK;
+ 126:hal/Landungsbruecke/tmc/UART.c **** //	UART_BDL_REG(UART0_BASE_PTR) = (ubd & UART_BDL_SBR_MASK);
+ 127:hal/Landungsbruecke/tmc/UART.c **** //
+ 128:hal/Landungsbruecke/tmc/UART.c **** //	/* Enable receiver and transmitter */
+ 129:hal/Landungsbruecke/tmc/UART.c **** //	UART_C2_REG(UART0_BASE_PTR) |= (UART_C2_TE_MASK | UART_C2_RE_MASK | UART_C2_RIE_MASK);
+ 130:hal/Landungsbruecke/tmc/UART.c **** 
+ 131:hal/Landungsbruecke/tmc/UART.c **** }
+ 132:hal/Landungsbruecke/tmc/UART.c **** 
+ 133:hal/Landungsbruecke/tmc/UART.c **** static void deInit()
+ 134:hal/Landungsbruecke/tmc/UART.c **** {
+ 135:hal/Landungsbruecke/tmc/UART.c **** 	switch(UART.pinout) {
+ 136:hal/Landungsbruecke/tmc/UART.c **** 	case UART_PINS_2:
+ 137:hal/Landungsbruecke/tmc/UART.c **** 		SIM_SCGC4 &= ~(SIM_SCGC4_UART0_MASK);
+ 138:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->pins->DIO10.configuration.GPIO_Mode = GPIO_Mode_IN;
+ 139:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->pins->DIO11.configuration.GPIO_Mode = GPIO_Mode_IN;
+ 140:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->config->set(&HAL.IOs->pins->DIO10);
+ 141:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->config->set(&HAL.IOs->pins->DIO11);
+ 142:hal/Landungsbruecke/tmc/UART.c **** 		disable_irq(INT_UART0_RX_TX-16);
+ 143:hal/Landungsbruecke/tmc/UART.c **** 		break;
+ 144:hal/Landungsbruecke/tmc/UART.c **** 	case UART_PINS_1:
+ 145:hal/Landungsbruecke/tmc/UART.c **** 	default:
+ 146:hal/Landungsbruecke/tmc/UART.c **** 		SIM_SCGC4 &= ~(SIM_SCGC4_UART2_MASK);
+ 147:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->pins->DIO17.configuration.GPIO_Mode = GPIO_Mode_IN;
+ 148:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->pins->DIO18.configuration.GPIO_Mode = GPIO_Mode_IN;
+ 149:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->config->set(&HAL.IOs->pins->DIO17);
+ 150:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->config->set(&HAL.IOs->pins->DIO18);
+ 151:hal/Landungsbruecke/tmc/UART.c **** 		disable_irq(INT_UART2_RX_TX-16);
+ 152:hal/Landungsbruecke/tmc/UART.c **** 		break;
+ 153:hal/Landungsbruecke/tmc/UART.c **** 	}
+ 154:hal/Landungsbruecke/tmc/UART.c **** 
+ 155:hal/Landungsbruecke/tmc/UART.c **** 	clearBuffers();
+ 156:hal/Landungsbruecke/tmc/UART.c **** }
+ 157:hal/Landungsbruecke/tmc/UART.c **** 
+ 158:hal/Landungsbruecke/tmc/UART.c **** void UART0_RX_TX_IRQHandler_UART(void)
+ 159:hal/Landungsbruecke/tmc/UART.c **** {
+ 160:hal/Landungsbruecke/tmc/UART.c **** 	static uint8_t isSending = false;
+ 161:hal/Landungsbruecke/tmc/UART.c **** 	uint32_t status = UART0_S1;
+ 162:hal/Landungsbruecke/tmc/UART.c **** 
+ 163:hal/Landungsbruecke/tmc/UART.c **** 	// Receive interrupt
+ 164:hal/Landungsbruecke/tmc/UART.c **** 	if(status & UART_S1_RDRF_MASK)
+ 165:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 166:hal/Landungsbruecke/tmc/UART.c **** 		// One-wire UART communication:
+ 167:hal/Landungsbruecke/tmc/UART.c **** 		buffers.rx.buffer[buffers.rx.wrote] = UART0_D;
+ 168:hal/Landungsbruecke/tmc/UART.c **** 		if(!isSending) // Only move ring buffer index & available counter when the received byte wasn't t
+ 169:hal/Landungsbruecke/tmc/UART.c **** 		{
+ 170:hal/Landungsbruecke/tmc/UART.c **** 			buffers.rx.wrote = (buffers.rx.wrote + 1) % BUFFER_SIZE;
+ 171:hal/Landungsbruecke/tmc/UART.c **** 			available++;
+ 172:hal/Landungsbruecke/tmc/UART.c **** 		}
+ 173:hal/Landungsbruecke/tmc/UART.c **** 	}
+ 174:hal/Landungsbruecke/tmc/UART.c **** 
+ 175:hal/Landungsbruecke/tmc/UART.c **** 	// Transmission complete interrupt => do not ignore echo any more
+ 176:hal/Landungsbruecke/tmc/UART.c **** 	// after last bit has been sent.
+ 177:hal/Landungsbruecke/tmc/UART.c **** 	if(status & UART_S1_TC_MASK)
+ 178:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 179:hal/Landungsbruecke/tmc/UART.c **** 		// Last bit has been sent
+ 180:hal/Landungsbruecke/tmc/UART.c **** 		isSending = false;
+ 181:hal/Landungsbruecke/tmc/UART.c **** 		UART0_C2 &= ~UART_C2_TCIE_MASK;
+ 182:hal/Landungsbruecke/tmc/UART.c **** 	}
+ 183:hal/Landungsbruecke/tmc/UART.c **** 
+ 184:hal/Landungsbruecke/tmc/UART.c **** 	// Transmit buffer empty interrupt => send next byte if there is something
+ 185:hal/Landungsbruecke/tmc/UART.c **** 	// to be sent.
+ 186:hal/Landungsbruecke/tmc/UART.c **** 	if(status & UART_S1_TDRE_MASK)
+ 187:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 188:hal/Landungsbruecke/tmc/UART.c **** 		if(buffers.tx.read != buffers.tx.wrote)
+ 189:hal/Landungsbruecke/tmc/UART.c **** 		{
+ 190:hal/Landungsbruecke/tmc/UART.c **** 			UART0_D = buffers.tx.buffer[buffers.tx.read];
+ 191:hal/Landungsbruecke/tmc/UART.c **** 			buffers.tx.read = (buffers.tx.read + 1) % BUFFER_SIZE;
+ 192:hal/Landungsbruecke/tmc/UART.c **** 
+ 193:hal/Landungsbruecke/tmc/UART.c **** 			isSending = true; // Ignore echo
+ 194:hal/Landungsbruecke/tmc/UART.c **** 			UART0_C2 |= UART_C2_TCIE_MASK; // Turn on transmission complete interrupt
+ 195:hal/Landungsbruecke/tmc/UART.c **** 		}
+ 196:hal/Landungsbruecke/tmc/UART.c **** 		else
+ 197:hal/Landungsbruecke/tmc/UART.c **** 		{
+ 198:hal/Landungsbruecke/tmc/UART.c **** 			UART0_C2 &= ~UART_C2_TIE_MASK; // empty buffer -> turn off transmit buffer empty interrupt
+ 199:hal/Landungsbruecke/tmc/UART.c **** 		}
+ 200:hal/Landungsbruecke/tmc/UART.c **** 	}
+ 201:hal/Landungsbruecke/tmc/UART.c **** }
+ 202:hal/Landungsbruecke/tmc/UART.c **** 
+ 203:hal/Landungsbruecke/tmc/UART.c **** void UART2_RX_TX_IRQHandler(void)
+ 204:hal/Landungsbruecke/tmc/UART.c **** {
+ 205:hal/Landungsbruecke/tmc/UART.c **** 	static uint8_t isSending = false;
+ 206:hal/Landungsbruecke/tmc/UART.c **** 	uint32_t status = UART2_S1;
+ 207:hal/Landungsbruecke/tmc/UART.c **** 
+ 208:hal/Landungsbruecke/tmc/UART.c **** 	// Receive interrupt
+ 209:hal/Landungsbruecke/tmc/UART.c **** 	if(status & UART_S1_RDRF_MASK)
+ 210:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 211:hal/Landungsbruecke/tmc/UART.c **** 		// One-wire UART communication:
+ 212:hal/Landungsbruecke/tmc/UART.c **** 		buffers.rx.buffer[buffers.rx.wrote] = UART2_D;
+ 213:hal/Landungsbruecke/tmc/UART.c **** 		if(!isSending) // Only move ring buffer index & available counter when the received byte wasn't t
+ 214:hal/Landungsbruecke/tmc/UART.c **** 		{
+ 215:hal/Landungsbruecke/tmc/UART.c **** 			buffers.rx.wrote = (buffers.rx.wrote + 1) % BUFFER_SIZE;
+ 216:hal/Landungsbruecke/tmc/UART.c **** 			available++;
+ 217:hal/Landungsbruecke/tmc/UART.c **** 		}
+ 218:hal/Landungsbruecke/tmc/UART.c **** 	}
+ 219:hal/Landungsbruecke/tmc/UART.c **** 
+ 220:hal/Landungsbruecke/tmc/UART.c **** 	// Transmission complete interrupt => do not ignore echo any more
+ 221:hal/Landungsbruecke/tmc/UART.c **** 	// after last bit has been sent.
+ 222:hal/Landungsbruecke/tmc/UART.c **** 	if(status & UART_S1_TC_MASK)
+ 223:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 224:hal/Landungsbruecke/tmc/UART.c **** 		// Last bit has been sent
+ 225:hal/Landungsbruecke/tmc/UART.c **** 		isSending = false;
+ 226:hal/Landungsbruecke/tmc/UART.c **** 		UART2_C2 &= ~UART_C2_TCIE_MASK;
+ 227:hal/Landungsbruecke/tmc/UART.c **** 	}
+ 228:hal/Landungsbruecke/tmc/UART.c **** 
+ 229:hal/Landungsbruecke/tmc/UART.c **** 	// Transmit buffer empty interrupt => send next byte if there is something
+ 230:hal/Landungsbruecke/tmc/UART.c **** 	// to be sent.
+ 231:hal/Landungsbruecke/tmc/UART.c **** 	if(status & UART_S1_TDRE_MASK)
+ 232:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 233:hal/Landungsbruecke/tmc/UART.c **** 		if(buffers.tx.read != buffers.tx.wrote)
+ 234:hal/Landungsbruecke/tmc/UART.c **** 		{
+ 235:hal/Landungsbruecke/tmc/UART.c **** 			UART2_D = buffers.tx.buffer[buffers.tx.read];
+ 236:hal/Landungsbruecke/tmc/UART.c **** 			buffers.tx.read = (buffers.tx.read + 1) % BUFFER_SIZE;
+ 237:hal/Landungsbruecke/tmc/UART.c **** 
+ 238:hal/Landungsbruecke/tmc/UART.c **** 			isSending = true; // Ignore echo
+ 239:hal/Landungsbruecke/tmc/UART.c **** 			UART2_C2 |= UART_C2_TCIE_MASK; // Turn on transmission complete interrupt
+ 240:hal/Landungsbruecke/tmc/UART.c **** 		}
+ 241:hal/Landungsbruecke/tmc/UART.c **** 		else
+ 242:hal/Landungsbruecke/tmc/UART.c **** 		{
+ 243:hal/Landungsbruecke/tmc/UART.c **** 			UART2_C2 &= ~UART_C2_TIE_MASK; // empty buffer -> turn off transmit buffer empty interrupt
+ 244:hal/Landungsbruecke/tmc/UART.c **** 		}
+ 245:hal/Landungsbruecke/tmc/UART.c **** 	}
+ 246:hal/Landungsbruecke/tmc/UART.c **** }
+ 247:hal/Landungsbruecke/tmc/UART.c **** 
+ 248:hal/Landungsbruecke/tmc/UART.c **** int UART_readWrite(UART_Config *uart, uint8_t *data, size_t writeLength, uint8_t readLength)
+ 249:hal/Landungsbruecke/tmc/UART.c **** {
+ 250:hal/Landungsbruecke/tmc/UART.c **** 	uart->rxtx.clearBuffers();
+ 251:hal/Landungsbruecke/tmc/UART.c **** 	uart->rxtx.txN(data, writeLength);
+ 252:hal/Landungsbruecke/tmc/UART.c **** 	/* Workaround: Give the UART time to send. Otherwise another write/readRegister can do clearBuffer
+ 253:hal/Landungsbruecke/tmc/UART.c **** 	 * before we're done. This currently is an issue with the IDE when using the Register browser and 
+ 254:hal/Landungsbruecke/tmc/UART.c **** 	 * periodic refresh of values gets requested right after the write request.
+ 255:hal/Landungsbruecke/tmc/UART.c **** 	 */
+ 256:hal/Landungsbruecke/tmc/UART.c **** 	wait(2);
+ 257:hal/Landungsbruecke/tmc/UART.c **** 
+ 258:hal/Landungsbruecke/tmc/UART.c **** 	// Abort early if no data needs to be read back
+ 259:hal/Landungsbruecke/tmc/UART.c **** 	if (readLength <= 0)
+ 260:hal/Landungsbruecke/tmc/UART.c **** 		return 0;
+ 261:hal/Landungsbruecke/tmc/UART.c **** 
+ 262:hal/Landungsbruecke/tmc/UART.c **** 	// Wait for reply with timeout limit
+ 263:hal/Landungsbruecke/tmc/UART.c **** 	uint32_t timestamp = systick_getTick();
+ 264:hal/Landungsbruecke/tmc/UART.c **** 	while(uart->rxtx.bytesAvailable() < readLength)
+ 265:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 266:hal/Landungsbruecke/tmc/UART.c **** 		if(timeSince(timestamp) > UART_TIMEOUT_VALUE)
+ 267:hal/Landungsbruecke/tmc/UART.c **** 		{
+ 268:hal/Landungsbruecke/tmc/UART.c **** 			// Abort on timeout
+ 269:hal/Landungsbruecke/tmc/UART.c **** 			return -1;
+ 270:hal/Landungsbruecke/tmc/UART.c **** 		}
+ 271:hal/Landungsbruecke/tmc/UART.c **** 	}
+ 272:hal/Landungsbruecke/tmc/UART.c **** 
+ 273:hal/Landungsbruecke/tmc/UART.c **** 	uart->rxtx.rxN(data, readLength);
+ 274:hal/Landungsbruecke/tmc/UART.c **** 
+ 275:hal/Landungsbruecke/tmc/UART.c **** 	return 0;
+ 276:hal/Landungsbruecke/tmc/UART.c **** }
+ 277:hal/Landungsbruecke/tmc/UART.c **** 
+ 278:hal/Landungsbruecke/tmc/UART.c **** void UART_readInt(UART_Config *channel, uint8_t slave, uint8_t address, int32_t *value)
+ 279:hal/Landungsbruecke/tmc/UART.c **** {
+ 280:hal/Landungsbruecke/tmc/UART.c **** 	uint8_t readData[8], dataRequest[4];
+ 281:hal/Landungsbruecke/tmc/UART.c **** 	uint32_t timeout;
+ 282:hal/Landungsbruecke/tmc/UART.c **** 
+ 283:hal/Landungsbruecke/tmc/UART.c **** 	dataRequest[0] = 0x05;                        // Sync byte
+ 284:hal/Landungsbruecke/tmc/UART.c **** 	dataRequest[1] = slave;                       // Slave address
+ 285:hal/Landungsbruecke/tmc/UART.c **** 	dataRequest[2] = address;                     // Register address
+ 286:hal/Landungsbruecke/tmc/UART.c **** 	dataRequest[3] = tmc_CRC8(dataRequest, 3, 1); // Cyclic redundancy check
+ 287:hal/Landungsbruecke/tmc/UART.c **** 
+ 288:hal/Landungsbruecke/tmc/UART.c **** 	channel->rxtx.clearBuffers();
+ 289:hal/Landungsbruecke/tmc/UART.c **** 	channel->rxtx.txN(dataRequest, ARRAY_SIZE(dataRequest));
+ 290:hal/Landungsbruecke/tmc/UART.c **** 
+ 291:hal/Landungsbruecke/tmc/UART.c **** 	// Wait for reply with timeout limit
+ 292:hal/Landungsbruecke/tmc/UART.c **** 	timeout = systick_getTick();
+ 293:hal/Landungsbruecke/tmc/UART.c **** 	while(channel->rxtx.bytesAvailable() < ARRAY_SIZE(readData))
+ 294:hal/Landungsbruecke/tmc/UART.c **** 		if(timeSince(timeout) > UART_TIMEOUT_VALUE) // Timeout
+ 295:hal/Landungsbruecke/tmc/UART.c **** 			return;
+ 296:hal/Landungsbruecke/tmc/UART.c **** 
+ 297:hal/Landungsbruecke/tmc/UART.c **** 	channel->rxtx.rxN(readData, ARRAY_SIZE(readData));
+ 298:hal/Landungsbruecke/tmc/UART.c **** 	// Check if the received data is correct (CRC, Sync, Slave address, Register address)
+ 299:hal/Landungsbruecke/tmc/UART.c **** 	// todo CHECK 2: Only keep CRC check? Should be sufficient for wrong transmissions (LH) #1
+ 300:hal/Landungsbruecke/tmc/UART.c **** 	if(readData[7] != tmc_CRC8(readData, 7, 1) || readData[0] != 0x05 || readData[1] != 0xFF || readDa
+ 301:hal/Landungsbruecke/tmc/UART.c **** 		return;
+ 302:hal/Landungsbruecke/tmc/UART.c **** 
+ 303:hal/Landungsbruecke/tmc/UART.c **** 	*value = readData[3] << 24 | readData[4] << 16 | readData[5] << 8 | readData[6];
+ 304:hal/Landungsbruecke/tmc/UART.c **** 	return;
+ 305:hal/Landungsbruecke/tmc/UART.c **** }
+ 306:hal/Landungsbruecke/tmc/UART.c **** 
+ 307:hal/Landungsbruecke/tmc/UART.c **** void UART_writeInt(UART_Config *channel, uint8_t slave, uint8_t address, int32_t value)
+ 308:hal/Landungsbruecke/tmc/UART.c **** {
+ 309:hal/Landungsbruecke/tmc/UART.c **** 	uint8_t writeData[8];
+ 310:hal/Landungsbruecke/tmc/UART.c **** 
+ 311:hal/Landungsbruecke/tmc/UART.c **** 	writeData[0] = 0x05;                         // Sync byte
+ 312:hal/Landungsbruecke/tmc/UART.c **** 	writeData[1] = slave;                        // Slave address
+ 313:hal/Landungsbruecke/tmc/UART.c **** 	writeData[2] = address | TMC_WRITE_BIT;      // Register address with write bit set
+ 314:hal/Landungsbruecke/tmc/UART.c **** 	writeData[3] = value >> 24;                  // Register Data
+ 315:hal/Landungsbruecke/tmc/UART.c **** 	writeData[4] = value >> 16;                  // Register Data
+ 316:hal/Landungsbruecke/tmc/UART.c **** 	writeData[5] = value >> 8;                   // Register Data
+ 317:hal/Landungsbruecke/tmc/UART.c **** 	writeData[6] = value & 0xFF;                 // Register Data
+ 318:hal/Landungsbruecke/tmc/UART.c **** 	writeData[7] = tmc_CRC8(writeData, 7, 1);    // Cyclic redundancy check
+ 319:hal/Landungsbruecke/tmc/UART.c **** 
+ 320:hal/Landungsbruecke/tmc/UART.c **** 	channel->rxtx.clearBuffers();
+ 321:hal/Landungsbruecke/tmc/UART.c **** 	for(uint32_t i = 0; i < ARRAY_SIZE(writeData); i++)
+ 322:hal/Landungsbruecke/tmc/UART.c **** 		channel->rxtx.tx(writeData[i]);
+ 323:hal/Landungsbruecke/tmc/UART.c **** 
+ 324:hal/Landungsbruecke/tmc/UART.c **** 	/* Workaround: Give the UART time to send. Otherwise another write/readRegister can do clearBuffer
+ 325:hal/Landungsbruecke/tmc/UART.c **** 	 * before we're done. This currently is an issue with the IDE when using the Register browser and 
+ 326:hal/Landungsbruecke/tmc/UART.c **** 	 * periodic refresh of values gets requested right after the write request.
+ 327:hal/Landungsbruecke/tmc/UART.c **** 	 */
+ 328:hal/Landungsbruecke/tmc/UART.c **** 	wait(2);
+ 329:hal/Landungsbruecke/tmc/UART.c **** }
+ 330:hal/Landungsbruecke/tmc/UART.c **** 
+ 331:hal/Landungsbruecke/tmc/UART.c **** static void tx(uint8_t ch)
+ 332:hal/Landungsbruecke/tmc/UART.c **** {
+ 333:hal/Landungsbruecke/tmc/UART.c **** 	buffers.tx.buffer[buffers.tx.wrote] = ch;
+ 334:hal/Landungsbruecke/tmc/UART.c **** 	buffers.tx.wrote = (buffers.tx.wrote + 1) % BUFFER_SIZE;
+ 335:hal/Landungsbruecke/tmc/UART.c **** 
+ 336:hal/Landungsbruecke/tmc/UART.c **** 	// enable send interrupt
+ 337:hal/Landungsbruecke/tmc/UART.c **** 	switch(UART.pinout) {
+ 338:hal/Landungsbruecke/tmc/UART.c **** 	case UART_PINS_2:
+ 339:hal/Landungsbruecke/tmc/UART.c **** 		UART0_C2 |= UART_C2_TIE_MASK;
+ 340:hal/Landungsbruecke/tmc/UART.c **** 		break;
+ 341:hal/Landungsbruecke/tmc/UART.c **** 	case UART_PINS_1:
+ 342:hal/Landungsbruecke/tmc/UART.c **** 	default:
+ 343:hal/Landungsbruecke/tmc/UART.c **** 		UART2_C2 |= UART_C2_TIE_MASK;
+ 344:hal/Landungsbruecke/tmc/UART.c **** 		break;
+ 345:hal/Landungsbruecke/tmc/UART.c **** 	}
+ 346:hal/Landungsbruecke/tmc/UART.c **** }
+ 347:hal/Landungsbruecke/tmc/UART.c **** 
+ 348:hal/Landungsbruecke/tmc/UART.c **** static uint8_t rx(uint8_t *ch)
+ 349:hal/Landungsbruecke/tmc/UART.c **** {
+  26              		.loc 1 349 1 view -0
+  27              		.cfi_startproc
+  28              		@ args = 0, pretend = 0, frame = 0
+  29              		@ frame_needed = 0, uses_anonymous_args = 0
+  30              		@ link register save eliminated.
+ 350:hal/Landungsbruecke/tmc/UART.c **** 	if(buffers.rx.read == buffers.rx.wrote)
+  31              		.loc 1 350 2 view .LVU1
+  32              		.loc 1 350 15 is_stmt 0 view .LVU2
+  33 0000 094A     		ldr	r2, .L4
+  34              		.loc 1 350 4 view .LVU3
+  35 0002 D2E90331 		ldrd	r3, r1, [r2, #12]
+  36 0006 8B42     		cmp	r3, r1
+  37 0008 0CD0     		beq	.L3
+ 351:hal/Landungsbruecke/tmc/UART.c **** 		return 0;
+ 352:hal/Landungsbruecke/tmc/UART.c **** 
+ 353:hal/Landungsbruecke/tmc/UART.c **** 	*ch = buffers.rx.buffer[buffers.rx.read];
+  38              		.loc 1 353 2 is_stmt 1 view .LVU4
+  39              		.loc 1 353 25 is_stmt 0 view .LVU5
+  40 000a 5169     		ldr	r1, [r2, #20]
+  41 000c C95C     		ldrb	r1, [r1, r3]	@ zero_extendqisi2
+  42              		.loc 1 353 6 view .LVU6
+  43 000e 0170     		strb	r1, [r0]
+ 354:hal/Landungsbruecke/tmc/UART.c **** 	buffers.rx.read = (buffers.rx.read + 1) % BUFFER_SIZE;
+  44              		.loc 1 354 2 is_stmt 1 view .LVU7
+  45              		.loc 1 354 37 is_stmt 0 view .LVU8
+  46 0010 0133     		adds	r3, r3, #1
+  47              		.loc 1 354 42 view .LVU9
+  48 0012 03F01F03 		and	r3, r3, #31
+  49              		.loc 1 354 18 view .LVU10
+  50 0016 D360     		str	r3, [r2, #12]
+ 355:hal/Landungsbruecke/tmc/UART.c **** 	available--;
+  51              		.loc 1 355 2 is_stmt 1 view .LVU11
+  52              		.loc 1 355 11 is_stmt 0 view .LVU12
+  53 0018 044A     		ldr	r2, .L4+4
+  54 001a 1368     		ldr	r3, [r2]
+  55 001c 013B     		subs	r3, r3, #1
+  56 001e 1360     		str	r3, [r2]
+ 356:hal/Landungsbruecke/tmc/UART.c **** 
+ 357:hal/Landungsbruecke/tmc/UART.c **** 	return 1;
+  57              		.loc 1 357 2 is_stmt 1 view .LVU13
+  58              		.loc 1 357 9 is_stmt 0 view .LVU14
+  59 0020 0120     		movs	r0, #1
+  60              	.LVL1:
+  61              		.loc 1 357 9 view .LVU15
+  62 0022 7047     		bx	lr
+  63              	.LVL2:
+  64              	.L3:
+ 351:hal/Landungsbruecke/tmc/UART.c **** 
+  65              		.loc 1 351 10 view .LVU16
+  66 0024 0020     		movs	r0, #0
+  67              	.LVL3:
+ 358:hal/Landungsbruecke/tmc/UART.c **** }
+  68              		.loc 1 358 1 view .LVU17
+  69 0026 7047     		bx	lr
+  70              	.L5:
+  71              		.align	2
+  72              	.L4:
+  73 0028 00000000 		.word	.LANCHOR0
+  74 002c 00000000 		.word	.LANCHOR1
+  75              		.cfi_endproc
+  76              	.LFE8:
+  78              		.align	1
+  79              		.syntax unified
+  80              		.thumb
+  81              		.thumb_func
+  82              		.fpu softvfp
+  84              	bytesAvailable:
+  85              	.LFB12:
+ 359:hal/Landungsbruecke/tmc/UART.c **** 
+ 360:hal/Landungsbruecke/tmc/UART.c **** static void txN(uint8_t *str, uint8_t number)
+ 361:hal/Landungsbruecke/tmc/UART.c **** {
+ 362:hal/Landungsbruecke/tmc/UART.c **** 	for(int32_t i = 0; i < number; i++)
+ 363:hal/Landungsbruecke/tmc/UART.c **** 		tx(str[i]);
+ 364:hal/Landungsbruecke/tmc/UART.c **** }
+ 365:hal/Landungsbruecke/tmc/UART.c **** 
+ 366:hal/Landungsbruecke/tmc/UART.c **** static uint8_t rxN(uint8_t *str, uint8_t number)
+ 367:hal/Landungsbruecke/tmc/UART.c **** {
+ 368:hal/Landungsbruecke/tmc/UART.c **** 	if(available < number)
+ 369:hal/Landungsbruecke/tmc/UART.c **** 		return 0;
+ 370:hal/Landungsbruecke/tmc/UART.c **** 
+ 371:hal/Landungsbruecke/tmc/UART.c **** 	for(int32_t i = 0; i < number; i++)
+ 372:hal/Landungsbruecke/tmc/UART.c **** 		rx(&str[i]);
+ 373:hal/Landungsbruecke/tmc/UART.c **** 
+ 374:hal/Landungsbruecke/tmc/UART.c **** 	return 1;
+ 375:hal/Landungsbruecke/tmc/UART.c **** }
+ 376:hal/Landungsbruecke/tmc/UART.c **** 
+ 377:hal/Landungsbruecke/tmc/UART.c **** static void clearBuffers(void)
+ 378:hal/Landungsbruecke/tmc/UART.c **** {
+ 379:hal/Landungsbruecke/tmc/UART.c **** 	switch(UART.pinout) {
+ 380:hal/Landungsbruecke/tmc/UART.c **** 	case UART_PINS_2:
+ 381:hal/Landungsbruecke/tmc/UART.c **** 		disable_irq(INT_UART0_RX_TX-16);
+ 382:hal/Landungsbruecke/tmc/UART.c **** 		available         = 0;
+ 383:hal/Landungsbruecke/tmc/UART.c **** 		buffers.rx.read   = 0;
+ 384:hal/Landungsbruecke/tmc/UART.c **** 		buffers.rx.wrote  = 0;
+ 385:hal/Landungsbruecke/tmc/UART.c **** 		buffers.tx.read   = 0;
+ 386:hal/Landungsbruecke/tmc/UART.c **** 		buffers.tx.wrote  = 0;
+ 387:hal/Landungsbruecke/tmc/UART.c **** 		enable_irq(INT_UART0_RX_TX-16);
+ 388:hal/Landungsbruecke/tmc/UART.c **** 		break;
+ 389:hal/Landungsbruecke/tmc/UART.c **** 	case UART_PINS_1:
+ 390:hal/Landungsbruecke/tmc/UART.c **** 	default:
+ 391:hal/Landungsbruecke/tmc/UART.c **** 		disable_irq(INT_UART2_RX_TX-16);
+ 392:hal/Landungsbruecke/tmc/UART.c **** 		available         = 0;
+ 393:hal/Landungsbruecke/tmc/UART.c **** 		buffers.rx.read   = 0;
+ 394:hal/Landungsbruecke/tmc/UART.c **** 		buffers.rx.wrote  = 0;
+ 395:hal/Landungsbruecke/tmc/UART.c **** 		buffers.tx.read   = 0;
+ 396:hal/Landungsbruecke/tmc/UART.c **** 		buffers.tx.wrote  = 0;
+ 397:hal/Landungsbruecke/tmc/UART.c **** 		enable_irq(INT_UART2_RX_TX-16);
+ 398:hal/Landungsbruecke/tmc/UART.c **** 		break;
+ 399:hal/Landungsbruecke/tmc/UART.c **** 	}
+ 400:hal/Landungsbruecke/tmc/UART.c **** }
+ 401:hal/Landungsbruecke/tmc/UART.c **** 
+ 402:hal/Landungsbruecke/tmc/UART.c **** static uint32_t bytesAvailable()
+ 403:hal/Landungsbruecke/tmc/UART.c **** {
+  86              		.loc 1 403 1 is_stmt 1 view -0
+  87              		.cfi_startproc
+  88              		@ args = 0, pretend = 0, frame = 0
+  89              		@ frame_needed = 0, uses_anonymous_args = 0
+  90              		@ link register save eliminated.
+ 404:hal/Landungsbruecke/tmc/UART.c **** 	return available;
+  91              		.loc 1 404 2 view .LVU19
+  92              		.loc 1 404 9 is_stmt 0 view .LVU20
+  93 0030 014B     		ldr	r3, .L7
+  94 0032 1868     		ldr	r0, [r3]
+ 405:hal/Landungsbruecke/tmc/UART.c **** }
+  95              		.loc 1 405 1 view .LVU21
+  96 0034 7047     		bx	lr
+  97              	.L8:
+  98 0036 00BF     		.align	2
+  99              	.L7:
+ 100 0038 00000000 		.word	.LANCHOR1
+ 101              		.cfi_endproc
+ 102              	.LFE12:
+ 104              		.align	1
+ 105              		.syntax unified
+ 106              		.thumb
+ 107              		.thumb_func
+ 108              		.fpu softvfp
+ 110              	init:
+ 111              	.LFB0:
+  60:hal/Landungsbruecke/tmc/UART.c **** 	register uint16_t ubd = (CPU_BUS_CLK_HZ / 16) / UART.rxtx.baudRate;
+ 112              		.loc 1 60 1 is_stmt 1 view -0
+ 113              		.cfi_startproc
+ 114              		@ args = 0, pretend = 0, frame = 0
+ 115              		@ frame_needed = 0, uses_anonymous_args = 0
+  61:hal/Landungsbruecke/tmc/UART.c **** 
+ 116              		.loc 1 61 2 view .LVU23
+  61:hal/Landungsbruecke/tmc/UART.c **** 
+ 117              		.loc 1 61 59 is_stmt 0 view .LVU24
+ 118 003c 404A     		ldr	r2, .L14
+  60:hal/Landungsbruecke/tmc/UART.c **** 	register uint16_t ubd = (CPU_BUS_CLK_HZ / 16) / UART.rxtx.baudRate;
+ 119              		.loc 1 60 1 view .LVU25
+ 120 003e F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 121              	.LCFI0:
+ 122              		.cfi_def_cfa_offset 24
+ 123              		.cfi_offset 3, -24
+ 124              		.cfi_offset 4, -20
+ 125              		.cfi_offset 5, -16
+ 126              		.cfi_offset 6, -12
+ 127              		.cfi_offset 7, -8
+ 128              		.cfi_offset 14, -4
+  61:hal/Landungsbruecke/tmc/UART.c **** 
+ 129              		.loc 1 61 48 view .LVU26
+ 130 0040 D36B     		ldr	r3, [r2, #60]
+ 131 0042 404D     		ldr	r5, .L14+4
+ 132 0044 B5FBF3F5 		udiv	r5, r5, r3
+ 133              	.LVL4:
+  65:hal/Landungsbruecke/tmc/UART.c **** 	case UART_PINS_2:
+ 134              		.loc 1 65 2 is_stmt 1 view .LVU27
+ 135 0048 3F4B     		ldr	r3, .L14+8
+ 136 004a 107E     		ldrb	r0, [r2, #24]	@ zero_extendqisi2
+ 137 004c DC68     		ldr	r4, [r3, #12]
+ 138 004e D4E90013 		ldrd	r1, r3, [r4]
+ 139 0052 0128     		cmp	r0, #1
+ 140 0054 C5F30427 		ubfx	r7, r5, #8, #5
+ 141 0058 0968     		ldr	r1, [r1]
+ 142 005a EDB2     		uxtb	r5, r5
+ 143              	.LVL5:
+  65:hal/Landungsbruecke/tmc/UART.c **** 	case UART_PINS_2:
+ 144              		.loc 1 65 2 is_stmt 0 view .LVU28
+ 145 005c 2AD1     		bne	.L10
+  67:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->pins->DIO11.configuration.GPIO_Mode  = GPIO_Mode_AF3;  // RxD (DIO11)
+ 146              		.loc 1 67 3 is_stmt 1 view .LVU29
+  67:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->pins->DIO11.configuration.GPIO_Mode  = GPIO_Mode_AF3;  // RxD (DIO11)
+ 147              		.loc 1 67 49 is_stmt 0 view .LVU30
+ 148 005e 0322     		movs	r2, #3
+ 149 0060 83F8BD21 		strb	r2, [r3, #445]
+  68:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->pins->DIO10.configuration.GPIO_OType = GPIO_OType_OD;  // TxD as open drain output
+ 150              		.loc 1 68 3 is_stmt 1 view .LVU31
+  68:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->pins->DIO10.configuration.GPIO_OType = GPIO_OType_OD;  // TxD as open drain output
+ 151              		.loc 1 68 49 is_stmt 0 view .LVU32
+ 152 0064 83F8DD21 		strb	r2, [r3, #477]
+  69:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->pins->DIO11.configuration.GPIO_PuPd  = GPIO_PuPd_UP;   // RxD with pull-up resistor
+ 153              		.loc 1 69 3 is_stmt 1 view .LVU33
+  69:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->pins->DIO11.configuration.GPIO_PuPd  = GPIO_PuPd_UP;   // RxD with pull-up resistor
+ 154              		.loc 1 69 49 is_stmt 0 view .LVU34
+ 155 0068 83F8BF01 		strb	r0, [r3, #447]
+  70:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->config->set(&HAL.IOs->pins->DIO10);
+ 156              		.loc 1 70 3 is_stmt 1 view .LVU35
+  70:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->config->set(&HAL.IOs->pins->DIO10);
+ 157              		.loc 1 70 49 is_stmt 0 view .LVU36
+ 158 006c 83F8E001 		strb	r0, [r3, #480]
+  71:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->config->set(&HAL.IOs->pins->DIO11);
+ 159              		.loc 1 71 3 is_stmt 1 view .LVU37
+ 160 0070 03F5D470 		add	r0, r3, #424
+ 161 0074 8847     		blx	r1
+ 162              	.LVL6:
+  72:hal/Landungsbruecke/tmc/UART.c **** 		SIM_SCGC4 |= SIM_SCGC4_UART0_MASK;
+ 163              		.loc 1 72 3 view .LVU38
+  72:hal/Landungsbruecke/tmc/UART.c **** 		SIM_SCGC4 |= SIM_SCGC4_UART0_MASK;
+ 164              		.loc 1 72 18 is_stmt 0 view .LVU39
+ 165 0076 D4E90030 		ldrd	r3, r0, [r4]
+  72:hal/Landungsbruecke/tmc/UART.c **** 		SIM_SCGC4 |= SIM_SCGC4_UART0_MASK;
+ 166              		.loc 1 72 3 view .LVU40
+ 167 007a 1B68     		ldr	r3, [r3]
+ 168 007c 00F5E470 		add	r0, r0, #456
+ 169 0080 9847     		blx	r3
+ 170              	.LVL7:
+  73:hal/Landungsbruecke/tmc/UART.c **** 		UART_C2_REG(UART0_BASE_PTR) &= ~(UART_C2_TE_MASK | UART_C2_RE_MASK );
+ 171              		.loc 1 73 3 is_stmt 1 view .LVU41
+  73:hal/Landungsbruecke/tmc/UART.c **** 		UART_C2_REG(UART0_BASE_PTR) &= ~(UART_C2_TE_MASK | UART_C2_RE_MASK );
+ 172              		.loc 1 73 13 is_stmt 0 view .LVU42
+ 173 0082 41F23402 		movw	r2, #4148
+ 174 0086 3149     		ldr	r1, .L14+12
+ 175 0088 8B58     		ldr	r3, [r1, r2]
+ 176 008a 43F48063 		orr	r3, r3, #1024
+ 177 008e 8B50     		str	r3, [r1, r2]
+  74:hal/Landungsbruecke/tmc/UART.c **** 		UART_C1_REG(UART0_BASE_PTR) = 0;
+ 178              		.loc 1 74 3 is_stmt 1 view .LVU43
+  74:hal/Landungsbruecke/tmc/UART.c **** 		UART_C1_REG(UART0_BASE_PTR) = 0;
+ 179              		.loc 1 74 31 is_stmt 0 view .LVU44
+ 180 0090 2F4B     		ldr	r3, .L14+16
+ 181 0092 DA78     		ldrb	r2, [r3, #3]	@ zero_extendqisi2
+ 182 0094 02F0F302 		and	r2, r2, #243
+ 183 0098 DA70     		strb	r2, [r3, #3]
+  75:hal/Landungsbruecke/tmc/UART.c **** 		UART_BDH_REG(UART0_BASE_PTR) = (ubd >> 8) & UART_BDH_SBR_MASK;
+ 184              		.loc 1 75 3 is_stmt 1 view .LVU45
+  75:hal/Landungsbruecke/tmc/UART.c **** 		UART_BDH_REG(UART0_BASE_PTR) = (ubd >> 8) & UART_BDH_SBR_MASK;
+ 185              		.loc 1 75 31 is_stmt 0 view .LVU46
+ 186 009a 0022     		movs	r2, #0
+ 187 009c 9A70     		strb	r2, [r3, #2]
+  76:hal/Landungsbruecke/tmc/UART.c **** 		UART_BDL_REG(UART0_BASE_PTR) = (ubd & UART_BDL_SBR_MASK);
+ 188              		.loc 1 76 3 is_stmt 1 view .LVU47
+  76:hal/Landungsbruecke/tmc/UART.c **** 		UART_BDL_REG(UART0_BASE_PTR) = (ubd & UART_BDL_SBR_MASK);
+ 189              		.loc 1 76 32 is_stmt 0 view .LVU48
+ 190 009e 1F70     		strb	r7, [r3]
+  77:hal/Landungsbruecke/tmc/UART.c **** 		UART_C2_REG(UART0_BASE_PTR) |= (UART_C2_TE_MASK | UART_C2_RE_MASK | UART_C2_RIE_MASK);
+ 191              		.loc 1 77 3 is_stmt 1 view .LVU49
+  77:hal/Landungsbruecke/tmc/UART.c **** 		UART_C2_REG(UART0_BASE_PTR) |= (UART_C2_TE_MASK | UART_C2_RE_MASK | UART_C2_RIE_MASK);
+ 192              		.loc 1 77 32 is_stmt 0 view .LVU50
+ 193 00a0 5D70     		strb	r5, [r3, #1]
+  78:hal/Landungsbruecke/tmc/UART.c **** 		enable_irq(INT_UART0_RX_TX-16);
+ 194              		.loc 1 78 3 is_stmt 1 view .LVU51
+  78:hal/Landungsbruecke/tmc/UART.c **** 		enable_irq(INT_UART0_RX_TX-16);
+ 195              		.loc 1 78 31 is_stmt 0 view .LVU52
+ 196 00a2 DA78     		ldrb	r2, [r3, #3]	@ zero_extendqisi2
+ 197 00a4 42F02C02 		orr	r2, r2, #44
+ 198 00a8 DA70     		strb	r2, [r3, #3]
+  79:hal/Landungsbruecke/tmc/UART.c **** 		break;
+ 199              		.loc 1 79 3 is_stmt 1 view .LVU53
+ 200 00aa 2D20     		movs	r0, #45
+ 201              	.L13:
+ 131:hal/Landungsbruecke/tmc/UART.c **** 
+ 202              		.loc 1 131 1 is_stmt 0 view .LVU54
+ 203 00ac BDE8F840 		pop	{r3, r4, r5, r6, r7, lr}
+ 204              	.LCFI1:
+ 205              		.cfi_remember_state
+ 206              		.cfi_restore 14
+ 207              		.cfi_restore 7
+ 208              		.cfi_restore 6
+ 209              		.cfi_restore 5
+ 210              		.cfi_restore 4
+ 211              		.cfi_restore 3
+ 212              		.cfi_def_cfa_offset 0
+ 112:hal/Landungsbruecke/tmc/UART.c **** 		break;
+ 213              		.loc 1 112 3 view .LVU55
+ 214 00b0 FFF7FEBF 		b	enable_irq
+ 215              	.LVL8:
+ 216              	.L10:
+ 217              	.LCFI2:
+ 218              		.cfi_restore_state
+  83:hal/Landungsbruecke/tmc/UART.c **** 		UART_C1_REG(UART2_BASE_PTR) = 0;
+ 219              		.loc 1 83 3 is_stmt 1 view .LVU56
+  83:hal/Landungsbruecke/tmc/UART.c **** 		UART_C1_REG(UART2_BASE_PTR) = 0;
+ 220              		.loc 1 83 13 is_stmt 0 view .LVU57
+ 221 00b4 DFF894C0 		ldr	ip, .L14+12
+ 222 00b8 41F23406 		movw	r6, #4148
+ 223 00bc 5CF80600 		ldr	r0, [ip, r6]
+ 224 00c0 40F48050 		orr	r0, r0, #4096
+ 225 00c4 4CF80600 		str	r0, [ip, r6]
+ 226              	.LVL9:
+  84:hal/Landungsbruecke/tmc/UART.c **** 		switch(UART.mode) {
+ 227              		.loc 1 84 3 is_stmt 1 view .LVU58
+  84:hal/Landungsbruecke/tmc/UART.c **** 		switch(UART.mode) {
+ 228              		.loc 1 84 31 is_stmt 0 view .LVU59
+ 229 00c8 224E     		ldr	r6, .L14+20
+ 230 00ca 0020     		movs	r0, #0
+ 231 00cc B070     		strb	r0, [r6, #2]
+  85:hal/Landungsbruecke/tmc/UART.c **** 		case UART_MODE_SINGLE_WIRE:
+ 232              		.loc 1 85 3 is_stmt 1 view .LVU60
+ 233 00ce 92F819C0 		ldrb	ip, [r2, #25]	@ zero_extendqisi2
+ 234 00d2 0322     		movs	r2, #3
+ 235 00d4 BCF1010F 		cmp	ip, #1
+ 236 00d8 03F57A70 		add	r0, r3, #1000
+ 100:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->pins->DIO18.configuration.GPIO_Mode  = GPIO_Mode_AF3;  // RxD (DIO18)
+ 237              		.loc 1 100 50 is_stmt 0 view .LVU61
+ 238 00dc 83F8FD23 		strb	r2, [r3, #1021]
+ 101:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->pins->DIO17.configuration.GPIO_OType = GPIO_OType_OD;  // TxD as open drain output
+ 239              		.loc 1 101 4 is_stmt 1 view .LVU62
+ 101:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->pins->DIO17.configuration.GPIO_OType = GPIO_OType_OD;  // TxD as open drain output
+ 240              		.loc 1 101 50 is_stmt 0 view .LVU63
+ 241 00e0 83F81D24 		strb	r2, [r3, #1053]
+ 242 00e4 1FD1     		bne	.L11
+  87:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->pins->DIO18.configuration.GPIO_Mode  = GPIO_Mode_AF3;  // RxD (DIO18)
+ 243              		.loc 1 87 4 is_stmt 1 view .LVU64
+  89:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->pins->DIO17.configuration.GPIO_PuPd  = GPIO_PuPd_UP;   // RxD with pull-up resistor
+ 244              		.loc 1 89 4 view .LVU65
+  89:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->pins->DIO17.configuration.GPIO_PuPd  = GPIO_PuPd_UP;   // RxD with pull-up resistor
+ 245              		.loc 1 89 50 is_stmt 0 view .LVU66
+ 246 00e6 83F81FC4 		strb	ip, [r3, #1055]
+  90:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->config->set(&HAL.IOs->pins->DIO17);
+ 247              		.loc 1 90 4 is_stmt 1 view .LVU67
+  90:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->config->set(&HAL.IOs->pins->DIO17);
+ 248              		.loc 1 90 50 is_stmt 0 view .LVU68
+ 249 00ea 83F800C4 		strb	ip, [r3, #1024]
+  91:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->config->set(&HAL.IOs->pins->DIO18);
+ 250              		.loc 1 91 4 is_stmt 1 view .LVU69
+ 251 00ee 8847     		blx	r1
+ 252              	.LVL10:
+  92:hal/Landungsbruecke/tmc/UART.c **** 			// Enable single wire UART
+ 253              		.loc 1 92 4 view .LVU70
+  92:hal/Landungsbruecke/tmc/UART.c **** 			// Enable single wire UART
+ 254              		.loc 1 92 19 is_stmt 0 view .LVU71
+ 255 00f0 D4E90030 		ldrd	r3, r0, [r4]
+  92:hal/Landungsbruecke/tmc/UART.c **** 			// Enable single wire UART
+ 256              		.loc 1 92 4 view .LVU72
+ 257 00f4 1B68     		ldr	r3, [r3]
+ 258 00f6 00F58160 		add	r0, r0, #1032
+ 259 00fa 9847     		blx	r3
+ 260              	.LVL11:
+  94:hal/Landungsbruecke/tmc/UART.c **** 			// Set TxD as output in single wire UART
+ 261              		.loc 1 94 4 is_stmt 1 view .LVU73
+  94:hal/Landungsbruecke/tmc/UART.c **** 			// Set TxD as output in single wire UART
+ 262              		.loc 1 94 32 is_stmt 0 view .LVU74
+ 263 00fc B378     		ldrb	r3, [r6, #2]	@ zero_extendqisi2
+ 264 00fe 43F0A003 		orr	r3, r3, #160
+ 265 0102 B370     		strb	r3, [r6, #2]
+  96:hal/Landungsbruecke/tmc/UART.c **** 			break;
+ 266              		.loc 1 96 4 is_stmt 1 view .LVU75
+  96:hal/Landungsbruecke/tmc/UART.c **** 			break;
+ 267              		.loc 1 96 32 is_stmt 0 view .LVU76
+ 268 0104 B379     		ldrb	r3, [r6, #6]	@ zero_extendqisi2
+ 269 0106 43F02003 		orr	r3, r3, #32
+ 270 010a B371     		strb	r3, [r6, #6]
+  97:hal/Landungsbruecke/tmc/UART.c **** 		case UART_MODE_DUAL_WIRE:
+ 271              		.loc 1 97 4 is_stmt 1 view .LVU77
+ 272              	.L12:
+ 108:hal/Landungsbruecke/tmc/UART.c **** 		UART_BDH_REG(UART2_BASE_PTR) = (ubd >> 8) & UART_BDH_SBR_MASK;
+ 273              		.loc 1 108 3 view .LVU78
+ 108:hal/Landungsbruecke/tmc/UART.c **** 		UART_BDH_REG(UART2_BASE_PTR) = (ubd >> 8) & UART_BDH_SBR_MASK;
+ 274              		.loc 1 108 31 is_stmt 0 view .LVU79
+ 275 010c 114B     		ldr	r3, .L14+20
+ 276 010e DA78     		ldrb	r2, [r3, #3]	@ zero_extendqisi2
+ 277 0110 02F0F302 		and	r2, r2, #243
+ 278 0114 DA70     		strb	r2, [r3, #3]
+ 109:hal/Landungsbruecke/tmc/UART.c **** 		UART_BDL_REG(UART2_BASE_PTR) = (ubd & UART_BDL_SBR_MASK);
+ 279              		.loc 1 109 3 is_stmt 1 view .LVU80
+ 109:hal/Landungsbruecke/tmc/UART.c **** 		UART_BDL_REG(UART2_BASE_PTR) = (ubd & UART_BDL_SBR_MASK);
+ 280              		.loc 1 109 32 is_stmt 0 view .LVU81
+ 281 0116 1F70     		strb	r7, [r3]
+ 110:hal/Landungsbruecke/tmc/UART.c **** 		UART_C2_REG(UART2_BASE_PTR) |= (UART_C2_TE_MASK | UART_C2_RE_MASK | UART_C2_RIE_MASK);
+ 282              		.loc 1 110 3 is_stmt 1 view .LVU82
+ 110:hal/Landungsbruecke/tmc/UART.c **** 		UART_C2_REG(UART2_BASE_PTR) |= (UART_C2_TE_MASK | UART_C2_RE_MASK | UART_C2_RIE_MASK);
+ 283              		.loc 1 110 32 is_stmt 0 view .LVU83
+ 284 0118 5D70     		strb	r5, [r3, #1]
+ 111:hal/Landungsbruecke/tmc/UART.c **** 		enable_irq(INT_UART2_RX_TX-16);
+ 285              		.loc 1 111 3 is_stmt 1 view .LVU84
+ 111:hal/Landungsbruecke/tmc/UART.c **** 		enable_irq(INT_UART2_RX_TX-16);
+ 286              		.loc 1 111 31 is_stmt 0 view .LVU85
+ 287 011a DA78     		ldrb	r2, [r3, #3]	@ zero_extendqisi2
+ 288 011c 42F02C02 		orr	r2, r2, #44
+ 289 0120 DA70     		strb	r2, [r3, #3]
+ 112:hal/Landungsbruecke/tmc/UART.c **** 		break;
+ 290              		.loc 1 112 3 is_stmt 1 view .LVU86
+ 291 0122 3120     		movs	r0, #49
+ 292 0124 C2E7     		b	.L13
+ 293              	.L11:
+ 100:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->pins->DIO18.configuration.GPIO_Mode  = GPIO_Mode_AF3;  // RxD (DIO18)
+ 294              		.loc 1 100 4 view .LVU87
+ 102:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->pins->DIO18.configuration.GPIO_PuPd  = GPIO_PuPd_UP;   // RxD with pull-up resistor
+ 295              		.loc 1 102 4 view .LVU88
+ 102:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->pins->DIO18.configuration.GPIO_PuPd  = GPIO_PuPd_UP;   // RxD with pull-up resistor
+ 296              		.loc 1 102 50 is_stmt 0 view .LVU89
+ 297 0126 0122     		movs	r2, #1
+ 298 0128 83F8FF23 		strb	r2, [r3, #1023]
+ 103:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->config->set(&HAL.IOs->pins->DIO17);
+ 299              		.loc 1 103 4 is_stmt 1 view .LVU90
+ 103:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->config->set(&HAL.IOs->pins->DIO17);
+ 300              		.loc 1 103 50 is_stmt 0 view .LVU91
+ 301 012c 83F82024 		strb	r2, [r3, #1056]
+ 104:hal/Landungsbruecke/tmc/UART.c **** 			HAL.IOs->config->set(&HAL.IOs->pins->DIO18);
+ 302              		.loc 1 104 4 is_stmt 1 view .LVU92
+ 303 0130 8847     		blx	r1
+ 304              	.LVL12:
+ 105:hal/Landungsbruecke/tmc/UART.c **** 			break;
+ 305              		.loc 1 105 4 view .LVU93
+ 105:hal/Landungsbruecke/tmc/UART.c **** 			break;
+ 306              		.loc 1 105 19 is_stmt 0 view .LVU94
+ 307 0132 D4E90030 		ldrd	r3, r0, [r4]
+ 105:hal/Landungsbruecke/tmc/UART.c **** 			break;
+ 308              		.loc 1 105 4 view .LVU95
+ 309 0136 1B68     		ldr	r3, [r3]
+ 310 0138 00F58160 		add	r0, r0, #1032
+ 311 013c 9847     		blx	r3
+ 312              	.LVL13:
+ 106:hal/Landungsbruecke/tmc/UART.c **** 		}
+ 313              		.loc 1 106 4 is_stmt 1 view .LVU96
+ 314 013e E5E7     		b	.L12
+ 315              	.L15:
+ 316              		.align	2
+ 317              	.L14:
+ 318 0140 00000000 		.word	.LANCHOR0
+ 319 0144 C0C62D00 		.word	3000000
+ 320 0148 00000000 		.word	HAL
+ 321 014c 00700440 		.word	1074032640
+ 322 0150 00A00640 		.word	1074176000
+ 323 0154 00C00640 		.word	1074184192
+ 324              		.cfi_endproc
+ 325              	.LFE0:
+ 327              		.align	1
+ 328              		.syntax unified
+ 329              		.thumb
+ 330              		.thumb_func
+ 331              		.fpu softvfp
+ 333              	tx:
+ 334              	.LVL14:
+ 335              	.LFB7:
+ 332:hal/Landungsbruecke/tmc/UART.c **** 	buffers.tx.buffer[buffers.tx.wrote] = ch;
+ 336              		.loc 1 332 1 view -0
+ 337              		.cfi_startproc
+ 338              		@ args = 0, pretend = 0, frame = 0
+ 339              		@ frame_needed = 0, uses_anonymous_args = 0
+ 340              		@ link register save eliminated.
+ 333:hal/Landungsbruecke/tmc/UART.c **** 	buffers.tx.wrote = (buffers.tx.wrote + 1) % BUFFER_SIZE;
+ 341              		.loc 1 333 2 view .LVU98
+ 333:hal/Landungsbruecke/tmc/UART.c **** 	buffers.tx.wrote = (buffers.tx.wrote + 1) % BUFFER_SIZE;
+ 342              		.loc 1 333 30 is_stmt 0 view .LVU99
+ 343 0158 084A     		ldr	r2, .L20
+ 333:hal/Landungsbruecke/tmc/UART.c **** 	buffers.tx.wrote = (buffers.tx.wrote + 1) % BUFFER_SIZE;
+ 344              		.loc 1 333 19 view .LVU100
+ 345 015a D2E90131 		ldrd	r3, r1, [r2, #4]
+ 333:hal/Landungsbruecke/tmc/UART.c **** 	buffers.tx.wrote = (buffers.tx.wrote + 1) % BUFFER_SIZE;
+ 346              		.loc 1 333 38 view .LVU101
+ 347 015e C854     		strb	r0, [r1, r3]
+ 334:hal/Landungsbruecke/tmc/UART.c **** 
+ 348              		.loc 1 334 2 is_stmt 1 view .LVU102
+ 334:hal/Landungsbruecke/tmc/UART.c **** 
+ 349              		.loc 1 334 39 is_stmt 0 view .LVU103
+ 350 0160 0133     		adds	r3, r3, #1
+ 334:hal/Landungsbruecke/tmc/UART.c **** 
+ 351              		.loc 1 334 44 view .LVU104
+ 352 0162 03F01F03 		and	r3, r3, #31
+ 334:hal/Landungsbruecke/tmc/UART.c **** 
+ 353              		.loc 1 334 19 view .LVU105
+ 354 0166 5360     		str	r3, [r2, #4]
+ 337:hal/Landungsbruecke/tmc/UART.c **** 	case UART_PINS_2:
+ 355              		.loc 1 337 2 is_stmt 1 view .LVU106
+ 356 0168 137E     		ldrb	r3, [r2, #24]	@ zero_extendqisi2
+ 357 016a 012B     		cmp	r3, #1
+ 358              	.LBB5:
+ 359              	.LBI5:
+ 331:hal/Landungsbruecke/tmc/UART.c **** {
+ 360              		.loc 1 331 13 view .LVU107
+ 361              	.LVL15:
+ 362              	.LBB6:
+ 339:hal/Landungsbruecke/tmc/UART.c **** 		break;
+ 363              		.loc 1 339 3 view .LVU108
+ 339:hal/Landungsbruecke/tmc/UART.c **** 		break;
+ 364              		.loc 1 339 12 is_stmt 0 view .LVU109
+ 365 016c 0CBF     		ite	eq
+ 366 016e 044A     		ldreq	r2, .L20+4
+ 367              	.LBE6:
+ 368              	.LBE5:
+ 343:hal/Landungsbruecke/tmc/UART.c **** 		break;
+ 369              		.loc 1 343 3 is_stmt 1 view .LVU110
+ 343:hal/Landungsbruecke/tmc/UART.c **** 		break;
+ 370              		.loc 1 343 12 is_stmt 0 view .LVU111
+ 371 0170 044A     		ldrne	r2, .L20+8
+ 372 0172 D378     		ldrb	r3, [r2, #3]	@ zero_extendqisi2
+ 373 0174 43F08003 		orr	r3, r3, #128
+ 374 0178 D370     		strb	r3, [r2, #3]
+ 344:hal/Landungsbruecke/tmc/UART.c **** 	}
+ 375              		.loc 1 344 3 is_stmt 1 view .LVU112
+ 376              	.LVL16:
+ 346:hal/Landungsbruecke/tmc/UART.c **** 
+ 377              		.loc 1 346 1 is_stmt 0 view .LVU113
+ 378 017a 7047     		bx	lr
+ 379              	.L21:
+ 380              		.align	2
+ 381              	.L20:
+ 382 017c 00000000 		.word	.LANCHOR0
+ 383 0180 00A00640 		.word	1074176000
+ 384 0184 00C00640 		.word	1074184192
+ 385              		.cfi_endproc
+ 386              	.LFE7:
+ 388              		.align	1
+ 389              		.syntax unified
+ 390              		.thumb
+ 391              		.thumb_func
+ 392              		.fpu softvfp
+ 394              	txN:
+ 395              	.LVL17:
+ 396              	.LFB9:
+ 361:hal/Landungsbruecke/tmc/UART.c **** 	for(int32_t i = 0; i < number; i++)
+ 397              		.loc 1 361 1 is_stmt 1 view -0
+ 398              		.cfi_startproc
+ 399              		@ args = 0, pretend = 0, frame = 0
+ 400              		@ frame_needed = 0, uses_anonymous_args = 0
+ 362:hal/Landungsbruecke/tmc/UART.c **** 		tx(str[i]);
+ 401              		.loc 1 362 2 view .LVU115
+ 402              	.LBB7:
+ 362:hal/Landungsbruecke/tmc/UART.c **** 		tx(str[i]);
+ 403              		.loc 1 362 6 view .LVU116
+ 362:hal/Landungsbruecke/tmc/UART.c **** 		tx(str[i]);
+ 404              		.loc 1 362 6 is_stmt 0 view .LVU117
+ 405              	.LBE7:
+ 361:hal/Landungsbruecke/tmc/UART.c **** 	for(int32_t i = 0; i < number; i++)
+ 406              		.loc 1 361 1 view .LVU118
+ 407 0188 70B5     		push	{r4, r5, r6, lr}
+ 408              	.LCFI3:
+ 409              		.cfi_def_cfa_offset 16
+ 410              		.cfi_offset 4, -16
+ 411              		.cfi_offset 5, -12
+ 412              		.cfi_offset 6, -8
+ 413              		.cfi_offset 14, -4
+ 361:hal/Landungsbruecke/tmc/UART.c **** 	for(int32_t i = 0; i < number; i++)
+ 414              		.loc 1 361 1 view .LVU119
+ 415 018a 0646     		mov	r6, r0
+ 416 018c 0D46     		mov	r5, r1
+ 417              	.LBB8:
+ 362:hal/Landungsbruecke/tmc/UART.c **** 		tx(str[i]);
+ 418              		.loc 1 362 14 view .LVU120
+ 419 018e 0024     		movs	r4, #0
+ 420              	.LVL18:
+ 421              	.L23:
+ 362:hal/Landungsbruecke/tmc/UART.c **** 		tx(str[i]);
+ 422              		.loc 1 362 21 is_stmt 1 discriminator 1 view .LVU121
+ 362:hal/Landungsbruecke/tmc/UART.c **** 		tx(str[i]);
+ 423              		.loc 1 362 2 is_stmt 0 discriminator 1 view .LVU122
+ 424 0190 A542     		cmp	r5, r4
+ 425 0192 00DC     		bgt	.L24
+ 426              	.LBE8:
+ 364:hal/Landungsbruecke/tmc/UART.c **** 
+ 427              		.loc 1 364 1 view .LVU123
+ 428 0194 70BD     		pop	{r4, r5, r6, pc}
+ 429              	.LVL19:
+ 430              	.L24:
+ 431              	.LBB9:
+ 363:hal/Landungsbruecke/tmc/UART.c **** }
+ 432              		.loc 1 363 3 is_stmt 1 discriminator 3 view .LVU124
+ 433 0196 305D     		ldrb	r0, [r6, r4]	@ zero_extendqisi2
+ 434 0198 FFF7DEFF 		bl	tx
+ 435              	.LVL20:
+ 362:hal/Landungsbruecke/tmc/UART.c **** 		tx(str[i]);
+ 436              		.loc 1 362 33 discriminator 3 view .LVU125
+ 362:hal/Landungsbruecke/tmc/UART.c **** 		tx(str[i]);
+ 437              		.loc 1 362 34 is_stmt 0 discriminator 3 view .LVU126
+ 438 019c 0134     		adds	r4, r4, #1
+ 439              	.LVL21:
+ 362:hal/Landungsbruecke/tmc/UART.c **** 		tx(str[i]);
+ 440              		.loc 1 362 34 discriminator 3 view .LVU127
+ 441 019e F7E7     		b	.L23
+ 442              	.LBE9:
+ 443              		.cfi_endproc
+ 444              	.LFE9:
+ 446              		.align	1
+ 447              		.syntax unified
+ 448              		.thumb
+ 449              		.thumb_func
+ 450              		.fpu softvfp
+ 452              	rxN:
+ 453              	.LVL22:
+ 454              	.LFB10:
+ 367:hal/Landungsbruecke/tmc/UART.c **** 	if(available < number)
+ 455              		.loc 1 367 1 is_stmt 1 view -0
+ 456              		.cfi_startproc
+ 457              		@ args = 0, pretend = 0, frame = 0
+ 458              		@ frame_needed = 0, uses_anonymous_args = 0
+ 368:hal/Landungsbruecke/tmc/UART.c **** 		return 0;
+ 459              		.loc 1 368 2 view .LVU129
+ 368:hal/Landungsbruecke/tmc/UART.c **** 		return 0;
+ 460              		.loc 1 368 15 is_stmt 0 view .LVU130
+ 461 01a0 094B     		ldr	r3, .L30
+ 462 01a2 1B68     		ldr	r3, [r3]
+ 368:hal/Landungsbruecke/tmc/UART.c **** 		return 0;
+ 463              		.loc 1 368 4 view .LVU131
+ 464 01a4 9942     		cmp	r1, r3
+ 367:hal/Landungsbruecke/tmc/UART.c **** 	if(available < number)
+ 465              		.loc 1 367 1 view .LVU132
+ 466 01a6 70B5     		push	{r4, r5, r6, lr}
+ 467              	.LCFI4:
+ 468              		.cfi_def_cfa_offset 16
+ 469              		.cfi_offset 4, -16
+ 470              		.cfi_offset 5, -12
+ 471              		.cfi_offset 6, -8
+ 472              		.cfi_offset 14, -4
+ 367:hal/Landungsbruecke/tmc/UART.c **** 	if(available < number)
+ 473              		.loc 1 367 1 view .LVU133
+ 474 01a8 0646     		mov	r6, r0
+ 475 01aa 0C46     		mov	r4, r1
+ 368:hal/Landungsbruecke/tmc/UART.c **** 		return 0;
+ 476              		.loc 1 368 4 view .LVU134
+ 477 01ac 09D8     		bhi	.L29
+ 478              	.LBB14:
+ 479              	.LBB15:
+ 371:hal/Landungsbruecke/tmc/UART.c **** 		rx(&str[i]);
+ 480              		.loc 1 371 14 view .LVU135
+ 481 01ae 0025     		movs	r5, #0
+ 482              	.LVL23:
+ 483              	.L27:
+ 371:hal/Landungsbruecke/tmc/UART.c **** 		rx(&str[i]);
+ 484              		.loc 1 371 21 is_stmt 1 view .LVU136
+ 371:hal/Landungsbruecke/tmc/UART.c **** 		rx(&str[i]);
+ 485              		.loc 1 371 2 is_stmt 0 view .LVU137
+ 486 01b0 A542     		cmp	r5, r4
+ 487 01b2 01DB     		blt	.L28
+ 488 01b4 0120     		movs	r0, #1
+ 489              	.LVL24:
+ 490              	.L26:
+ 371:hal/Landungsbruecke/tmc/UART.c **** 		rx(&str[i]);
+ 491              		.loc 1 371 2 view .LVU138
+ 492              	.LBE15:
+ 493              	.LBE14:
+ 375:hal/Landungsbruecke/tmc/UART.c **** 
+ 494              		.loc 1 375 1 view .LVU139
+ 495 01b6 70BD     		pop	{r4, r5, r6, pc}
+ 496              	.LVL25:
+ 497              	.L28:
+ 498              	.LBB17:
+ 499              	.LBB16:
+ 372:hal/Landungsbruecke/tmc/UART.c **** 
+ 500              		.loc 1 372 3 is_stmt 1 view .LVU140
+ 501 01b8 7019     		adds	r0, r6, r5
+ 502 01ba FFF721FF 		bl	rx
+ 503              	.LVL26:
+ 371:hal/Landungsbruecke/tmc/UART.c **** 		rx(&str[i]);
+ 504              		.loc 1 371 33 view .LVU141
+ 371:hal/Landungsbruecke/tmc/UART.c **** 		rx(&str[i]);
+ 505              		.loc 1 371 34 is_stmt 0 view .LVU142
+ 506 01be 0135     		adds	r5, r5, #1
+ 507              	.LVL27:
+ 371:hal/Landungsbruecke/tmc/UART.c **** 		rx(&str[i]);
+ 508              		.loc 1 371 34 view .LVU143
+ 509 01c0 F6E7     		b	.L27
+ 510              	.LVL28:
+ 511              	.L29:
+ 371:hal/Landungsbruecke/tmc/UART.c **** 		rx(&str[i]);
+ 512              		.loc 1 371 34 view .LVU144
+ 513              	.LBE16:
+ 514              	.LBE17:
+ 369:hal/Landungsbruecke/tmc/UART.c **** 
+ 515              		.loc 1 369 10 view .LVU145
+ 516 01c2 0020     		movs	r0, #0
+ 517              	.LVL29:
+ 369:hal/Landungsbruecke/tmc/UART.c **** 
+ 518              		.loc 1 369 10 view .LVU146
+ 519 01c4 F7E7     		b	.L26
+ 520              	.L31:
+ 521 01c6 00BF     		.align	2
+ 522              	.L30:
+ 523 01c8 00000000 		.word	.LANCHOR1
+ 524              		.cfi_endproc
+ 525              	.LFE10:
+ 527              		.align	1
+ 528              		.syntax unified
+ 529              		.thumb
+ 530              		.thumb_func
+ 531              		.fpu softvfp
+ 533              	clearBuffers:
+ 534              	.LFB11:
+ 378:hal/Landungsbruecke/tmc/UART.c **** 	switch(UART.pinout) {
+ 535              		.loc 1 378 1 is_stmt 1 view -0
+ 536              		.cfi_startproc
+ 537              		@ args = 0, pretend = 0, frame = 0
+ 538              		@ frame_needed = 0, uses_anonymous_args = 0
+ 379:hal/Landungsbruecke/tmc/UART.c **** 	case UART_PINS_2:
+ 539              		.loc 1 379 2 view .LVU148
+ 378:hal/Landungsbruecke/tmc/UART.c **** 	switch(UART.pinout) {
+ 540              		.loc 1 378 1 is_stmt 0 view .LVU149
+ 541 01cc 70B5     		push	{r4, r5, r6, lr}
+ 542              	.LCFI5:
+ 543              		.cfi_def_cfa_offset 16
+ 544              		.cfi_offset 4, -16
+ 545              		.cfi_offset 5, -12
+ 546              		.cfi_offset 6, -8
+ 547              		.cfi_offset 14, -4
+ 379:hal/Landungsbruecke/tmc/UART.c **** 	case UART_PINS_2:
+ 548              		.loc 1 379 13 view .LVU150
+ 549 01ce 0F4D     		ldr	r5, .L35
+ 550 01d0 0F4E     		ldr	r6, .L35+4
+ 379:hal/Landungsbruecke/tmc/UART.c **** 	case UART_PINS_2:
+ 551              		.loc 1 379 2 view .LVU151
+ 552 01d2 2B7E     		ldrb	r3, [r5, #24]	@ zero_extendqisi2
+ 553 01d4 012B     		cmp	r3, #1
+ 554 01d6 4FF00004 		mov	r4, #0
+ 555 01da 0CD1     		bne	.L33
+ 556              	.LBB20:
+ 557              	.LBI20:
+ 377:hal/Landungsbruecke/tmc/UART.c **** {
+ 558              		.loc 1 377 13 is_stmt 1 view .LVU152
+ 559              	.LBB21:
+ 381:hal/Landungsbruecke/tmc/UART.c **** 		available         = 0;
+ 560              		.loc 1 381 3 view .LVU153
+ 561 01dc 2D20     		movs	r0, #45
+ 562 01de FFF7FEFF 		bl	disable_irq
+ 563              	.LVL30:
+ 382:hal/Landungsbruecke/tmc/UART.c **** 		buffers.rx.read   = 0;
+ 564              		.loc 1 382 3 view .LVU154
+ 384:hal/Landungsbruecke/tmc/UART.c **** 		buffers.tx.read   = 0;
+ 565              		.loc 1 384 21 is_stmt 0 view .LVU155
+ 566 01e2 C5E90344 		strd	r4, r4, [r5, #12]
+ 386:hal/Landungsbruecke/tmc/UART.c **** 		enable_irq(INT_UART0_RX_TX-16);
+ 567              		.loc 1 386 21 view .LVU156
+ 568 01e6 C5E90044 		strd	r4, r4, [r5]
+ 382:hal/Landungsbruecke/tmc/UART.c **** 		buffers.rx.read   = 0;
+ 569              		.loc 1 382 21 view .LVU157
+ 570 01ea 3460     		str	r4, [r6]
+ 383:hal/Landungsbruecke/tmc/UART.c **** 		buffers.rx.wrote  = 0;
+ 571              		.loc 1 383 3 is_stmt 1 view .LVU158
+ 385:hal/Landungsbruecke/tmc/UART.c **** 		buffers.tx.wrote  = 0;
+ 572              		.loc 1 385 3 view .LVU159
+ 387:hal/Landungsbruecke/tmc/UART.c **** 		break;
+ 573              		.loc 1 387 3 view .LVU160
+ 574 01ec 2D20     		movs	r0, #45
+ 575              	.L34:
+ 576              	.LBE21:
+ 577              	.LBE20:
+ 400:hal/Landungsbruecke/tmc/UART.c **** 
+ 578              		.loc 1 400 1 is_stmt 0 view .LVU161
+ 579 01ee BDE87040 		pop	{r4, r5, r6, lr}
+ 580              	.LCFI6:
+ 581              		.cfi_remember_state
+ 582              		.cfi_restore 14
+ 583              		.cfi_restore 6
+ 584              		.cfi_restore 5
+ 585              		.cfi_restore 4
+ 586              		.cfi_def_cfa_offset 0
+ 397:hal/Landungsbruecke/tmc/UART.c **** 		break;
+ 587              		.loc 1 397 3 view .LVU162
+ 588 01f2 FFF7FEBF 		b	enable_irq
+ 589              	.LVL31:
+ 590              	.L33:
+ 591              	.LCFI7:
+ 592              		.cfi_restore_state
+ 391:hal/Landungsbruecke/tmc/UART.c **** 		available         = 0;
+ 593              		.loc 1 391 3 is_stmt 1 view .LVU163
+ 594 01f6 3120     		movs	r0, #49
+ 595 01f8 FFF7FEFF 		bl	disable_irq
+ 596              	.LVL32:
+ 392:hal/Landungsbruecke/tmc/UART.c **** 		buffers.rx.read   = 0;
+ 597              		.loc 1 392 3 view .LVU164
+ 394:hal/Landungsbruecke/tmc/UART.c **** 		buffers.tx.read   = 0;
+ 598              		.loc 1 394 21 is_stmt 0 view .LVU165
+ 599 01fc C5E90344 		strd	r4, r4, [r5, #12]
+ 396:hal/Landungsbruecke/tmc/UART.c **** 		enable_irq(INT_UART2_RX_TX-16);
+ 600              		.loc 1 396 21 view .LVU166
+ 601 0200 C5E90044 		strd	r4, r4, [r5]
+ 392:hal/Landungsbruecke/tmc/UART.c **** 		buffers.rx.read   = 0;
+ 602              		.loc 1 392 21 view .LVU167
+ 603 0204 3460     		str	r4, [r6]
+ 393:hal/Landungsbruecke/tmc/UART.c **** 		buffers.rx.wrote  = 0;
+ 604              		.loc 1 393 3 is_stmt 1 view .LVU168
+ 395:hal/Landungsbruecke/tmc/UART.c **** 		buffers.tx.wrote  = 0;
+ 605              		.loc 1 395 3 view .LVU169
+ 397:hal/Landungsbruecke/tmc/UART.c **** 		break;
+ 606              		.loc 1 397 3 view .LVU170
+ 607 0206 3120     		movs	r0, #49
+ 608 0208 F1E7     		b	.L34
+ 609              	.L36:
+ 610 020a 00BF     		.align	2
+ 611              	.L35:
+ 612 020c 00000000 		.word	.LANCHOR0
+ 613 0210 00000000 		.word	.LANCHOR1
+ 614              		.cfi_endproc
+ 615              	.LFE11:
+ 617              		.align	1
+ 618              		.syntax unified
+ 619              		.thumb
+ 620              		.thumb_func
+ 621              		.fpu softvfp
+ 623              	deInit:
+ 624              	.LFB1:
+ 134:hal/Landungsbruecke/tmc/UART.c **** 	switch(UART.pinout) {
+ 625              		.loc 1 134 1 view -0
+ 626              		.cfi_startproc
+ 627              		@ args = 0, pretend = 0, frame = 0
+ 628              		@ frame_needed = 0, uses_anonymous_args = 0
+ 135:hal/Landungsbruecke/tmc/UART.c **** 	case UART_PINS_2:
+ 629              		.loc 1 135 2 view .LVU172
+ 134:hal/Landungsbruecke/tmc/UART.c **** 	switch(UART.pinout) {
+ 630              		.loc 1 134 1 is_stmt 0 view .LVU173
+ 631 0214 38B5     		push	{r3, r4, r5, lr}
+ 632              	.LCFI8:
+ 633              		.cfi_def_cfa_offset 16
+ 634              		.cfi_offset 3, -16
+ 635              		.cfi_offset 4, -12
+ 636              		.cfi_offset 5, -8
+ 637              		.cfi_offset 14, -4
+ 638 0216 1B4B     		ldr	r3, .L41
+ 639 0218 1B4A     		ldr	r2, .L41+4
+ 640 021a DC68     		ldr	r4, [r3, #12]
+ 641 021c D4E90030 		ldrd	r3, r0, [r4]
+ 642 0220 1D68     		ldr	r5, [r3]
+ 135:hal/Landungsbruecke/tmc/UART.c **** 	case UART_PINS_2:
+ 643              		.loc 1 135 13 view .LVU174
+ 644 0222 1A4B     		ldr	r3, .L41+8
+ 135:hal/Landungsbruecke/tmc/UART.c **** 	case UART_PINS_2:
+ 645              		.loc 1 135 2 view .LVU175
+ 646 0224 1B7E     		ldrb	r3, [r3, #24]	@ zero_extendqisi2
+ 647 0226 012B     		cmp	r3, #1
+ 648 0228 41F23403 		movw	r3, #4148
+ 146:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->pins->DIO17.configuration.GPIO_Mode = GPIO_Mode_IN;
+ 649              		.loc 1 146 13 view .LVU176
+ 650 022c D158     		ldr	r1, [r2, r3]
+ 135:hal/Landungsbruecke/tmc/UART.c **** 	case UART_PINS_2:
+ 651              		.loc 1 135 2 view .LVU177
+ 652 022e 16D1     		bne	.L38
+ 137:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->pins->DIO10.configuration.GPIO_Mode = GPIO_Mode_IN;
+ 653              		.loc 1 137 3 is_stmt 1 view .LVU178
+ 137:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->pins->DIO10.configuration.GPIO_Mode = GPIO_Mode_IN;
+ 654              		.loc 1 137 13 is_stmt 0 view .LVU179
+ 655 0230 21F48061 		bic	r1, r1, #1024
+ 656 0234 D150     		str	r1, [r2, r3]
+ 138:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->pins->DIO11.configuration.GPIO_Mode = GPIO_Mode_IN;
+ 657              		.loc 1 138 3 is_stmt 1 view .LVU180
+ 138:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->pins->DIO11.configuration.GPIO_Mode = GPIO_Mode_IN;
+ 658              		.loc 1 138 48 is_stmt 0 view .LVU181
+ 659 0236 0823     		movs	r3, #8
+ 660 0238 80F8BD31 		strb	r3, [r0, #445]
+ 139:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->config->set(&HAL.IOs->pins->DIO10);
+ 661              		.loc 1 139 3 is_stmt 1 view .LVU182
+ 139:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->config->set(&HAL.IOs->pins->DIO10);
+ 662              		.loc 1 139 48 is_stmt 0 view .LVU183
+ 663 023c 80F8DD31 		strb	r3, [r0, #477]
+ 140:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->config->set(&HAL.IOs->pins->DIO11);
+ 664              		.loc 1 140 3 is_stmt 1 view .LVU184
+ 665 0240 00F5D470 		add	r0, r0, #424
+ 666 0244 A847     		blx	r5
+ 667              	.LVL33:
+ 141:hal/Landungsbruecke/tmc/UART.c **** 		disable_irq(INT_UART0_RX_TX-16);
+ 668              		.loc 1 141 3 view .LVU185
+ 141:hal/Landungsbruecke/tmc/UART.c **** 		disable_irq(INT_UART0_RX_TX-16);
+ 669              		.loc 1 141 18 is_stmt 0 view .LVU186
+ 670 0246 D4E90030 		ldrd	r3, r0, [r4]
+ 141:hal/Landungsbruecke/tmc/UART.c **** 		disable_irq(INT_UART0_RX_TX-16);
+ 671              		.loc 1 141 3 view .LVU187
+ 672 024a 00F5E470 		add	r0, r0, #456
+ 673 024e 1B68     		ldr	r3, [r3]
+ 674 0250 9847     		blx	r3
+ 675              	.LVL34:
+ 142:hal/Landungsbruecke/tmc/UART.c **** 		break;
+ 676              		.loc 1 142 3 is_stmt 1 view .LVU188
+ 677 0252 2D20     		movs	r0, #45
+ 678              	.L40:
+ 151:hal/Landungsbruecke/tmc/UART.c **** 		break;
+ 679              		.loc 1 151 3 is_stmt 0 view .LVU189
+ 680 0254 FFF7FEFF 		bl	disable_irq
+ 681              	.LVL35:
+ 152:hal/Landungsbruecke/tmc/UART.c **** 	}
+ 682              		.loc 1 152 3 is_stmt 1 view .LVU190
+ 155:hal/Landungsbruecke/tmc/UART.c **** }
+ 683              		.loc 1 155 2 view .LVU191
+ 156:hal/Landungsbruecke/tmc/UART.c **** 
+ 684              		.loc 1 156 1 is_stmt 0 view .LVU192
+ 685 0258 BDE83840 		pop	{r3, r4, r5, lr}
+ 686              	.LCFI9:
+ 687              		.cfi_remember_state
+ 688              		.cfi_restore 14
+ 689              		.cfi_restore 5
+ 690              		.cfi_restore 4
+ 691              		.cfi_restore 3
+ 692              		.cfi_def_cfa_offset 0
+ 155:hal/Landungsbruecke/tmc/UART.c **** }
+ 693              		.loc 1 155 2 view .LVU193
+ 694 025c B6E7     		b	clearBuffers
+ 695              	.LVL36:
+ 696              	.L38:
+ 697              	.LCFI10:
+ 698              		.cfi_restore_state
+ 146:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->pins->DIO17.configuration.GPIO_Mode = GPIO_Mode_IN;
+ 699              		.loc 1 146 3 is_stmt 1 view .LVU194
+ 146:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->pins->DIO17.configuration.GPIO_Mode = GPIO_Mode_IN;
+ 700              		.loc 1 146 13 is_stmt 0 view .LVU195
+ 701 025e 21F48051 		bic	r1, r1, #4096
+ 702 0262 D150     		str	r1, [r2, r3]
+ 147:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->pins->DIO18.configuration.GPIO_Mode = GPIO_Mode_IN;
+ 703              		.loc 1 147 3 is_stmt 1 view .LVU196
+ 147:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->pins->DIO18.configuration.GPIO_Mode = GPIO_Mode_IN;
+ 704              		.loc 1 147 48 is_stmt 0 view .LVU197
+ 705 0264 0823     		movs	r3, #8
+ 706 0266 80F8FD33 		strb	r3, [r0, #1021]
+ 148:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->config->set(&HAL.IOs->pins->DIO17);
+ 707              		.loc 1 148 3 is_stmt 1 view .LVU198
+ 148:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->config->set(&HAL.IOs->pins->DIO17);
+ 708              		.loc 1 148 48 is_stmt 0 view .LVU199
+ 709 026a 80F81D34 		strb	r3, [r0, #1053]
+ 149:hal/Landungsbruecke/tmc/UART.c **** 		HAL.IOs->config->set(&HAL.IOs->pins->DIO18);
+ 710              		.loc 1 149 3 is_stmt 1 view .LVU200
+ 711 026e 00F57A70 		add	r0, r0, #1000
+ 712 0272 A847     		blx	r5
+ 713              	.LVL37:
+ 150:hal/Landungsbruecke/tmc/UART.c **** 		disable_irq(INT_UART2_RX_TX-16);
+ 714              		.loc 1 150 3 view .LVU201
+ 150:hal/Landungsbruecke/tmc/UART.c **** 		disable_irq(INT_UART2_RX_TX-16);
+ 715              		.loc 1 150 18 is_stmt 0 view .LVU202
+ 716 0274 D4E90030 		ldrd	r3, r0, [r4]
+ 150:hal/Landungsbruecke/tmc/UART.c **** 		disable_irq(INT_UART2_RX_TX-16);
+ 717              		.loc 1 150 3 view .LVU203
+ 718 0278 00F58160 		add	r0, r0, #1032
+ 719 027c 1B68     		ldr	r3, [r3]
+ 720 027e 9847     		blx	r3
+ 721              	.LVL38:
+ 151:hal/Landungsbruecke/tmc/UART.c **** 		break;
+ 722              		.loc 1 151 3 is_stmt 1 view .LVU204
+ 723 0280 3120     		movs	r0, #49
+ 724 0282 E7E7     		b	.L40
+ 725              	.L42:
+ 726              		.align	2
+ 727              	.L41:
+ 728 0284 00000000 		.word	HAL
+ 729 0288 00700440 		.word	1074032640
+ 730 028c 00000000 		.word	.LANCHOR0
+ 731              		.cfi_endproc
+ 732              	.LFE1:
+ 734              		.align	1
+ 735              		.global	UART0_RX_TX_IRQHandler_UART
+ 736              		.syntax unified
+ 737              		.thumb
+ 738              		.thumb_func
+ 739              		.fpu softvfp
+ 741              	UART0_RX_TX_IRQHandler_UART:
+ 742              	.LFB2:
+ 159:hal/Landungsbruecke/tmc/UART.c **** 	static uint8_t isSending = false;
+ 743              		.loc 1 159 1 view -0
+ 744              		.cfi_startproc
+ 745              		@ args = 0, pretend = 0, frame = 0
+ 746              		@ frame_needed = 0, uses_anonymous_args = 0
+ 160:hal/Landungsbruecke/tmc/UART.c **** 	uint32_t status = UART0_S1;
+ 747              		.loc 1 160 2 view .LVU206
+ 161:hal/Landungsbruecke/tmc/UART.c **** 
+ 748              		.loc 1 161 2 view .LVU207
+ 159:hal/Landungsbruecke/tmc/UART.c **** 	static uint8_t isSending = false;
+ 749              		.loc 1 159 1 is_stmt 0 view .LVU208
+ 750 0290 10B5     		push	{r4, lr}
+ 751              	.LCFI11:
+ 752              		.cfi_def_cfa_offset 8
+ 753              		.cfi_offset 4, -8
+ 754              		.cfi_offset 14, -4
+ 161:hal/Landungsbruecke/tmc/UART.c **** 
+ 755              		.loc 1 161 20 view .LVU209
+ 756 0292 1D4A     		ldr	r2, .L54
+ 757 0294 1379     		ldrb	r3, [r2, #4]	@ zero_extendqisi2
+ 164:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 758              		.loc 1 164 4 view .LVU210
+ 759 0296 9906     		lsls	r1, r3, #26
+ 161:hal/Landungsbruecke/tmc/UART.c **** 
+ 760              		.loc 1 161 20 view .LVU211
+ 761 0298 D8B2     		uxtb	r0, r3
+ 762              	.LVL39:
+ 164:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 763              		.loc 1 164 2 is_stmt 1 view .LVU212
+ 164:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 764              		.loc 1 164 4 is_stmt 0 view .LVU213
+ 765 029a 0FD5     		bpl	.L45
+ 167:hal/Landungsbruecke/tmc/UART.c **** 		if(!isSending) // Only move ring buffer index & available counter when the received byte wasn't t
+ 766              		.loc 1 167 3 is_stmt 1 view .LVU214
+ 167:hal/Landungsbruecke/tmc/UART.c **** 		if(!isSending) // Only move ring buffer index & available counter when the received byte wasn't t
+ 767              		.loc 1 167 31 is_stmt 0 view .LVU215
+ 768 029c 1B49     		ldr	r1, .L54+4
+ 167:hal/Landungsbruecke/tmc/UART.c **** 		if(!isSending) // Only move ring buffer index & available counter when the received byte wasn't t
+ 769              		.loc 1 167 41 view .LVU216
+ 770 029e D279     		ldrb	r2, [r2, #7]	@ zero_extendqisi2
+ 167:hal/Landungsbruecke/tmc/UART.c **** 		if(!isSending) // Only move ring buffer index & available counter when the received byte wasn't t
+ 771              		.loc 1 167 20 view .LVU217
+ 772 02a0 D1E90434 		ldrd	r3, r4, [r1, #16]
+ 167:hal/Landungsbruecke/tmc/UART.c **** 		if(!isSending) // Only move ring buffer index & available counter when the received byte wasn't t
+ 773              		.loc 1 167 41 view .LVU218
+ 774 02a4 D2B2     		uxtb	r2, r2
+ 167:hal/Landungsbruecke/tmc/UART.c **** 		if(!isSending) // Only move ring buffer index & available counter when the received byte wasn't t
+ 775              		.loc 1 167 39 view .LVU219
+ 776 02a6 E254     		strb	r2, [r4, r3]
+ 168:hal/Landungsbruecke/tmc/UART.c **** 		{
+ 777              		.loc 1 168 3 is_stmt 1 view .LVU220
+ 168:hal/Landungsbruecke/tmc/UART.c **** 		{
+ 778              		.loc 1 168 6 is_stmt 0 view .LVU221
+ 779 02a8 194A     		ldr	r2, .L54+8
+ 168:hal/Landungsbruecke/tmc/UART.c **** 		{
+ 780              		.loc 1 168 5 view .LVU222
+ 781 02aa 1479     		ldrb	r4, [r2, #4]	@ zero_extendqisi2
+ 782 02ac 34B9     		cbnz	r4, .L45
+ 170:hal/Landungsbruecke/tmc/UART.c **** 			available++;
+ 783              		.loc 1 170 4 is_stmt 1 view .LVU223
+ 170:hal/Landungsbruecke/tmc/UART.c **** 			available++;
+ 784              		.loc 1 170 41 is_stmt 0 view .LVU224
+ 785 02ae 0133     		adds	r3, r3, #1
+ 170:hal/Landungsbruecke/tmc/UART.c **** 			available++;
+ 786              		.loc 1 170 46 view .LVU225
+ 787 02b0 03F01F03 		and	r3, r3, #31
+ 170:hal/Landungsbruecke/tmc/UART.c **** 			available++;
+ 788              		.loc 1 170 21 view .LVU226
+ 789 02b4 0B61     		str	r3, [r1, #16]
+ 171:hal/Landungsbruecke/tmc/UART.c **** 		}
+ 790              		.loc 1 171 4 is_stmt 1 view .LVU227
+ 171:hal/Landungsbruecke/tmc/UART.c **** 		}
+ 791              		.loc 1 171 13 is_stmt 0 view .LVU228
+ 792 02b6 1368     		ldr	r3, [r2]
+ 793 02b8 0133     		adds	r3, r3, #1
+ 794 02ba 1360     		str	r3, [r2]
+ 795              	.L45:
+ 177:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 796              		.loc 1 177 2 is_stmt 1 view .LVU229
+ 177:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 797              		.loc 1 177 4 is_stmt 0 view .LVU230
+ 798 02bc 4206     		lsls	r2, r0, #25
+ 799 02be 07D5     		bpl	.L47
+ 180:hal/Landungsbruecke/tmc/UART.c **** 		UART0_C2 &= ~UART_C2_TCIE_MASK;
+ 800              		.loc 1 180 3 is_stmt 1 view .LVU231
+ 180:hal/Landungsbruecke/tmc/UART.c **** 		UART0_C2 &= ~UART_C2_TCIE_MASK;
+ 801              		.loc 1 180 13 is_stmt 0 view .LVU232
+ 802 02c0 134B     		ldr	r3, .L54+8
+ 803 02c2 0022     		movs	r2, #0
+ 804 02c4 1A71     		strb	r2, [r3, #4]
+ 181:hal/Landungsbruecke/tmc/UART.c **** 	}
+ 805              		.loc 1 181 3 is_stmt 1 view .LVU233
+ 181:hal/Landungsbruecke/tmc/UART.c **** 	}
+ 806              		.loc 1 181 12 is_stmt 0 view .LVU234
+ 807 02c6 104A     		ldr	r2, .L54
+ 808 02c8 D378     		ldrb	r3, [r2, #3]	@ zero_extendqisi2
+ 809 02ca 03F0BF03 		and	r3, r3, #191
+ 810 02ce D370     		strb	r3, [r2, #3]
+ 811              	.L47:
+ 186:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 812              		.loc 1 186 2 is_stmt 1 view .LVU235
+ 186:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 813              		.loc 1 186 4 is_stmt 0 view .LVU236
+ 814 02d0 0306     		lsls	r3, r0, #24
+ 815 02d2 14D5     		bpl	.L43
+ 188:hal/Landungsbruecke/tmc/UART.c **** 		{
+ 816              		.loc 1 188 3 is_stmt 1 view .LVU237
+ 188:hal/Landungsbruecke/tmc/UART.c **** 		{
+ 817              		.loc 1 188 16 is_stmt 0 view .LVU238
+ 818 02d4 0D49     		ldr	r1, .L54+4
+ 188:hal/Landungsbruecke/tmc/UART.c **** 		{
+ 819              		.loc 1 188 5 view .LVU239
+ 820 02d6 D1E90032 		ldrd	r3, r2, [r1]
+ 821 02da 9342     		cmp	r3, r2
+ 822 02dc 0A4A     		ldr	r2, .L54
+ 823 02de 0FD0     		beq	.L49
+ 190:hal/Landungsbruecke/tmc/UART.c **** 			buffers.tx.read = (buffers.tx.read + 1) % BUFFER_SIZE;
+ 824              		.loc 1 190 4 is_stmt 1 view .LVU240
+ 190:hal/Landungsbruecke/tmc/UART.c **** 			buffers.tx.read = (buffers.tx.read + 1) % BUFFER_SIZE;
+ 825              		.loc 1 190 31 is_stmt 0 view .LVU241
+ 826 02e0 8868     		ldr	r0, [r1, #8]
+ 827              	.LVL40:
+ 190:hal/Landungsbruecke/tmc/UART.c **** 			buffers.tx.read = (buffers.tx.read + 1) % BUFFER_SIZE;
+ 828              		.loc 1 190 31 view .LVU242
+ 829 02e2 C05C     		ldrb	r0, [r0, r3]	@ zero_extendqisi2
+ 191:hal/Landungsbruecke/tmc/UART.c **** 
+ 830              		.loc 1 191 39 view .LVU243
+ 831 02e4 0133     		adds	r3, r3, #1
+ 191:hal/Landungsbruecke/tmc/UART.c **** 
+ 832              		.loc 1 191 44 view .LVU244
+ 833 02e6 03F01F03 		and	r3, r3, #31
+ 190:hal/Landungsbruecke/tmc/UART.c **** 			buffers.tx.read = (buffers.tx.read + 1) % BUFFER_SIZE;
+ 834              		.loc 1 190 31 view .LVU245
+ 835 02ea C0B2     		uxtb	r0, r0
+ 190:hal/Landungsbruecke/tmc/UART.c **** 			buffers.tx.read = (buffers.tx.read + 1) % BUFFER_SIZE;
+ 836              		.loc 1 190 12 view .LVU246
+ 837 02ec D071     		strb	r0, [r2, #7]
+ 191:hal/Landungsbruecke/tmc/UART.c **** 
+ 838              		.loc 1 191 4 is_stmt 1 view .LVU247
+ 191:hal/Landungsbruecke/tmc/UART.c **** 
+ 839              		.loc 1 191 20 is_stmt 0 view .LVU248
+ 840 02ee 0B60     		str	r3, [r1]
+ 193:hal/Landungsbruecke/tmc/UART.c **** 			UART0_C2 |= UART_C2_TCIE_MASK; // Turn on transmission complete interrupt
+ 841              		.loc 1 193 4 is_stmt 1 view .LVU249
+ 193:hal/Landungsbruecke/tmc/UART.c **** 			UART0_C2 |= UART_C2_TCIE_MASK; // Turn on transmission complete interrupt
+ 842              		.loc 1 193 14 is_stmt 0 view .LVU250
+ 843 02f0 074B     		ldr	r3, .L54+8
+ 844 02f2 0121     		movs	r1, #1
+ 845 02f4 1971     		strb	r1, [r3, #4]
+ 194:hal/Landungsbruecke/tmc/UART.c **** 		}
+ 846              		.loc 1 194 4 is_stmt 1 view .LVU251
+ 194:hal/Landungsbruecke/tmc/UART.c **** 		}
+ 847              		.loc 1 194 13 is_stmt 0 view .LVU252
+ 848 02f6 D378     		ldrb	r3, [r2, #3]	@ zero_extendqisi2
+ 849 02f8 43F04003 		orr	r3, r3, #64
+ 850              	.L53:
+ 198:hal/Landungsbruecke/tmc/UART.c **** 		}
+ 851              		.loc 1 198 13 view .LVU253
+ 852 02fc D370     		strb	r3, [r2, #3]
+ 853              	.L43:
+ 201:hal/Landungsbruecke/tmc/UART.c **** 
+ 854              		.loc 1 201 1 view .LVU254
+ 855 02fe 10BD     		pop	{r4, pc}
+ 856              	.LVL41:
+ 857              	.L49:
+ 198:hal/Landungsbruecke/tmc/UART.c **** 		}
+ 858              		.loc 1 198 4 is_stmt 1 view .LVU255
+ 198:hal/Landungsbruecke/tmc/UART.c **** 		}
+ 859              		.loc 1 198 13 is_stmt 0 view .LVU256
+ 860 0300 D378     		ldrb	r3, [r2, #3]	@ zero_extendqisi2
+ 861 0302 03F07F03 		and	r3, r3, #127
+ 862 0306 F9E7     		b	.L53
+ 863              	.L55:
+ 864              		.align	2
+ 865              	.L54:
+ 866 0308 00A00640 		.word	1074176000
+ 867 030c 00000000 		.word	.LANCHOR0
+ 868 0310 00000000 		.word	.LANCHOR1
+ 869              		.cfi_endproc
+ 870              	.LFE2:
+ 872              		.align	1
+ 873              		.global	UART2_RX_TX_IRQHandler
+ 874              		.syntax unified
+ 875              		.thumb
+ 876              		.thumb_func
+ 877              		.fpu softvfp
+ 879              	UART2_RX_TX_IRQHandler:
+ 880              	.LFB3:
+ 204:hal/Landungsbruecke/tmc/UART.c **** 	static uint8_t isSending = false;
+ 881              		.loc 1 204 1 is_stmt 1 view -0
+ 882              		.cfi_startproc
+ 883              		@ args = 0, pretend = 0, frame = 0
+ 884              		@ frame_needed = 0, uses_anonymous_args = 0
+ 205:hal/Landungsbruecke/tmc/UART.c **** 	uint32_t status = UART2_S1;
+ 885              		.loc 1 205 2 view .LVU258
+ 206:hal/Landungsbruecke/tmc/UART.c **** 
+ 886              		.loc 1 206 2 view .LVU259
+ 204:hal/Landungsbruecke/tmc/UART.c **** 	static uint8_t isSending = false;
+ 887              		.loc 1 204 1 is_stmt 0 view .LVU260
+ 888 0314 10B5     		push	{r4, lr}
+ 889              	.LCFI12:
+ 890              		.cfi_def_cfa_offset 8
+ 891              		.cfi_offset 4, -8
+ 892              		.cfi_offset 14, -4
+ 206:hal/Landungsbruecke/tmc/UART.c **** 
+ 893              		.loc 1 206 20 view .LVU261
+ 894 0316 1D4A     		ldr	r2, .L67
+ 895 0318 1379     		ldrb	r3, [r2, #4]	@ zero_extendqisi2
+ 209:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 896              		.loc 1 209 4 view .LVU262
+ 897 031a 9906     		lsls	r1, r3, #26
+ 206:hal/Landungsbruecke/tmc/UART.c **** 
+ 898              		.loc 1 206 20 view .LVU263
+ 899 031c D8B2     		uxtb	r0, r3
+ 900              	.LVL42:
+ 209:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 901              		.loc 1 209 2 is_stmt 1 view .LVU264
+ 209:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 902              		.loc 1 209 4 is_stmt 0 view .LVU265
+ 903 031e 0FD5     		bpl	.L58
+ 212:hal/Landungsbruecke/tmc/UART.c **** 		if(!isSending) // Only move ring buffer index & available counter when the received byte wasn't t
+ 904              		.loc 1 212 3 is_stmt 1 view .LVU266
+ 212:hal/Landungsbruecke/tmc/UART.c **** 		if(!isSending) // Only move ring buffer index & available counter when the received byte wasn't t
+ 905              		.loc 1 212 31 is_stmt 0 view .LVU267
+ 906 0320 1B49     		ldr	r1, .L67+4
+ 212:hal/Landungsbruecke/tmc/UART.c **** 		if(!isSending) // Only move ring buffer index & available counter when the received byte wasn't t
+ 907              		.loc 1 212 41 view .LVU268
+ 908 0322 D279     		ldrb	r2, [r2, #7]	@ zero_extendqisi2
+ 212:hal/Landungsbruecke/tmc/UART.c **** 		if(!isSending) // Only move ring buffer index & available counter when the received byte wasn't t
+ 909              		.loc 1 212 20 view .LVU269
+ 910 0324 D1E90434 		ldrd	r3, r4, [r1, #16]
+ 212:hal/Landungsbruecke/tmc/UART.c **** 		if(!isSending) // Only move ring buffer index & available counter when the received byte wasn't t
+ 911              		.loc 1 212 41 view .LVU270
+ 912 0328 D2B2     		uxtb	r2, r2
+ 212:hal/Landungsbruecke/tmc/UART.c **** 		if(!isSending) // Only move ring buffer index & available counter when the received byte wasn't t
+ 913              		.loc 1 212 39 view .LVU271
+ 914 032a E254     		strb	r2, [r4, r3]
+ 213:hal/Landungsbruecke/tmc/UART.c **** 		{
+ 915              		.loc 1 213 3 is_stmt 1 view .LVU272
+ 213:hal/Landungsbruecke/tmc/UART.c **** 		{
+ 916              		.loc 1 213 6 is_stmt 0 view .LVU273
+ 917 032c 194A     		ldr	r2, .L67+8
+ 213:hal/Landungsbruecke/tmc/UART.c **** 		{
+ 918              		.loc 1 213 5 view .LVU274
+ 919 032e 5479     		ldrb	r4, [r2, #5]	@ zero_extendqisi2
+ 920 0330 34B9     		cbnz	r4, .L58
+ 215:hal/Landungsbruecke/tmc/UART.c **** 			available++;
+ 921              		.loc 1 215 4 is_stmt 1 view .LVU275
+ 215:hal/Landungsbruecke/tmc/UART.c **** 			available++;
+ 922              		.loc 1 215 41 is_stmt 0 view .LVU276
+ 923 0332 0133     		adds	r3, r3, #1
+ 215:hal/Landungsbruecke/tmc/UART.c **** 			available++;
+ 924              		.loc 1 215 46 view .LVU277
+ 925 0334 03F01F03 		and	r3, r3, #31
+ 215:hal/Landungsbruecke/tmc/UART.c **** 			available++;
+ 926              		.loc 1 215 21 view .LVU278
+ 927 0338 0B61     		str	r3, [r1, #16]
+ 216:hal/Landungsbruecke/tmc/UART.c **** 		}
+ 928              		.loc 1 216 4 is_stmt 1 view .LVU279
+ 216:hal/Landungsbruecke/tmc/UART.c **** 		}
+ 929              		.loc 1 216 13 is_stmt 0 view .LVU280
+ 930 033a 1368     		ldr	r3, [r2]
+ 931 033c 0133     		adds	r3, r3, #1
+ 932 033e 1360     		str	r3, [r2]
+ 933              	.L58:
+ 222:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 934              		.loc 1 222 2 is_stmt 1 view .LVU281
+ 222:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 935              		.loc 1 222 4 is_stmt 0 view .LVU282
+ 936 0340 4206     		lsls	r2, r0, #25
+ 937 0342 07D5     		bpl	.L60
+ 225:hal/Landungsbruecke/tmc/UART.c **** 		UART2_C2 &= ~UART_C2_TCIE_MASK;
+ 938              		.loc 1 225 3 is_stmt 1 view .LVU283
+ 225:hal/Landungsbruecke/tmc/UART.c **** 		UART2_C2 &= ~UART_C2_TCIE_MASK;
+ 939              		.loc 1 225 13 is_stmt 0 view .LVU284
+ 940 0344 134B     		ldr	r3, .L67+8
+ 941 0346 0022     		movs	r2, #0
+ 942 0348 5A71     		strb	r2, [r3, #5]
+ 226:hal/Landungsbruecke/tmc/UART.c **** 	}
+ 943              		.loc 1 226 3 is_stmt 1 view .LVU285
+ 226:hal/Landungsbruecke/tmc/UART.c **** 	}
+ 944              		.loc 1 226 12 is_stmt 0 view .LVU286
+ 945 034a 104A     		ldr	r2, .L67
+ 946 034c D378     		ldrb	r3, [r2, #3]	@ zero_extendqisi2
+ 947 034e 03F0BF03 		and	r3, r3, #191
+ 948 0352 D370     		strb	r3, [r2, #3]
+ 949              	.L60:
+ 231:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 950              		.loc 1 231 2 is_stmt 1 view .LVU287
+ 231:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 951              		.loc 1 231 4 is_stmt 0 view .LVU288
+ 952 0354 0306     		lsls	r3, r0, #24
+ 953 0356 14D5     		bpl	.L56
+ 233:hal/Landungsbruecke/tmc/UART.c **** 		{
+ 954              		.loc 1 233 3 is_stmt 1 view .LVU289
+ 233:hal/Landungsbruecke/tmc/UART.c **** 		{
+ 955              		.loc 1 233 16 is_stmt 0 view .LVU290
+ 956 0358 0D49     		ldr	r1, .L67+4
+ 233:hal/Landungsbruecke/tmc/UART.c **** 		{
+ 957              		.loc 1 233 5 view .LVU291
+ 958 035a D1E90032 		ldrd	r3, r2, [r1]
+ 959 035e 9342     		cmp	r3, r2
+ 960 0360 0A4A     		ldr	r2, .L67
+ 961 0362 0FD0     		beq	.L62
+ 235:hal/Landungsbruecke/tmc/UART.c **** 			buffers.tx.read = (buffers.tx.read + 1) % BUFFER_SIZE;
+ 962              		.loc 1 235 4 is_stmt 1 view .LVU292
+ 235:hal/Landungsbruecke/tmc/UART.c **** 			buffers.tx.read = (buffers.tx.read + 1) % BUFFER_SIZE;
+ 963              		.loc 1 235 31 is_stmt 0 view .LVU293
+ 964 0364 8868     		ldr	r0, [r1, #8]
+ 965              	.LVL43:
+ 235:hal/Landungsbruecke/tmc/UART.c **** 			buffers.tx.read = (buffers.tx.read + 1) % BUFFER_SIZE;
+ 966              		.loc 1 235 31 view .LVU294
+ 967 0366 C05C     		ldrb	r0, [r0, r3]	@ zero_extendqisi2
+ 236:hal/Landungsbruecke/tmc/UART.c **** 
+ 968              		.loc 1 236 39 view .LVU295
+ 969 0368 0133     		adds	r3, r3, #1
+ 236:hal/Landungsbruecke/tmc/UART.c **** 
+ 970              		.loc 1 236 44 view .LVU296
+ 971 036a 03F01F03 		and	r3, r3, #31
+ 235:hal/Landungsbruecke/tmc/UART.c **** 			buffers.tx.read = (buffers.tx.read + 1) % BUFFER_SIZE;
+ 972              		.loc 1 235 31 view .LVU297
+ 973 036e C0B2     		uxtb	r0, r0
+ 235:hal/Landungsbruecke/tmc/UART.c **** 			buffers.tx.read = (buffers.tx.read + 1) % BUFFER_SIZE;
+ 974              		.loc 1 235 12 view .LVU298
+ 975 0370 D071     		strb	r0, [r2, #7]
+ 236:hal/Landungsbruecke/tmc/UART.c **** 
+ 976              		.loc 1 236 4 is_stmt 1 view .LVU299
+ 236:hal/Landungsbruecke/tmc/UART.c **** 
+ 977              		.loc 1 236 20 is_stmt 0 view .LVU300
+ 978 0372 0B60     		str	r3, [r1]
+ 238:hal/Landungsbruecke/tmc/UART.c **** 			UART2_C2 |= UART_C2_TCIE_MASK; // Turn on transmission complete interrupt
+ 979              		.loc 1 238 4 is_stmt 1 view .LVU301
+ 238:hal/Landungsbruecke/tmc/UART.c **** 			UART2_C2 |= UART_C2_TCIE_MASK; // Turn on transmission complete interrupt
+ 980              		.loc 1 238 14 is_stmt 0 view .LVU302
+ 981 0374 074B     		ldr	r3, .L67+8
+ 982 0376 0121     		movs	r1, #1
+ 983 0378 5971     		strb	r1, [r3, #5]
+ 239:hal/Landungsbruecke/tmc/UART.c **** 		}
+ 984              		.loc 1 239 4 is_stmt 1 view .LVU303
+ 239:hal/Landungsbruecke/tmc/UART.c **** 		}
+ 985              		.loc 1 239 13 is_stmt 0 view .LVU304
+ 986 037a D378     		ldrb	r3, [r2, #3]	@ zero_extendqisi2
+ 987 037c 43F04003 		orr	r3, r3, #64
+ 988              	.L66:
+ 243:hal/Landungsbruecke/tmc/UART.c **** 		}
+ 989              		.loc 1 243 13 view .LVU305
+ 990 0380 D370     		strb	r3, [r2, #3]
+ 991              	.L56:
+ 246:hal/Landungsbruecke/tmc/UART.c **** 
+ 992              		.loc 1 246 1 view .LVU306
+ 993 0382 10BD     		pop	{r4, pc}
+ 994              	.LVL44:
+ 995              	.L62:
+ 243:hal/Landungsbruecke/tmc/UART.c **** 		}
+ 996              		.loc 1 243 4 is_stmt 1 view .LVU307
+ 243:hal/Landungsbruecke/tmc/UART.c **** 		}
+ 997              		.loc 1 243 13 is_stmt 0 view .LVU308
+ 998 0384 D378     		ldrb	r3, [r2, #3]	@ zero_extendqisi2
+ 999 0386 03F07F03 		and	r3, r3, #127
+ 1000 038a F9E7     		b	.L66
+ 1001              	.L68:
+ 1002              		.align	2
+ 1003              	.L67:
+ 1004 038c 00C00640 		.word	1074184192
+ 1005 0390 00000000 		.word	.LANCHOR0
+ 1006 0394 00000000 		.word	.LANCHOR1
+ 1007              		.cfi_endproc
+ 1008              	.LFE3:
+ 1010              		.align	1
+ 1011              		.global	UART_readWrite
+ 1012              		.syntax unified
+ 1013              		.thumb
+ 1014              		.thumb_func
+ 1015              		.fpu softvfp
+ 1017              	UART_readWrite:
+ 1018              	.LVL45:
+ 1019              	.LFB4:
+ 249:hal/Landungsbruecke/tmc/UART.c **** 	uart->rxtx.clearBuffers();
+ 1020              		.loc 1 249 1 is_stmt 1 view -0
+ 1021              		.cfi_startproc
+ 1022              		@ args = 0, pretend = 0, frame = 0
+ 1023              		@ frame_needed = 0, uses_anonymous_args = 0
+ 250:hal/Landungsbruecke/tmc/UART.c **** 	uart->rxtx.txN(data, writeLength);
+ 1024              		.loc 1 250 2 view .LVU310
+ 249:hal/Landungsbruecke/tmc/UART.c **** 	uart->rxtx.clearBuffers();
+ 1025              		.loc 1 249 1 is_stmt 0 view .LVU311
+ 1026 0398 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 1027              	.LCFI13:
+ 1028              		.cfi_def_cfa_offset 24
+ 1029              		.cfi_offset 3, -24
+ 1030              		.cfi_offset 4, -20
+ 1031              		.cfi_offset 5, -16
+ 1032              		.cfi_offset 6, -12
+ 1033              		.cfi_offset 7, -8
+ 1034              		.cfi_offset 14, -4
+ 249:hal/Landungsbruecke/tmc/UART.c **** 	uart->rxtx.clearBuffers();
+ 1035              		.loc 1 249 1 view .LVU312
+ 1036 039a 0546     		mov	r5, r0
+ 1037 039c 0E46     		mov	r6, r1
+ 1038 039e 1746     		mov	r7, r2
+ 1039 03a0 1C46     		mov	r4, r3
+ 250:hal/Landungsbruecke/tmc/UART.c **** 	uart->rxtx.txN(data, writeLength);
+ 1040              		.loc 1 250 2 view .LVU313
+ 1041 03a2 C369     		ldr	r3, [r0, #28]
+ 1042              	.LVL46:
+ 250:hal/Landungsbruecke/tmc/UART.c **** 	uart->rxtx.txN(data, writeLength);
+ 1043              		.loc 1 250 2 view .LVU314
+ 1044 03a4 9847     		blx	r3
+ 1045              	.LVL47:
+ 251:hal/Landungsbruecke/tmc/UART.c **** 	/* Workaround: Give the UART time to send. Otherwise another write/readRegister can do clearBuffer
+ 1046              		.loc 1 251 2 is_stmt 1 view .LVU315
+ 1047 03a6 3046     		mov	r0, r6
+ 1048 03a8 6B69     		ldr	r3, [r5, #20]
+ 1049 03aa F9B2     		uxtb	r1, r7
+ 1050 03ac 9847     		blx	r3
+ 1051              	.LVL48:
+ 256:hal/Landungsbruecke/tmc/UART.c **** 
+ 1052              		.loc 1 256 2 view .LVU316
+ 1053 03ae 0220     		movs	r0, #2
+ 1054 03b0 FFF7FEFF 		bl	wait
+ 1055              	.LVL49:
+ 259:hal/Landungsbruecke/tmc/UART.c **** 		return 0;
+ 1056              		.loc 1 259 2 view .LVU317
+ 259:hal/Landungsbruecke/tmc/UART.c **** 		return 0;
+ 1057              		.loc 1 259 5 is_stmt 0 view .LVU318
+ 1058 03b4 54B1     		cbz	r4, .L75
+ 263:hal/Landungsbruecke/tmc/UART.c **** 	while(uart->rxtx.bytesAvailable() < readLength)
+ 1059              		.loc 1 263 2 is_stmt 1 view .LVU319
+ 263:hal/Landungsbruecke/tmc/UART.c **** 	while(uart->rxtx.bytesAvailable() < readLength)
+ 1060              		.loc 1 263 23 is_stmt 0 view .LVU320
+ 1061 03b6 FFF7FEFF 		bl	systick_getTick
+ 1062              	.LVL50:
+ 1063 03ba 0746     		mov	r7, r0
+ 1064              	.LVL51:
+ 264:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 1065              		.loc 1 264 2 is_stmt 1 view .LVU321
+ 1066              	.L71:
+ 264:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 1067              		.loc 1 264 7 view .LVU322
+ 264:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 1068              		.loc 1 264 8 is_stmt 0 view .LVU323
+ 1069 03bc 2B6A     		ldr	r3, [r5, #32]
+ 1070 03be 9847     		blx	r3
+ 1071              	.LVL52:
+ 264:hal/Landungsbruecke/tmc/UART.c **** 	{
+ 1072              		.loc 1 264 7 view .LVU324
+ 1073 03c0 A042     		cmp	r0, r4
+ 1074 03c2 05D3     		bcc	.L72
+ 273:hal/Landungsbruecke/tmc/UART.c **** 
+ 1075              		.loc 1 273 2 is_stmt 1 view .LVU325
+ 1076 03c4 AB69     		ldr	r3, [r5, #24]
+ 1077 03c6 2146     		mov	r1, r4
+ 1078 03c8 3046     		mov	r0, r6
+ 1079 03ca 9847     		blx	r3
+ 1080              	.LVL53:
+ 1081              	.L75:
+ 275:hal/Landungsbruecke/tmc/UART.c **** }
+ 1082              		.loc 1 275 2 view .LVU326
+ 275:hal/Landungsbruecke/tmc/UART.c **** }
+ 1083              		.loc 1 275 9 is_stmt 0 view .LVU327
+ 1084 03cc 0020     		movs	r0, #0
+ 1085              	.L69:
+ 276:hal/Landungsbruecke/tmc/UART.c **** 
+ 1086              		.loc 1 276 1 view .LVU328
+ 1087 03ce F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 1088              	.LVL54:
+ 1089              	.L72:
+ 266:hal/Landungsbruecke/tmc/UART.c **** 		{
+ 1090              		.loc 1 266 3 is_stmt 1 view .LVU329
+ 266:hal/Landungsbruecke/tmc/UART.c **** 		{
+ 1091              		.loc 1 266 6 is_stmt 0 view .LVU330
+ 1092 03d0 3846     		mov	r0, r7
+ 1093 03d2 FFF7FEFF 		bl	timeSince
+ 1094              	.LVL55:
+ 266:hal/Landungsbruecke/tmc/UART.c **** 		{
+ 1095              		.loc 1 266 5 view .LVU331
+ 1096 03d6 0A28     		cmp	r0, #10
+ 1097 03d8 F0D9     		bls	.L71
+ 269:hal/Landungsbruecke/tmc/UART.c **** 		}
+ 1098              		.loc 1 269 11 view .LVU332
+ 1099 03da 4FF0FF30 		mov	r0, #-1
+ 1100 03de F6E7     		b	.L69
+ 1101              		.cfi_endproc
+ 1102              	.LFE4:
+ 1104              		.align	1
+ 1105              		.global	UART_readInt
+ 1106              		.syntax unified
+ 1107              		.thumb
+ 1108              		.thumb_func
+ 1109              		.fpu softvfp
+ 1111              	UART_readInt:
+ 1112              	.LVL56:
+ 1113              	.LFB5:
+ 279:hal/Landungsbruecke/tmc/UART.c **** 	uint8_t readData[8], dataRequest[4];
+ 1114              		.loc 1 279 1 is_stmt 1 view -0
+ 1115              		.cfi_startproc
+ 1116              		@ args = 0, pretend = 0, frame = 16
+ 1117              		@ frame_needed = 0, uses_anonymous_args = 0
+ 280:hal/Landungsbruecke/tmc/UART.c **** 	uint32_t timeout;
+ 1118              		.loc 1 280 2 view .LVU334
+ 281:hal/Landungsbruecke/tmc/UART.c **** 
+ 1119              		.loc 1 281 2 view .LVU335
+ 283:hal/Landungsbruecke/tmc/UART.c **** 	dataRequest[1] = slave;                       // Slave address
+ 1120              		.loc 1 283 2 view .LVU336
+ 279:hal/Landungsbruecke/tmc/UART.c **** 	uint8_t readData[8], dataRequest[4];
+ 1121              		.loc 1 279 1 is_stmt 0 view .LVU337
+ 1122 03e0 F0B5     		push	{r4, r5, r6, r7, lr}
+ 1123              	.LCFI14:
+ 1124              		.cfi_def_cfa_offset 20
+ 1125              		.cfi_offset 4, -20
+ 1126              		.cfi_offset 5, -16
+ 1127              		.cfi_offset 6, -12
+ 1128              		.cfi_offset 7, -8
+ 1129              		.cfi_offset 14, -4
+ 1130 03e2 85B0     		sub	sp, sp, #20
+ 1131              	.LCFI15:
+ 1132              		.cfi_def_cfa_offset 40
+ 279:hal/Landungsbruecke/tmc/UART.c **** 	uint8_t readData[8], dataRequest[4];
+ 1133              		.loc 1 279 1 view .LVU338
+ 1134 03e4 0446     		mov	r4, r0
+ 284:hal/Landungsbruecke/tmc/UART.c **** 	dataRequest[2] = address;                     // Register address
+ 1135              		.loc 1 284 17 view .LVU339
+ 1136 03e6 8DF80510 		strb	r1, [sp, #5]
+ 285:hal/Landungsbruecke/tmc/UART.c **** 	dataRequest[3] = tmc_CRC8(dataRequest, 3, 1); // Cyclic redundancy check
+ 1137              		.loc 1 285 17 view .LVU340
+ 1138 03ea 8DF80620 		strb	r2, [sp, #6]
+ 286:hal/Landungsbruecke/tmc/UART.c **** 
+ 1139              		.loc 1 286 19 view .LVU341
+ 1140 03ee 0321     		movs	r1, #3
+ 1141              	.LVL57:
+ 279:hal/Landungsbruecke/tmc/UART.c **** 	uint8_t readData[8], dataRequest[4];
+ 1142              		.loc 1 279 1 view .LVU342
+ 1143 03f0 1546     		mov	r5, r2
+ 1144 03f2 1E46     		mov	r6, r3
+ 286:hal/Landungsbruecke/tmc/UART.c **** 
+ 1145              		.loc 1 286 19 view .LVU343
+ 1146 03f4 0122     		movs	r2, #1
+ 1147              	.LVL58:
+ 283:hal/Landungsbruecke/tmc/UART.c **** 	dataRequest[1] = slave;                       // Slave address
+ 1148              		.loc 1 283 17 view .LVU344
+ 1149 03f6 0523     		movs	r3, #5
+ 1150              	.LVL59:
+ 286:hal/Landungsbruecke/tmc/UART.c **** 
+ 1151              		.loc 1 286 19 view .LVU345
+ 1152 03f8 01A8     		add	r0, sp, #4
+ 1153              	.LVL60:
+ 283:hal/Landungsbruecke/tmc/UART.c **** 	dataRequest[1] = slave;                       // Slave address
+ 1154              		.loc 1 283 17 view .LVU346
+ 1155 03fa 8DF80430 		strb	r3, [sp, #4]
+ 284:hal/Landungsbruecke/tmc/UART.c **** 	dataRequest[2] = address;                     // Register address
+ 1156              		.loc 1 284 2 is_stmt 1 view .LVU347
+ 285:hal/Landungsbruecke/tmc/UART.c **** 	dataRequest[3] = tmc_CRC8(dataRequest, 3, 1); // Cyclic redundancy check
+ 1157              		.loc 1 285 2 view .LVU348
+ 286:hal/Landungsbruecke/tmc/UART.c **** 
+ 1158              		.loc 1 286 2 view .LVU349
+ 286:hal/Landungsbruecke/tmc/UART.c **** 
+ 1159              		.loc 1 286 19 is_stmt 0 view .LVU350
+ 1160 03fe FFF7FEFF 		bl	tmc_CRC8
+ 1161              	.LVL61:
+ 288:hal/Landungsbruecke/tmc/UART.c **** 	channel->rxtx.txN(dataRequest, ARRAY_SIZE(dataRequest));
+ 1162              		.loc 1 288 2 view .LVU351
+ 1163 0402 E369     		ldr	r3, [r4, #28]
+ 286:hal/Landungsbruecke/tmc/UART.c **** 
+ 1164              		.loc 1 286 17 view .LVU352
+ 1165 0404 8DF80700 		strb	r0, [sp, #7]
+ 288:hal/Landungsbruecke/tmc/UART.c **** 	channel->rxtx.txN(dataRequest, ARRAY_SIZE(dataRequest));
+ 1166              		.loc 1 288 2 is_stmt 1 view .LVU353
+ 1167 0408 9847     		blx	r3
+ 1168              	.LVL62:
+ 289:hal/Landungsbruecke/tmc/UART.c **** 
+ 1169              		.loc 1 289 2 view .LVU354
+ 1170 040a 0421     		movs	r1, #4
+ 1171 040c 6369     		ldr	r3, [r4, #20]
+ 1172 040e 0DEB0100 		add	r0, sp, r1
+ 1173 0412 9847     		blx	r3
+ 1174              	.LVL63:
+ 292:hal/Landungsbruecke/tmc/UART.c **** 	while(channel->rxtx.bytesAvailable() < ARRAY_SIZE(readData))
+ 1175              		.loc 1 292 2 view .LVU355
+ 292:hal/Landungsbruecke/tmc/UART.c **** 	while(channel->rxtx.bytesAvailable() < ARRAY_SIZE(readData))
+ 1176              		.loc 1 292 12 is_stmt 0 view .LVU356
+ 1177 0414 FFF7FEFF 		bl	systick_getTick
+ 1178              	.LVL64:
+ 1179 0418 0746     		mov	r7, r0
+ 1180              	.LVL65:
+ 293:hal/Landungsbruecke/tmc/UART.c **** 		if(timeSince(timeout) > UART_TIMEOUT_VALUE) // Timeout
+ 1181              		.loc 1 293 2 is_stmt 1 view .LVU357
+ 1182              	.L77:
+ 293:hal/Landungsbruecke/tmc/UART.c **** 		if(timeSince(timeout) > UART_TIMEOUT_VALUE) // Timeout
+ 1183              		.loc 1 293 7 view .LVU358
+ 293:hal/Landungsbruecke/tmc/UART.c **** 		if(timeSince(timeout) > UART_TIMEOUT_VALUE) // Timeout
+ 1184              		.loc 1 293 8 is_stmt 0 view .LVU359
+ 1185 041a 236A     		ldr	r3, [r4, #32]
+ 1186 041c 9847     		blx	r3
+ 1187              	.LVL66:
+ 293:hal/Landungsbruecke/tmc/UART.c **** 		if(timeSince(timeout) > UART_TIMEOUT_VALUE) // Timeout
+ 1188              		.loc 1 293 7 view .LVU360
+ 1189 041e 0728     		cmp	r0, #7
+ 1190 0420 1ED9     		bls	.L79
+ 297:hal/Landungsbruecke/tmc/UART.c **** 	// Check if the received data is correct (CRC, Sync, Slave address, Register address)
+ 1191              		.loc 1 297 2 is_stmt 1 view .LVU361
+ 1192 0422 0821     		movs	r1, #8
+ 1193 0424 A369     		ldr	r3, [r4, #24]
+ 1194 0426 0DEB0100 		add	r0, sp, r1
+ 1195 042a 9847     		blx	r3
+ 1196              	.LVL67:
+ 300:hal/Landungsbruecke/tmc/UART.c **** 		return;
+ 1197              		.loc 1 300 2 view .LVU362
+ 300:hal/Landungsbruecke/tmc/UART.c **** 		return;
+ 1198              		.loc 1 300 20 is_stmt 0 view .LVU363
+ 1199 042c 0122     		movs	r2, #1
+ 1200 042e 0721     		movs	r1, #7
+ 1201 0430 02A8     		add	r0, sp, #8
+ 300:hal/Landungsbruecke/tmc/UART.c **** 		return;
+ 1202              		.loc 1 300 13 view .LVU364
+ 1203 0432 9DF80F40 		ldrb	r4, [sp, #15]	@ zero_extendqisi2
+ 1204              	.LVL68:
+ 300:hal/Landungsbruecke/tmc/UART.c **** 		return;
+ 1205              		.loc 1 300 20 view .LVU365
+ 1206 0436 FFF7FEFF 		bl	tmc_CRC8
+ 1207              	.LVL69:
+ 300:hal/Landungsbruecke/tmc/UART.c **** 		return;
+ 1208              		.loc 1 300 4 view .LVU366
+ 1209 043a 8442     		cmp	r4, r0
+ 1210 043c 15D1     		bne	.L76
+ 300:hal/Landungsbruecke/tmc/UART.c **** 		return;
+ 1211              		.loc 1 300 45 discriminator 1 view .LVU367
+ 1212 043e 9DF80830 		ldrb	r3, [sp, #8]	@ zero_extendqisi2
+ 1213 0442 052B     		cmp	r3, #5
+ 1214 0444 11D1     		bne	.L76
+ 300:hal/Landungsbruecke/tmc/UART.c **** 		return;
+ 1215              		.loc 1 300 68 discriminator 2 view .LVU368
+ 1216 0446 9DF80930 		ldrb	r3, [sp, #9]	@ zero_extendqisi2
+ 1217 044a FF2B     		cmp	r3, #255
+ 1218 044c 0DD1     		bne	.L76
+ 300:hal/Landungsbruecke/tmc/UART.c **** 		return;
+ 1219              		.loc 1 300 91 discriminator 3 view .LVU369
+ 1220 044e 9DF80A30 		ldrb	r3, [sp, #10]	@ zero_extendqisi2
+ 1221 0452 AB42     		cmp	r3, r5
+ 303:hal/Landungsbruecke/tmc/UART.c **** 	return;
+ 1222              		.loc 1 303 2 is_stmt 1 discriminator 3 view .LVU370
+ 1223 0454 02BF     		ittt	eq
+ 1224 0456 DDF80B30 		ldreq	r3, [sp, #11]	@ unaligned
+ 1225 045a 1BBA     		reveq	r3, r3
+ 303:hal/Landungsbruecke/tmc/UART.c **** 	return;
+ 1226              		.loc 1 303 9 is_stmt 0 discriminator 3 view .LVU371
+ 1227 045c 3360     		streq	r3, [r6]
+ 304:hal/Landungsbruecke/tmc/UART.c **** }
+ 1228              		.loc 1 304 2 is_stmt 1 discriminator 3 view .LVU372
+ 1229 045e 04E0     		b	.L76
+ 1230              	.LVL70:
+ 1231              	.L79:
+ 294:hal/Landungsbruecke/tmc/UART.c **** 			return;
+ 1232              		.loc 1 294 3 view .LVU373
+ 294:hal/Landungsbruecke/tmc/UART.c **** 			return;
+ 1233              		.loc 1 294 6 is_stmt 0 view .LVU374
+ 1234 0460 3846     		mov	r0, r7
+ 1235 0462 FFF7FEFF 		bl	timeSince
+ 1236              	.LVL71:
+ 294:hal/Landungsbruecke/tmc/UART.c **** 			return;
+ 1237              		.loc 1 294 5 view .LVU375
+ 1238 0466 0A28     		cmp	r0, #10
+ 1239 0468 D7D9     		bls	.L77
+ 1240              	.LVL72:
+ 1241              	.L76:
+ 305:hal/Landungsbruecke/tmc/UART.c **** 
+ 1242              		.loc 1 305 1 view .LVU376
+ 1243 046a 05B0     		add	sp, sp, #20
+ 1244              	.LCFI16:
+ 1245              		.cfi_def_cfa_offset 20
+ 1246              		@ sp needed
+ 1247 046c F0BD     		pop	{r4, r5, r6, r7, pc}
+ 305:hal/Landungsbruecke/tmc/UART.c **** 
+ 1248              		.loc 1 305 1 view .LVU377
+ 1249              		.cfi_endproc
+ 1250              	.LFE5:
+ 1252              		.align	1
+ 1253              		.global	UART_writeInt
+ 1254              		.syntax unified
+ 1255              		.thumb
+ 1256              		.thumb_func
+ 1257              		.fpu softvfp
+ 1259              	UART_writeInt:
+ 1260              	.LVL73:
+ 1261              	.LFB6:
+ 308:hal/Landungsbruecke/tmc/UART.c **** 	uint8_t writeData[8];
+ 1262              		.loc 1 308 1 is_stmt 1 view -0
+ 1263              		.cfi_startproc
+ 1264              		@ args = 0, pretend = 0, frame = 8
+ 1265              		@ frame_needed = 0, uses_anonymous_args = 0
+ 309:hal/Landungsbruecke/tmc/UART.c **** 
+ 1266              		.loc 1 309 2 view .LVU379
+ 311:hal/Landungsbruecke/tmc/UART.c **** 	writeData[1] = slave;                        // Slave address
+ 1267              		.loc 1 311 2 view .LVU380
+ 308:hal/Landungsbruecke/tmc/UART.c **** 	uint8_t writeData[8];
+ 1268              		.loc 1 308 1 is_stmt 0 view .LVU381
+ 1269 046e 73B5     		push	{r0, r1, r4, r5, r6, lr}
+ 1270              	.LCFI17:
+ 1271              		.cfi_def_cfa_offset 24
+ 1272              		.cfi_offset 4, -16
+ 1273              		.cfi_offset 5, -12
+ 1274              		.cfi_offset 6, -8
+ 1275              		.cfi_offset 14, -4
+ 313:hal/Landungsbruecke/tmc/UART.c **** 	writeData[3] = value >> 24;                  // Register Data
+ 1276              		.loc 1 313 15 view .LVU382
+ 1277 0470 62F07F02 		orn	r2, r2, #127
+ 1278              	.LVL74:
+ 313:hal/Landungsbruecke/tmc/UART.c **** 	writeData[3] = value >> 24;                  // Register Data
+ 1279              		.loc 1 313 15 view .LVU383
+ 1280 0474 8DF80220 		strb	r2, [sp, #2]
+ 314:hal/Landungsbruecke/tmc/UART.c **** 	writeData[4] = value >> 16;                  // Register Data
+ 1281              		.loc 1 314 23 view .LVU384
+ 1282 0478 1A16     		asrs	r2, r3, #24
+ 314:hal/Landungsbruecke/tmc/UART.c **** 	writeData[4] = value >> 16;                  // Register Data
+ 1283              		.loc 1 314 15 view .LVU385
+ 1284 047a 8DF80320 		strb	r2, [sp, #3]
+ 315:hal/Landungsbruecke/tmc/UART.c **** 	writeData[5] = value >> 8;                   // Register Data
+ 1285              		.loc 1 315 23 view .LVU386
+ 1286 047e 1A14     		asrs	r2, r3, #16
+ 308:hal/Landungsbruecke/tmc/UART.c **** 	uint8_t writeData[8];
+ 1287              		.loc 1 308 1 view .LVU387
+ 1288 0480 0546     		mov	r5, r0
+ 315:hal/Landungsbruecke/tmc/UART.c **** 	writeData[5] = value >> 8;                   // Register Data
+ 1289              		.loc 1 315 15 view .LVU388
+ 1290 0482 8DF80420 		strb	r2, [sp, #4]
+ 311:hal/Landungsbruecke/tmc/UART.c **** 	writeData[1] = slave;                        // Slave address
+ 1291              		.loc 1 311 15 view .LVU389
+ 1292 0486 0520     		movs	r0, #5
+ 1293              	.LVL75:
+ 316:hal/Landungsbruecke/tmc/UART.c **** 	writeData[6] = value & 0xFF;                 // Register Data
+ 1294              		.loc 1 316 23 view .LVU390
+ 1295 0488 1A12     		asrs	r2, r3, #8
+ 311:hal/Landungsbruecke/tmc/UART.c **** 	writeData[1] = slave;                        // Slave address
+ 1296              		.loc 1 311 15 view .LVU391
+ 1297 048a 8DF80000 		strb	r0, [sp]
+ 312:hal/Landungsbruecke/tmc/UART.c **** 	writeData[2] = address | TMC_WRITE_BIT;      // Register address with write bit set
+ 1298              		.loc 1 312 2 is_stmt 1 view .LVU392
+ 312:hal/Landungsbruecke/tmc/UART.c **** 	writeData[2] = address | TMC_WRITE_BIT;      // Register address with write bit set
+ 1299              		.loc 1 312 15 is_stmt 0 view .LVU393
+ 1300 048e 8DF80110 		strb	r1, [sp, #1]
+ 313:hal/Landungsbruecke/tmc/UART.c **** 	writeData[3] = value >> 24;                  // Register Data
+ 1301              		.loc 1 313 2 is_stmt 1 view .LVU394
+ 314:hal/Landungsbruecke/tmc/UART.c **** 	writeData[4] = value >> 16;                  // Register Data
+ 1302              		.loc 1 314 2 view .LVU395
+ 315:hal/Landungsbruecke/tmc/UART.c **** 	writeData[5] = value >> 8;                   // Register Data
+ 1303              		.loc 1 315 2 view .LVU396
+ 316:hal/Landungsbruecke/tmc/UART.c **** 	writeData[6] = value & 0xFF;                 // Register Data
+ 1304              		.loc 1 316 2 view .LVU397
+ 316:hal/Landungsbruecke/tmc/UART.c **** 	writeData[6] = value & 0xFF;                 // Register Data
+ 1305              		.loc 1 316 15 is_stmt 0 view .LVU398
+ 1306 0492 8DF80520 		strb	r2, [sp, #5]
+ 317:hal/Landungsbruecke/tmc/UART.c **** 	writeData[7] = tmc_CRC8(writeData, 7, 1);    // Cyclic redundancy check
+ 1307              		.loc 1 317 2 is_stmt 1 view .LVU399
+ 318:hal/Landungsbruecke/tmc/UART.c **** 
+ 1308              		.loc 1 318 17 is_stmt 0 view .LVU400
+ 1309 0496 0721     		movs	r1, #7
+ 1310              	.LVL76:
+ 318:hal/Landungsbruecke/tmc/UART.c **** 
+ 1311              		.loc 1 318 17 view .LVU401
+ 1312 0498 0122     		movs	r2, #1
+ 1313 049a 6846     		mov	r0, sp
+ 317:hal/Landungsbruecke/tmc/UART.c **** 	writeData[7] = tmc_CRC8(writeData, 7, 1);    // Cyclic redundancy check
+ 1314              		.loc 1 317 15 view .LVU402
+ 1315 049c 8DF80630 		strb	r3, [sp, #6]
+ 318:hal/Landungsbruecke/tmc/UART.c **** 
+ 1316              		.loc 1 318 2 is_stmt 1 view .LVU403
+ 318:hal/Landungsbruecke/tmc/UART.c **** 
+ 1317              		.loc 1 318 17 is_stmt 0 view .LVU404
+ 1318 04a0 FFF7FEFF 		bl	tmc_CRC8
+ 1319              	.LVL77:
+ 320:hal/Landungsbruecke/tmc/UART.c **** 	for(uint32_t i = 0; i < ARRAY_SIZE(writeData); i++)
+ 1320              		.loc 1 320 2 view .LVU405
+ 1321 04a4 EB69     		ldr	r3, [r5, #28]
+ 318:hal/Landungsbruecke/tmc/UART.c **** 
+ 1322              		.loc 1 318 15 view .LVU406
+ 1323 04a6 8DF80700 		strb	r0, [sp, #7]
+ 320:hal/Landungsbruecke/tmc/UART.c **** 	for(uint32_t i = 0; i < ARRAY_SIZE(writeData); i++)
+ 1324              		.loc 1 320 2 is_stmt 1 view .LVU407
+ 1325 04aa 9847     		blx	r3
+ 1326              	.LVL78:
+ 321:hal/Landungsbruecke/tmc/UART.c **** 		channel->rxtx.tx(writeData[i]);
+ 1327              		.loc 1 321 2 view .LVU408
+ 1328              	.LBB22:
+ 321:hal/Landungsbruecke/tmc/UART.c **** 		channel->rxtx.tx(writeData[i]);
+ 1329              		.loc 1 321 6 view .LVU409
+ 321:hal/Landungsbruecke/tmc/UART.c **** 		channel->rxtx.tx(writeData[i]);
+ 1330              		.loc 1 321 22 view .LVU410
+ 1331 04ac 6C46     		mov	r4, sp
+ 321:hal/Landungsbruecke/tmc/UART.c **** 		channel->rxtx.tx(writeData[i]);
+ 1332              		.loc 1 321 15 is_stmt 0 view .LVU411
+ 1333 04ae 0026     		movs	r6, #0
+ 1334              	.LVL79:
+ 1335              	.L83:
+ 322:hal/Landungsbruecke/tmc/UART.c **** 
+ 1336              		.loc 1 322 3 is_stmt 1 discriminator 3 view .LVU412
+ 1337 04b0 EB68     		ldr	r3, [r5, #12]
+ 1338 04b2 14F8010B 		ldrb	r0, [r4], #1	@ zero_extendqisi2
+ 321:hal/Landungsbruecke/tmc/UART.c **** 		channel->rxtx.tx(writeData[i]);
+ 1339              		.loc 1 321 50 is_stmt 0 discriminator 3 view .LVU413
+ 1340 04b6 0136     		adds	r6, r6, #1
+ 1341              	.LVL80:
+ 322:hal/Landungsbruecke/tmc/UART.c **** 
+ 1342              		.loc 1 322 3 discriminator 3 view .LVU414
+ 1343 04b8 9847     		blx	r3
+ 1344              	.LVL81:
+ 321:hal/Landungsbruecke/tmc/UART.c **** 		channel->rxtx.tx(writeData[i]);
+ 1345              		.loc 1 321 49 is_stmt 1 discriminator 3 view .LVU415
+ 321:hal/Landungsbruecke/tmc/UART.c **** 		channel->rxtx.tx(writeData[i]);
+ 1346              		.loc 1 321 22 discriminator 3 view .LVU416
+ 321:hal/Landungsbruecke/tmc/UART.c **** 		channel->rxtx.tx(writeData[i]);
+ 1347              		.loc 1 321 2 is_stmt 0 discriminator 3 view .LVU417
+ 1348 04ba 082E     		cmp	r6, #8
+ 1349 04bc F8D1     		bne	.L83
+ 1350              	.LBE22:
+ 328:hal/Landungsbruecke/tmc/UART.c **** }
+ 1351              		.loc 1 328 2 is_stmt 1 view .LVU418
+ 1352 04be 0220     		movs	r0, #2
+ 1353 04c0 FFF7FEFF 		bl	wait
+ 1354              	.LVL82:
+ 329:hal/Landungsbruecke/tmc/UART.c **** 
+ 1355              		.loc 1 329 1 is_stmt 0 view .LVU419
+ 1356 04c4 02B0     		add	sp, sp, #8
+ 1357              	.LCFI18:
+ 1358              		.cfi_def_cfa_offset 16
+ 1359              		@ sp needed
+ 1360 04c6 70BD     		pop	{r4, r5, r6, pc}
+ 329:hal/Landungsbruecke/tmc/UART.c **** 
+ 1361              		.loc 1 329 1 view .LVU420
+ 1362              		.cfi_endproc
+ 1363              	.LFE6:
+ 1365              		.comm	hwid,1,1
+ 1366              		.comm	HAL,48,4
+ 1367              		.global	UART
+ 1368              		.comm	Timer,16,4
+ 1369              		.comm	WLAN,36,4
+ 1370              		.comm	RS232,36,4
+ 1371              		.comm	LEDs,28,4
+ 1372              		.comm	USB,36,4
+ 1373              		.comm	uart0_interrupt,1,1
+ 1374              		.comm	ADCs,32,4
+ 1375              		.comm	SPI,44,4
+ 1376              		.comm	IOMap,2088,4
+ 1377              		.comm	IOs,52,4
+ 1378              		.comm	Cpu,8,4
+ 1379              		.data
+ 1380              		.align	2
+ 1381              		.set	.LANCHOR0,. + 0
+ 1384              	buffers:
+ 1385 0000 00000000 		.word	0
+ 1386 0004 00000000 		.word	0
+ 1387 0008 06000000 		.word	txBuffer
+ 1388 000c 00000000 		.word	0
+ 1389 0010 00000000 		.word	0
+ 1390 0014 26000000 		.word	rxBuffer
+ 1393              	UART:
+ 1394 0018 00       		.byte	0
+ 1395 0019 00       		.byte	0
+ 1396 001a 0000     		.space	2
+ 1397 001c 00000000 		.word	init
+ 1398 0020 00000000 		.word	deInit
+ 1399 0024 00000000 		.word	tx
+ 1400 0028 00000000 		.word	rx
+ 1401 002c 00000000 		.word	txN
+ 1402 0030 00000000 		.word	rxN
+ 1403 0034 00000000 		.word	clearBuffers
+ 1404 0038 00000000 		.word	bytesAvailable
+ 1405 003c 00C20100 		.word	115200
+ 1406              		.bss
+ 1407              		.align	2
+ 1408              		.set	.LANCHOR1,. + 0
+ 1411              	available:
+ 1412 0000 00000000 		.space	4
+ 1415              	isSending.7363:
+ 1416 0004 00       		.space	1
+ 1419              	isSending.7368:
+ 1420 0005 00       		.space	1
+ 1423              	txBuffer:
+ 1424 0006 00000000 		.space	32
+ 1424      00000000 
+ 1424      00000000 
+ 1424      00000000 
+ 1424      00000000 
+ 1427              	rxBuffer:
+ 1428 0026 00000000 		.space	32
+ 1428      00000000 
+ 1428      00000000 
+ 1428      00000000 
+ 1428      00000000 
+ 1431              	ADCValue:
+ 1432 0046 00000000 		.space	12
+ 1432      00000000 
+ 1432      00000000 
+ 1433              		.text
+ 1434              	.Letext0:
+ 1435              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 1436              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1437              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1438              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 1439              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1440              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1441              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1442              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1443              		.file 10 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 1444              		.file 11 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 1445              		.file 12 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 1446              		.file 13 "./hal/IOs.h"
+ 1447              		.file 14 "./hal/IOMap.h"
+ 1448              		.file 15 "./hal/SPI.h"
+ 1449              		.file 16 "./hal/ADCs.h"
+ 1450              		.file 17 "./hal/RXTX.h"
+ 1451              		.file 18 "./hal/USB.h"
+ 1452              		.file 19 "./hal/LEDs.h"
+ 1453              		.file 20 "./hal/RS232.h"
+ 1454              		.file 21 "./hal/WLAN.h"
+ 1455              		.file 22 "./hal/Timer.h"
+ 1456              		.file 23 "./hal/UART.h"
+ 1457              		.file 24 "./hal/HAL.h"
+ 1458              		.file 25 "TMC-API/tmc/helpers/CRC.h"
+ 1459              		.file 26 "./hal/SysTick.h"
+ 1460              		.file 27 "./hal/Landungsbruecke/freescale/nvic.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 UART.c
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:22     .text:00000000 rx
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:73     .text:00000028 $d
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:78     .text:00000030 $t
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:84     .text:00000030 bytesAvailable
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:100    .text:00000038 $d
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:104    .text:0000003c $t
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:110    .text:0000003c init
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:318    .text:00000140 $d
+                            *COM*:00000030 HAL
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:327    .text:00000158 $t
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:333    .text:00000158 tx
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:382    .text:0000017c $d
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:388    .text:00000188 $t
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:394    .text:00000188 txN
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:452    .text:000001a0 rxN
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:523    .text:000001c8 $d
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:527    .text:000001cc $t
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:533    .text:000001cc clearBuffers
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:612    .text:0000020c $d
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:617    .text:00000214 $t
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:623    .text:00000214 deInit
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:728    .text:00000284 $d
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:734    .text:00000290 $t
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:741    .text:00000290 UART0_RX_TX_IRQHandler_UART
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:866    .text:00000308 $d
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:872    .text:00000314 $t
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:879    .text:00000314 UART2_RX_TX_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:1004   .text:0000038c $d
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:1010   .text:00000398 $t
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:1017   .text:00000398 UART_readWrite
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:1111   .text:000003e0 UART_readInt
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:1259   .text:0000046e UART_writeInt
+                            *COM*:00000001 hwid
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:1393   .data:00000018 UART
+                            *COM*:00000010 Timer
+                            *COM*:00000024 WLAN
+                            *COM*:00000024 RS232
+                            *COM*:0000001c LEDs
+                            *COM*:00000024 USB
+                            *COM*:00000001 uart0_interrupt
+                            *COM*:00000020 ADCs
+                            *COM*:0000002c SPI
+                            *COM*:00000828 IOMap
+                            *COM*:00000034 IOs
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:1380   .data:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:1384   .data:00000000 buffers
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:1423   .bss:00000006 txBuffer
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:1427   .bss:00000026 rxBuffer
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:1407   .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:1411   .bss:00000000 available
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:1415   .bss:00000004 isSending.7363
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:1419   .bss:00000005 isSending.7368
+C:\Users\Shubham\AppData\Local\Temp\cc8d4LW8.s:1431   .bss:00000046 ADCValue
+
+UNDEFINED SYMBOLS
+enable_irq
+disable_irq
+wait
+systick_getTick
+timeSince
+tmc_CRC8

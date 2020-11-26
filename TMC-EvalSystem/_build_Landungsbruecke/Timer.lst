@@ -1,0 +1,546 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"Timer.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.arch armv7e-m
+  17              		.syntax unified
+  18              		.thumb
+  19              		.thumb_func
+  20              		.fpu softvfp
+  22              	init:
+  23              	.LFB0:
+  24              		.file 1 "hal/Landungsbruecke/tmc/Timer.c"
+   1:hal/Landungsbruecke/tmc/Timer.c **** #include "hal/HAL.h"
+   2:hal/Landungsbruecke/tmc/Timer.c **** #include "hal/Timer.h"
+   3:hal/Landungsbruecke/tmc/Timer.c **** 
+   4:hal/Landungsbruecke/tmc/Timer.c **** #define MAX_ARR_HALF  TIMER_MAX >> 1
+   5:hal/Landungsbruecke/tmc/Timer.c **** 
+   6:hal/Landungsbruecke/tmc/Timer.c **** static void init(void);
+   7:hal/Landungsbruecke/tmc/Timer.c **** static void deInit(void);
+   8:hal/Landungsbruecke/tmc/Timer.c **** static void setDuty(timer_channel, uint16_t);
+   9:hal/Landungsbruecke/tmc/Timer.c **** static uint16_t getDuty(timer_channel);
+  10:hal/Landungsbruecke/tmc/Timer.c **** 
+  11:hal/Landungsbruecke/tmc/Timer.c **** TimerTypeDef Timer =
+  12:hal/Landungsbruecke/tmc/Timer.c **** {
+  13:hal/Landungsbruecke/tmc/Timer.c **** 	.init     = init,
+  14:hal/Landungsbruecke/tmc/Timer.c **** 	.deInit   = deInit,
+  15:hal/Landungsbruecke/tmc/Timer.c **** 	.setDuty  = setDuty,
+  16:hal/Landungsbruecke/tmc/Timer.c **** 	.getDuty  = getDuty
+  17:hal/Landungsbruecke/tmc/Timer.c **** };
+  18:hal/Landungsbruecke/tmc/Timer.c **** 
+  19:hal/Landungsbruecke/tmc/Timer.c **** static void init(void)
+  20:hal/Landungsbruecke/tmc/Timer.c **** {
+  25              		.loc 1 20 1 view -0
+  26              		.cfi_startproc
+  27              		@ args = 0, pretend = 0, frame = 0
+  28              		@ frame_needed = 0, uses_anonymous_args = 0
+  29              		@ link register save eliminated.
+  21:hal/Landungsbruecke/tmc/Timer.c **** 	// enable clock for FTM0
+  22:hal/Landungsbruecke/tmc/Timer.c **** 	SIM_SCGC6 |= SIM_SCGC6_FTM0_MASK;
+  30              		.loc 1 22 2 view .LVU1
+  31              		.loc 1 22 12 is_stmt 0 view .LVU2
+  32 0000 2C4B     		ldr	r3, .L2
+  33 0002 41F23C01 		movw	r1, #4156
+  34 0006 5A58     		ldr	r2, [r3, r1]
+  35 0008 42F08072 		orr	r2, r2, #16777216
+  36 000c 5A50     		str	r2, [r3, r1]
+  23:hal/Landungsbruecke/tmc/Timer.c **** 
+  24:hal/Landungsbruecke/tmc/Timer.c **** 	// enable clock for port D
+  25:hal/Landungsbruecke/tmc/Timer.c **** 	SIM_SCGC5 |= SIM_SCGC5_PORTD_MASK;
+  37              		.loc 1 25 2 is_stmt 1 view .LVU3
+  38              		.loc 1 25 12 is_stmt 0 view .LVU4
+  39 000e 41F23801 		movw	r1, #4152
+  40 0012 5A58     		ldr	r2, [r3, r1]
+  41 0014 42F48052 		orr	r2, r2, #4096
+  42 0018 5A50     		str	r2, [r3, r1]
+  26:hal/Landungsbruecke/tmc/Timer.c **** 
+  27:hal/Landungsbruecke/tmc/Timer.c **** 	// disable write protection
+  28:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_MODE |= FTM_MODE_WPDIS_MASK;
+  43              		.loc 1 28 2 is_stmt 1 view .LVU5
+  44              		.loc 1 28 12 is_stmt 0 view .LVU6
+  45 001a A3F57043 		sub	r3, r3, #61440
+  46 001e 5A6D     		ldr	r2, [r3, #84]
+  47 0020 42F00402 		orr	r2, r2, #4
+  48 0024 5A65     		str	r2, [r3, #84]
+  29:hal/Landungsbruecke/tmc/Timer.c **** 
+  30:hal/Landungsbruecke/tmc/Timer.c **** 	// FAULTM = 1 - Fault control is enabled for all channels,
+  31:hal/Landungsbruecke/tmc/Timer.c **** 	// FTMEN  = 1 - all registers are available for use with no restrictions.
+  32:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_MODE |= FTM_MODE_FAULTM_MASK | FTM_MODE_FTMEN_MASK;
+  49              		.loc 1 32 2 is_stmt 1 view .LVU7
+  50              		.loc 1 32 12 is_stmt 0 view .LVU8
+  51 0026 5A6D     		ldr	r2, [r3, #84]
+  52 0028 42F06102 		orr	r2, r2, #97
+  53 002c 5A65     		str	r2, [r3, #84]
+  33:hal/Landungsbruecke/tmc/Timer.c **** 
+  34:hal/Landungsbruecke/tmc/Timer.c **** 	// setting for Center Aligned PWM in Combine Mode
+  35:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_MOD = TIMER_MAX;  // set PWM frequency
+  54              		.loc 1 35 2 is_stmt 1 view .LVU9
+  55              		.loc 1 35 11 is_stmt 0 view .LVU10
+  56 002e 4FF4FA52 		mov	r2, #8000
+  57 0032 9A60     		str	r2, [r3, #8]
+  36:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_CNTIN = 0;        // CTNMAX = 1 - PWM update at counter in max. value
+  58              		.loc 1 36 2 is_stmt 1 view .LVU11
+  59              		.loc 1 36 13 is_stmt 0 view .LVU12
+  60 0034 0022     		movs	r2, #0
+  61 0036 DA64     		str	r2, [r3, #76]
+  37:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_SYNC |= FTM_SYNC_CNTMAX_MASK;
+  62              		.loc 1 37 2 is_stmt 1 view .LVU13
+  63              		.loc 1 37 12 is_stmt 0 view .LVU14
+  64 0038 996D     		ldr	r1, [r3, #88]
+  65 003a 41F00201 		orr	r1, r1, #2
+  66 003e 9965     		str	r1, [r3, #88]
+  38:hal/Landungsbruecke/tmc/Timer.c **** 
+  39:hal/Landungsbruecke/tmc/Timer.c **** 	// SWSYNC = 1 - set PWM value update. This bit is cleared automatically.
+  40:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_SYNC |= FTM_SYNC_SWSYNC_MASK;
+  67              		.loc 1 40 2 is_stmt 1 view .LVU15
+  68              		.loc 1 40 12 is_stmt 0 view .LVU16
+  69 0040 996D     		ldr	r1, [r3, #88]
+  70 0042 41F08001 		orr	r1, r1, #128
+  71 0046 9965     		str	r1, [r3, #88]
+  41:hal/Landungsbruecke/tmc/Timer.c **** 
+  42:hal/Landungsbruecke/tmc/Timer.c **** 	// disable all channels outputs using the OUTPUT MASK feature
+  43:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_OUTMASK = FTM_OUTMASK_CH0OM_MASK | FTM_OUTMASK_CH1OM_MASK
+  72              		.loc 1 43 2 is_stmt 1 view .LVU17
+  73              		.loc 1 43 15 is_stmt 0 view .LVU18
+  74 0048 F321     		movs	r1, #243
+  75 004a 1966     		str	r1, [r3, #96]
+  44:hal/Landungsbruecke/tmc/Timer.c **** 	             | FTM_OUTMASK_CH4OM_MASK | FTM_OUTMASK_CH5OM_MASK
+  45:hal/Landungsbruecke/tmc/Timer.c **** 	             | FTM_OUTMASK_CH6OM_MASK | FTM_OUTMASK_CH7OM_MASK;
+  46:hal/Landungsbruecke/tmc/Timer.c **** 
+  47:hal/Landungsbruecke/tmc/Timer.c **** 	/* COMBINE = 1 - combine mode set, COMP = 1 - complementary PWM set,
+  48:hal/Landungsbruecke/tmc/Timer.c **** 	DTEN = 1 - deadtime enabled, SYNCEN = 1 - PWM update synchronization enabled,
+  49:hal/Landungsbruecke/tmc/Timer.c **** 	FAULTEN = 1 - fault control enabled */
+  50:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_COMBINE = FTM_COMBINE_SYNCEN0_MASK | FTM_COMBINE_DTEN0_MASK
+  76              		.loc 1 50 2 is_stmt 1 view .LVU19
+  77              		.loc 1 50 15 is_stmt 0 view .LVU20
+  78 004c 1A49     		ldr	r1, .L2+4
+  79 004e 5966     		str	r1, [r3, #100]
+  51:hal/Landungsbruecke/tmc/Timer.c **** 	             | FTM_COMBINE_COMP0_MASK   | FTM_COMBINE_COMBINE0_MASK
+  52:hal/Landungsbruecke/tmc/Timer.c **** 	             | FTM_COMBINE_SYNCEN2_MASK | FTM_COMBINE_DTEN2_MASK
+  53:hal/Landungsbruecke/tmc/Timer.c **** 	             | FTM_COMBINE_COMP2_MASK   | FTM_COMBINE_COMBINE2_MASK
+  54:hal/Landungsbruecke/tmc/Timer.c **** 	             | FTM_COMBINE_SYNCEN3_MASK | FTM_COMBINE_DTEN3_MASK
+  55:hal/Landungsbruecke/tmc/Timer.c **** 	             | FTM_COMBINE_COMP3_MASK   | FTM_COMBINE_COMBINE3_MASK;
+  56:hal/Landungsbruecke/tmc/Timer.c **** 
+  57:hal/Landungsbruecke/tmc/Timer.c **** 	// initialize setting of value registers to  duty cycle
+  58:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_C0V = 0;
+  80              		.loc 1 58 2 is_stmt 1 view .LVU21
+  59:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_C1V = MAX_ARR_HALF;
+  81              		.loc 1 59 11 is_stmt 0 view .LVU22
+  82 0050 4FF47A61 		mov	r1, #4000
+  58:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_C1V = MAX_ARR_HALF;
+  83              		.loc 1 58 11 view .LVU23
+  84 0054 1A61     		str	r2, [r3, #16]
+  85              		.loc 1 59 2 is_stmt 1 view .LVU24
+  86              		.loc 1 59 11 is_stmt 0 view .LVU25
+  87 0056 9961     		str	r1, [r3, #24]
+  60:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_C4V = 0;
+  88              		.loc 1 60 2 is_stmt 1 view .LVU26
+  89              		.loc 1 60 11 is_stmt 0 view .LVU27
+  90 0058 1A63     		str	r2, [r3, #48]
+  61:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_C5V = MAX_ARR_HALF;
+  91              		.loc 1 61 2 is_stmt 1 view .LVU28
+  92              		.loc 1 61 11 is_stmt 0 view .LVU29
+  93 005a 9963     		str	r1, [r3, #56]
+  62:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_C6V = 0;
+  94              		.loc 1 62 2 is_stmt 1 view .LVU30
+  95              		.loc 1 62 11 is_stmt 0 view .LVU31
+  96 005c 1A64     		str	r2, [r3, #64]
+  63:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_C7V = MAX_ARR_HALF;
+  97              		.loc 1 63 2 is_stmt 1 view .LVU32
+  98              		.loc 1 63 11 is_stmt 0 view .LVU33
+  99 005e 9964     		str	r1, [r3, #72]
+  64:hal/Landungsbruecke/tmc/Timer.c **** 
+  65:hal/Landungsbruecke/tmc/Timer.c **** 	// set channel mode to generate positive PWM
+  66:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_C0SC |= FTM_CnSC_ELSB_MASK;
+ 100              		.loc 1 66 2 is_stmt 1 view .LVU34
+ 101              		.loc 1 66 12 is_stmt 0 view .LVU35
+ 102 0060 D968     		ldr	r1, [r3, #12]
+ 103 0062 41F00801 		orr	r1, r1, #8
+ 104 0066 D960     		str	r1, [r3, #12]
+  67:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_C1SC |= FTM_CnSC_ELSB_MASK;
+ 105              		.loc 1 67 2 is_stmt 1 view .LVU36
+ 106              		.loc 1 67 12 is_stmt 0 view .LVU37
+ 107 0068 5969     		ldr	r1, [r3, #20]
+ 108 006a 41F00801 		orr	r1, r1, #8
+ 109 006e 5961     		str	r1, [r3, #20]
+  68:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_C4SC |= FTM_CnSC_ELSB_MASK;
+ 110              		.loc 1 68 2 is_stmt 1 view .LVU38
+ 111              		.loc 1 68 12 is_stmt 0 view .LVU39
+ 112 0070 D96A     		ldr	r1, [r3, #44]
+ 113 0072 41F00801 		orr	r1, r1, #8
+ 114 0076 D962     		str	r1, [r3, #44]
+  69:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_C5SC |= FTM_CnSC_ELSB_MASK;
+ 115              		.loc 1 69 2 is_stmt 1 view .LVU40
+ 116              		.loc 1 69 12 is_stmt 0 view .LVU41
+ 117 0078 596B     		ldr	r1, [r3, #52]
+ 118 007a 41F00801 		orr	r1, r1, #8
+ 119 007e 5963     		str	r1, [r3, #52]
+  70:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_C6SC |= FTM_CnSC_ELSB_MASK;
+ 120              		.loc 1 70 2 is_stmt 1 view .LVU42
+ 121              		.loc 1 70 12 is_stmt 0 view .LVU43
+ 122 0080 D96B     		ldr	r1, [r3, #60]
+ 123 0082 41F00801 		orr	r1, r1, #8
+ 124 0086 D963     		str	r1, [r3, #60]
+  71:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_C7SC |= FTM_CnSC_ELSB_MASK;
+ 125              		.loc 1 71 2 is_stmt 1 view .LVU44
+ 126              		.loc 1 71 12 is_stmt 0 view .LVU45
+ 127 0088 596C     		ldr	r1, [r3, #68]
+ 128 008a 41F00801 		orr	r1, r1, #8
+ 129 008e 5964     		str	r1, [r3, #68]
+  72:hal/Landungsbruecke/tmc/Timer.c **** 
+  73:hal/Landungsbruecke/tmc/Timer.c **** 	// enable loading of the MOD, CNTIN, and CV registers with the values of their write buffers
+  74:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_PWMLOAD = FTM_PWMLOAD_LDOK_MASK;
+ 130              		.loc 1 74 2 is_stmt 1 view .LVU46
+ 131              		.loc 1 74 15 is_stmt 0 view .LVU47
+ 132 0090 4FF40071 		mov	r1, #512
+ 133 0094 C3F89810 		str	r1, [r3, #152]
+  75:hal/Landungsbruecke/tmc/Timer.c **** 
+  76:hal/Landungsbruecke/tmc/Timer.c **** 	// enable the generation of the trigger when the FTM counter is equal to the CNTIN register
+  77:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_EXTTRIG |= FTM_EXTTRIG_INITTRIGEN_MASK;
+ 134              		.loc 1 77 2 is_stmt 1 view .LVU48
+ 135              		.loc 1 77 15 is_stmt 0 view .LVU49
+ 136 0098 D96E     		ldr	r1, [r3, #108]
+ 137 009a 41F04001 		orr	r1, r1, #64
+ 138 009e D966     		str	r1, [r3, #108]
+  78:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_MODE |= FTM_MODE_INIT_MASK;
+ 139              		.loc 1 78 2 is_stmt 1 view .LVU50
+ 140              		.loc 1 78 12 is_stmt 0 view .LVU51
+ 141 00a0 596D     		ldr	r1, [r3, #84]
+ 142 00a2 41F00201 		orr	r1, r1, #2
+ 143 00a6 5965     		str	r1, [r3, #84]
+  79:hal/Landungsbruecke/tmc/Timer.c **** 
+  80:hal/Landungsbruecke/tmc/Timer.c **** 	// set system clock as source for FTM0 (CLKS[1:0] = 01)
+  81:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_SC |= FTM_SC_CLKS(1); // Periodendauer 166,66us
+ 144              		.loc 1 81 2 is_stmt 1 view .LVU52
+ 145              		.loc 1 81 10 is_stmt 0 view .LVU53
+ 146 00a8 1968     		ldr	r1, [r3]
+ 147 00aa 41F00801 		orr	r1, r1, #8
+ 148 00ae 1960     		str	r1, [r3]
+  82:hal/Landungsbruecke/tmc/Timer.c **** 
+  83:hal/Landungsbruecke/tmc/Timer.c **** 	// initialize pwm pin for FTM0
+  84:hal/Landungsbruecke/tmc/Timer.c **** 
+  85:hal/Landungsbruecke/tmc/Timer.c **** 
+  86:hal/Landungsbruecke/tmc/Timer.c **** 
+  87:hal/Landungsbruecke/tmc/Timer.c **** 
+  88:hal/Landungsbruecke/tmc/Timer.c **** 	// ATTENTION The Pins had to configure as AF4 near the initialisation !!!!!!
+  89:hal/Landungsbruecke/tmc/Timer.c **** 
+  90:hal/Landungsbruecke/tmc/Timer.c **** 
+  91:hal/Landungsbruecke/tmc/Timer.c **** 
+  92:hal/Landungsbruecke/tmc/Timer.c **** 
+  93:hal/Landungsbruecke/tmc/Timer.c **** 	// enable PWM outputs of FTM0
+  94:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_OUTMASK = 0;
+ 149              		.loc 1 94 2 is_stmt 1 view .LVU54
+ 150              		.loc 1 94 15 is_stmt 0 view .LVU55
+ 151 00b0 1A66     		str	r2, [r3, #96]
+  95:hal/Landungsbruecke/tmc/Timer.c **** }
+ 152              		.loc 1 95 1 view .LVU56
+ 153 00b2 7047     		bx	lr
+ 154              	.L3:
+ 155              		.align	2
+ 156              	.L2:
+ 157 00b4 00700440 		.word	1074032640
+ 158 00b8 33003333 		.word	858980403
+ 159              		.cfi_endproc
+ 160              	.LFE0:
+ 162              		.align	1
+ 163              		.syntax unified
+ 164              		.thumb
+ 165              		.thumb_func
+ 166              		.fpu softvfp
+ 168              	deInit:
+ 169              	.LFB1:
+  96:hal/Landungsbruecke/tmc/Timer.c **** 
+  97:hal/Landungsbruecke/tmc/Timer.c **** static void deInit(void)
+  98:hal/Landungsbruecke/tmc/Timer.c **** {
+ 170              		.loc 1 98 1 is_stmt 1 view -0
+ 171              		.cfi_startproc
+ 172              		@ args = 0, pretend = 0, frame = 0
+ 173              		@ frame_needed = 0, uses_anonymous_args = 0
+ 174              		@ link register save eliminated.
+  99:hal/Landungsbruecke/tmc/Timer.c **** 	SIM_SCGC6 &= ~SIM_SCGC6_FTM0_MASK;
+ 175              		.loc 1 99 2 view .LVU58
+ 176              		.loc 1 99 12 is_stmt 0 view .LVU59
+ 177 00bc 0349     		ldr	r1, .L5
+ 178 00be 41F23C02 		movw	r2, #4156
+ 179 00c2 8B58     		ldr	r3, [r1, r2]
+ 180 00c4 23F08073 		bic	r3, r3, #16777216
+ 181 00c8 8B50     		str	r3, [r1, r2]
+ 100:hal/Landungsbruecke/tmc/Timer.c **** }
+ 182              		.loc 1 100 1 view .LVU60
+ 183 00ca 7047     		bx	lr
+ 184              	.L6:
+ 185              		.align	2
+ 186              	.L5:
+ 187 00cc 00700440 		.word	1074032640
+ 188              		.cfi_endproc
+ 189              	.LFE1:
+ 191              		.align	1
+ 192              		.syntax unified
+ 193              		.thumb
+ 194              		.thumb_func
+ 195              		.fpu softvfp
+ 197              	setDuty:
+ 198              	.LVL0:
+ 199              	.LFB2:
+ 101:hal/Landungsbruecke/tmc/Timer.c **** 
+ 102:hal/Landungsbruecke/tmc/Timer.c **** static void setDuty(timer_channel channel, uint16_t duty)
+ 103:hal/Landungsbruecke/tmc/Timer.c **** {
+ 200              		.loc 1 103 1 is_stmt 1 view -0
+ 201              		.cfi_startproc
+ 202              		@ args = 0, pretend = 0, frame = 0
+ 203              		@ frame_needed = 0, uses_anonymous_args = 0
+ 204              		@ link register save eliminated.
+ 104:hal/Landungsbruecke/tmc/Timer.c **** 	switch(channel) {
+ 205              		.loc 1 104 2 view .LVU62
+ 206 00d0 B1F5FA5F 		cmp	r1, #8000
+ 207 00d4 28BF     		it	cs
+ 208 00d6 4FF4FA51 		movcs	r1, #8000
+ 209              	.LVL1:
+ 210              		.loc 1 104 2 is_stmt 0 view .LVU63
+ 211 00da 0128     		cmp	r0, #1
+ 212 00dc 064B     		ldr	r3, .L13
+ 213 00de 03D0     		beq	.L8
+ 214 00e0 0228     		cmp	r0, #2
+ 215 00e2 07D0     		beq	.L9
+ 105:hal/Landungsbruecke/tmc/Timer.c **** 	case TIMER_CHANNEL_2:
+ 106:hal/Landungsbruecke/tmc/Timer.c **** 		FTM0_C1V = (duty < TIMER_MAX) ? duty : TIMER_MAX;
+ 107:hal/Landungsbruecke/tmc/Timer.c **** 		break;
+ 108:hal/Landungsbruecke/tmc/Timer.c **** 	case TIMER_CHANNEL_3:
+ 109:hal/Landungsbruecke/tmc/Timer.c **** 		FTM0_C5V = (duty < TIMER_MAX) ? duty : TIMER_MAX;
+ 110:hal/Landungsbruecke/tmc/Timer.c **** 		break;
+ 111:hal/Landungsbruecke/tmc/Timer.c **** 	case TIMER_CHANNEL_1:
+ 112:hal/Landungsbruecke/tmc/Timer.c **** 	default:
+ 113:hal/Landungsbruecke/tmc/Timer.c **** 		FTM0_C7V = (duty < TIMER_MAX) ? duty : TIMER_MAX;
+ 216              		.loc 1 113 3 is_stmt 1 view .LVU64
+ 217              		.loc 1 113 12 is_stmt 0 view .LVU65
+ 218 00e4 9964     		str	r1, [r3, #72]
+ 114:hal/Landungsbruecke/tmc/Timer.c **** 		break;
+ 219              		.loc 1 114 3 is_stmt 1 view .LVU66
+ 220 00e6 00E0     		b	.L11
+ 221              	.L8:
+ 106:hal/Landungsbruecke/tmc/Timer.c **** 		break;
+ 222              		.loc 1 106 3 view .LVU67
+ 106:hal/Landungsbruecke/tmc/Timer.c **** 		break;
+ 223              		.loc 1 106 12 is_stmt 0 view .LVU68
+ 224 00e8 9961     		str	r1, [r3, #24]
+ 107:hal/Landungsbruecke/tmc/Timer.c **** 	case TIMER_CHANNEL_3:
+ 225              		.loc 1 107 3 is_stmt 1 view .LVU69
+ 226              	.L11:
+ 115:hal/Landungsbruecke/tmc/Timer.c **** 	}
+ 116:hal/Landungsbruecke/tmc/Timer.c **** 	FTM0_PWMLOAD = FTM_PWMLOAD_LDOK_MASK;
+ 227              		.loc 1 116 2 view .LVU70
+ 228              		.loc 1 116 15 is_stmt 0 view .LVU71
+ 229 00ea 4FF40072 		mov	r2, #512
+ 230 00ee C3F89820 		str	r2, [r3, #152]
+ 117:hal/Landungsbruecke/tmc/Timer.c **** }
+ 231              		.loc 1 117 1 view .LVU72
+ 232 00f2 7047     		bx	lr
+ 233              	.L9:
+ 109:hal/Landungsbruecke/tmc/Timer.c **** 		break;
+ 234              		.loc 1 109 3 is_stmt 1 view .LVU73
+ 109:hal/Landungsbruecke/tmc/Timer.c **** 		break;
+ 235              		.loc 1 109 12 is_stmt 0 view .LVU74
+ 236 00f4 9963     		str	r1, [r3, #56]
+ 110:hal/Landungsbruecke/tmc/Timer.c **** 	case TIMER_CHANNEL_1:
+ 237              		.loc 1 110 3 is_stmt 1 view .LVU75
+ 238 00f6 F8E7     		b	.L11
+ 239              	.L14:
+ 240              		.align	2
+ 241              	.L13:
+ 242 00f8 00800340 		.word	1073971200
+ 243              		.cfi_endproc
+ 244              	.LFE2:
+ 246              		.align	1
+ 247              		.syntax unified
+ 248              		.thumb
+ 249              		.thumb_func
+ 250              		.fpu softvfp
+ 252              	getDuty:
+ 253              	.LVL2:
+ 254              	.LFB3:
+ 118:hal/Landungsbruecke/tmc/Timer.c **** 
+ 119:hal/Landungsbruecke/tmc/Timer.c **** static uint16_t getDuty(timer_channel channel)
+ 120:hal/Landungsbruecke/tmc/Timer.c **** {
+ 255              		.loc 1 120 1 view -0
+ 256              		.cfi_startproc
+ 257              		@ args = 0, pretend = 0, frame = 0
+ 258              		@ frame_needed = 0, uses_anonymous_args = 0
+ 259              		@ link register save eliminated.
+ 121:hal/Landungsbruecke/tmc/Timer.c **** 	uint16_t duty = 0;
+ 260              		.loc 1 121 2 view .LVU77
+ 122:hal/Landungsbruecke/tmc/Timer.c **** 	switch(channel) {
+ 261              		.loc 1 122 2 view .LVU78
+ 262 00fc 0128     		cmp	r0, #1
+ 263 00fe 074B     		ldr	r3, .L22
+ 264 0100 04D0     		beq	.L16
+ 265 0102 0228     		cmp	r0, #2
+ 266 0104 07D0     		beq	.L17
+ 267              	.LBB4:
+ 268              	.LBI4:
+ 119:hal/Landungsbruecke/tmc/Timer.c **** {
+ 269              		.loc 1 119 17 view .LVU79
+ 270              	.LVL3:
+ 271              	.LBB5:
+ 123:hal/Landungsbruecke/tmc/Timer.c **** 	case TIMER_CHANNEL_2:
+ 124:hal/Landungsbruecke/tmc/Timer.c **** 		duty = (FTM0_C1V - FTM0_C0V);
+ 125:hal/Landungsbruecke/tmc/Timer.c **** 		break;
+ 126:hal/Landungsbruecke/tmc/Timer.c **** 	case TIMER_CHANNEL_3:
+ 127:hal/Landungsbruecke/tmc/Timer.c **** 		duty = (FTM0_C5V - FTM0_C4V);
+ 128:hal/Landungsbruecke/tmc/Timer.c **** 		break;
+ 129:hal/Landungsbruecke/tmc/Timer.c **** 	case TIMER_CHANNEL_1:
+ 130:hal/Landungsbruecke/tmc/Timer.c **** 	default:
+ 131:hal/Landungsbruecke/tmc/Timer.c **** 		duty = (FTM0_C7V - FTM0_C6V);
+ 272              		.loc 1 131 3 view .LVU80
+ 273              		.loc 1 131 11 is_stmt 0 view .LVU81
+ 274 0106 986C     		ldr	r0, [r3, #72]
+ 275              	.LVL4:
+ 276              		.loc 1 131 22 view .LVU82
+ 277 0108 1B6C     		ldr	r3, [r3, #64]
+ 278 010a 01E0     		b	.L21
+ 279              	.LVL5:
+ 280              	.L16:
+ 281              		.loc 1 131 22 view .LVU83
+ 282              	.LBE5:
+ 283              	.LBE4:
+ 124:hal/Landungsbruecke/tmc/Timer.c **** 		break;
+ 284              		.loc 1 124 3 is_stmt 1 view .LVU84
+ 124:hal/Landungsbruecke/tmc/Timer.c **** 		break;
+ 285              		.loc 1 124 11 is_stmt 0 view .LVU85
+ 286 010c 9869     		ldr	r0, [r3, #24]
+ 287              	.LVL6:
+ 124:hal/Landungsbruecke/tmc/Timer.c **** 		break;
+ 288              		.loc 1 124 22 view .LVU86
+ 289 010e 1B69     		ldr	r3, [r3, #16]
+ 290              	.L21:
+ 291              	.LBB7:
+ 292              	.LBB6:
+ 293              		.loc 1 131 8 view .LVU87
+ 294 0110 C01A     		subs	r0, r0, r3
+ 295 0112 80B2     		uxth	r0, r0
+ 296              	.LVL7:
+ 132:hal/Landungsbruecke/tmc/Timer.c **** 		break;
+ 297              		.loc 1 132 3 is_stmt 1 view .LVU88
+ 133:hal/Landungsbruecke/tmc/Timer.c **** 	}
+ 134:hal/Landungsbruecke/tmc/Timer.c **** 	return duty;
+ 298              		.loc 1 134 2 view .LVU89
+ 299              		.loc 1 134 2 is_stmt 0 view .LVU90
+ 300              	.LBE6:
+ 301              	.LBE7:
+ 302              		.loc 1 134 2 is_stmt 1 view .LVU91
+ 135:hal/Landungsbruecke/tmc/Timer.c **** }
+ 303              		.loc 1 135 1 is_stmt 0 view .LVU92
+ 304 0114 7047     		bx	lr
+ 305              	.LVL8:
+ 306              	.L17:
+ 127:hal/Landungsbruecke/tmc/Timer.c **** 		break;
+ 307              		.loc 1 127 3 is_stmt 1 view .LVU93
+ 127:hal/Landungsbruecke/tmc/Timer.c **** 		break;
+ 308              		.loc 1 127 11 is_stmt 0 view .LVU94
+ 309 0116 986B     		ldr	r0, [r3, #56]
+ 310              	.LVL9:
+ 127:hal/Landungsbruecke/tmc/Timer.c **** 		break;
+ 311              		.loc 1 127 22 view .LVU95
+ 312 0118 1B6B     		ldr	r3, [r3, #48]
+ 313 011a F9E7     		b	.L21
+ 314              	.L23:
+ 315              		.align	2
+ 316              	.L22:
+ 317 011c 00800340 		.word	1073971200
+ 318              		.cfi_endproc
+ 319              	.LFE3:
+ 321              		.comm	hwid,1,1
+ 322              		.comm	HAL,48,4
+ 323              		.comm	UART,40,4
+ 324              		.global	Timer
+ 325              		.comm	WLAN,36,4
+ 326              		.comm	RS232,36,4
+ 327              		.comm	LEDs,28,4
+ 328              		.comm	USB,36,4
+ 329              		.comm	uart0_interrupt,1,1
+ 330              		.comm	ADCs,32,4
+ 331              		.comm	SPI,44,4
+ 332              		.comm	IOMap,2088,4
+ 333              		.comm	IOs,52,4
+ 334              		.comm	Cpu,8,4
+ 335              		.data
+ 336              		.align	2
+ 339              	Timer:
+ 340 0000 00000000 		.word	init
+ 341 0004 00000000 		.word	deInit
+ 342 0008 00000000 		.word	setDuty
+ 343 000c 00000000 		.word	getDuty
+ 344              		.bss
+ 345              		.align	1
+ 348              	ADCValue:
+ 349 0000 00000000 		.space	12
+ 349      00000000 
+ 349      00000000 
+ 350              		.text
+ 351              	.Letext0:
+ 352              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 353              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 354              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 355              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 356              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 357              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 358              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 359              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 360              		.file 10 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 361              		.file 11 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 362              		.file 12 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 363              		.file 13 "./hal/IOs.h"
+ 364              		.file 14 "./hal/IOMap.h"
+ 365              		.file 15 "./hal/SPI.h"
+ 366              		.file 16 "./hal/ADCs.h"
+ 367              		.file 17 "./hal/RXTX.h"
+ 368              		.file 18 "./hal/USB.h"
+ 369              		.file 19 "./hal/LEDs.h"
+ 370              		.file 20 "./hal/RS232.h"
+ 371              		.file 21 "./hal/WLAN.h"
+ 372              		.file 22 "./hal/Timer.h"
+ 373              		.file 23 "./hal/UART.h"
+ 374              		.file 24 "./hal/HAL.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 Timer.c
+C:\Users\Shubham\AppData\Local\Temp\cccww3IY.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\cccww3IY.s:22     .text:00000000 init
+C:\Users\Shubham\AppData\Local\Temp\cccww3IY.s:157    .text:000000b4 $d
+C:\Users\Shubham\AppData\Local\Temp\cccww3IY.s:162    .text:000000bc $t
+C:\Users\Shubham\AppData\Local\Temp\cccww3IY.s:168    .text:000000bc deInit
+C:\Users\Shubham\AppData\Local\Temp\cccww3IY.s:187    .text:000000cc $d
+C:\Users\Shubham\AppData\Local\Temp\cccww3IY.s:191    .text:000000d0 $t
+C:\Users\Shubham\AppData\Local\Temp\cccww3IY.s:197    .text:000000d0 setDuty
+C:\Users\Shubham\AppData\Local\Temp\cccww3IY.s:242    .text:000000f8 $d
+C:\Users\Shubham\AppData\Local\Temp\cccww3IY.s:246    .text:000000fc $t
+C:\Users\Shubham\AppData\Local\Temp\cccww3IY.s:252    .text:000000fc getDuty
+C:\Users\Shubham\AppData\Local\Temp\cccww3IY.s:317    .text:0000011c $d
+                            *COM*:00000001 hwid
+                            *COM*:00000030 HAL
+                            *COM*:00000028 UART
+C:\Users\Shubham\AppData\Local\Temp\cccww3IY.s:339    .data:00000000 Timer
+                            *COM*:00000024 WLAN
+                            *COM*:00000024 RS232
+                            *COM*:0000001c LEDs
+                            *COM*:00000024 USB
+                            *COM*:00000001 uart0_interrupt
+                            *COM*:00000020 ADCs
+                            *COM*:0000002c SPI
+                            *COM*:00000828 IOMap
+                            *COM*:00000034 IOs
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\cccww3IY.s:336    .data:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\cccww3IY.s:345    .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\cccww3IY.s:348    .bss:00000000 ADCValue
+
+NO UNDEFINED SYMBOLS

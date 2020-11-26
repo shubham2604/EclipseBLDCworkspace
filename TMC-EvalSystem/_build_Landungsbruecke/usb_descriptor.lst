@@ -1,0 +1,1845 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"usb_descriptor.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.global	USB_Desc_Get_Descriptor
+  17              		.arch armv7e-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	USB_Desc_Get_Descriptor:
+  24              	.LVL0:
+  25              	.LFB0:
+  26              		.file 1 "hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c"
+   1:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** /******************************************************************************
+   2:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+   3:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * Freescale Semiconductor Inc.
+   4:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * (c) Copyright 2004-2009 Freescale Semiconductor, Inc.
+   5:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * ALL RIGHTS RESERVED.
+   6:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+   7:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  **************************************************************************//*!
+   8:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+   9:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @file usb_descriptor.c
+  10:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+  11:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @author
+  12:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+  13:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @version
+  14:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+  15:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @date May-28-2009
+  16:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+  17:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @brief This file contains USB descriptors for Virtual COM Loopback
+  18:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *        Application
+  19:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************/
+  20:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+  21:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** /******************************************************************************
+  22:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * Includes
+  23:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************/
+  24:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** #include "hal/derivative.h"
+  25:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** #include "types.h"
+  26:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** #include "usb_class.h"
+  27:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** #include "usb_descriptor.h"
+  28:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+  29:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** #if (defined __MCF52xxx_H__)||(defined __MK_xxx_H__)
+  30:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** /* Put CFV2 descriptors in RAM */
+  31:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** #define USB_DESC_CONST
+  32:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** #else
+  33:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** #define USB_DESC_CONST	const
+  34:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** #endif
+  35:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+  36:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** /*****************************************************************************
+  37:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * Constant and Macro's
+  38:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************/
+  39:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** /* structure containing details of all the endpoints used by this device */
+  40:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** USB_DESC_CONST USB_ENDPOINTS usb_desc_ep =
+  41:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** {
+  42:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     CDC_DESC_ENDPOINT_COUNT,
+  43:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     {
+  44:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         #if DATA_CLASS_SUPPORT
+  45:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             #if DIC_ISOCHRONOUS_SETTING
+  46:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             {
+  47:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                 DIC_ISO_IN_ENDPOINT,
+  48:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                 USB_ISOCHRONOUS_PIPE,
+  49:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                 USB_SEND,
+  50:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                 DIC_ISO_IN_ENDP_PACKET_SIZE
+  51:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             },
+  52:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             {
+  53:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                 DIC_ISO_OUT_ENDPOINT,
+  54:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                 USB_ISOCHRONOUS_PIPE,
+  55:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                 USB_RECV,
+  56:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                 DIC_ISO_OUT_ENDP_PACKET_SIZE
+  57:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             }
+  58:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             #else
+  59:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             {
+  60:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                 DIC_BULK_IN_ENDPOINT,
+  61:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                 USB_BULK_PIPE,
+  62:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                 USB_SEND,
+  63:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                 DIC_BULK_IN_ENDP_PACKET_SIZE
+  64:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             },
+  65:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             {
+  66:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                 DIC_BULK_OUT_ENDPOINT,
+  67:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                 USB_BULK_PIPE,
+  68:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                 USB_RECV,
+  69:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                 DIC_BULK_OUT_ENDP_PACKET_SIZE
+  70:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             }
+  71:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             #endif
+  72:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         #endif
+  73:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         #if CIC_NOTIF_ELEM_SUPPORT
+  74:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         ,
+  75:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         {
+  76:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             CIC_NOTIF_ENDPOINT,
+  77:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             USB_INTERRUPT_PIPE,
+  78:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             USB_SEND,
+  79:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             CIC_NOTIF_ENDP_PACKET_SIZE
+  80:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         }
+  81:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         #endif
+  82:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+  83:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     }
+  84:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** };
+  85:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+  86:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** uint_8 USB_DESC_CONST g_device_descriptor[DEVICE_DESCRIPTOR_SIZE] =
+  87:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** {
+  88:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****    DEVICE_DESCRIPTOR_SIZE,               /*  Device Descriptor Size         */
+  89:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****    USB_DEVICE_DESCRIPTOR,                /*  Device Type of descriptor      */
+  90:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****    0x00, 0x02,                           /*  BCD USB version                */
+  91:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****    0x02,                                 /*  Device Class is indicated in
+  92:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                              the interface descriptors      */
+  93:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****    0x00,                                 /*  Device Subclass is indicated
+  94:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                              in the interface descriptors   */
+  95:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****    0x00,                                 /*  Device Protocol                */
+  96:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****    CONTROL_MAX_PACKET_SIZE,              /*  Max Packet size                */
+  97:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****    (0x2A3C&0xFF),((0x2A3C>>8)&0xFF),     /*  Vendor ID "Trinamic"           */
+  98:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****    (0x0700&0xFF),((0x0700>>8)&0xFF),     /*  "TRINAMIC Evaluation Device"   */
+  99:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****    0x02,0x00,                            /*  BCD Device version             */
+ 100:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****    0x01,                                 /*  Manufacturer string index      */
+ 101:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****    0x02,                                 /*  Product string index           */
+ 102:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****    0x00,                                 /*  Serial number string index     */
+ 103:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****    0x01                                  /*  Number of configurations       */
+ 104:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** };
+ 105:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 106:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** uint_8 USB_DESC_CONST g_config_descriptor[CONFIG_DESC_SIZE] =
+ 107:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** {
+ 108:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     CONFIG_ONLY_DESC_SIZE,  /*  Configuration Descriptor Size */
+ 109:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     USB_CONFIG_DESCRIPTOR,  /* "Configuration" type of descriptor */
+ 110:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     CONFIG_DESC_SIZE, 0x00, /*  Total length of the Configuration descriptor */
+ 111:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     (uint_8)(1+DATA_CLASS_SUPPORT),/*NumInterfaces*/
+ 112:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     0x01,                      /*  Configuration Value */
+ 113:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     0x00,                      /*  Configuration Description String Index*/
+ 114:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     BUS_POWERED|SELF_POWERED|(REMOTE_WAKEUP_SUPPORT<<REMOTE_WAKEUP_SHIFT),
+ 115:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****               /*  Attributes.support RemoteWakeup and self power*/
+ 116:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     0x32,                   /*  Current draw from bus -- 100mA*/
+ 117:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 118:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     /* CIC INTERFACE DESCRIPTOR */
+ 119:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     IFACE_ONLY_DESC_SIZE,
+ 120:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     USB_IFACE_DESCRIPTOR,
+ 121:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     0x00, /* bInterfaceNumber */
+ 122:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     0x00, /* bAlternateSetting */
+ 123:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     CIC_ENDP_COUNT, /* management and notification(optional)element present */
+ 124:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     0x02, /* Communication Interface Class */
+ 125:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     CIC_SUBCLASS_CODE,
+ 126:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     CIC_PROTOCOL_CODE,
+ 127:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     0x00, /* Interface Description String Index*/
+ 128:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 129:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     /* CDC Class-Specific descriptor */
+ 130:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     0x05,             /* size of Functional Desc in bytes */
+ 131:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     USB_CS_INTERFACE,  /* descriptor type*/
+ 132:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     HEADER_FUNC_DESC,
+ 133:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     0x10, 0x01,  /* USB Class Definitions for CDC spec release number in BCD */
+ 134:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 135:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     0x05,             /* Size of this descriptor */
+ 136:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     USB_CS_INTERFACE, /* descriptor type*/
+ 137:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     CALL_MANAGEMENT_FUNC_DESC,
+ 138:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     0x01,/*may use 0x03 */  /* device handales call management itself(D0 set)
+ 139:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****               and will process commands multiplexed over the data interface */
+ 140:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     0x01,      /* Indicates multiplexed commands are
+ 141:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                 handled via data interface */
+ 142:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 143:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     0x04,             /* Size of this descriptor */
+ 144:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     USB_CS_INTERFACE, /* descriptor type*/
+ 145:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     ABSTRACT_CONTROL_FUNC_DESC,
+ 146:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     0x06, /*may use 0x0F */ /* Device Supports all commands for ACM - CDC
+ 147:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               PSTN SubClass bmCapabilities */
+ 148:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 149:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     0x05,             /* size of Functional Desc in bytes */
+ 150:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     USB_CS_INTERFACE,  /* descriptor type*/
+ 151:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     UNION_FUNC_DESC,
+ 152:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     0x00,           /* Interface Number of Control */
+ 153:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     0x01            /* Interface Number of Subordinate (Data Class) Interface */
+ 154:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 155:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** #if CIC_NOTIF_ELEM_SUPPORT    /*Endpoint descriptor */
+ 156:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     , /* Comma Added if NOTIF ELEM IS TO BE ADDED */
+ 157:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     ENDP_ONLY_DESC_SIZE,
+ 158:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     USB_ENDPOINT_DESCRIPTOR,
+ 159:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     CIC_NOTIF_ENDPOINT|(USB_SEND << 7),
+ 160:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     USB_INTERRUPT_PIPE,
+ 161:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     CIC_NOTIF_ENDP_PACKET_SIZE, 0x00,
+ 162:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     0x0A
+ 163:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** #endif
+ 164:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 165:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** #if DATA_CLASS_SUPPORT
+ 166:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         , /* Comma Added if DATA_CLASS_DESC IS TO BE ADDED */
+ 167:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         IFACE_ONLY_DESC_SIZE,
+ 168:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         USB_IFACE_DESCRIPTOR,
+ 169:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         (uint_8)(0x00+DATA_CLASS_SUPPORT), /* bInterfaceNumber */
+ 170:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         0x00, /* bAlternateSetting */
+ 171:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         DIC_ENDP_COUNT, /* notification element included */
+ 172:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         0x0A, /* DATA Interface Class */
+ 173:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         0x00, /* Data Interface SubClass Code */
+ 174:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         DIC_PROTOCOL_CODE,
+ 175:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         0x00, /* Interface Description String Index*/
+ 176:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 177:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     #if ! DIC_ISOCHRONOUS_SETTING
+ 178:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         /*Endpoint descriptor */
+ 179:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         ENDP_ONLY_DESC_SIZE,
+ 180:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         USB_ENDPOINT_DESCRIPTOR,
+ 181:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         DIC_BULK_IN_ENDPOINT|(USB_SEND << 7),
+ 182:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         USB_BULK_PIPE,
+ 183:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         DIC_BULK_IN_ENDP_PACKET_SIZE, 0x00,
+ 184:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         0x00,/* This value is ignored for Bulk ENDPOINT */
+ 185:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 186:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         /*Endpoint descriptor */
+ 187:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         ENDP_ONLY_DESC_SIZE,
+ 188:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         USB_ENDPOINT_DESCRIPTOR,
+ 189:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         DIC_BULK_OUT_ENDPOINT|(USB_RECV << 7),
+ 190:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         USB_BULK_PIPE,
+ 191:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         DIC_BULK_OUT_ENDP_PACKET_SIZE, 0x00,
+ 192:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         0x00 /* This value is ignored for Bulk ENDPOINT */
+ 193:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     #else
+ 194:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         /*Endpoint descriptor */
+ 195:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         ENDP_ONLY_DESC_SIZE,
+ 196:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         USB_ENDPOINT_DESCRIPTOR,
+ 197:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         DIC_ISO_IN_ENDPOINT|(USB_SEND << 7),
+ 198:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         USB_ISOCHRONOUS_PIPE,
+ 199:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         DIC_ISO_IN_ENDP_PACKET_SIZE, 0x00,
+ 200:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         0x01,/* This value is for Iso ENDPOINT */
+ 201:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 202:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         /*Endpoint descriptor */
+ 203:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         ENDP_ONLY_DESC_SIZE,
+ 204:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         USB_ENDPOINT_DESCRIPTOR,
+ 205:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         DIC_ISO_OUT_ENDPOINT|(USB_RECV << 7),
+ 206:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         USB_ISOCHRONOUS_PIPE,
+ 207:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         DIC_ISO_OUT_ENDP_PACKET_SIZE, 0x00,
+ 208:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         0x01 /* This value is for Iso ENDPOINT */
+ 209:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     #endif
+ 210:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** #endif
+ 211:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** };
+ 212:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 213:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** uint_8 USB_DESC_CONST USB_STR_0[USB_STR_0_SIZE+USB_STR_DESC_SIZE] =
+ 214:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                     {sizeof(USB_STR_0),
+ 215:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                      USB_STRING_DESCRIPTOR,
+ 216:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                       0x09,
+ 217:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                       0x04/*equiavlent to 0x0409*/
+ 218:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                     };
+ 219:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 220:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** uint_8 USB_DESC_CONST USB_STR_1[USB_STR_1_SIZE+USB_STR_DESC_SIZE]
+ 221:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                           = {  sizeof(USB_STR_1),
+ 222:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                USB_STRING_DESCRIPTOR,
+ 223:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 224:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               'T',0,
+ 225:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               'R',0,
+ 226:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               'I',0,
+ 227:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               'N',0,
+ 228:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               'A',0,
+ 229:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               'M',0,
+ 230:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               'I',0,
+ 231:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               'C',0,
+ 232:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               ' ',0,
+ 233:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               'M',0,
+ 234:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               'o',0,
+ 235:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               't',0,
+ 236:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               'i',0,
+ 237:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               'o',0,
+ 238:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               'n',0,
+ 239:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               ' ',0,
+ 240:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               'C',0,
+ 241:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               'o',0,
+ 242:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               'n',0,
+ 243:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               't',0,
+ 244:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               'r',0,
+ 245:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               'o',0,
+ 246:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               'l',0,
+ 247:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               ' ',0,
+ 248:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               ' ',0,
+ 249:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               ' ',0,
+ 250:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               ' ',0,
+ 251:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                               ' ',0
+ 252:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                           };
+ 253:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 254:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 255:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** uint_8 USB_DESC_CONST USB_STR_2[USB_STR_2_SIZE+USB_STR_DESC_SIZE]
+ 256:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                           = {  sizeof(USB_STR_2),
+ 257:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                USB_STRING_DESCRIPTOR,
+ 258:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 259:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'E',0,
+ 260:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'v',0,
+ 261:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'a',0,
+ 262:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'l',0,
+ 263:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'u',0,
+ 264:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'a',0,
+ 265:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                't',0,
+ 266:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'i',0,
+ 267:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'o',0,
+ 268:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'n',0,
+ 269:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                ' ',0,
+ 270:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'D',0,
+ 271:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'e',0,
+ 272:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'v',0,
+ 273:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'i',0,
+ 274:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'c',0,
+ 275:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'e',0,
+ 276:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                ' ',0
+ 277:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                           };
+ 278:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 279:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** uint_8 USB_DESC_CONST USB_STR_n[USB_STR_n_SIZE+USB_STR_DESC_SIZE]
+ 280:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                           = {  sizeof(USB_STR_n),
+ 281:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                USB_STRING_DESCRIPTOR,
+ 282:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'B',0,
+ 283:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'A',0,
+ 284:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'D',0,
+ 285:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                ' ',0,
+ 286:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'S',0,
+ 287:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'T',0,
+ 288:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'R',0,
+ 289:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'I',0,
+ 290:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'N',0,
+ 291:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'G',0,
+ 292:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                ' ',0,
+ 293:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'I',0,
+ 294:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'N',0,
+ 295:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'D',0,
+ 296:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'E',0,
+ 297:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                'X',0
+ 298:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                           };
+ 299:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 300:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 301:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** USB_PACKET_SIZE const g_std_desc_size[USB_MAX_STD_DESCRIPTORS+1] =
+ 302:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                     {0,
+ 303:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                      DEVICE_DESCRIPTOR_SIZE,
+ 304:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                      CONFIG_DESC_SIZE,
+ 305:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                      0, /* string */
+ 306:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                      0, /* Interface */
+ 307:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                      0, /* Endpoint */
+ 308:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                      0, /* Device Qualifier */
+ 309:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                      0 /* other speed config */
+ 310:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                     };
+ 311:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 312:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** uint_8_ptr const g_std_descriptors[USB_MAX_STD_DESCRIPTORS+1] =
+ 313:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                             {
+ 314:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                 NULL,
+ 315:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                 (uint_8_ptr)g_device_descriptor,
+ 316:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                 (uint_8_ptr)g_config_descriptor,
+ 317:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                 NULL, /* string */
+ 318:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                 NULL, /* Interface */
+ 319:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                 NULL, /* Endpoint */
+ 320:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                 NULL, /* Device Qualifier */
+ 321:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                 NULL  /* other speed config*/
+ 322:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                             };
+ 323:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 324:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** uint_8 const g_string_desc_size[USB_MAX_STRING_DESCRIPTORS+1] =
+ 325:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                             {
+ 326:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                 sizeof(USB_STR_0),
+ 327:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                 sizeof(USB_STR_1),
+ 328:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                 sizeof(USB_STR_2),
+ 329:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                 sizeof(USB_STR_n)
+ 330:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                             };
+ 331:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 332:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** uint_8_ptr const g_string_descriptors[USB_MAX_STRING_DESCRIPTORS+1] =
+ 333:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                             {
+ 334:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                 (uint_8_ptr)USB_STR_0,
+ 335:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                 (uint_8_ptr)USB_STR_1,
+ 336:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                 (uint_8_ptr)USB_STR_2,
+ 337:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                 (uint_8_ptr)USB_STR_n
+ 338:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                             };
+ 339:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 340:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** #ifdef __HC08__ /* << EST */
+ 341:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** #pragma MESSAGE DISABLE C4800 /* implicit cast in assignment */
+ 342:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** #endif
+ 343:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** USB_ALL_LANGUAGES g_languages = { USB_STR_0, sizeof(USB_STR_0),
+ 344:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 		                          {
+ 345:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 		                            {
+ 346:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                             (uint_16)0x0409,
+ 347:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                         (const uint_8 **) (unsigned long) g_string_descriptors, 	//
+ 348:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                         g_string_desc_size
+ 349:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                     }
+ 350:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 		                          }
+ 351:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                 };
+ 352:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** #ifdef __HC08__ /* << EST */
+ 353:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** #pragma MESSAGE DEFAULT C4800
+ 354:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** #endif
+ 355:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 356:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** uint_8 const g_valid_config_values[USB_MAX_CONFIG_SUPPORTED+1]={0,1};
+ 357:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 358:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** /****************************************************************************
+ 359:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * Global Variables
+ 360:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  ****************************************************************************/
+ 361:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** #ifdef _MC9S08JS16_H
+ 362:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** #pragma DATA_SEG APP_DATA
+ 363:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** #endif
+ 364:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 365:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** static uint_8 g_line_coding[USB_MAX_SUPPORTED_INTERFACES][LINE_CODING_SIZE] =
+ 366:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** {
+ 367:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         { (LINE_CODE_DTERATE_IFACE0>> 0) & 0x000000FF,
+ 368:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****           (LINE_CODE_DTERATE_IFACE0>> 8) & 0x000000FF,
+ 369:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****           (LINE_CODE_DTERATE_IFACE0>>16) & 0x000000FF,
+ 370:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****           (LINE_CODE_DTERATE_IFACE0>>24) & 0x000000FF,
+ 371:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****           /*e.g. 0x00,0xC2,0x01,0x00 : 0x0001C200 is 115200 bits per second */
+ 372:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****            LINE_CODE_CHARFORMAT_IFACE0,
+ 373:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****            LINE_CODE_PARITYTYPE_IFACE0,
+ 374:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****            LINE_CODE_DATABITS_IFACE0
+ 375:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         }
+ 376:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** };
+ 377:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 378:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** static uint_8 g_abstract_state[USB_MAX_SUPPORTED_INTERFACES][COMM_FEATURE_DATA_SIZE] =
+ 379:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** {
+ 380:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         { (STATUS_ABSTRACT_STATE_IFACE0>>0) & 0x00FF,
+ 381:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****           (STATUS_ABSTRACT_STATE_IFACE0>>8) & 0x00FF
+ 382:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         }
+ 383:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** };
+ 384:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 385:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** static uint_8 g_country_code[USB_MAX_SUPPORTED_INTERFACES][COMM_FEATURE_DATA_SIZE] =
+ 386:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** {
+ 387:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         { (COUNTRY_SETTING_IFACE0>>0) & 0x00FF,
+ 388:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****           (COUNTRY_SETTING_IFACE0>>8) & 0x00FF
+ 389:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         }
+ 390:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** };
+ 391:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 392:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** static uint_8 g_alternate_interface[USB_MAX_SUPPORTED_INTERFACES];
+ 393:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 394:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** /*****************************************************************************
+ 395:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * Local Types - None
+ 396:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************/
+ 397:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 398:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** /*****************************************************************************
+ 399:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * Local Functions Prototypes
+ 400:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************/
+ 401:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 402:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** /*****************************************************************************
+ 403:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * Local Variables - None
+ 404:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************/
+ 405:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 406:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 407:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  /*****************************************************************************
+ 408:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * Local Functions - None
+ 409:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************/
+ 410:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 411:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** /*****************************************************************************
+ 412:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * Global Functions
+ 413:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************/
+ 414:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** /**************************************************************************//*!
+ 415:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 416:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @name  USB_Desc_Get_Descriptor
+ 417:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 418:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @brief The function returns the correponding descriptor
+ 419:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 420:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param controller_ID : Controller ID
+ 421:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param type          : type of descriptor requested
+ 422:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param sub_type      : string index for string descriptor
+ 423:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param index         : string descriptor language Id
+ 424:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param descriptor    : output descriptor pointer
+ 425:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param size          : size of descriptor returned
+ 426:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 427:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @return USB_OK                      When Successfull
+ 428:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *         USBERR_INVALID_REQ_TYPE     when Error
+ 429:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************
+ 430:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * This function is used to pass the pointer to the requested descriptor
+ 431:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************/
+ 432:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** uint_8 USB_Desc_Get_Descriptor (
+ 433:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****      uint_8 controller_ID,   /* [IN] Controller ID */
+ 434:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****      uint_8 type,            /* [IN] type of descriptor requested */
+ 435:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****      uint_8 str_num,         /* [IN] string index for string descriptor */
+ 436:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****      uint_16 index,          /* [IN] string descriptor language Id */
+ 437:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****      uint_8_ptr *descriptor, /* [OUT] output descriptor pointer */
+ 438:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****      USB_PACKET_SIZE *size   /* [OUT] size of descriptor returned */
+ 439:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** )
+ 440:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** {
+  27              		.loc 1 440 1 view -0
+  28              		.cfi_startproc
+  29              		@ args = 8, pretend = 0, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+ 441:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****      UNUSED (controller_ID);
+  31              		.loc 1 441 6 view .LVU1
+ 442:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 443:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     /* string descriptors are handled saperately */
+ 444:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     if(type == USB_STRING_DESCRIPTOR)
+  32              		.loc 1 444 5 view .LVU2
+ 440:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****      UNUSED (controller_ID);
+  33              		.loc 1 440 1 is_stmt 0 view .LVU3
+  34 0000 30B5     		push	{r4, r5, lr}
+  35              	.LCFI0:
+  36              		.cfi_def_cfa_offset 12
+  37              		.cfi_offset 4, -12
+  38              		.cfi_offset 5, -8
+  39              		.cfi_offset 14, -4
+  40              		.loc 1 444 7 view .LVU4
+  41 0002 0329     		cmp	r1, #3
+ 440:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****      UNUSED (controller_ID);
+  42              		.loc 1 440 1 view .LVU5
+  43 0004 DDE90354 		ldrd	r5, r4, [sp, #12]
+  44 0008 1846     		mov	r0, r3
+  45              	.LVL1:
+  46              		.loc 1 444 7 view .LVU6
+  47 000a 1DD1     		bne	.L2
+ 445:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     {
+ 446:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         if(index == 0)
+  48              		.loc 1 446 9 is_stmt 1 view .LVU7
+  49              		.loc 1 446 11 is_stmt 0 view .LVU8
+  50 000c 23B9     		cbnz	r3, .L3
+ 447:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         {
+ 448:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             /* return the string and size of all languages */
+ 449:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             *descriptor = (uint_8_ptr) (unsigned long) g_languages.languages_supported_string;	// c
+  51              		.loc 1 449 13 is_stmt 1 view .LVU9
+  52              		.loc 1 449 25 is_stmt 0 view .LVU10
+  53 000e 164B     		ldr	r3, .L14
+  54              	.LVL2:
+  55              		.loc 1 449 25 view .LVU11
+  56 0010 2B60     		str	r3, [r5]
+ 450:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             *size = g_languages.languages_supported_size;
+  57              		.loc 1 450 13 is_stmt 1 view .LVU12
+  58              		.loc 1 450 19 is_stmt 0 view .LVU13
+  59 0012 0423     		movs	r3, #4
+  60 0014 2380     		strh	r3, [r4]	@ movhi
+  61              	.LVL3:
+  62              	.L4:
+ 451:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         } else
+ 452:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         {
+ 453:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             uint_8 lang_id=0;
+ 454:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             uint_8 lang_index=USB_MAX_LANGUAGES_SUPPORTED;
+ 455:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 456:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             for(;lang_id< USB_MAX_LANGUAGES_SUPPORTED;lang_id++)
+ 457:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             {
+ 458:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                 /* check whether we have a string for this language */
+ 459:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                 if(index == g_languages.usb_language[lang_id].language_id)
+ 460:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                 {   /* check for max descriptors */
+ 461:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                     if(str_num < USB_MAX_STRING_DESCRIPTORS)
+ 462:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                     {   /* setup index for the string to be returned */
+ 463:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                         lang_index=str_num;
+ 464:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                     }
+ 465:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 466:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                     break;
+ 467:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                 }
+ 468:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 469:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             }
+ 470:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 471:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             /* set return val for descriptor and size */
+ 472:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             *descriptor = (uint_8_ptr) (unsigned long) g_languages.usb_language[lang_id].	// cast t
+ 473:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                                 lang_desc[lang_index];
+ 474:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             *size = g_languages.usb_language[lang_id].
+ 475:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                                 lang_desc_size[lang_index];
+ 476:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         }
+ 477:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 478:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     }
+ 479:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     else if(type < USB_MAX_STD_DESCRIPTORS+1)
+ 480:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     {
+ 481:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         /* Set return val for descriptor and size */
+ 482:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         *descriptor = (uint_8_ptr) (unsigned long) g_std_descriptors [type];	// cast to unsigned lo
+ 483:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 484:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         /* if there is no descriptor then return error */
+ 485:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         if(*descriptor == NULL)
+ 486:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         {
+ 487:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             return USBERR_INVALID_REQ_TYPE;
+ 488:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         }
+ 489:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 490:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         *size = g_std_desc_size[type];
+ 491:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     }
+ 492:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     else /* invalid descriptor */
+ 493:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     {
+ 494:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         return USBERR_INVALID_REQ_TYPE;
+ 495:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     }
+ 496:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 497:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     return USB_OK;
+ 498:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** }
+  63              		.loc 1 498 1 view .LVU14
+  64 0016 30BD     		pop	{r4, r5, pc}
+  65              	.LVL4:
+  66              	.L3:
+  67              	.LBB2:
+ 456:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             {
+  68              		.loc 1 456 18 is_stmt 1 view .LVU15
+ 459:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                 {   /* check for max descriptors */
+  69              		.loc 1 459 17 view .LVU16
+ 459:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                 {   /* check for max descriptors */
+  70              		.loc 1 459 19 is_stmt 0 view .LVU17
+  71 0018 40F20943 		movw	r3, #1033
+  72              	.LVL5:
+ 459:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                 {   /* check for max descriptors */
+  73              		.loc 1 459 19 view .LVU18
+  74 001c 9842     		cmp	r0, r3
+  75 001e 10D1     		bne	.L8
+ 461:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                     {   /* setup index for the string to be returned */
+  76              		.loc 1 461 21 is_stmt 1 view .LVU19
+ 461:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                     {   /* setup index for the string to be returned */
+  77              		.loc 1 461 23 is_stmt 0 view .LVU20
+  78 0020 022A     		cmp	r2, #2
+  79 0022 4FF00003 		mov	r3, #0
+  80 0026 0DD8     		bhi	.L9
+  81              	.LVL6:
+  82              	.L5:
+ 472:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                                 lang_desc[lang_index];
+  83              		.loc 1 472 13 is_stmt 1 view .LVU21
+ 472:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                                 lang_desc[lang_index];
+  84              		.loc 1 472 89 is_stmt 0 view .LVU22
+  85 0028 1049     		ldr	r1, .L14+4
+  86              	.LVL7:
+ 472:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                                 lang_desc[lang_index];
+  87              		.loc 1 472 89 view .LVU23
+  88 002a 0C20     		movs	r0, #12
+  89 002c 00FB0313 		mla	r3, r0, r3, r1
+ 473:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             *size = g_languages.usb_language[lang_id].
+  90              		.loc 1 473 58 view .LVU24
+  91 0030 D968     		ldr	r1, [r3, #12]
+ 475:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         }
+  92              		.loc 1 475 63 view .LVU25
+  93 0032 1B69     		ldr	r3, [r3, #16]
+ 473:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             *size = g_languages.usb_language[lang_id].
+  94              		.loc 1 473 58 view .LVU26
+  95 0034 51F82210 		ldr	r1, [r1, r2, lsl #2]
+ 472:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                                 lang_desc[lang_index];
+  96              		.loc 1 472 25 view .LVU27
+  97 0038 2960     		str	r1, [r5]
+ 474:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                                 lang_desc_size[lang_index];
+  98              		.loc 1 474 13 is_stmt 1 view .LVU28
+ 475:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         }
+  99              		.loc 1 475 63 is_stmt 0 view .LVU29
+ 100 003a 9B5C     		ldrb	r3, [r3, r2]	@ zero_extendqisi2
+ 101              	.LVL8:
+ 102              	.L13:
+ 475:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         }
+ 103              		.loc 1 475 63 view .LVU30
+ 104              	.LBE2:
+ 490:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     }
+ 105              		.loc 1 490 15 view .LVU31
+ 106 003c 2380     		strh	r3, [r4]	@ movhi
+ 497:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** }
+ 107              		.loc 1 497 12 view .LVU32
+ 108 003e 0020     		movs	r0, #0
+ 109 0040 E9E7     		b	.L4
+ 110              	.LVL9:
+ 111              	.L8:
+ 112              	.LBB3:
+ 456:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             {
+ 113              		.loc 1 456 62 view .LVU33
+ 114 0042 0123     		movs	r3, #1
+ 115              	.L9:
+ 454:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 116              		.loc 1 454 20 view .LVU34
+ 117 0044 0122     		movs	r2, #1
+ 118              	.LVL10:
+ 454:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 119              		.loc 1 454 20 view .LVU35
+ 120 0046 EFE7     		b	.L5
+ 121              	.LVL11:
+ 122              	.L2:
+ 454:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 123              		.loc 1 454 20 view .LVU36
+ 124              	.LBE3:
+ 479:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     {
+ 125              		.loc 1 479 10 is_stmt 1 view .LVU37
+ 479:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     {
+ 126              		.loc 1 479 12 is_stmt 0 view .LVU38
+ 127 0048 0729     		cmp	r1, #7
+ 128 004a 01D9     		bls	.L6
+ 129              	.LVL12:
+ 130              	.L7:
+ 494:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     }
+ 131              		.loc 1 494 16 view .LVU39
+ 132 004c CD20     		movs	r0, #205
+ 133 004e E2E7     		b	.L4
+ 134              	.LVL13:
+ 135              	.L6:
+ 482:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 136              		.loc 1 482 9 is_stmt 1 view .LVU40
+ 482:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 137              		.loc 1 482 70 is_stmt 0 view .LVU41
+ 138 0050 064B     		ldr	r3, .L14+4
+ 139              	.LVL14:
+ 482:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 140              		.loc 1 482 70 view .LVU42
+ 141 0052 03EB8102 		add	r2, r3, r1, lsl #2
+ 142              	.LVL15:
+ 482:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 143              		.loc 1 482 70 view .LVU43
+ 144 0056 126A     		ldr	r2, [r2, #32]
+ 482:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 145              		.loc 1 482 21 view .LVU44
+ 146 0058 2A60     		str	r2, [r5]
+ 485:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         {
+ 147              		.loc 1 485 9 is_stmt 1 view .LVU45
+ 485:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         {
+ 148              		.loc 1 485 11 is_stmt 0 view .LVU46
+ 149 005a 002A     		cmp	r2, #0
+ 150 005c F6D0     		beq	.L7
+ 490:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     }
+ 151              		.loc 1 490 9 is_stmt 1 view .LVU47
+ 490:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     }
+ 152              		.loc 1 490 32 is_stmt 0 view .LVU48
+ 153 005e 03EB4101 		add	r1, r3, r1, lsl #1
+ 154              	.LVL16:
+ 490:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     }
+ 155              		.loc 1 490 15 view .LVU49
+ 156 0062 B1F84030 		ldrh	r3, [r1, #64]
+ 157 0066 E9E7     		b	.L13
+ 158              	.L15:
+ 159              		.align	2
+ 160              	.L14:
+ 161 0068 00000000 		.word	.LANCHOR0
+ 162 006c 00000000 		.word	.LANCHOR1
+ 163              		.cfi_endproc
+ 164              	.LFE0:
+ 166              		.align	1
+ 167              		.global	USB_Desc_Get_Interface
+ 168              		.syntax unified
+ 169              		.thumb
+ 170              		.thumb_func
+ 171              		.fpu softvfp
+ 173              	USB_Desc_Get_Interface:
+ 174              	.LVL17:
+ 175              	.LFB1:
+ 499:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 500:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** /**************************************************************************//*!
+ 501:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 502:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @name  USB_Desc_Get_Interface
+ 503:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 504:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @brief The function returns the alternate interface
+ 505:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 506:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param controller_ID : Controller Id
+ 507:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param interface     : Interface number
+ 508:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param alt_interface : Output alternate interface
+ 509:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 510:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @return USB_OK                     When Successfull
+ 511:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *         USBERR_INVALID_REQ_TYPE    when Error
+ 512:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************
+ 513:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * This function is called by the framework module to get the current interface
+ 514:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************/
+ 515:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** uint_8 USB_Desc_Get_Interface (
+ 516:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****       uint_8 controller_ID,     /* [IN] Controller ID */
+ 517:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****       uint_8 interface,         /* [IN] interface number */
+ 518:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****       uint_8_ptr alt_interface  /* [OUT] output alternate interface */
+ 519:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** )
+ 520:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** {
+ 176              		.loc 1 520 1 is_stmt 1 view -0
+ 177              		.cfi_startproc
+ 178              		@ args = 0, pretend = 0, frame = 0
+ 179              		@ frame_needed = 0, uses_anonymous_args = 0
+ 180              		@ link register save eliminated.
+ 521:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     UNUSED (controller_ID);
+ 181              		.loc 1 521 5 view .LVU51
+ 522:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     /* if interface valid */
+ 523:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     if(interface < USB_MAX_SUPPORTED_INTERFACES)
+ 182              		.loc 1 523 5 view .LVU52
+ 183              		.loc 1 523 7 is_stmt 0 view .LVU53
+ 184 0070 0129     		cmp	r1, #1
+ 524:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     {
+ 525:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         /* get alternate interface*/
+ 526:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         *alt_interface = g_alternate_interface[interface];
+ 185              		.loc 1 526 9 is_stmt 1 view .LVU54
+ 186              		.loc 1 526 47 is_stmt 0 view .LVU55
+ 187 0072 9FBF     		itttt	ls
+ 188 0074 034B     		ldrls	r3, .L19
+ 189              		.loc 1 526 24 view .LVU56
+ 190 0076 5B5C     		ldrbls	r3, [r3, r1]	@ zero_extendqisi2
+ 191 0078 1370     		strbls	r3, [r2]
+ 527:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         return USB_OK;
+ 192              		.loc 1 527 9 is_stmt 1 view .LVU57
+ 193              		.loc 1 527 16 is_stmt 0 view .LVU58
+ 194 007a 0020     		movls	r0, #0
+ 195              	.LVL18:
+ 528:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     }
+ 529:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 530:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     return USBERR_INVALID_REQ_TYPE;
+ 196              		.loc 1 530 12 view .LVU59
+ 197 007c 88BF     		it	hi
+ 198 007e CD20     		movhi	r0, #205
+ 531:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** }
+ 199              		.loc 1 531 1 view .LVU60
+ 200 0080 7047     		bx	lr
+ 201              	.L20:
+ 202 0082 00BF     		.align	2
+ 203              	.L19:
+ 204 0084 00000000 		.word	.LANCHOR2
+ 205              		.cfi_endproc
+ 206              	.LFE1:
+ 208              		.align	1
+ 209              		.global	USB_Desc_Set_Interface
+ 210              		.syntax unified
+ 211              		.thumb
+ 212              		.thumb_func
+ 213              		.fpu softvfp
+ 215              	USB_Desc_Set_Interface:
+ 216              	.LVL19:
+ 217              	.LFB2:
+ 532:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 533:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** /**************************************************************************//*!
+ 534:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 535:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @name  USB_Desc_Set_Interface
+ 536:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 537:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @brief The function sets the alternate interface
+ 538:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 539:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param controller_ID : Controller Id
+ 540:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param interface     : Interface number
+ 541:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param alt_interface : Input alternate interface
+ 542:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 543:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @return USB_OK                              When Successfull
+ 544:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *         USBERR_INVALID_REQ_TYPE             when Error
+ 545:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************
+ 546:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * This function is called by the framework module to set the interface
+ 547:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************/
+ 548:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** uint_8 USB_Desc_Set_Interface (
+ 549:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****       uint_8 controller_ID, /* [IN] Controller ID */
+ 550:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****       uint_8 interface,     /* [IN] interface number */
+ 551:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****       uint_8 alt_interface  /* [IN] input alternate interface */
+ 552:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** )
+ 553:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** {
+ 218              		.loc 1 553 1 is_stmt 1 view -0
+ 219              		.cfi_startproc
+ 220              		@ args = 0, pretend = 0, frame = 0
+ 221              		@ frame_needed = 0, uses_anonymous_args = 0
+ 222              		@ link register save eliminated.
+ 554:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     UNUSED (controller_ID);
+ 223              		.loc 1 554 5 view .LVU62
+ 555:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     /* if interface valid */
+ 556:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     if(interface < USB_MAX_SUPPORTED_INTERFACES)
+ 224              		.loc 1 556 5 view .LVU63
+ 225              		.loc 1 556 7 is_stmt 0 view .LVU64
+ 226 0088 0129     		cmp	r1, #1
+ 557:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     {
+ 558:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         /* set alternate interface*/
+ 559:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         g_alternate_interface[interface]=alt_interface;
+ 227              		.loc 1 559 9 is_stmt 1 view .LVU65
+ 228              		.loc 1 559 41 is_stmt 0 view .LVU66
+ 229 008a 9DBF     		ittte	ls
+ 230 008c 024B     		ldrls	r3, .L24
+ 560:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             return USB_OK;
+ 231              		.loc 1 560 20 view .LVU67
+ 232 008e 0020     		movls	r0, #0
+ 233              	.LVL20:
+ 559:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             return USB_OK;
+ 234              		.loc 1 559 41 view .LVU68
+ 235 0090 5A54     		strbls	r2, [r3, r1]
+ 236              		.loc 1 560 13 is_stmt 1 view .LVU69
+ 561:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     }
+ 562:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 563:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     return USBERR_INVALID_REQ_TYPE;
+ 237              		.loc 1 563 12 is_stmt 0 view .LVU70
+ 238 0092 CD20     		movhi	r0, #205
+ 564:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** }
+ 239              		.loc 1 564 1 view .LVU71
+ 240 0094 7047     		bx	lr
+ 241              	.L25:
+ 242 0096 00BF     		.align	2
+ 243              	.L24:
+ 244 0098 00000000 		.word	.LANCHOR2
+ 245              		.cfi_endproc
+ 246              	.LFE2:
+ 248              		.align	1
+ 249              		.global	USB_Desc_Valid_Configation
+ 250              		.syntax unified
+ 251              		.thumb
+ 252              		.thumb_func
+ 253              		.fpu softvfp
+ 255              	USB_Desc_Valid_Configation:
+ 256              	.LVL21:
+ 257              	.LFB3:
+ 565:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 566:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** /**************************************************************************//*!
+ 567:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 568:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @name  USB_Desc_Valid_Configation
+ 569:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 570:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @brief The function checks whether the configuration parameter
+ 571:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *        input is valid or not
+ 572:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 573:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param controller_ID : Controller Id
+ 574:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param config_val    : Configuration value
+ 575:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 576:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @return TRUE           When Valid
+ 577:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *         FALSE          When Error
+ 578:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************
+ 579:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * This function checks whether the configuration is valid or not
+ 580:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************/
+ 581:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** boolean USB_Desc_Valid_Configation (
+ 582:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****       uint_8 controller_ID,/*[IN] Controller ID */
+ 583:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****       uint_16 config_val   /*[IN] configuration value */
+ 584:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** )
+ 585:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** {
+ 258              		.loc 1 585 1 is_stmt 1 view -0
+ 259              		.cfi_startproc
+ 260              		@ args = 0, pretend = 0, frame = 0
+ 261              		@ frame_needed = 0, uses_anonymous_args = 0
+ 262              		@ link register save eliminated.
+ 586:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     uint_8 loop_index=0;
+ 263              		.loc 1 586 5 view .LVU73
+ 587:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     UNUSED (controller_ID);
+ 264              		.loc 1 587 5 view .LVU74
+ 588:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 589:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     /* check with only supported val right now */
+ 590:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     while(loop_index < (USB_MAX_CONFIG_SUPPORTED+1))
+ 265              		.loc 1 590 5 view .LVU75
+ 266              		.loc 1 590 10 view .LVU76
+ 591:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     {
+ 592:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         if(config_val == g_valid_config_values[loop_index])
+ 267              		.loc 1 592 9 view .LVU77
+ 593:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         {
+ 594:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             return TRUE;
+ 595:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         }
+ 596:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         loop_index++;
+ 597:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     }
+ 598:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 599:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     return FALSE;
+ 600:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** }
+ 268              		.loc 1 600 1 is_stmt 0 view .LVU78
+ 269 009c 0129     		cmp	r1, #1
+ 270 009e 8CBF     		ite	hi
+ 271 00a0 0020     		movhi	r0, #0
+ 272              	.LVL22:
+ 273              		.loc 1 600 1 view .LVU79
+ 274 00a2 0120     		movls	r0, #1
+ 275 00a4 7047     		bx	lr
+ 276              		.cfi_endproc
+ 277              	.LFE3:
+ 279              		.align	1
+ 280              		.global	USB_Desc_Valid_Interface
+ 281              		.syntax unified
+ 282              		.thumb
+ 283              		.thumb_func
+ 284              		.fpu softvfp
+ 286              	USB_Desc_Valid_Interface:
+ 287              	.LVL23:
+ 288              	.LFB4:
+ 601:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** /**************************************************************************//*!
+ 602:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 603:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @name  USB_Desc_Valid_Interface
+ 604:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 605:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @brief The function checks whether the interface parameter
+ 606:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *        input is valid or not
+ 607:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 608:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param controller_ID : Controller Id
+ 609:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param interface     : Target interface
+ 610:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 611:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @return TRUE           When Valid
+ 612:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *         FALSE          When Error
+ 613:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************
+ 614:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * This function checks whether the interface is valid or not
+ 615:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************/
+ 616:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** boolean USB_Desc_Valid_Interface (
+ 617:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****       uint_8 controller_ID, /*[IN] Controller ID */
+ 618:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****       uint_8 interface      /*[IN] target interface */
+ 619:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** )
+ 620:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** {
+ 289              		.loc 1 620 1 is_stmt 1 view -0
+ 290              		.cfi_startproc
+ 291              		@ args = 0, pretend = 0, frame = 0
+ 292              		@ frame_needed = 0, uses_anonymous_args = 0
+ 293              		@ link register save eliminated.
+ 621:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     uint_8 loop_index=0;
+ 294              		.loc 1 621 5 view .LVU81
+ 622:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     UNUSED (controller_ID);
+ 295              		.loc 1 622 5 view .LVU82
+ 623:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 624:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     /* check with only supported val right now */
+ 625:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     while(loop_index < USB_MAX_SUPPORTED_INTERFACES)
+ 296              		.loc 1 625 5 view .LVU83
+ 297              		.loc 1 625 10 view .LVU84
+ 626:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     {
+ 627:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         if(interface == g_alternate_interface[loop_index])
+ 298              		.loc 1 627 9 view .LVU85
+ 299              		.loc 1 627 46 is_stmt 0 view .LVU86
+ 300 00a6 054B     		ldr	r3, .L30
+ 301              		.loc 1 627 11 view .LVU87
+ 302 00a8 1A78     		ldrb	r2, [r3]	@ zero_extendqisi2
+ 303 00aa 8A42     		cmp	r2, r1
+ 304 00ac 04D0     		beq	.L29
+ 628:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         {
+ 629:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             return TRUE;
+ 630:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         }
+ 631:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         loop_index++;
+ 305              		.loc 1 631 9 is_stmt 1 view .LVU88
+ 306              	.LVL24:
+ 625:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     {
+ 307              		.loc 1 625 10 view .LVU89
+ 627:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         {
+ 308              		.loc 1 627 9 view .LVU90
+ 627:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         {
+ 309              		.loc 1 627 11 is_stmt 0 view .LVU91
+ 310 00ae 5878     		ldrb	r0, [r3, #1]	@ zero_extendqisi2
+ 311              	.LVL25:
+ 629:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         }
+ 312              		.loc 1 629 20 view .LVU92
+ 313 00b0 431A     		subs	r3, r0, r1
+ 314 00b2 5842     		rsbs	r0, r3, #0
+ 315 00b4 5841     		adcs	r0, r0, r3
+ 316 00b6 7047     		bx	lr
+ 317              	.LVL26:
+ 318              	.L29:
+ 629:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         }
+ 319              		.loc 1 629 20 view .LVU93
+ 320 00b8 0120     		movs	r0, #1
+ 321              	.LVL27:
+ 632:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     }
+ 633:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 634:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     return FALSE;
+ 635:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** }
+ 322              		.loc 1 635 1 view .LVU94
+ 323 00ba 7047     		bx	lr
+ 324              	.L31:
+ 325              		.align	2
+ 326              	.L30:
+ 327 00bc 00000000 		.word	.LANCHOR2
+ 328              		.cfi_endproc
+ 329              	.LFE4:
+ 331              		.align	1
+ 332              		.global	USB_Desc_Remote_Wakeup
+ 333              		.syntax unified
+ 334              		.thumb
+ 335              		.thumb_func
+ 336              		.fpu softvfp
+ 338              	USB_Desc_Remote_Wakeup:
+ 339              	.LVL28:
+ 340              	.LFB5:
+ 636:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 637:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** /**************************************************************************//*!
+ 638:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 639:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @name  USB_Desc_Remote_Wakeup
+ 640:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 641:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @brief The function checks whether the remote wakeup is supported or not
+ 642:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 643:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param controller_ID : Controller ID
+ 644:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 645:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @return REMOTE_WAKEUP_SUPPORT (TRUE) - if remote wakeup supported
+ 646:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************
+ 647:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * This function returns remote wakeup is supported or not
+ 648:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************/
+ 649:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** boolean USB_Desc_Remote_Wakeup (
+ 650:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****       uint_8 controller_ID  /* [IN] Controller ID */
+ 651:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** )
+ 652:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** {
+ 341              		.loc 1 652 1 is_stmt 1 view -0
+ 342              		.cfi_startproc
+ 343              		@ args = 0, pretend = 0, frame = 0
+ 344              		@ frame_needed = 0, uses_anonymous_args = 0
+ 345              		@ link register save eliminated.
+ 653:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     UNUSED (controller_ID);
+ 346              		.loc 1 653 5 view .LVU96
+ 654:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     return REMOTE_WAKEUP_SUPPORT;
+ 347              		.loc 1 654 5 view .LVU97
+ 655:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** }
+ 348              		.loc 1 655 1 is_stmt 0 view .LVU98
+ 349 00c0 0020     		movs	r0, #0
+ 350              	.LVL29:
+ 351              		.loc 1 655 1 view .LVU99
+ 352 00c2 7047     		bx	lr
+ 353              		.cfi_endproc
+ 354              	.LFE5:
+ 356              		.align	1
+ 357              		.global	USB_Desc_Get_Endpoints
+ 358              		.syntax unified
+ 359              		.thumb
+ 360              		.thumb_func
+ 361              		.fpu softvfp
+ 363              	USB_Desc_Get_Endpoints:
+ 364              	.LVL30:
+ 365              	.LFB6:
+ 656:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 657:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** /**************************************************************************//*!
+ 658:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 659:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @name  USB_Desc_Get_Endpoints
+ 660:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 661:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @brief The function returns with the list of all non control endpoints used
+ 662:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 663:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param controller_ID : Controller ID
+ 664:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 665:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @return pointer to USB_ENDPOINTS
+ 666:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************
+ 667:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * This function returns the information about all the non control endpoints
+ 668:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * implemented
+ 669:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************/
+ 670:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** void* USB_Desc_Get_Endpoints (
+ 671:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****       uint_8 controller_ID  /* [IN] Controller ID */
+ 672:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** )
+ 673:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** {
+ 366              		.loc 1 673 1 is_stmt 1 view -0
+ 367              		.cfi_startproc
+ 368              		@ args = 0, pretend = 0, frame = 0
+ 369              		@ frame_needed = 0, uses_anonymous_args = 0
+ 370              		@ link register save eliminated.
+ 674:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     UNUSED (controller_ID);
+ 371              		.loc 1 674 5 view .LVU101
+ 675:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     return (void*) (unsigned long) &usb_desc_ep;	// cast to unsigned long before properly casting t
+ 372              		.loc 1 675 5 view .LVU102
+ 676:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** }
+ 373              		.loc 1 676 1 is_stmt 0 view .LVU103
+ 374 00c4 0048     		ldr	r0, .L34
+ 375              	.LVL31:
+ 376              		.loc 1 676 1 view .LVU104
+ 377 00c6 7047     		bx	lr
+ 378              	.L35:
+ 379              		.align	2
+ 380              	.L34:
+ 381 00c8 50000000 		.word	.LANCHOR1+80
+ 382              		.cfi_endproc
+ 383              	.LFE6:
+ 385              		.align	1
+ 386              		.global	USB_Desc_Get_Line_Coding
+ 387              		.syntax unified
+ 388              		.thumb
+ 389              		.thumb_func
+ 390              		.fpu softvfp
+ 392              	USB_Desc_Get_Line_Coding:
+ 393              	.LVL32:
+ 394              	.LFB7:
+ 677:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 678:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** /**************************************************************************//*!
+ 679:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 680:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @name  USB_Desc_Get_Line_Coding
+ 681:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 682:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @brief The function returns the Line Coding/Configuraion
+ 683:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 684:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param controller_ID : Controller ID
+ 685:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param interface     : Interface number
+ 686:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param coding_data   : Output line coding data
+ 687:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 688:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @return USB_OK                              When Successfull
+ 689:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *         USBERR_INVALID_REQ_TYPE             when Error
+ 690:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************
+ 691:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * Returns current Line Coding Parameters
+ 692:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************/
+ 693:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** uint_8 USB_Desc_Get_Line_Coding (
+ 694:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     uint_8 controller_ID,       /* [IN] Controller ID */
+ 695:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     uint_8 interface,           /* [IN] Interface Number */
+ 696:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     uint_8_ptr *coding_data     /* [OUT] Line Coding Data */
+ 697:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** )
+ 698:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** {
+ 395              		.loc 1 698 1 is_stmt 1 view -0
+ 396              		.cfi_startproc
+ 397              		@ args = 0, pretend = 0, frame = 0
+ 398              		@ frame_needed = 0, uses_anonymous_args = 0
+ 399              		@ link register save eliminated.
+ 699:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     UNUSED (controller_ID);
+ 400              		.loc 1 699 5 view .LVU106
+ 700:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     /* if interface valid */
+ 701:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     if(interface < USB_MAX_SUPPORTED_INTERFACES)
+ 401              		.loc 1 701 5 view .LVU107
+ 402              		.loc 1 701 7 is_stmt 0 view .LVU108
+ 403 00cc 0129     		cmp	r1, #1
+ 702:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     {
+ 703:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         /* get line coding data*/
+ 704:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         *coding_data = g_line_coding[interface];
+ 404              		.loc 1 704 9 is_stmt 1 view .LVU109
+ 405              		.loc 1 704 24 is_stmt 0 view .LVU110
+ 406 00ce 9FBF     		itttt	ls
+ 407 00d0 044B     		ldrls	r3, .L39
+ 408 00d2 C1EBC101 		rsbls	r1, r1, r1, lsl #3
+ 409              	.LVL33:
+ 410              		.loc 1 704 24 view .LVU111
+ 411 00d6 C918     		addls	r1, r1, r3
+ 705:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         return USB_OK;
+ 412              		.loc 1 705 16 view .LVU112
+ 413 00d8 0020     		movls	r0, #0
+ 414              	.LVL34:
+ 704:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         return USB_OK;
+ 415              		.loc 1 704 22 view .LVU113
+ 416 00da 94BF     		ite	ls
+ 417 00dc 1160     		strls	r1, [r2]
+ 418              		.loc 1 705 9 is_stmt 1 view .LVU114
+ 706:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     }
+ 707:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 708:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     return USBERR_INVALID_REQ_TYPE;
+ 419              		.loc 1 708 12 is_stmt 0 view .LVU115
+ 420 00de CD20     		movhi	r0, #205
+ 709:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** }
+ 421              		.loc 1 709 1 view .LVU116
+ 422 00e0 7047     		bx	lr
+ 423              	.L40:
+ 424 00e2 00BF     		.align	2
+ 425              	.L39:
+ 426 00e4 04000000 		.word	.LANCHOR0+4
+ 427              		.cfi_endproc
+ 428              	.LFE7:
+ 430              		.align	1
+ 431              		.global	USB_Desc_Set_Line_Coding
+ 432              		.syntax unified
+ 433              		.thumb
+ 434              		.thumb_func
+ 435              		.fpu softvfp
+ 437              	USB_Desc_Set_Line_Coding:
+ 438              	.LVL35:
+ 439              	.LFB8:
+ 710:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 711:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** /**************************************************************************//*!
+ 712:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 713:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @name  USB_Desc_Set_Line_Coding
+ 714:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 715:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @brief The function sets the Line Coding/Configuraion
+ 716:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 717:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param controller_ID : Controller ID
+ 718:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param interface     : Interface number
+ 719:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param coding_data   : Output line coding data
+ 720:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 721:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @return USB_OK                              When Successfull
+ 722:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *         USBERR_INVALID_REQ_TYPE             when Error
+ 723:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************
+ 724:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * Sets Line Coding Structure with the HOST specified values
+ 725:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************/
+ 726:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** uint_8 USB_Desc_Set_Line_Coding (
+ 727:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     uint_8 controller_ID,       /* [IN] Controller ID */
+ 728:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     uint_8 interface,           /* [IN] Interface Number */
+ 729:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     uint_8_ptr *coding_data     /* [IN] Line Coding Data */
+ 730:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** )
+ 731:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** {
+ 440              		.loc 1 731 1 is_stmt 1 view -0
+ 441              		.cfi_startproc
+ 442              		@ args = 0, pretend = 0, frame = 0
+ 443              		@ frame_needed = 0, uses_anonymous_args = 0
+ 444              		@ link register save eliminated.
+ 732:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     uint_8 count;
+ 445              		.loc 1 732 5 view .LVU118
+ 733:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     UNUSED (controller_ID);
+ 446              		.loc 1 733 5 view .LVU119
+ 734:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 735:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     /* if interface valid */
+ 736:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     if(interface < USB_MAX_SUPPORTED_INTERFACES)
+ 447              		.loc 1 736 5 view .LVU120
+ 448              		.loc 1 736 7 is_stmt 0 view .LVU121
+ 449 00e8 0129     		cmp	r1, #1
+ 450 00ea 0DD8     		bhi	.L44
+ 451 00ec 074B     		ldr	r3, .L46
+ 452 00ee C1EBC101 		rsb	r1, r1, r1, lsl #3
+ 453              	.LVL36:
+ 454              		.loc 1 736 7 view .LVU122
+ 455 00f2 1944     		add	r1, r1, r3
+ 456 00f4 0823     		movs	r3, #8
+ 457              	.LVL37:
+ 458              	.L43:
+ 737:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     {
+ 738:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         /* set line coding data*/
+ 739:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         for(count = 0; count < LINE_CODING_SIZE; count++)
+ 740:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         {
+ 741:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             g_line_coding[interface][count] = *((*coding_data +
+ 459              		.loc 1 741 13 is_stmt 1 discriminator 3 view .LVU123
+ 460              		.loc 1 741 47 is_stmt 0 discriminator 3 view .LVU124
+ 461 00f6 1068     		ldr	r0, [r2]
+ 462 00f8 C05C     		ldrb	r0, [r0, r3]	@ zero_extendqisi2
+ 463              		.loc 1 741 45 discriminator 3 view .LVU125
+ 464 00fa 01F8010B 		strb	r0, [r1], #1
+ 739:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         {
+ 465              		.loc 1 739 50 is_stmt 1 discriminator 3 view .LVU126
+ 466              	.LVL38:
+ 739:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         {
+ 467              		.loc 1 739 24 discriminator 3 view .LVU127
+ 468 00fe 0133     		adds	r3, r3, #1
+ 469              	.LVL39:
+ 739:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         {
+ 470              		.loc 1 739 9 is_stmt 0 discriminator 3 view .LVU128
+ 471 0100 0F2B     		cmp	r3, #15
+ 472 0102 F8D1     		bne	.L43
+ 742:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****                                                 USB_SETUP_PKT_SIZE) + count);
+ 743:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         }
+ 744:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         return USB_OK;
+ 473              		.loc 1 744 16 view .LVU129
+ 474 0104 0020     		movs	r0, #0
+ 475 0106 7047     		bx	lr
+ 476              	.LVL40:
+ 477              	.L44:
+ 745:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     }
+ 746:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 747:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     return USBERR_INVALID_REQ_TYPE;
+ 478              		.loc 1 747 12 view .LVU130
+ 479 0108 CD20     		movs	r0, #205
+ 480              	.LVL41:
+ 748:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** }
+ 481              		.loc 1 748 1 view .LVU131
+ 482 010a 7047     		bx	lr
+ 483              	.L47:
+ 484              		.align	2
+ 485              	.L46:
+ 486 010c 04000000 		.word	.LANCHOR0+4
+ 487              		.cfi_endproc
+ 488              	.LFE8:
+ 490              		.align	1
+ 491              		.global	USB_Desc_Get_Abstract_State
+ 492              		.syntax unified
+ 493              		.thumb
+ 494              		.thumb_func
+ 495              		.fpu softvfp
+ 497              	USB_Desc_Get_Abstract_State:
+ 498              	.LVL42:
+ 499              	.LFB9:
+ 749:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 750:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** /**************************************************************************//*!
+ 751:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 752:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @name  USB_Desc_Get_Abstract_State
+ 753:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 754:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @brief The function gets the current setting for communication feature
+ 755:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *                                                  (ABSTRACT_STATE)
+ 756:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param controller_ID : Controller ID
+ 757:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param interface     : Interface number
+ 758:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param feature_data  : Output comm feature data
+ 759:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 760:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @return USB_OK                              When Successfull
+ 761:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *         USBERR_INVALID_REQ_TYPE             when Error
+ 762:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************
+ 763:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * Returns ABSTRACT STATE Communication Feature to the Host
+ 764:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************/
+ 765:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** uint_8 USB_Desc_Get_Abstract_State (
+ 766:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     uint_8 controller_ID,       /* [IN] Controller ID */
+ 767:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     uint_8 interface,           /* [IN] Interface Number */
+ 768:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     uint_8_ptr *feature_data    /* [OUT] Output Comm Feature Data */
+ 769:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** )
+ 770:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** {
+ 500              		.loc 1 770 1 is_stmt 1 view -0
+ 501              		.cfi_startproc
+ 502              		@ args = 0, pretend = 0, frame = 0
+ 503              		@ frame_needed = 0, uses_anonymous_args = 0
+ 504              		@ link register save eliminated.
+ 771:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     UNUSED (controller_ID);
+ 505              		.loc 1 771 5 view .LVU133
+ 772:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     /* if interface valid */
+ 773:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     if(interface < USB_MAX_SUPPORTED_INTERFACES)
+ 506              		.loc 1 773 5 view .LVU134
+ 507              		.loc 1 773 7 is_stmt 0 view .LVU135
+ 508 0110 0129     		cmp	r1, #1
+ 774:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     {
+ 775:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         /* get line coding data*/
+ 776:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         *feature_data = g_abstract_state[interface];
+ 509              		.loc 1 776 9 is_stmt 1 view .LVU136
+ 510              		.loc 1 776 25 is_stmt 0 view .LVU137
+ 511 0112 9FBF     		itttt	ls
+ 512 0114 034B     		ldrls	r3, .L51
+ 513 0116 03EB4101 		addls	r1, r3, r1, lsl #1
+ 514              	.LVL43:
+ 777:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         return USB_OK;
+ 515              		.loc 1 777 16 view .LVU138
+ 516 011a 0020     		movls	r0, #0
+ 517              	.LVL44:
+ 776:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         return USB_OK;
+ 518              		.loc 1 776 23 view .LVU139
+ 519 011c 1160     		strls	r1, [r2]
+ 520              		.loc 1 777 9 is_stmt 1 view .LVU140
+ 778:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     }
+ 779:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 780:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     return USBERR_INVALID_REQ_TYPE;
+ 521              		.loc 1 780 12 is_stmt 0 view .LVU141
+ 522 011e 88BF     		it	hi
+ 523 0120 CD20     		movhi	r0, #205
+ 781:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** }
+ 524              		.loc 1 781 1 view .LVU142
+ 525 0122 7047     		bx	lr
+ 526              	.L52:
+ 527              		.align	2
+ 528              	.L51:
+ 529 0124 02000000 		.word	.LANCHOR2+2
+ 530              		.cfi_endproc
+ 531              	.LFE9:
+ 533              		.align	1
+ 534              		.global	USB_Desc_Get_Country_Setting
+ 535              		.syntax unified
+ 536              		.thumb
+ 537              		.thumb_func
+ 538              		.fpu softvfp
+ 540              	USB_Desc_Get_Country_Setting:
+ 541              	.LVL45:
+ 542              	.LFB10:
+ 782:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 783:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** /**************************************************************************//*!
+ 784:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 785:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @name  USB_Desc_Get_Country_Setting
+ 786:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 787:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @brief The function gets the current setting for communication feature
+ 788:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *                                                  (COUNTRY_CODE)
+ 789:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param controller_ID : Controller ID
+ 790:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param interface     : Interface number
+ 791:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param feature_data  : Output comm feature data
+ 792:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 793:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @return USB_OK                              When Successfull
+ 794:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *         USBERR_INVALID_REQ_TYPE             when Error
+ 795:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************
+ 796:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * Returns the country Code to the Host
+ 797:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************/
+ 798:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** uint_8 USB_Desc_Get_Country_Setting (
+ 799:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     uint_8 controller_ID,       /* [IN] Controller ID */
+ 800:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     uint_8 interface,           /* [IN] Interface Number */
+ 801:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     uint_8_ptr *feature_data    /* [OUT] Output Comm Feature Data */
+ 802:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** )
+ 803:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** {
+ 543              		.loc 1 803 1 is_stmt 1 view -0
+ 544              		.cfi_startproc
+ 545              		@ args = 0, pretend = 0, frame = 0
+ 546              		@ frame_needed = 0, uses_anonymous_args = 0
+ 547              		@ link register save eliminated.
+ 804:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     UNUSED (controller_ID);
+ 548              		.loc 1 804 5 view .LVU144
+ 805:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     /* if interface valid */
+ 806:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     if(interface < USB_MAX_SUPPORTED_INTERFACES)
+ 549              		.loc 1 806 5 view .LVU145
+ 550              		.loc 1 806 7 is_stmt 0 view .LVU146
+ 551 0128 0129     		cmp	r1, #1
+ 807:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     {
+ 808:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         /* get line coding data*/
+ 809:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         *feature_data = g_country_code[interface];
+ 552              		.loc 1 809 9 is_stmt 1 view .LVU147
+ 553              		.loc 1 809 25 is_stmt 0 view .LVU148
+ 554 012a 9FBF     		itttt	ls
+ 555 012c 034B     		ldrls	r3, .L56
+ 556 012e 03EB4101 		addls	r1, r3, r1, lsl #1
+ 557              	.LVL46:
+ 810:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         return USB_OK;
+ 558              		.loc 1 810 16 view .LVU149
+ 559 0132 0020     		movls	r0, #0
+ 560              	.LVL47:
+ 809:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         return USB_OK;
+ 561              		.loc 1 809 23 view .LVU150
+ 562 0134 1160     		strls	r1, [r2]
+ 563              		.loc 1 810 9 is_stmt 1 view .LVU151
+ 811:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     }
+ 812:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 813:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     return USBERR_INVALID_REQ_TYPE;
+ 564              		.loc 1 813 12 is_stmt 0 view .LVU152
+ 565 0136 88BF     		it	hi
+ 566 0138 CD20     		movhi	r0, #205
+ 814:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** }
+ 567              		.loc 1 814 1 view .LVU153
+ 568 013a 7047     		bx	lr
+ 569              	.L57:
+ 570              		.align	2
+ 571              	.L56:
+ 572 013c 06000000 		.word	.LANCHOR2+6
+ 573              		.cfi_endproc
+ 574              	.LFE10:
+ 576              		.align	1
+ 577              		.global	USB_Desc_Set_Abstract_State
+ 578              		.syntax unified
+ 579              		.thumb
+ 580              		.thumb_func
+ 581              		.fpu softvfp
+ 583              	USB_Desc_Set_Abstract_State:
+ 584              	.LVL48:
+ 585              	.LFB11:
+ 815:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 816:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** /**************************************************************************//*!
+ 817:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 818:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @name  USB_Desc_Set_Abstract_State
+ 819:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 820:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @brief The function gets the current setting for communication feature
+ 821:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *                                                  (ABSTRACT_STATE)
+ 822:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param controller_ID : Controller ID
+ 823:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param interface     : Interface number
+ 824:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param feature_data  : Output comm feature data
+ 825:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 826:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @return USB_OK                              When Successfull
+ 827:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *         USBERR_INVALID_REQ_TYPE             when Error
+ 828:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************
+ 829:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * Sets the ABSTRACT State specified by the Host
+ 830:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************/
+ 831:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** uint_8 USB_Desc_Set_Abstract_State (
+ 832:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     uint_8 controller_ID,       /* [IN] Controller ID */
+ 833:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     uint_8 interface,           /* [IN] Interface Number */
+ 834:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     uint_8_ptr *feature_data    /* [OUT] Output Comm Feature Data */
+ 835:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** )
+ 836:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** {
+ 586              		.loc 1 836 1 is_stmt 1 view -0
+ 587              		.cfi_startproc
+ 588              		@ args = 0, pretend = 0, frame = 0
+ 589              		@ frame_needed = 0, uses_anonymous_args = 0
+ 590              		@ link register save eliminated.
+ 837:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     uint_8 count;
+ 591              		.loc 1 837 5 view .LVU155
+ 838:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     UNUSED (controller_ID);
+ 592              		.loc 1 838 5 view .LVU156
+ 839:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 840:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     /* if interface valid */
+ 841:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     if(interface < USB_MAX_SUPPORTED_INTERFACES)
+ 593              		.loc 1 841 5 view .LVU157
+ 594              		.loc 1 841 7 is_stmt 0 view .LVU158
+ 595 0140 0129     		cmp	r1, #1
+ 596 0142 0AD8     		bhi	.L60
+ 597              	.LVL49:
+ 842:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     {
+ 843:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         /* set Abstract State Feature*/
+ 844:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         for(count = 0; count < COMM_FEATURE_DATA_SIZE; count++)
+ 598              		.loc 1 844 24 is_stmt 1 view .LVU159
+ 845:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         {
+ 846:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             g_abstract_state[interface][count] = *(*feature_data + count);
+ 599              		.loc 1 846 13 view .LVU160
+ 600              		.loc 1 846 50 is_stmt 0 view .LVU161
+ 601 0144 1368     		ldr	r3, [r2]
+ 602 0146 1878     		ldrb	r0, [r3]	@ zero_extendqisi2
+ 603              	.LVL50:
+ 604              		.loc 1 846 48 view .LVU162
+ 605 0148 054B     		ldr	r3, .L61
+ 606 014a 03EB4101 		add	r1, r3, r1, lsl #1
+ 607              	.LVL51:
+ 608              		.loc 1 846 48 view .LVU163
+ 609 014e 8870     		strb	r0, [r1, #2]
+ 844:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         {
+ 610              		.loc 1 844 56 is_stmt 1 view .LVU164
+ 611              	.LVL52:
+ 844:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         {
+ 612              		.loc 1 844 24 view .LVU165
+ 613              		.loc 1 846 13 view .LVU166
+ 614              		.loc 1 846 50 is_stmt 0 view .LVU167
+ 615 0150 1368     		ldr	r3, [r2]
+ 616 0152 5B78     		ldrb	r3, [r3, #1]	@ zero_extendqisi2
+ 617              		.loc 1 846 48 view .LVU168
+ 618 0154 CB70     		strb	r3, [r1, #3]
+ 844:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         {
+ 619              		.loc 1 844 56 is_stmt 1 view .LVU169
+ 620              	.LVL53:
+ 844:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         {
+ 621              		.loc 1 844 24 view .LVU170
+ 847:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         }
+ 848:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         return USB_OK;
+ 622              		.loc 1 848 16 is_stmt 0 view .LVU171
+ 623 0156 0020     		movs	r0, #0
+ 624 0158 7047     		bx	lr
+ 625              	.LVL54:
+ 626              	.L60:
+ 849:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     }
+ 850:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 851:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     return USBERR_INVALID_REQ_TYPE;
+ 627              		.loc 1 851 12 view .LVU172
+ 628 015a CD20     		movs	r0, #205
+ 629              	.LVL55:
+ 852:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** }
+ 630              		.loc 1 852 1 view .LVU173
+ 631 015c 7047     		bx	lr
+ 632              	.L62:
+ 633 015e 00BF     		.align	2
+ 634              	.L61:
+ 635 0160 00000000 		.word	.LANCHOR2
+ 636              		.cfi_endproc
+ 637              	.LFE11:
+ 639              		.align	1
+ 640              		.global	USB_Desc_Set_Country_Setting
+ 641              		.syntax unified
+ 642              		.thumb
+ 643              		.thumb_func
+ 644              		.fpu softvfp
+ 646              	USB_Desc_Set_Country_Setting:
+ 647              	.LVL56:
+ 648              	.LFB12:
+ 853:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 854:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** /**************************************************************************//*!
+ 855:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 856:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @name  USB_Desc_Set_Country_Setting
+ 857:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 858:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @brief The function gets the current setting for communication feature
+ 859:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *                                                  (COUNTRY_CODE)
+ 860:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param controller_ID : Controller ID
+ 861:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param interface     : Interface number
+ 862:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @param feature_data  : Output comm feature data
+ 863:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *
+ 864:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * @return USB_OK                              When Successfull
+ 865:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *         USBERR_INVALID_REQ_TYPE             when Error
+ 866:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************
+ 867:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  * Sets the country code specified by the HOST
+ 868:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****  *****************************************************************************/
+ 869:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** uint_8 USB_Desc_Set_Country_Setting(
+ 870:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     uint_8 controller_ID,       /* [IN] Controller ID */
+ 871:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     uint_8 interface,           /* [IN] Interface Number */
+ 872:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     uint_8_ptr *feature_data    /* [OUT] Output Comm Feature Data */
+ 873:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** )
+ 874:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** {
+ 649              		.loc 1 874 1 is_stmt 1 view -0
+ 650              		.cfi_startproc
+ 651              		@ args = 0, pretend = 0, frame = 0
+ 652              		@ frame_needed = 0, uses_anonymous_args = 0
+ 653              		@ link register save eliminated.
+ 875:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     uint_8 count;
+ 654              		.loc 1 875 5 view .LVU175
+ 876:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     UNUSED (controller_ID);
+ 655              		.loc 1 876 5 view .LVU176
+ 877:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 878:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     /* if interface valid */
+ 879:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     if(interface < USB_MAX_SUPPORTED_INTERFACES)
+ 656              		.loc 1 879 5 view .LVU177
+ 657              		.loc 1 879 7 is_stmt 0 view .LVU178
+ 658 0164 0129     		cmp	r1, #1
+ 659 0166 0AD8     		bhi	.L65
+ 660              	.LVL57:
+ 880:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     {
+ 881:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         for(count = 0; count < COMM_FEATURE_DATA_SIZE; count++)
+ 661              		.loc 1 881 24 is_stmt 1 view .LVU179
+ 882:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         {
+ 883:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****             g_country_code[interface][count] = *(*feature_data + count);
+ 662              		.loc 1 883 13 view .LVU180
+ 663              		.loc 1 883 48 is_stmt 0 view .LVU181
+ 664 0168 1368     		ldr	r3, [r2]
+ 665 016a 1878     		ldrb	r0, [r3]	@ zero_extendqisi2
+ 666              	.LVL58:
+ 667              		.loc 1 883 46 view .LVU182
+ 668 016c 054B     		ldr	r3, .L66
+ 669 016e 03EB4101 		add	r1, r3, r1, lsl #1
+ 670              	.LVL59:
+ 671              		.loc 1 883 46 view .LVU183
+ 672 0172 8871     		strb	r0, [r1, #6]
+ 881:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         {
+ 673              		.loc 1 881 56 is_stmt 1 view .LVU184
+ 674              	.LVL60:
+ 881:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         {
+ 675              		.loc 1 881 24 view .LVU185
+ 676              		.loc 1 883 13 view .LVU186
+ 677              		.loc 1 883 48 is_stmt 0 view .LVU187
+ 678 0174 1368     		ldr	r3, [r2]
+ 679 0176 5B78     		ldrb	r3, [r3, #1]	@ zero_extendqisi2
+ 680              		.loc 1 883 46 view .LVU188
+ 681 0178 CB71     		strb	r3, [r1, #7]
+ 881:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         {
+ 682              		.loc 1 881 56 is_stmt 1 view .LVU189
+ 683              	.LVL61:
+ 881:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         {
+ 684              		.loc 1 881 24 view .LVU190
+ 884:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         }
+ 885:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****         return USB_OK;
+ 685              		.loc 1 885 16 is_stmt 0 view .LVU191
+ 686 017a 0020     		movs	r0, #0
+ 687 017c 7047     		bx	lr
+ 688              	.LVL62:
+ 689              	.L65:
+ 886:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     }
+ 887:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** 
+ 888:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c ****     return USBERR_INVALID_REQ_TYPE;
+ 690              		.loc 1 888 12 view .LVU192
+ 691 017e CD20     		movs	r0, #205
+ 692              	.LVL63:
+ 889:hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.c **** }
+ 693              		.loc 1 889 1 view .LVU193
+ 694 0180 7047     		bx	lr
+ 695              	.L67:
+ 696 0182 00BF     		.align	2
+ 697              	.L66:
+ 698 0184 00000000 		.word	.LANCHOR2
+ 699              		.cfi_endproc
+ 700              	.LFE12:
+ 702              		.global	g_valid_config_values
+ 703              		.global	g_languages
+ 704              		.global	g_string_descriptors
+ 705              		.global	g_string_desc_size
+ 706              		.global	g_std_descriptors
+ 707              		.global	g_std_desc_size
+ 708              		.global	USB_STR_n
+ 709              		.global	USB_STR_2
+ 710              		.global	USB_STR_1
+ 711              		.global	USB_STR_0
+ 712              		.global	g_config_descriptor
+ 713              		.global	g_device_descriptor
+ 714              		.global	usb_desc_ep
+ 715              		.comm	Cpu,8,4
+ 716              		.section	.rodata
+ 717              		.align	2
+ 718              		.set	.LANCHOR1,. + 0
+ 721              	g_languages:
+ 722 0000 00000000 		.word	USB_STR_0
+ 723 0004 04       		.byte	4
+ 724 0005 000000   		.space	3
+ 725 0008 0904     		.short	1033
+ 726 000a 0000     		.space	2
+ 727 000c 00000000 		.word	g_string_descriptors
+ 728 0010 00000000 		.word	g_string_desc_size
+ 729 0014 00000000 		.space	12
+ 729      00000000 
+ 729      00000000 
+ 732              	g_std_descriptors:
+ 733 0020 00000000 		.word	0
+ 734 0024 00000000 		.word	g_device_descriptor
+ 735 0028 00000000 		.word	g_config_descriptor
+ 736 002c 00000000 		.word	0
+ 737 0030 00000000 		.word	0
+ 738 0034 00000000 		.word	0
+ 739 0038 00000000 		.word	0
+ 740 003c 00000000 		.word	0
+ 743              	g_std_desc_size:
+ 744 0040 0000     		.short	0
+ 745 0042 1200     		.short	18
+ 746 0044 4300     		.short	67
+ 747 0046 0000     		.short	0
+ 748 0048 0000     		.short	0
+ 749 004a 0000     		.short	0
+ 750 004c 0000     		.short	0
+ 751 004e 0000     		.short	0
+ 754              	usb_desc_ep:
+ 755 0050 03       		.byte	3
+ 756 0051 01       		.byte	1
+ 757 0052 02       		.byte	2
+ 758 0053 01       		.byte	1
+ 759 0054 1000     		.2byte	16
+ 760 0056 02       		.byte	2
+ 761 0057 02       		.byte	2
+ 762 0058 00       		.byte	0
+ 763 0059 1000     		.2byte	16
+ 764 005b 03       		.byte	3
+ 765 005c 03       		.byte	3
+ 766 005d 01       		.byte	1
+ 767 005e 1000     		.2byte	16
+ 770              	g_valid_config_values:
+ 771 0060 0001     		.ascii	"\000\001"
+ 772 0062 0000     		.space	2
+ 775              	g_string_descriptors:
+ 776 0064 00000000 		.word	USB_STR_0
+ 777 0068 00000000 		.word	USB_STR_1
+ 778 006c 00000000 		.word	USB_STR_2
+ 779 0070 00000000 		.word	USB_STR_n
+ 782              	g_string_desc_size:
+ 783 0074 043A2622 		.ascii	"\004:&\""
+ 784              		.data
+ 785              		.set	.LANCHOR0,. + 0
+ 788              	USB_STR_0:
+ 789 0000 04030904 		.ascii	"\004\003\011\004"
+ 792              	g_line_coding:
+ 793 0004 00C20100 		.ascii	"\000\302\001\000\000\000\010"
+ 793      000008
+ 794 000b 00000000 		.space	7
+ 794      000000
+ 797              	USB_STR_n:
+ 798 0012 22034200 		.ascii	"\"\003B\000A\000D\000 \000S\000T\000R\000I\000N\000"
+ 798      41004400 
+ 798      20005300 
+ 798      54005200 
+ 798      49004E00 
+ 799 0026 47002000 		.ascii	"G\000 \000I\000N\000D\000E\000X\000"
+ 799      49004E00 
+ 799      44004500 
+ 799      5800
+ 802              	USB_STR_2:
+ 803 0034 26034500 		.ascii	"&\003E\000v\000a\000l\000u\000a\000t\000i\000o\000n"
+ 803      76006100 
+ 803      6C007500 
+ 803      61007400 
+ 803      69006F00 
+ 804 0049 00200044 		.ascii	"\000 \000D\000e\000v\000i\000c\000e\000 \000"
+ 804      00650076 
+ 804      00690063 
+ 804      00650020 
+ 804      00
+ 807              	USB_STR_1:
+ 808 005a 3A035400 		.ascii	":\003T\000R\000I\000N\000A\000M\000I\000C\000 \000M"
+ 808      52004900 
+ 808      4E004100 
+ 808      4D004900 
+ 808      43002000 
+ 809 006f 006F0074 		.ascii	"\000o\000t\000i\000o\000n\000 \000C\000o\000n\000t\000"
+ 809      0069006F 
+ 809      006E0020 
+ 809      0043006F 
+ 809      006E0074 
+ 810 0084 72006F00 		.ascii	"r\000o\000l\000 \000 \000 \000 \000 \000"
+ 810      6C002000 
+ 810      20002000 
+ 810      20002000 
+ 813              	g_config_descriptor:
+ 814 0094 09024300 		.ascii	"\011\002C\000\002\001\000\3002\011\004\000\000\001\002"
+ 814      020100C0 
+ 814      32090400 
+ 814      000102
+ 815 00a3 02000005 		.ascii	"\002\000\000\005$\000\020\001\005$\001\001\001\004$"
+ 815      24001001 
+ 815      05240101 
+ 815      010424
+ 816 00b2 02060524 		.ascii	"\002\006\005$\006\000\001\007\005\203\003\020\000\012"
+ 816      06000107 
+ 816      05830310 
+ 816      000A
+ 817 00c0 09040100 		.ascii	"\011\004\001\000\002\012\000\000\000\007\005\201\002"
+ 817      020A0000 
+ 817      00070581 
+ 817      02
+ 818 00cd 10000007 		.ascii	"\020\000\000\007\005\002\002\020\000\000"
+ 818      05020210 
+ 818      0000
+ 821              	g_device_descriptor:
+ 822 00d7 12010002 		.ascii	"\022\001\000\002\002\000\000\020<*\000\007\002\000\001"
+ 822      02000010 
+ 822      3C2A0007 
+ 822      020001
+ 823 00e6 020001   		.ascii	"\002\000\001"
+ 824              		.bss
+ 825              		.set	.LANCHOR2,. + 0
+ 828              	g_alternate_interface:
+ 829 0000 0000     		.space	2
+ 832              	g_abstract_state:
+ 833 0002 00000000 		.space	4
+ 836              	g_country_code:
+ 837 0006 00000000 		.space	4
+ 838              		.text
+ 839              	.Letext0:
+ 840              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 841              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 842              		.file 4 "TMC-API/tmc/helpers/Types.h"
+ 843              		.file 5 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 844              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 845              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 846              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 847              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 848              		.file 10 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 849              		.file 11 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 850              		.file 12 "hal/Landungsbruecke/freescale/USB_CDC/types.h"
+ 851              		.file 13 "hal/Landungsbruecke/freescale/USB_CDC/usb_devapi.h"
+ 852              		.file 14 "hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 usb_descriptor.c
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:23     .text:00000000 USB_Desc_Get_Descriptor
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:161    .text:00000068 $d
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:166    .text:00000070 $t
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:173    .text:00000070 USB_Desc_Get_Interface
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:204    .text:00000084 $d
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:208    .text:00000088 $t
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:215    .text:00000088 USB_Desc_Set_Interface
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:244    .text:00000098 $d
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:248    .text:0000009c $t
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:255    .text:0000009c USB_Desc_Valid_Configation
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:286    .text:000000a6 USB_Desc_Valid_Interface
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:327    .text:000000bc $d
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:331    .text:000000c0 $t
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:338    .text:000000c0 USB_Desc_Remote_Wakeup
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:363    .text:000000c4 USB_Desc_Get_Endpoints
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:381    .text:000000c8 $d
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:385    .text:000000cc $t
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:392    .text:000000cc USB_Desc_Get_Line_Coding
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:426    .text:000000e4 $d
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:430    .text:000000e8 $t
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:437    .text:000000e8 USB_Desc_Set_Line_Coding
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:486    .text:0000010c $d
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:490    .text:00000110 $t
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:497    .text:00000110 USB_Desc_Get_Abstract_State
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:529    .text:00000124 $d
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:533    .text:00000128 $t
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:540    .text:00000128 USB_Desc_Get_Country_Setting
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:572    .text:0000013c $d
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:576    .text:00000140 $t
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:583    .text:00000140 USB_Desc_Set_Abstract_State
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:635    .text:00000160 $d
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:639    .text:00000164 $t
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:646    .text:00000164 USB_Desc_Set_Country_Setting
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:698    .text:00000184 $d
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:770    .rodata:00000060 g_valid_config_values
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:721    .rodata:00000000 g_languages
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:775    .rodata:00000064 g_string_descriptors
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:782    .rodata:00000074 g_string_desc_size
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:732    .rodata:00000020 g_std_descriptors
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:743    .rodata:00000040 g_std_desc_size
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:797    .data:00000012 USB_STR_n
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:802    .data:00000034 USB_STR_2
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:807    .data:0000005a USB_STR_1
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:788    .data:00000000 USB_STR_0
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:813    .data:00000094 g_config_descriptor
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:821    .data:000000d7 g_device_descriptor
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:754    .rodata:00000050 usb_desc_ep
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:717    .rodata:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:792    .data:00000004 g_line_coding
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:794    .data:0000000b $d
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:828    .bss:00000000 g_alternate_interface
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:829    .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:832    .bss:00000002 g_abstract_state
+C:\Users\Shubham\AppData\Local\Temp\ccVi1oGc.s:836    .bss:00000006 g_country_code
+
+NO UNDEFINED SYMBOLS

@@ -1,0 +1,1066 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"TMC6100_eval.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.arch armv7e-m
+  17              		.syntax unified
+  18              		.thumb
+  19              		.thumb_func
+  20              		.fpu softvfp
+  22              	rotate:
+  23              	.LVL0:
+  24              	.LFB2:
+  25              		.file 1 "boards/TMC6100_eval.c"
+   1:boards/TMC6100_eval.c **** #include "boards/Board.h"
+   2:boards/TMC6100_eval.c **** #include "tmc/ic/TMC6100/TMC6100.h"
+   3:boards/TMC6100_eval.c **** 
+   4:boards/TMC6100_eval.c **** #define VM_MIN         50   // VM[V/10] min
+   5:boards/TMC6100_eval.c **** #define VM_MAX         550  // VM[V/10] max
+   6:boards/TMC6100_eval.c **** 
+   7:boards/TMC6100_eval.c **** #define TMC6100_DEFAULT_MOTOR 0
+   8:boards/TMC6100_eval.c **** 
+   9:boards/TMC6100_eval.c **** static uint32_t right(uint8_t motor, int32_t velocity);
+  10:boards/TMC6100_eval.c **** static uint32_t left(uint8_t motor, int32_t velocity);
+  11:boards/TMC6100_eval.c **** static uint32_t rotate(uint8_t motor, int32_t velocity);
+  12:boards/TMC6100_eval.c **** static uint32_t stop(uint8_t motor);
+  13:boards/TMC6100_eval.c **** static uint32_t moveTo(uint8_t motor, int32_t position);
+  14:boards/TMC6100_eval.c **** static uint32_t moveBy(uint8_t motor, int32_t *ticks);
+  15:boards/TMC6100_eval.c **** static uint32_t GAP(uint8_t type, uint8_t motor, int32_t *value);
+  16:boards/TMC6100_eval.c **** static uint32_t SAP(uint8_t type, uint8_t motor, int32_t value);
+  17:boards/TMC6100_eval.c **** static void readRegister(uint8_t motor, uint8_t address, int32_t *value);
+  18:boards/TMC6100_eval.c **** static void writeRegister(uint8_t motor, uint8_t address, int32_t value);
+  19:boards/TMC6100_eval.c **** static uint32_t getMeasuredSpeed(uint8_t motor, int32_t *value);
+  20:boards/TMC6100_eval.c **** 
+  21:boards/TMC6100_eval.c **** static void periodicJob(uint32_t tick);
+  22:boards/TMC6100_eval.c **** static void checkErrors(uint32_t tick);
+  23:boards/TMC6100_eval.c **** static void deInit(void);
+  24:boards/TMC6100_eval.c **** static uint32_t userFunction(uint8_t type, uint8_t motor, int32_t *value);
+  25:boards/TMC6100_eval.c **** 
+  26:boards/TMC6100_eval.c **** static uint8_t reset();
+  27:boards/TMC6100_eval.c **** static void enableDriver(DriverState state);
+  28:boards/TMC6100_eval.c **** 
+  29:boards/TMC6100_eval.c **** SPIChannelTypeDef *TMC6100_SPIChannel;
+  30:boards/TMC6100_eval.c **** 
+  31:boards/TMC6100_eval.c **** // => SPI wrapper
+  32:boards/TMC6100_eval.c **** uint8_t tmc6100_readwriteByte(uint8_t motor, uint8_t data, uint8_t lastTransfer)
+  33:boards/TMC6100_eval.c **** {
+  34:boards/TMC6100_eval.c **** 	if (motor == TMC6100_DEFAULT_MOTOR)
+  35:boards/TMC6100_eval.c **** 		return TMC6100_SPIChannel->readWrite(data, lastTransfer);
+  36:boards/TMC6100_eval.c **** 	else
+  37:boards/TMC6100_eval.c **** 		return 0;
+  38:boards/TMC6100_eval.c **** }
+  39:boards/TMC6100_eval.c **** // <= SPI wrapper
+  40:boards/TMC6100_eval.c **** 
+  41:boards/TMC6100_eval.c **** typedef struct
+  42:boards/TMC6100_eval.c **** {
+  43:boards/TMC6100_eval.c **** 	IOPinTypeDef  *REFL_UC;
+  44:boards/TMC6100_eval.c **** 	IOPinTypeDef  *REFR_UC;
+  45:boards/TMC6100_eval.c **** 	IOPinTypeDef  *DRV_ENN_CFG6;
+  46:boards/TMC6100_eval.c **** 	IOPinTypeDef  *ENCA_DCIN_CFG5;
+  47:boards/TMC6100_eval.c **** 	IOPinTypeDef  *ENCB_DCEN_CFG4;
+  48:boards/TMC6100_eval.c **** 	IOPinTypeDef  *ENCN_DCO;
+  49:boards/TMC6100_eval.c **** 	IOPinTypeDef  *SD_MODE;
+  50:boards/TMC6100_eval.c **** 	IOPinTypeDef  *SPI_MODE;
+  51:boards/TMC6100_eval.c **** 	IOPinTypeDef  *SWN_DIAG0;
+  52:boards/TMC6100_eval.c **** 	IOPinTypeDef  *SWP_DIAG1;
+  53:boards/TMC6100_eval.c **** } PinsTypeDef;
+  54:boards/TMC6100_eval.c **** 
+  55:boards/TMC6100_eval.c **** //static PinsTypeDef Pins;
+  56:boards/TMC6100_eval.c **** 
+  57:boards/TMC6100_eval.c **** static uint32_t rotate(uint8_t motor, int32_t velocity)
+  58:boards/TMC6100_eval.c **** {
+  26              		.loc 1 58 1 view -0
+  27              		.cfi_startproc
+  28              		@ args = 0, pretend = 0, frame = 0
+  29              		@ frame_needed = 0, uses_anonymous_args = 0
+  30              		@ link register save eliminated.
+  59:boards/TMC6100_eval.c **** 	UNUSED(velocity);
+  31              		.loc 1 59 2 view .LVU1
+  60:boards/TMC6100_eval.c **** 
+  61:boards/TMC6100_eval.c **** 	if(motor >= TMC6100_MOTORS)
+  32              		.loc 1 61 2 view .LVU2
+  33              		.loc 1 61 4 is_stmt 0 view .LVU3
+  34 0000 0028     		cmp	r0, #0
+  62:boards/TMC6100_eval.c **** 		return TMC_ERROR_MOTOR;
+  63:boards/TMC6100_eval.c **** 
+  64:boards/TMC6100_eval.c **** 	return TMC_ERROR_NONE;
+  65:boards/TMC6100_eval.c **** }
+  35              		.loc 1 65 1 view .LVU4
+  36 0002 14BF     		ite	ne
+  37 0004 0820     		movne	r0, #8
+  38              	.LVL1:
+  39              		.loc 1 65 1 view .LVU5
+  40 0006 0020     		moveq	r0, #0
+  41 0008 7047     		bx	lr
+  42              		.cfi_endproc
+  43              	.LFE2:
+  45              		.align	1
+  46              		.syntax unified
+  47              		.thumb
+  48              		.thumb_func
+  49              		.fpu softvfp
+  51              	right:
+  52              	.LVL2:
+  53              	.LFB3:
+  66:boards/TMC6100_eval.c **** 
+  67:boards/TMC6100_eval.c **** static uint32_t right(uint8_t motor, int32_t velocity)
+  68:boards/TMC6100_eval.c **** {
+  54              		.loc 1 68 1 is_stmt 1 view -0
+  55              		.cfi_startproc
+  56              		@ args = 0, pretend = 0, frame = 0
+  57              		@ frame_needed = 0, uses_anonymous_args = 0
+  58              		@ link register save eliminated.
+  69:boards/TMC6100_eval.c **** 	return rotate(motor, velocity);
+  59              		.loc 1 69 2 view .LVU7
+  60              	.LBB18:
+  61              	.LBI18:
+  57:boards/TMC6100_eval.c **** {
+  62              		.loc 1 57 17 view .LVU8
+  63              	.LBB19:
+  59:boards/TMC6100_eval.c **** 
+  64              		.loc 1 59 2 view .LVU9
+  61:boards/TMC6100_eval.c **** 		return TMC_ERROR_MOTOR;
+  65              		.loc 1 61 2 view .LVU10
+  61:boards/TMC6100_eval.c **** 		return TMC_ERROR_MOTOR;
+  66              		.loc 1 61 4 is_stmt 0 view .LVU11
+  67 000a 0028     		cmp	r0, #0
+  68              	.LBE19:
+  69              	.LBE18:
+  70:boards/TMC6100_eval.c **** }
+  70              		.loc 1 70 1 view .LVU12
+  71 000c 14BF     		ite	ne
+  72 000e 0820     		movne	r0, #8
+  73              	.LVL3:
+  74              		.loc 1 70 1 view .LVU13
+  75 0010 0020     		moveq	r0, #0
+  76 0012 7047     		bx	lr
+  77              		.cfi_endproc
+  78              	.LFE3:
+  80              		.align	1
+  81              		.syntax unified
+  82              		.thumb
+  83              		.thumb_func
+  84              		.fpu softvfp
+  86              	stop:
+  87              	.LVL4:
+  88              	.LFB5:
+  71:boards/TMC6100_eval.c **** 
+  72:boards/TMC6100_eval.c **** static uint32_t left(uint8_t motor, int32_t velocity)
+  73:boards/TMC6100_eval.c **** {
+  74:boards/TMC6100_eval.c **** 	return rotate(motor, -velocity);
+  75:boards/TMC6100_eval.c **** }
+  76:boards/TMC6100_eval.c **** 
+  77:boards/TMC6100_eval.c **** static uint32_t stop(uint8_t motor)
+  78:boards/TMC6100_eval.c **** {
+  89              		.loc 1 78 1 is_stmt 1 view -0
+  90              		.cfi_startproc
+  91              		@ args = 0, pretend = 0, frame = 0
+  92              		@ frame_needed = 0, uses_anonymous_args = 0
+  93              		@ link register save eliminated.
+  79:boards/TMC6100_eval.c **** 	return rotate(motor, 0);
+  94              		.loc 1 79 2 view .LVU15
+  95              	.LBB20:
+  96              	.LBI20:
+  57:boards/TMC6100_eval.c **** {
+  97              		.loc 1 57 17 view .LVU16
+  98              	.LBB21:
+  59:boards/TMC6100_eval.c **** 
+  99              		.loc 1 59 2 view .LVU17
+  61:boards/TMC6100_eval.c **** 		return TMC_ERROR_MOTOR;
+ 100              		.loc 1 61 2 view .LVU18
+  61:boards/TMC6100_eval.c **** 		return TMC_ERROR_MOTOR;
+ 101              		.loc 1 61 4 is_stmt 0 view .LVU19
+ 102 0014 0028     		cmp	r0, #0
+ 103              	.LBE21:
+ 104              	.LBE20:
+  80:boards/TMC6100_eval.c **** }
+ 105              		.loc 1 80 1 view .LVU20
+ 106 0016 14BF     		ite	ne
+ 107 0018 0820     		movne	r0, #8
+ 108              	.LVL5:
+ 109              		.loc 1 80 1 view .LVU21
+ 110 001a 0020     		moveq	r0, #0
+ 111 001c 7047     		bx	lr
+ 112              		.cfi_endproc
+ 113              	.LFE5:
+ 115              		.align	1
+ 116              		.syntax unified
+ 117              		.thumb
+ 118              		.thumb_func
+ 119              		.fpu softvfp
+ 121              	moveBy:
+ 122              	.LVL6:
+ 123              	.LFB7:
+  81:boards/TMC6100_eval.c **** 
+  82:boards/TMC6100_eval.c **** static uint32_t moveTo(uint8_t motor, int32_t position)
+  83:boards/TMC6100_eval.c **** {
+  84:boards/TMC6100_eval.c **** 	UNUSED(position);
+  85:boards/TMC6100_eval.c **** 
+  86:boards/TMC6100_eval.c **** 	if(motor >= TMC6100_MOTORS)
+  87:boards/TMC6100_eval.c **** 		return TMC_ERROR_MOTOR;
+  88:boards/TMC6100_eval.c **** 
+  89:boards/TMC6100_eval.c **** 	return TMC_ERROR_NONE;
+  90:boards/TMC6100_eval.c **** }
+  91:boards/TMC6100_eval.c **** 
+  92:boards/TMC6100_eval.c **** static uint32_t moveBy(uint8_t motor, int32_t *ticks)
+  93:boards/TMC6100_eval.c **** {
+ 124              		.loc 1 93 1 is_stmt 1 view -0
+ 125              		.cfi_startproc
+ 126              		@ args = 0, pretend = 0, frame = 0
+ 127              		@ frame_needed = 0, uses_anonymous_args = 0
+ 128              		@ link register save eliminated.
+  94:boards/TMC6100_eval.c **** 	return moveTo(motor, *ticks);
+ 129              		.loc 1 94 2 view .LVU23
+ 130              	.LBB22:
+ 131              	.LBI22:
+  82:boards/TMC6100_eval.c **** {
+ 132              		.loc 1 82 17 view .LVU24
+ 133              	.LBB23:
+  84:boards/TMC6100_eval.c **** 
+ 134              		.loc 1 84 2 view .LVU25
+  86:boards/TMC6100_eval.c **** 		return TMC_ERROR_MOTOR;
+ 135              		.loc 1 86 2 view .LVU26
+  86:boards/TMC6100_eval.c **** 		return TMC_ERROR_MOTOR;
+ 136              		.loc 1 86 4 is_stmt 0 view .LVU27
+ 137 001e 0028     		cmp	r0, #0
+ 138              	.LBE23:
+ 139              	.LBE22:
+  95:boards/TMC6100_eval.c **** }
+ 140              		.loc 1 95 1 view .LVU28
+ 141 0020 14BF     		ite	ne
+ 142 0022 0820     		movne	r0, #8
+ 143              	.LVL7:
+ 144              		.loc 1 95 1 view .LVU29
+ 145 0024 0020     		moveq	r0, #0
+ 146 0026 7047     		bx	lr
+ 147              		.cfi_endproc
+ 148              	.LFE7:
+ 150              		.align	1
+ 151              		.syntax unified
+ 152              		.thumb
+ 153              		.thumb_func
+ 154              		.fpu softvfp
+ 156              	SAP:
+ 157              	.LVL8:
+ 158              	.LFB9:
+  96:boards/TMC6100_eval.c **** 
+  97:boards/TMC6100_eval.c **** static uint32_t handleParameter(uint8_t readWrite, uint8_t motor, uint8_t type, int32_t *value)
+  98:boards/TMC6100_eval.c **** {
+  99:boards/TMC6100_eval.c **** 	UNUSED(readWrite);
+ 100:boards/TMC6100_eval.c **** 	UNUSED(value);
+ 101:boards/TMC6100_eval.c **** 
+ 102:boards/TMC6100_eval.c **** 	uint32_t errors = TMC_ERROR_NONE;
+ 103:boards/TMC6100_eval.c **** 
+ 104:boards/TMC6100_eval.c **** 	if(motor >= TMC6100_MOTORS)
+ 105:boards/TMC6100_eval.c **** 		return TMC_ERROR_MOTOR;
+ 106:boards/TMC6100_eval.c **** 
+ 107:boards/TMC6100_eval.c **** 	switch(type)
+ 108:boards/TMC6100_eval.c **** 	{
+ 109:boards/TMC6100_eval.c **** 		// add parameters if needed
+ 110:boards/TMC6100_eval.c **** 		default:
+ 111:boards/TMC6100_eval.c **** 			errors |= TMC_ERROR_TYPE;
+ 112:boards/TMC6100_eval.c **** 			break;
+ 113:boards/TMC6100_eval.c **** 	}
+ 114:boards/TMC6100_eval.c **** 	return errors;
+ 115:boards/TMC6100_eval.c **** }
+ 116:boards/TMC6100_eval.c **** 
+ 117:boards/TMC6100_eval.c **** static uint32_t SAP(uint8_t type, uint8_t motor, int32_t value)
+ 118:boards/TMC6100_eval.c **** {
+ 159              		.loc 1 118 1 is_stmt 1 view -0
+ 160              		.cfi_startproc
+ 161              		@ args = 0, pretend = 0, frame = 0
+ 162              		@ frame_needed = 0, uses_anonymous_args = 0
+ 163              		@ link register save eliminated.
+ 119:boards/TMC6100_eval.c **** 	return handleParameter(WRITE, motor, type, &value);
+ 164              		.loc 1 119 2 view .LVU31
+ 165              	.LBB24:
+ 166              	.LBI24:
+  97:boards/TMC6100_eval.c **** {
+ 167              		.loc 1 97 17 view .LVU32
+ 168              	.LBB25:
+  99:boards/TMC6100_eval.c **** 	UNUSED(value);
+ 169              		.loc 1 99 2 view .LVU33
+ 100:boards/TMC6100_eval.c **** 
+ 170              		.loc 1 100 2 view .LVU34
+ 102:boards/TMC6100_eval.c **** 
+ 171              		.loc 1 102 2 view .LVU35
+ 104:boards/TMC6100_eval.c **** 		return TMC_ERROR_MOTOR;
+ 172              		.loc 1 104 2 view .LVU36
+ 104:boards/TMC6100_eval.c **** 		return TMC_ERROR_MOTOR;
+ 173              		.loc 1 104 4 is_stmt 0 view .LVU37
+ 174 0028 0029     		cmp	r1, #0
+ 175              	.LBE25:
+ 176              	.LBE24:
+ 120:boards/TMC6100_eval.c **** }
+ 177              		.loc 1 120 1 view .LVU38
+ 178 002a 0CBF     		ite	eq
+ 179 002c 0420     		moveq	r0, #4
+ 180              	.LVL9:
+ 181              		.loc 1 120 1 view .LVU39
+ 182 002e 0820     		movne	r0, #8
+ 183 0030 7047     		bx	lr
+ 184              		.cfi_endproc
+ 185              	.LFE9:
+ 187              		.align	1
+ 188              		.syntax unified
+ 189              		.thumb
+ 190              		.thumb_func
+ 191              		.fpu softvfp
+ 193              	GAP:
+ 194              	.LVL10:
+ 195              	.LFB10:
+ 121:boards/TMC6100_eval.c **** 
+ 122:boards/TMC6100_eval.c **** static uint32_t GAP(uint8_t type, uint8_t motor, int32_t *value)
+ 123:boards/TMC6100_eval.c **** {
+ 196              		.loc 1 123 1 is_stmt 1 view -0
+ 197              		.cfi_startproc
+ 198              		@ args = 0, pretend = 0, frame = 0
+ 199              		@ frame_needed = 0, uses_anonymous_args = 0
+ 200              		@ link register save eliminated.
+ 124:boards/TMC6100_eval.c **** 	return handleParameter(READ, motor, type, value);
+ 201              		.loc 1 124 2 view .LVU41
+ 202              	.LBB26:
+ 203              	.LBI26:
+  97:boards/TMC6100_eval.c **** {
+ 204              		.loc 1 97 17 view .LVU42
+ 205              	.LBB27:
+  99:boards/TMC6100_eval.c **** 	UNUSED(value);
+ 206              		.loc 1 99 2 view .LVU43
+ 100:boards/TMC6100_eval.c **** 
+ 207              		.loc 1 100 2 view .LVU44
+ 102:boards/TMC6100_eval.c **** 
+ 208              		.loc 1 102 2 view .LVU45
+ 104:boards/TMC6100_eval.c **** 		return TMC_ERROR_MOTOR;
+ 209              		.loc 1 104 2 view .LVU46
+ 104:boards/TMC6100_eval.c **** 		return TMC_ERROR_MOTOR;
+ 210              		.loc 1 104 4 is_stmt 0 view .LVU47
+ 211 0032 0029     		cmp	r1, #0
+ 212              	.LBE27:
+ 213              	.LBE26:
+ 125:boards/TMC6100_eval.c **** }
+ 214              		.loc 1 125 1 view .LVU48
+ 215 0034 0CBF     		ite	eq
+ 216 0036 0420     		moveq	r0, #4
+ 217              	.LVL11:
+ 218              		.loc 1 125 1 view .LVU49
+ 219 0038 0820     		movne	r0, #8
+ 220 003a 7047     		bx	lr
+ 221              		.cfi_endproc
+ 222              	.LFE10:
+ 224              		.align	1
+ 225              		.syntax unified
+ 226              		.thumb
+ 227              		.thumb_func
+ 228              		.fpu softvfp
+ 230              	getMeasuredSpeed:
+ 231              	.LVL12:
+ 232              	.LFB11:
+ 126:boards/TMC6100_eval.c **** 
+ 127:boards/TMC6100_eval.c **** static uint32_t getMeasuredSpeed(uint8_t motor, int32_t *value)
+ 128:boards/TMC6100_eval.c **** {
+ 233              		.loc 1 128 1 is_stmt 1 view -0
+ 234              		.cfi_startproc
+ 235              		@ args = 0, pretend = 0, frame = 0
+ 236              		@ frame_needed = 0, uses_anonymous_args = 0
+ 237              		@ link register save eliminated.
+ 129:boards/TMC6100_eval.c **** 	UNUSED(value);
+ 238              		.loc 1 129 2 view .LVU51
+ 130:boards/TMC6100_eval.c **** 
+ 131:boards/TMC6100_eval.c **** 	if(motor >= TMC6100_MOTORS)
+ 239              		.loc 1 131 2 view .LVU52
+ 240              		.loc 1 131 4 is_stmt 0 view .LVU53
+ 241 003c 0028     		cmp	r0, #0
+ 132:boards/TMC6100_eval.c **** 		return TMC_ERROR_MOTOR;
+ 133:boards/TMC6100_eval.c **** 
+ 134:boards/TMC6100_eval.c **** 	return TMC_ERROR_NONE;
+ 135:boards/TMC6100_eval.c **** }
+ 242              		.loc 1 135 1 view .LVU54
+ 243 003e 14BF     		ite	ne
+ 244 0040 0820     		movne	r0, #8
+ 245              	.LVL13:
+ 246              		.loc 1 135 1 view .LVU55
+ 247 0042 0020     		moveq	r0, #0
+ 248 0044 7047     		bx	lr
+ 249              		.cfi_endproc
+ 250              	.LFE11:
+ 252              		.align	1
+ 253              		.syntax unified
+ 254              		.thumb
+ 255              		.thumb_func
+ 256              		.fpu softvfp
+ 258              	periodicJob:
+ 259              	.LVL14:
+ 260              	.LFB14:
+ 136:boards/TMC6100_eval.c **** 
+ 137:boards/TMC6100_eval.c **** static void writeRegister(uint8_t motor, uint8_t address, int32_t value)
+ 138:boards/TMC6100_eval.c **** {
+ 139:boards/TMC6100_eval.c **** 	UNUSED(motor);
+ 140:boards/TMC6100_eval.c **** 	tmc6100_writeInt(TMC6100_DEFAULT_MOTOR, address, value);
+ 141:boards/TMC6100_eval.c **** }
+ 142:boards/TMC6100_eval.c **** 
+ 143:boards/TMC6100_eval.c **** static void readRegister(uint8_t motor, uint8_t address, int32_t *value)
+ 144:boards/TMC6100_eval.c **** {
+ 145:boards/TMC6100_eval.c **** 	UNUSED(motor);
+ 146:boards/TMC6100_eval.c **** 	*value = tmc6100_readInt(TMC6100_DEFAULT_MOTOR, address);
+ 147:boards/TMC6100_eval.c **** }
+ 148:boards/TMC6100_eval.c **** 
+ 149:boards/TMC6100_eval.c **** static void periodicJob(uint32_t tick)
+ 150:boards/TMC6100_eval.c **** {
+ 261              		.loc 1 150 1 is_stmt 1 view -0
+ 262              		.cfi_startproc
+ 263              		@ args = 0, pretend = 0, frame = 0
+ 264              		@ frame_needed = 0, uses_anonymous_args = 0
+ 265              		@ link register save eliminated.
+ 151:boards/TMC6100_eval.c **** 	UNUSED(tick);
+ 266              		.loc 1 151 2 view .LVU57
+ 152:boards/TMC6100_eval.c **** }
+ 267              		.loc 1 152 1 is_stmt 0 view .LVU58
+ 268 0046 7047     		bx	lr
+ 269              		.cfi_endproc
+ 270              	.LFE14:
+ 272              		.align	1
+ 273              		.syntax unified
+ 274              		.thumb
+ 275              		.thumb_func
+ 276              		.fpu softvfp
+ 278              	checkErrors:
+ 279              	.LVL15:
+ 280              	.LFB15:
+ 153:boards/TMC6100_eval.c **** 
+ 154:boards/TMC6100_eval.c **** static void checkErrors(uint32_t tick)
+ 155:boards/TMC6100_eval.c **** {
+ 281              		.loc 1 155 1 is_stmt 1 view -0
+ 282              		.cfi_startproc
+ 283              		@ args = 0, pretend = 0, frame = 0
+ 284              		@ frame_needed = 0, uses_anonymous_args = 0
+ 285              		@ link register save eliminated.
+ 156:boards/TMC6100_eval.c **** 	UNUSED(tick);
+ 286              		.loc 1 156 2 view .LVU60
+ 157:boards/TMC6100_eval.c **** 	Evalboards.ch2.errors = 0;
+ 287              		.loc 1 157 2 view .LVU61
+ 288              		.loc 1 157 24 is_stmt 0 view .LVU62
+ 289 0048 024B     		ldr	r3, .L24
+ 290 004a 0022     		movs	r2, #0
+ 291 004c C3F88020 		str	r2, [r3, #128]
+ 158:boards/TMC6100_eval.c **** }
+ 292              		.loc 1 158 1 view .LVU63
+ 293 0050 7047     		bx	lr
+ 294              	.L25:
+ 295 0052 00BF     		.align	2
+ 296              	.L24:
+ 297 0054 00000000 		.word	Evalboards
+ 298              		.cfi_endproc
+ 299              	.LFE15:
+ 301              		.align	1
+ 302              		.syntax unified
+ 303              		.thumb
+ 304              		.thumb_func
+ 305              		.fpu softvfp
+ 307              	userFunction:
+ 308              	.LVL16:
+ 309              	.LFB16:
+ 159:boards/TMC6100_eval.c **** 
+ 160:boards/TMC6100_eval.c **** static uint32_t userFunction(uint8_t type, uint8_t motor, int32_t *value)
+ 161:boards/TMC6100_eval.c **** {
+ 310              		.loc 1 161 1 is_stmt 1 view -0
+ 311              		.cfi_startproc
+ 312              		@ args = 0, pretend = 0, frame = 0
+ 313              		@ frame_needed = 0, uses_anonymous_args = 0
+ 314              		@ link register save eliminated.
+ 162:boards/TMC6100_eval.c **** 	UNUSED(type);
+ 315              		.loc 1 162 2 view .LVU65
+ 163:boards/TMC6100_eval.c **** 	UNUSED(motor);
+ 316              		.loc 1 163 2 view .LVU66
+ 164:boards/TMC6100_eval.c **** 	UNUSED(value);
+ 317              		.loc 1 164 2 view .LVU67
+ 165:boards/TMC6100_eval.c **** 
+ 166:boards/TMC6100_eval.c **** 	return 0;
+ 318              		.loc 1 166 2 view .LVU68
+ 167:boards/TMC6100_eval.c **** }
+ 319              		.loc 1 167 1 is_stmt 0 view .LVU69
+ 320 0058 0020     		movs	r0, #0
+ 321              	.LVL17:
+ 322              		.loc 1 167 1 view .LVU70
+ 323 005a 7047     		bx	lr
+ 324              		.cfi_endproc
+ 325              	.LFE16:
+ 327              		.align	1
+ 328              		.syntax unified
+ 329              		.thumb
+ 330              		.thumb_func
+ 331              		.fpu softvfp
+ 333              	deInit:
+ 334              	.LFB17:
+ 168:boards/TMC6100_eval.c **** 
+ 169:boards/TMC6100_eval.c **** static void deInit(void)
+ 170:boards/TMC6100_eval.c **** {
+ 335              		.loc 1 170 1 is_stmt 1 view -0
+ 336              		.cfi_startproc
+ 337              		@ args = 0, pretend = 0, frame = 0
+ 338              		@ frame_needed = 0, uses_anonymous_args = 0
+ 339              		@ link register save eliminated.
+ 171:boards/TMC6100_eval.c **** };
+ 340              		.loc 1 171 1 view .LVU72
+ 341 005c 7047     		bx	lr
+ 342              		.cfi_endproc
+ 343              	.LFE17:
+ 345              		.align	1
+ 346              		.syntax unified
+ 347              		.thumb
+ 348              		.thumb_func
+ 349              		.fpu softvfp
+ 351              	enableDriver:
+ 352              	.LVL18:
+ 353              	.LFB20:
+ 172:boards/TMC6100_eval.c **** 
+ 173:boards/TMC6100_eval.c **** static uint8_t reset()
+ 174:boards/TMC6100_eval.c **** {
+ 175:boards/TMC6100_eval.c **** 	// set default PWM configuration for evaluation board use with TMC467x-EVAL
+ 176:boards/TMC6100_eval.c **** 	tmc6100_writeInt(TMC6100_DEFAULT_MOTOR, TMC6100_GCONF, 0x40);
+ 177:boards/TMC6100_eval.c **** 
+ 178:boards/TMC6100_eval.c **** 	return 1;
+ 179:boards/TMC6100_eval.c **** }
+ 180:boards/TMC6100_eval.c **** 
+ 181:boards/TMC6100_eval.c **** static uint8_t restore()
+ 182:boards/TMC6100_eval.c **** {
+ 183:boards/TMC6100_eval.c **** 	// set default PWM configuration for evaluation board use with TMC467x-EVAL
+ 184:boards/TMC6100_eval.c **** 	tmc6100_writeInt(TMC6100_DEFAULT_MOTOR, TMC6100_GCONF, 0x40);
+ 185:boards/TMC6100_eval.c **** 
+ 186:boards/TMC6100_eval.c **** 	return 1;
+ 187:boards/TMC6100_eval.c **** }
+ 188:boards/TMC6100_eval.c **** 
+ 189:boards/TMC6100_eval.c **** static void enableDriver(DriverState state)
+ 190:boards/TMC6100_eval.c **** {
+ 354              		.loc 1 190 1 view -0
+ 355              		.cfi_startproc
+ 356              		@ args = 0, pretend = 0, frame = 0
+ 357              		@ frame_needed = 0, uses_anonymous_args = 0
+ 358              		@ link register save eliminated.
+ 191:boards/TMC6100_eval.c **** 	UNUSED(state);
+ 359              		.loc 1 191 2 view .LVU74
+ 192:boards/TMC6100_eval.c **** }
+ 360              		.loc 1 192 1 is_stmt 0 view .LVU75
+ 361 005e 7047     		bx	lr
+ 362              		.cfi_endproc
+ 363              	.LFE20:
+ 365              		.align	1
+ 366              		.syntax unified
+ 367              		.thumb
+ 368              		.thumb_func
+ 369              		.fpu softvfp
+ 371              	writeRegister:
+ 372              	.LVL19:
+ 373              	.LFB12:
+ 138:boards/TMC6100_eval.c **** 	UNUSED(motor);
+ 374              		.loc 1 138 1 is_stmt 1 view -0
+ 375              		.cfi_startproc
+ 376              		@ args = 0, pretend = 0, frame = 0
+ 377              		@ frame_needed = 0, uses_anonymous_args = 0
+ 378              		@ link register save eliminated.
+ 139:boards/TMC6100_eval.c **** 	tmc6100_writeInt(TMC6100_DEFAULT_MOTOR, address, value);
+ 379              		.loc 1 139 2 view .LVU77
+ 140:boards/TMC6100_eval.c **** }
+ 380              		.loc 1 140 2 view .LVU78
+ 381 0060 0020     		movs	r0, #0
+ 382              	.LVL20:
+ 140:boards/TMC6100_eval.c **** }
+ 383              		.loc 1 140 2 is_stmt 0 view .LVU79
+ 384 0062 FFF7FEBF 		b	tmc6100_writeInt
+ 385              	.LVL21:
+ 140:boards/TMC6100_eval.c **** }
+ 386              		.loc 1 140 2 view .LVU80
+ 387              		.cfi_endproc
+ 388              	.LFE12:
+ 390              		.align	1
+ 391              		.syntax unified
+ 392              		.thumb
+ 393              		.thumb_func
+ 394              		.fpu softvfp
+ 396              	reset:
+ 397              	.LFB18:
+ 174:boards/TMC6100_eval.c **** 	// set default PWM configuration for evaluation board use with TMC467x-EVAL
+ 398              		.loc 1 174 1 is_stmt 1 view -0
+ 399              		.cfi_startproc
+ 400              		@ args = 0, pretend = 0, frame = 0
+ 401              		@ frame_needed = 0, uses_anonymous_args = 0
+ 176:boards/TMC6100_eval.c **** 
+ 402              		.loc 1 176 2 view .LVU82
+ 174:boards/TMC6100_eval.c **** 	// set default PWM configuration for evaluation board use with TMC467x-EVAL
+ 403              		.loc 1 174 1 is_stmt 0 view .LVU83
+ 404 0066 08B5     		push	{r3, lr}
+ 405              	.LCFI0:
+ 406              		.cfi_def_cfa_offset 8
+ 407              		.cfi_offset 3, -8
+ 408              		.cfi_offset 14, -4
+ 176:boards/TMC6100_eval.c **** 
+ 409              		.loc 1 176 2 view .LVU84
+ 410 0068 0021     		movs	r1, #0
+ 411 006a 0846     		mov	r0, r1
+ 412 006c 4022     		movs	r2, #64
+ 413 006e FFF7FEFF 		bl	tmc6100_writeInt
+ 414              	.LVL22:
+ 178:boards/TMC6100_eval.c **** }
+ 415              		.loc 1 178 2 is_stmt 1 view .LVU85
+ 179:boards/TMC6100_eval.c **** 
+ 416              		.loc 1 179 1 is_stmt 0 view .LVU86
+ 417 0072 0120     		movs	r0, #1
+ 418 0074 08BD     		pop	{r3, pc}
+ 419              		.cfi_endproc
+ 420              	.LFE18:
+ 422              		.align	1
+ 423              		.syntax unified
+ 424              		.thumb
+ 425              		.thumb_func
+ 426              		.fpu softvfp
+ 428              	restore:
+ 429              	.LFB28:
+ 430              		.cfi_startproc
+ 431              		@ args = 0, pretend = 0, frame = 0
+ 432              		@ frame_needed = 0, uses_anonymous_args = 0
+ 433              		@ link register save eliminated.
+ 434 0076 F6E7     		b	reset
+ 435              		.cfi_endproc
+ 436              	.LFE28:
+ 438              		.align	1
+ 439              		.syntax unified
+ 440              		.thumb
+ 441              		.thumb_func
+ 442              		.fpu softvfp
+ 444              	readRegister:
+ 445              	.LVL23:
+ 446              	.LFB13:
+ 144:boards/TMC6100_eval.c **** 	UNUSED(motor);
+ 447              		.loc 1 144 1 is_stmt 1 view -0
+ 448              		.cfi_startproc
+ 449              		@ args = 0, pretend = 0, frame = 0
+ 450              		@ frame_needed = 0, uses_anonymous_args = 0
+ 145:boards/TMC6100_eval.c **** 	*value = tmc6100_readInt(TMC6100_DEFAULT_MOTOR, address);
+ 451              		.loc 1 145 2 view .LVU88
+ 146:boards/TMC6100_eval.c **** }
+ 452              		.loc 1 146 2 view .LVU89
+ 144:boards/TMC6100_eval.c **** 	UNUSED(motor);
+ 453              		.loc 1 144 1 is_stmt 0 view .LVU90
+ 454 0078 10B5     		push	{r4, lr}
+ 455              	.LCFI1:
+ 456              		.cfi_def_cfa_offset 8
+ 457              		.cfi_offset 4, -8
+ 458              		.cfi_offset 14, -4
+ 146:boards/TMC6100_eval.c **** }
+ 459              		.loc 1 146 11 view .LVU91
+ 460 007a 0020     		movs	r0, #0
+ 461              	.LVL24:
+ 144:boards/TMC6100_eval.c **** 	UNUSED(motor);
+ 462              		.loc 1 144 1 view .LVU92
+ 463 007c 1446     		mov	r4, r2
+ 146:boards/TMC6100_eval.c **** }
+ 464              		.loc 1 146 11 view .LVU93
+ 465 007e FFF7FEFF 		bl	tmc6100_readInt
+ 466              	.LVL25:
+ 146:boards/TMC6100_eval.c **** }
+ 467              		.loc 1 146 9 view .LVU94
+ 468 0082 2060     		str	r0, [r4]
+ 147:boards/TMC6100_eval.c **** 
+ 469              		.loc 1 147 1 view .LVU95
+ 470 0084 10BD     		pop	{r4, pc}
+ 147:boards/TMC6100_eval.c **** 
+ 471              		.loc 1 147 1 view .LVU96
+ 472              		.cfi_endproc
+ 473              	.LFE13:
+ 475              		.align	1
+ 476              		.syntax unified
+ 477              		.thumb
+ 478              		.thumb_func
+ 479              		.fpu softvfp
+ 481              	moveTo:
+ 482              	.LFB26:
+ 483              		.cfi_startproc
+ 484              		@ args = 0, pretend = 0, frame = 0
+ 485              		@ frame_needed = 0, uses_anonymous_args = 0
+ 486              		@ link register save eliminated.
+ 487 0086 0028     		cmp	r0, #0
+ 488 0088 14BF     		ite	ne
+ 489 008a 0820     		movne	r0, #8
+ 490 008c 0020     		moveq	r0, #0
+ 491 008e 7047     		bx	lr
+ 492              		.cfi_endproc
+ 493              	.LFE26:
+ 495              		.align	1
+ 496              		.syntax unified
+ 497              		.thumb
+ 498              		.thumb_func
+ 499              		.fpu softvfp
+ 501              	left:
+ 502              	.LFB24:
+ 503              		.cfi_startproc
+ 504              		@ args = 0, pretend = 0, frame = 0
+ 505              		@ frame_needed = 0, uses_anonymous_args = 0
+ 506              		@ link register save eliminated.
+ 507 0090 0028     		cmp	r0, #0
+ 508 0092 14BF     		ite	ne
+ 509 0094 0820     		movne	r0, #8
+ 510 0096 0020     		moveq	r0, #0
+ 511 0098 7047     		bx	lr
+ 512              		.cfi_endproc
+ 513              	.LFE24:
+ 515              		.align	1
+ 516              		.global	tmc6100_readwriteByte
+ 517              		.syntax unified
+ 518              		.thumb
+ 519              		.thumb_func
+ 520              		.fpu softvfp
+ 522              	tmc6100_readwriteByte:
+ 523              	.LVL26:
+ 524              	.LFB1:
+  33:boards/TMC6100_eval.c **** 	if (motor == TMC6100_DEFAULT_MOTOR)
+ 525              		.loc 1 33 1 is_stmt 1 view -0
+ 526              		.cfi_startproc
+ 527              		@ args = 0, pretend = 0, frame = 0
+ 528              		@ frame_needed = 0, uses_anonymous_args = 0
+ 529              		@ link register save eliminated.
+  34:boards/TMC6100_eval.c **** 		return TMC6100_SPIChannel->readWrite(data, lastTransfer);
+ 530              		.loc 1 34 2 view .LVU98
+  33:boards/TMC6100_eval.c **** 	if (motor == TMC6100_DEFAULT_MOTOR)
+ 531              		.loc 1 33 1 is_stmt 0 view .LVU99
+ 532 009a 0346     		mov	r3, r0
+ 533 009c 0846     		mov	r0, r1
+ 534              	.LVL27:
+  33:boards/TMC6100_eval.c **** 	if (motor == TMC6100_DEFAULT_MOTOR)
+ 535              		.loc 1 33 1 view .LVU100
+ 536 009e 1146     		mov	r1, r2
+ 537              	.LVL28:
+  34:boards/TMC6100_eval.c **** 		return TMC6100_SPIChannel->readWrite(data, lastTransfer);
+ 538              		.loc 1 34 5 view .LVU101
+ 539 00a0 1BB9     		cbnz	r3, .L40
+  35:boards/TMC6100_eval.c **** 	else
+ 540              		.loc 1 35 3 is_stmt 1 view .LVU102
+  35:boards/TMC6100_eval.c **** 	else
+ 541              		.loc 1 35 28 is_stmt 0 view .LVU103
+ 542 00a2 034B     		ldr	r3, .L41
+ 543 00a4 1B68     		ldr	r3, [r3]
+  35:boards/TMC6100_eval.c **** 	else
+ 544              		.loc 1 35 10 view .LVU104
+ 545 00a6 9B68     		ldr	r3, [r3, #8]
+ 546 00a8 1847     		bx	r3
+ 547              	.LVL29:
+ 548              	.L40:
+  38:boards/TMC6100_eval.c **** // <= SPI wrapper
+ 549              		.loc 1 38 1 view .LVU105
+ 550 00aa 0020     		movs	r0, #0
+ 551 00ac 7047     		bx	lr
+ 552              	.L42:
+ 553 00ae 00BF     		.align	2
+ 554              	.L41:
+ 555 00b0 00000000 		.word	TMC6100_SPIChannel
+ 556              		.cfi_endproc
+ 557              	.LFE1:
+ 559              		.align	1
+ 560              		.global	TMC6100_init
+ 561              		.syntax unified
+ 562              		.thumb
+ 563              		.thumb_func
+ 564              		.fpu softvfp
+ 566              	TMC6100_init:
+ 567              	.LFB21:
+ 193:boards/TMC6100_eval.c **** 
+ 194:boards/TMC6100_eval.c **** void TMC6100_init(void)
+ 195:boards/TMC6100_eval.c **** {
+ 568              		.loc 1 195 1 is_stmt 1 view -0
+ 569              		.cfi_startproc
+ 570              		@ args = 0, pretend = 0, frame = 0
+ 571              		@ frame_needed = 0, uses_anonymous_args = 0
+ 572              		@ link register save eliminated.
+ 196:boards/TMC6100_eval.c **** 	TMC6100_SPIChannel = &HAL.SPI->ch2;
+ 573              		.loc 1 196 2 view .LVU107
+ 574              		.loc 1 196 27 is_stmt 0 view .LVU108
+ 575 00b4 284B     		ldr	r3, .L44
+ 576              		.loc 1 196 21 view .LVU109
+ 577 00b6 2949     		ldr	r1, .L44+4
+ 578              		.loc 1 196 27 view .LVU110
+ 579 00b8 1A69     		ldr	r2, [r3, #16]
+ 197:boards/TMC6100_eval.c **** 	TMC6100_SPIChannel->CSN = &HAL.IOs->pins->SPI2_CSN0;
+ 580              		.loc 1 197 36 view .LVU111
+ 581 00ba DB68     		ldr	r3, [r3, #12]
+ 582              		.loc 1 197 28 view .LVU112
+ 583 00bc 5B68     		ldr	r3, [r3, #4]
+ 584 00be 03F50273 		add	r3, r3, #520
+ 585              		.loc 1 197 26 view .LVU113
+ 586 00c2 9361     		str	r3, [r2, #24]
+ 198:boards/TMC6100_eval.c **** 
+ 199:boards/TMC6100_eval.c **** 	Evalboards.ch2.config->reset        = reset;
+ 587              		.loc 1 199 16 view .LVU114
+ 588 00c4 264B     		ldr	r3, .L44+8
+ 196:boards/TMC6100_eval.c **** 	TMC6100_SPIChannel->CSN = &HAL.IOs->pins->SPI2_CSN0;
+ 589              		.loc 1 196 23 view .LVU115
+ 590 00c6 02F11400 		add	r0, r2, #20
+ 591              		.loc 1 199 16 view .LVU116
+ 592 00ca D3F89020 		ldr	r2, [r3, #144]
+ 196:boards/TMC6100_eval.c **** 	TMC6100_SPIChannel->CSN = &HAL.IOs->pins->SPI2_CSN0;
+ 593              		.loc 1 196 21 view .LVU117
+ 594 00ce 0860     		str	r0, [r1]
+ 197:boards/TMC6100_eval.c **** 	TMC6100_SPIChannel->CSN = &HAL.IOs->pins->SPI2_CSN0;
+ 595              		.loc 1 197 2 is_stmt 1 view .LVU118
+ 596              		.loc 1 199 2 view .LVU119
+ 597              		.loc 1 199 38 is_stmt 0 view .LVU120
+ 598 00d0 2449     		ldr	r1, .L44+12
+ 599 00d2 C2F80412 		str	r1, [r2, #516]
+ 200:boards/TMC6100_eval.c **** 	Evalboards.ch2.config->restore      = restore;
+ 600              		.loc 1 200 2 is_stmt 1 view .LVU121
+ 601              		.loc 1 200 38 is_stmt 0 view .LVU122
+ 602 00d6 2449     		ldr	r1, .L44+16
+ 603 00d8 C2F80812 		str	r1, [r2, #520]
+ 201:boards/TMC6100_eval.c **** 	Evalboards.ch2.config->state        = CONFIG_RESET;
+ 604              		.loc 1 201 2 is_stmt 1 view .LVU123
+ 202:boards/TMC6100_eval.c **** 	Evalboards.ch2.config->configIndex  = 0;
+ 605              		.loc 1 202 2 view .LVU124
+ 201:boards/TMC6100_eval.c **** 	Evalboards.ch2.config->state        = CONFIG_RESET;
+ 606              		.loc 1 201 38 is_stmt 0 view .LVU125
+ 607 00dc 0121     		movs	r1, #1
+ 608 00de 1180     		strh	r1, [r2]	@ movhi
+ 203:boards/TMC6100_eval.c **** 
+ 204:boards/TMC6100_eval.c **** 	Evalboards.ch2.rotate               = rotate;
+ 609              		.loc 1 204 2 is_stmt 1 view .LVU126
+ 610              		.loc 1 204 38 is_stmt 0 view .LVU127
+ 611 00e0 224A     		ldr	r2, .L44+20
+ 612 00e2 C3F89C20 		str	r2, [r3, #156]
+ 205:boards/TMC6100_eval.c **** 	Evalboards.ch2.right                = right;
+ 613              		.loc 1 205 2 is_stmt 1 view .LVU128
+ 614              		.loc 1 205 38 is_stmt 0 view .LVU129
+ 615 00e6 224A     		ldr	r2, .L44+24
+ 616 00e8 C3F89820 		str	r2, [r3, #152]
+ 206:boards/TMC6100_eval.c **** 	Evalboards.ch2.left                 = left;
+ 617              		.loc 1 206 2 is_stmt 1 view .LVU130
+ 618              		.loc 1 206 38 is_stmt 0 view .LVU131
+ 619 00ec 214A     		ldr	r2, .L44+28
+ 620 00ee C3F89420 		str	r2, [r3, #148]
+ 207:boards/TMC6100_eval.c **** 	Evalboards.ch2.stop                 = stop;
+ 621              		.loc 1 207 2 is_stmt 1 view .LVU132
+ 622              		.loc 1 207 38 is_stmt 0 view .LVU133
+ 623 00f2 214A     		ldr	r2, .L44+32
+ 624 00f4 C3F8A020 		str	r2, [r3, #160]
+ 208:boards/TMC6100_eval.c **** 	Evalboards.ch2.GAP                  = GAP;
+ 625              		.loc 1 208 2 is_stmt 1 view .LVU134
+ 626              		.loc 1 208 38 is_stmt 0 view .LVU135
+ 627 00f8 204A     		ldr	r2, .L44+36
+ 628 00fa C3F8B420 		str	r2, [r3, #180]
+ 209:boards/TMC6100_eval.c **** 	Evalboards.ch2.SAP                  = SAP;
+ 629              		.loc 1 209 2 is_stmt 1 view .LVU136
+ 630              		.loc 1 209 38 is_stmt 0 view .LVU137
+ 631 00fe 204A     		ldr	r2, .L44+40
+ 632 0100 C3F8B020 		str	r2, [r3, #176]
+ 210:boards/TMC6100_eval.c **** 	Evalboards.ch2.moveTo               = moveTo;
+ 633              		.loc 1 210 2 is_stmt 1 view .LVU138
+ 634              		.loc 1 210 38 is_stmt 0 view .LVU139
+ 635 0104 1F4A     		ldr	r2, .L44+44
+ 636 0106 C3F8A420 		str	r2, [r3, #164]
+ 211:boards/TMC6100_eval.c **** 	Evalboards.ch2.moveBy               = moveBy;
+ 637              		.loc 1 211 2 is_stmt 1 view .LVU140
+ 638              		.loc 1 211 38 is_stmt 0 view .LVU141
+ 639 010a 1F4A     		ldr	r2, .L44+48
+ 640 010c C3F8A820 		str	r2, [r3, #168]
+ 212:boards/TMC6100_eval.c **** 	Evalboards.ch2.writeRegister        = writeRegister;
+ 641              		.loc 1 212 2 is_stmt 1 view .LVU142
+ 642              		.loc 1 212 38 is_stmt 0 view .LVU143
+ 643 0110 1E4A     		ldr	r2, .L44+52
+ 644 0112 C3F8C420 		str	r2, [r3, #196]
+ 213:boards/TMC6100_eval.c **** 	Evalboards.ch2.readRegister         = readRegister;
+ 645              		.loc 1 213 2 is_stmt 1 view .LVU144
+ 646              		.loc 1 213 38 is_stmt 0 view .LVU145
+ 647 0116 1E4A     		ldr	r2, .L44+56
+ 648 0118 C3F8C020 		str	r2, [r3, #192]
+ 214:boards/TMC6100_eval.c **** 	Evalboards.ch2.periodicJob          = periodicJob;
+ 649              		.loc 1 214 2 is_stmt 1 view .LVU146
+ 650              		.loc 1 214 38 is_stmt 0 view .LVU147
+ 651 011c 1D4A     		ldr	r2, .L44+60
+ 652 011e C3F8D020 		str	r2, [r3, #208]
+ 215:boards/TMC6100_eval.c **** 	Evalboards.ch2.userFunction         = userFunction;
+ 653              		.loc 1 215 2 is_stmt 1 view .LVU148
+ 654              		.loc 1 215 38 is_stmt 0 view .LVU149
+ 655 0122 1D4A     		ldr	r2, .L44+64
+ 656 0124 C3F8CC20 		str	r2, [r3, #204]
+ 216:boards/TMC6100_eval.c **** 	Evalboards.ch2.getMeasuredSpeed     = getMeasuredSpeed;
+ 657              		.loc 1 216 2 is_stmt 1 view .LVU150
+ 658              		.loc 1 216 38 is_stmt 0 view .LVU151
+ 659 0128 1C4A     		ldr	r2, .L44+68
+ 660 012a C3F8C820 		str	r2, [r3, #200]
+ 217:boards/TMC6100_eval.c **** 	Evalboards.ch2.enableDriver         = enableDriver;
+ 661              		.loc 1 217 2 is_stmt 1 view .LVU152
+ 662              		.loc 1 217 38 is_stmt 0 view .LVU153
+ 663 012e 1C4A     		ldr	r2, .L44+72
+ 664 0130 C3F8DC20 		str	r2, [r3, #220]
+ 218:boards/TMC6100_eval.c **** 	Evalboards.ch2.checkErrors          = checkErrors;
+ 665              		.loc 1 218 2 is_stmt 1 view .LVU154
+ 666              		.loc 1 218 38 is_stmt 0 view .LVU155
+ 667 0134 1B4A     		ldr	r2, .L44+76
+ 668 0136 C3F8D820 		str	r2, [r3, #216]
+ 219:boards/TMC6100_eval.c **** 	Evalboards.ch2.numberOfMotors       = TMC6100_MOTORS;
+ 669              		.loc 1 219 2 is_stmt 1 view .LVU156
+ 670              		.loc 1 219 38 is_stmt 0 view .LVU157
+ 671 013a 83F88C10 		strb	r1, [r3, #140]
+ 220:boards/TMC6100_eval.c **** 	Evalboards.ch2.VMMin                = VM_MIN;
+ 672              		.loc 1 220 2 is_stmt 1 view .LVU158
+ 221:boards/TMC6100_eval.c **** 	Evalboards.ch2.VMMax                = VM_MAX;
+ 673              		.loc 1 221 38 is_stmt 0 view .LVU159
+ 674 013e 40F22622 		movw	r2, #550
+ 675 0142 3221     		movs	r1, #50
+ 676 0144 C3E92121 		strd	r2, r1, [r3, #132]
+ 222:boards/TMC6100_eval.c **** 	Evalboards.ch2.deInit               = deInit;
+ 677              		.loc 1 222 2 is_stmt 1 view .LVU160
+ 678              		.loc 1 222 38 is_stmt 0 view .LVU161
+ 679 0148 174A     		ldr	r2, .L44+80
+ 680 014a C3F8D420 		str	r2, [r3, #212]
+ 223:boards/TMC6100_eval.c **** 
+ 224:boards/TMC6100_eval.c **** 	// set default PWM configuration for evaluation board use with TMC467x-EVAL
+ 225:boards/TMC6100_eval.c **** 	tmc6100_writeInt(TMC6100_DEFAULT_MOTOR, TMC6100_GCONF, 0x40);
+ 681              		.loc 1 225 2 is_stmt 1 view .LVU162
+ 682 014e 0021     		movs	r1, #0
+ 683 0150 4022     		movs	r2, #64
+ 684 0152 0846     		mov	r0, r1
+ 685 0154 FFF7FEBF 		b	tmc6100_writeInt
+ 686              	.LVL30:
+ 687              	.L45:
+ 688              		.align	2
+ 689              	.L44:
+ 690 0158 00000000 		.word	HAL
+ 691 015c 00000000 		.word	TMC6100_SPIChannel
+ 692 0160 00000000 		.word	Evalboards
+ 693 0164 00000000 		.word	reset
+ 694 0168 00000000 		.word	restore
+ 695 016c 00000000 		.word	rotate
+ 696 0170 00000000 		.word	right
+ 697 0174 00000000 		.word	left
+ 698 0178 00000000 		.word	stop
+ 699 017c 00000000 		.word	GAP
+ 700 0180 00000000 		.word	SAP
+ 701 0184 00000000 		.word	moveTo
+ 702 0188 00000000 		.word	moveBy
+ 703 018c 00000000 		.word	writeRegister
+ 704 0190 00000000 		.word	readRegister
+ 705 0194 00000000 		.word	periodicJob
+ 706 0198 00000000 		.word	userFunction
+ 707 019c 00000000 		.word	getMeasuredSpeed
+ 708 01a0 00000000 		.word	enableDriver
+ 709 01a4 00000000 		.word	checkErrors
+ 710 01a8 00000000 		.word	deInit
+ 711              		.cfi_endproc
+ 712              	.LFE21:
+ 714              		.comm	TMC6100_SPIChannel,4,4
+ 715              		.comm	TMCMotionController,532,4
+ 716              		.comm	TMCDriver,532,4
+ 717              		.comm	Evalboards,244,4
+ 718              		.comm	VitalSignsMonitor,20,4
+ 719              		.comm	hwid,1,1
+ 720              		.comm	HAL,48,4
+ 721              		.comm	UART,40,4
+ 722              		.comm	Timer,16,4
+ 723              		.comm	WLAN,36,4
+ 724              		.comm	RS232,36,4
+ 725              		.comm	LEDs,28,4
+ 726              		.comm	USB,36,4
+ 727              		.comm	uart0_interrupt,1,1
+ 728              		.comm	ADCs,32,4
+ 729              		.comm	SPI,44,4
+ 730              		.comm	IOMap,2088,4
+ 731              		.comm	IOs,52,4
+ 732              		.comm	Cpu,8,4
+ 733              		.bss
+ 734              		.align	1
+ 737              	ADCValue:
+ 738 0000 00000000 		.space	12
+ 738      00000000 
+ 738      00000000 
+ 739              		.text
+ 740              	.Letext0:
+ 741              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 742              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 743              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 744              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 745              		.file 6 "TMC-API/tmc/helpers/Config.h"
+ 746              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 747              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 748              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 749              		.file 10 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\in
+ 750              		.file 11 "TMC-API/tmc/helpers/API_Header.h"
+ 751              		.file 12 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 752              		.file 13 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 753              		.file 14 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 754              		.file 15 "./hal/IOs.h"
+ 755              		.file 16 "./hal/IOMap.h"
+ 756              		.file 17 "./hal/SPI.h"
+ 757              		.file 18 "./hal/ADCs.h"
+ 758              		.file 19 "./hal/RXTX.h"
+ 759              		.file 20 "./hal/USB.h"
+ 760              		.file 21 "./hal/LEDs.h"
+ 761              		.file 22 "./hal/RS232.h"
+ 762              		.file 23 "./hal/WLAN.h"
+ 763              		.file 24 "./hal/Timer.h"
+ 764              		.file 25 "./hal/UART.h"
+ 765              		.file 26 "./hal/HAL.h"
+ 766              		.file 27 "./tmc/VitalSignsMonitor.h"
+ 767              		.file 28 "./boards/Board.h"
+ 768              		.file 29 "./boards/TMCDriver.h"
+ 769              		.file 30 "./boards/TMCMotionController.h"
+ 770              		.file 31 "TMC-API/tmc/ic/TMC6100/TMC6100.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 TMC6100_eval.c
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:22     .text:00000000 rotate
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:51     .text:0000000a right
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:86     .text:00000014 stop
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:121    .text:0000001e moveBy
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:156    .text:00000028 SAP
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:193    .text:00000032 GAP
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:230    .text:0000003c getMeasuredSpeed
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:258    .text:00000046 periodicJob
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:278    .text:00000048 checkErrors
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:297    .text:00000054 $d
+                            *COM*:000000f4 Evalboards
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:301    .text:00000058 $t
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:307    .text:00000058 userFunction
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:333    .text:0000005c deInit
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:351    .text:0000005e enableDriver
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:371    .text:00000060 writeRegister
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:396    .text:00000066 reset
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:428    .text:00000076 restore
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:444    .text:00000078 readRegister
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:481    .text:00000086 moveTo
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:501    .text:00000090 left
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:522    .text:0000009a tmc6100_readwriteByte
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:555    .text:000000b0 $d
+                            *COM*:00000004 TMC6100_SPIChannel
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:559    .text:000000b4 $t
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:566    .text:000000b4 TMC6100_init
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:690    .text:00000158 $d
+                            *COM*:00000030 HAL
+                            *COM*:00000214 TMCMotionController
+                            *COM*:00000214 TMCDriver
+                            *COM*:00000014 VitalSignsMonitor
+                            *COM*:00000001 hwid
+                            *COM*:00000028 UART
+                            *COM*:00000010 Timer
+                            *COM*:00000024 WLAN
+                            *COM*:00000024 RS232
+                            *COM*:0000001c LEDs
+                            *COM*:00000024 USB
+                            *COM*:00000001 uart0_interrupt
+                            *COM*:00000020 ADCs
+                            *COM*:0000002c SPI
+                            *COM*:00000828 IOMap
+                            *COM*:00000034 IOs
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:734    .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccDJQOUT.s:737    .bss:00000000 ADCValue
+
+UNDEFINED SYMBOLS
+tmc6100_writeInt
+tmc6100_readInt

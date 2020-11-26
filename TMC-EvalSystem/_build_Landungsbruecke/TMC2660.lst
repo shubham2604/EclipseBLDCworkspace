@@ -1,0 +1,804 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"TMC2660.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.global	tmc2660_initConfig
+  17              		.arch armv7e-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	tmc2660_initConfig:
+  24              	.LVL0:
+  25              	.LFB2:
+  26              		.file 1 "TMC-API/tmc/ic/TMC2660/TMC2660.c"
+   1:TMC-API/tmc/ic/TMC2660/TMC2660.c **** /*
+   2:TMC-API/tmc/ic/TMC2660/TMC2660.c ****  * TMC2660.c
+   3:TMC-API/tmc/ic/TMC2660/TMC2660.c ****  *
+   4:TMC-API/tmc/ic/TMC2660/TMC2660.c ****  *  Created on: 11.07.2017
+   5:TMC-API/tmc/ic/TMC2660/TMC2660.c ****  *      Author: LK
+   6:TMC-API/tmc/ic/TMC2660/TMC2660.c ****  */
+   7:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+   8:TMC-API/tmc/ic/TMC2660/TMC2660.c **** #include "TMC2660.h"
+   9:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+  10:TMC-API/tmc/ic/TMC2660/TMC2660.c **** const uint8_t tmc2660_defaultRegisterAccess[TMC2660_REGISTER_COUNT] =
+  11:TMC-API/tmc/ic/TMC2660/TMC2660.c **** {
+  12:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	TMC_ACCESS_WRITE,  // 0: DRVCTRL
+  13:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	TMC_ACCESS_NONE,   // 1: UNUSED
+  14:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	TMC_ACCESS_NONE,   // 2: UNUSED
+  15:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	TMC_ACCESS_NONE,   // 3: UNUSED
+  16:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	TMC_ACCESS_WRITE,  // 4: CHOPCONF
+  17:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	TMC_ACCESS_WRITE,  // 5: SMARTEN
+  18:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	TMC_ACCESS_WRITE,  // 6: SGCSCONF
+  19:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	TMC_ACCESS_WRITE   // 7: DRVCONF
+  20:TMC-API/tmc/ic/TMC2660/TMC2660.c **** };
+  21:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+  22:TMC-API/tmc/ic/TMC2660/TMC2660.c **** const int32_t tmc2660_defaultRegisterResetState[TMC2660_REGISTER_COUNT] =
+  23:TMC-API/tmc/ic/TMC2660/TMC2660.c **** {
+  24:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	0x00000000,  // 0: DRVCTRL
+  25:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	0x00000000,  // 1: UNUSED
+  26:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	0x00000000,  // 2: UNUSED
+  27:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	0x00000000,  // 3: UNUSED
+  28:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	0x00091935,  // 4: CHOPCONF
+  29:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	0x000A0000,  // 5: SMARTEN
+  30:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	0x000D0505,  // 6: SGCSCONF
+  31:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	0x000EF040   // 7: DRVCONF
+  32:TMC-API/tmc/ic/TMC2660/TMC2660.c **** };
+  33:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+  34:TMC-API/tmc/ic/TMC2660/TMC2660.c **** // => SPI wrapper
+  35:TMC-API/tmc/ic/TMC2660/TMC2660.c **** extern void tmc2660_writeInt(uint8_t motor, uint8_t address, int value);
+  36:TMC-API/tmc/ic/TMC2660/TMC2660.c **** extern uint32_t tmc2660_readInt(uint8_t motor, uint8_t address);
+  37:TMC-API/tmc/ic/TMC2660/TMC2660.c **** extern void tmc2660_readWrite(uint8_t motor, uint32_t value);
+  38:TMC-API/tmc/ic/TMC2660/TMC2660.c **** //extern void tmc2660_setField(uint8_t motor, uint8_t address, uint32_t clearMask, uint32_t field);
+  39:TMC-API/tmc/ic/TMC2660/TMC2660.c **** // <= SPI wrapper
+  40:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+  41:TMC-API/tmc/ic/TMC2660/TMC2660.c **** static void standStillCurrentLimitation(TMC2660TypeDef *TMC2660)
+  42:TMC-API/tmc/ic/TMC2660/TMC2660.c **** { // mark if current should be reduced in stand still if too high
+  43:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	static uint32_t errorTimer = 0;
+  44:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+  45:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	// check the standstill flag
+  46:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	if(TMC2660_GET_STST(tmc2660_readInt(0, TMC2660_RESPONSE_LATEST)))
+  47:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	{
+  48:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 		// check if current reduction is neccessary
+  49:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 		if(TMC2660->runCurrentScale > TMC2660->standStillCurrentScale)
+  50:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 		{
+  51:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 			TMC2660->isStandStillOverCurrent = 1;
+  52:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+  53:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 			// count timeout
+  54:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 			if(errorTimer++ > TMC2660->standStillTimeout/10)
+  55:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 			{
+  56:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 				// set current limitation flag
+  57:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 				TMC2660->isStandStillCurrentLimit = 1;
+  58:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 				errorTimer = 0;
+  59:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 			}
+  60:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 			return;
+  61:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 		}
+  62:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	}
+  63:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+  64:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	// No standstill or overcurrent -> reset flags & error timer
+  65:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	TMC2660->isStandStillOverCurrent  = 0;
+  66:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	TMC2660->isStandStillCurrentLimit = 0;
+  67:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	errorTimer = 0;
+  68:TMC-API/tmc/ic/TMC2660/TMC2660.c **** }
+  69:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+  70:TMC-API/tmc/ic/TMC2660/TMC2660.c **** static void continousSync(ConfigurationTypeDef *TMC2660_config)
+  71:TMC-API/tmc/ic/TMC2660/TMC2660.c **** { // refreshes settings to prevent chip from loosing settings on brownout
+  72:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	static uint8_t write  = 0;
+  73:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	static uint8_t read   = 0;
+  74:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	static uint8_t rdsel  = 0;
+  75:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+  76:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	// rotational reading all replys to keep values up to date
+  77:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	uint32_t value, drvConf;
+  78:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+  79:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	// additional reading to keep all replies up to date
+  80:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	value = drvConf = tmc2660_readInt(0, TMC2660_WRITE_BIT | TMC2660_DRVCONF);  // buffer value amd  d
+  81:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	value &= ~TMC2660_SET_RDSEL(-1);                                        // clear RDSEL bits
+  82:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	value |= TMC2660_SET_RDSEL(rdsel % 3);                                  // clear set rdsel
+  83:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660_readWrite(0, value);
+  84:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660_readWrite(0, drvConf);
+  85:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+  86:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	// determine next read address
+  87:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	read = (read + 1) % 3;
+  88:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+  89:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	// write settings from shadow register to chip.
+  90:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	//readWrite(TMC2660_config->shadowRegister[TMC2660_WRITE | write]);
+  91:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660_readWrite(0, TMC2660_config->shadowRegister[TMC2660_WRITE_BIT | write]);
+  92:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+  93:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	// determine next write address - skip unused addresses
+  94:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	write = (write == TMC2660_DRVCTRL) ? TMC2660_CHOPCONF : ((write + 1) % TMC2660_REGISTER_COUNT);
+  95:TMC-API/tmc/ic/TMC2660/TMC2660.c **** }
+  96:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+  97:TMC-API/tmc/ic/TMC2660/TMC2660.c **** void tmc2660_initConfig(TMC2660TypeDef *tmc2660)
+  98:TMC-API/tmc/ic/TMC2660/TMC2660.c **** {
+  27              		.loc 1 98 1 view -0
+  28              		.cfi_startproc
+  29              		@ args = 0, pretend = 0, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  99:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->velocity                  = 0;
+  31              		.loc 1 99 2 view .LVU1
+ 100:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->oldTick                   = 0;
+ 101:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->oldX                      = 0;
+ 102:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->continuousModeEnable      = 0;
+ 103:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->isStandStillCurrentLimit  = 0;
+ 104:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->isStandStillOverCurrent   = 0;
+ 105:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->runCurrentScale           = 5;
+ 106:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->coolStepActiveValue       = 0;
+ 107:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->coolStepInactiveValue     = 0;
+ 108:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->coolStepThreshold         = 0;
+ 109:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->standStillCurrentScale    = 5;
+  32              		.loc 1 109 37 is_stmt 0 view .LVU2
+  33 0000 0522     		movs	r2, #5
+  98:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->velocity                  = 0;
+  34              		.loc 1 98 1 view .LVU3
+  35 0002 30B5     		push	{r4, r5, lr}
+  36              	.LCFI0:
+  37              		.cfi_def_cfa_offset 12
+  38              		.cfi_offset 4, -12
+  39              		.cfi_offset 5, -8
+  40              		.cfi_offset 14, -4
+  41              		.loc 1 109 37 view .LVU4
+  42 0004 0270     		strb	r2, [r0]
+ 104:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->runCurrentScale           = 5;
+  43              		.loc 1 104 37 view .LVU5
+  44 0006 4FF0A062 		mov	r2, #83886080
+  99:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->oldTick                   = 0;
+  45              		.loc 1 99 37 view .LVU6
+  46 000a 0023     		movs	r3, #0
+ 104:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->runCurrentScale           = 5;
+  47              		.loc 1 104 37 view .LVU7
+  48 000c 8260     		str	r2, [r0, #8]
+  49 000e 0C4A     		ldr	r2, .L4
+  99:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->oldTick                   = 0;
+  50              		.loc 1 99 37 view .LVU8
+  51 0010 4361     		str	r3, [r0, #20]
+ 100:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->oldX                      = 0;
+  52              		.loc 1 100 2 is_stmt 1 view .LVU9
+ 108:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->standStillCurrentScale    = 5;
+  53              		.loc 1 108 37 is_stmt 0 view .LVU10
+  54 0012 0361     		str	r3, [r0, #16]
+ 110:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->standStillTimeout         = 0;
+  55              		.loc 1 110 37 view .LVU11
+  56 0014 4360     		str	r3, [r0, #4]
+ 107:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->coolStepThreshold         = 0;
+  57              		.loc 1 107 37 view .LVU12
+  58 0016 8381     		strh	r3, [r0, #12]	@ movhi
+ 101:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->continuousModeEnable      = 0;
+  59              		.loc 1 101 37 view .LVU13
+  60 0018 C0E90633 		strd	r3, r3, [r0, #24]
+ 102:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->isStandStillCurrentLimit  = 0;
+  61              		.loc 1 102 2 is_stmt 1 view .LVU14
+ 103:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->isStandStillOverCurrent   = 0;
+  62              		.loc 1 103 2 view .LVU15
+ 104:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->runCurrentScale           = 5;
+  63              		.loc 1 104 2 view .LVU16
+ 105:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->coolStepActiveValue       = 0;
+  64              		.loc 1 105 2 view .LVU17
+ 106:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->coolStepInactiveValue     = 0;
+  65              		.loc 1 106 2 view .LVU18
+ 107:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->coolStepThreshold         = 0;
+  66              		.loc 1 107 2 view .LVU19
+ 108:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->standStillCurrentScale    = 5;
+  67              		.loc 1 108 2 view .LVU20
+ 109:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660->standStillTimeout         = 0;
+  68              		.loc 1 109 2 view .LVU21
+  69              		.loc 1 110 2 view .LVU22
+ 111:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 112:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	int i;
+  70              		.loc 1 112 2 view .LVU23
+ 113:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	for(i = 0; i < TMC2660_REGISTER_COUNT; i++)
+  71              		.loc 1 113 2 view .LVU24
+  72              	.LVL1:
+  73              		.loc 1 113 13 view .LVU25
+  74 001c 00F12003 		add	r3, r0, #32
+  75 0020 2830     		adds	r0, r0, #40
+  76              	.LVL2:
+  77              		.loc 1 113 13 is_stmt 0 view .LVU26
+  78 0022 02F10801 		add	r1, r2, #8
+  79 0026 0446     		mov	r4, r0
+  80              	.LVL3:
+  81              	.L2:
+ 114:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	{
+ 115:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 		tmc2660->registerAccess[i]      = tmc2660_defaultRegisterAccess[i];
+  82              		.loc 1 115 3 is_stmt 1 discriminator 3 view .LVU27
+  83              		.loc 1 115 66 is_stmt 0 discriminator 3 view .LVU28
+  84 0028 12F8015B 		ldrb	r5, [r2], #1	@ zero_extendqisi2
+  85              	.LVL4:
+  86              		.loc 1 115 35 discriminator 3 view .LVU29
+  87 002c 03F8015B 		strb	r5, [r3], #1
+ 116:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 		tmc2660->registerResetState[i]  = tmc2660_defaultRegisterResetState[i];
+  88              		.loc 1 116 3 is_stmt 1 discriminator 3 view .LVU30
+  89              		.loc 1 116 70 is_stmt 0 discriminator 3 view .LVU31
+  90 0030 51F8045B 		ldr	r5, [r1], #4
+  91              		.loc 1 116 35 discriminator 3 view .LVU32
+  92 0034 40F8045B 		str	r5, [r0], #4
+ 113:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	for(i = 0; i < TMC2660_REGISTER_COUNT; i++)
+  93              		.loc 1 113 41 is_stmt 1 discriminator 3 view .LVU33
+  94              	.LVL5:
+ 113:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	for(i = 0; i < TMC2660_REGISTER_COUNT; i++)
+  95              		.loc 1 113 13 discriminator 3 view .LVU34
+ 113:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	for(i = 0; i < TMC2660_REGISTER_COUNT; i++)
+  96              		.loc 1 113 2 is_stmt 0 discriminator 3 view .LVU35
+  97 0038 A342     		cmp	r3, r4
+  98 003a F5D1     		bne	.L2
+ 117:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	}
+ 118:TMC-API/tmc/ic/TMC2660/TMC2660.c **** }
+  99              		.loc 1 118 1 view .LVU36
+ 100 003c 30BD     		pop	{r4, r5, pc}
+ 101              	.LVL6:
+ 102              	.L5:
+ 103              		.loc 1 118 1 view .LVU37
+ 104 003e 00BF     		.align	2
+ 105              	.L4:
+ 106 0040 00000000 		.word	.LANCHOR0
+ 107              		.cfi_endproc
+ 108              	.LFE2:
+ 110              		.align	1
+ 111              		.global	tmc2660_writeConfiguration
+ 112              		.syntax unified
+ 113              		.thumb
+ 114              		.thumb_func
+ 115              		.fpu softvfp
+ 117              	tmc2660_writeConfiguration:
+ 118              	.LVL7:
+ 119              	.LFB3:
+ 119:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 120:TMC-API/tmc/ic/TMC2660/TMC2660.c **** // Currently unused, we write the whole configuration as part of the reset/restore functions
+ 121:TMC-API/tmc/ic/TMC2660/TMC2660.c **** void tmc2660_writeConfiguration(TMC2660TypeDef *tmc2660, ConfigurationTypeDef *TMC2660_config)
+ 122:TMC-API/tmc/ic/TMC2660/TMC2660.c **** {
+ 120              		.loc 1 122 1 is_stmt 1 view -0
+ 121              		.cfi_startproc
+ 122              		@ args = 0, pretend = 0, frame = 0
+ 123              		@ frame_needed = 0, uses_anonymous_args = 0
+ 124              		@ link register save eliminated.
+ 123:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	// write one writeable register at a time - backwards to hit DRVCONF before DRVCTRL
+ 124:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	UNUSED(tmc2660);
+ 125              		.loc 1 124 2 view .LVU39
+ 125:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	UNUSED(TMC2660_config);
+ 126              		.loc 1 125 2 view .LVU40
+ 126:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 127:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	//uint8_t *ptr = &TMC2660_config->configIndex;
+ 128:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	//const int32_t *settings = (TMC2660_config->state == CONFIG_RESTORE) ? TMC2660_config->shadowRegi
+ 129:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 130:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	//while((*ptr >= 0) && !IS_WRITEABLE(tmc2660->registerAccess[*ptr]))
+ 131:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 		//(*ptr)--;
+ 132:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 133:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	//if(*ptr >= 0)
+ 134:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	//{
+ 135:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 		//tmc2660_writeInt(0, *ptr, settings[*ptr]);
+ 136:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 		//(*ptr)--;
+ 137:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	//}
+ 138:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	//else
+ 139:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	//{
+ 140:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 		//TMC2660_config->state = CONFIG_READY;
+ 141:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	//}
+ 142:TMC-API/tmc/ic/TMC2660/TMC2660.c **** }
+ 127              		.loc 1 142 1 is_stmt 0 view .LVU41
+ 128 0044 7047     		bx	lr
+ 129              		.cfi_endproc
+ 130              	.LFE3:
+ 132              		.align	1
+ 133              		.global	tmc2660_periodicJob
+ 134              		.syntax unified
+ 135              		.thumb
+ 136              		.thumb_func
+ 137              		.fpu softvfp
+ 139              	tmc2660_periodicJob:
+ 140              	.LVL8:
+ 141              	.LFB4:
+ 143:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 144:TMC-API/tmc/ic/TMC2660/TMC2660.c **** void tmc2660_periodicJob(uint8_t motor, uint32_t tick, TMC2660TypeDef *tmc2660, ConfigurationTypeDe
+ 145:TMC-API/tmc/ic/TMC2660/TMC2660.c **** {
+ 142              		.loc 1 145 1 is_stmt 1 view -0
+ 143              		.cfi_startproc
+ 144              		@ args = 0, pretend = 0, frame = 0
+ 145              		@ frame_needed = 0, uses_anonymous_args = 0
+ 146:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	UNUSED(motor);
+ 146              		.loc 1 146 2 view .LVU43
+ 147:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 148:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	if(tick - tmc2660->oldTick >= 10)
+ 147              		.loc 1 148 2 view .LVU44
+ 145:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	UNUSED(motor);
+ 148              		.loc 1 145 1 is_stmt 0 view .LVU45
+ 149 0046 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 150              	.LCFI1:
+ 151              		.cfi_def_cfa_offset 24
+ 152              		.cfi_offset 3, -24
+ 153              		.cfi_offset 4, -20
+ 154              		.cfi_offset 5, -16
+ 155              		.cfi_offset 6, -12
+ 156              		.cfi_offset 7, -8
+ 157              		.cfi_offset 14, -4
+ 145:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	UNUSED(motor);
+ 158              		.loc 1 145 1 view .LVU46
+ 159 0048 1D46     		mov	r5, r3
+ 160              		.loc 1 148 10 view .LVU47
+ 161 004a D369     		ldr	r3, [r2, #28]
+ 162              	.LVL9:
+ 163              		.loc 1 148 10 view .LVU48
+ 164 004c CB1A     		subs	r3, r1, r3
+ 165              		.loc 1 148 4 view .LVU49
+ 166 004e 092B     		cmp	r3, #9
+ 145:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	UNUSED(motor);
+ 167              		.loc 1 145 1 view .LVU50
+ 168 0050 0E46     		mov	r6, r1
+ 169 0052 1446     		mov	r4, r2
+ 170              		.loc 1 148 4 view .LVU51
+ 171 0054 1AD9     		bls	.L8
+ 149:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	{
+ 150:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 		standStillCurrentLimitation(tmc2660);
+ 172              		.loc 1 150 3 is_stmt 1 view .LVU52
+ 173              	.LVL10:
+ 174              	.LBB6:
+ 175              	.LBI6:
+  41:TMC-API/tmc/ic/TMC2660/TMC2660.c **** { // mark if current should be reduced in stand still if too high
+ 176              		.loc 1 41 13 view .LVU53
+ 177              	.LBB7:
+  43:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 178              		.loc 1 43 2 view .LVU54
+  46:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	{
+ 179              		.loc 1 46 2 view .LVU55
+  46:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	{
+ 180              		.loc 1 46 5 is_stmt 0 view .LVU56
+ 181 0056 0321     		movs	r1, #3
+ 182              	.LVL11:
+  46:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	{
+ 183              		.loc 1 46 5 view .LVU57
+ 184 0058 0020     		movs	r0, #0
+ 185              	.LVL12:
+  46:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	{
+ 186              		.loc 1 46 5 view .LVU58
+ 187 005a FFF7FEFF 		bl	tmc2660_readInt
+ 188              	.LVL13:
+  46:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	{
+ 189              		.loc 1 46 4 view .LVU59
+ 190 005e 10F0800F 		tst	r0, #128
+ 191 0062 224B     		ldr	r3, .L21
+ 192 0064 3CD0     		beq	.L9
+  49:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 		{
+ 193              		.loc 1 49 3 is_stmt 1 view .LVU60
+  49:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 		{
+ 194              		.loc 1 49 5 is_stmt 0 view .LVU61
+ 195 0066 E17A     		ldrb	r1, [r4, #11]	@ zero_extendqisi2
+ 196 0068 2278     		ldrb	r2, [r4]	@ zero_extendqisi2
+ 197 006a 9142     		cmp	r1, r2
+ 198 006c 38D9     		bls	.L9
+  51:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 199              		.loc 1 51 4 is_stmt 1 view .LVU62
+  54:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 			{
+ 200              		.loc 1 54 17 is_stmt 0 view .LVU63
+ 201 006e 1868     		ldr	r0, [r3]
+  51:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 202              		.loc 1 51 37 view .LVU64
+ 203 0070 0121     		movs	r1, #1
+  54:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 			{
+ 204              		.loc 1 54 17 view .LVU65
+ 205 0072 4218     		adds	r2, r0, r1
+ 206 0074 1A60     		str	r2, [r3]
+  54:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 			{
+ 207              		.loc 1 54 48 view .LVU66
+ 208 0076 0A27     		movs	r7, #10
+ 209 0078 6268     		ldr	r2, [r4, #4]
+ 210 007a B2FBF7F2 		udiv	r2, r2, r7
+  54:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 			{
+ 211              		.loc 1 54 6 view .LVU67
+ 212 007e 9042     		cmp	r0, r2
+  51:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 213              		.loc 1 51 37 view .LVU68
+ 214 0080 2172     		strb	r1, [r4, #8]
+  54:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 			{
+ 215              		.loc 1 54 4 is_stmt 1 view .LVU69
+  54:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 			{
+ 216              		.loc 1 54 6 is_stmt 0 view .LVU70
+ 217 0082 02D9     		bls	.L10
+  57:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 				errorTimer = 0;
+ 218              		.loc 1 57 5 is_stmt 1 view .LVU71
+  57:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 				errorTimer = 0;
+ 219              		.loc 1 57 39 is_stmt 0 view .LVU72
+ 220 0084 6172     		strb	r1, [r4, #9]
+  58:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 			}
+ 221              		.loc 1 58 5 is_stmt 1 view .LVU73
+  58:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 			}
+ 222              		.loc 1 58 16 is_stmt 0 view .LVU74
+ 223 0086 0022     		movs	r2, #0
+ 224              	.L20:
+  67:TMC-API/tmc/ic/TMC2660/TMC2660.c **** }
+ 225              		.loc 1 67 2 is_stmt 1 view .LVU75
+  67:TMC-API/tmc/ic/TMC2660/TMC2660.c **** }
+ 226              		.loc 1 67 13 is_stmt 0 view .LVU76
+ 227 0088 1A60     		str	r2, [r3]
+ 228              	.L10:
+ 229              	.LVL14:
+  67:TMC-API/tmc/ic/TMC2660/TMC2660.c **** }
+ 230              		.loc 1 67 13 view .LVU77
+ 231              	.LBE7:
+ 232              	.LBE6:
+ 151:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 		tmc2660->oldTick = tick;
+ 233              		.loc 1 151 3 is_stmt 1 view .LVU78
+ 234              		.loc 1 151 20 is_stmt 0 view .LVU79
+ 235 008a E661     		str	r6, [r4, #28]
+ 236              	.L8:
+ 152:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	}
+ 153:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 154:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	if(tmc2660->continuousModeEnable)
+ 237              		.loc 1 154 2 is_stmt 1 view .LVU80
+ 238              		.loc 1 154 4 is_stmt 0 view .LVU81
+ 239 008c A37A     		ldrb	r3, [r4, #10]	@ zero_extendqisi2
+ 240 008e 33B3     		cbz	r3, .L7
+ 155:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	{ // continuously write settings to chip and rotate through all reply types to keep data up to dat
+ 156:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 		continousSync(TMC2660_config);
+ 241              		.loc 1 156 3 is_stmt 1 view .LVU82
+ 242              	.LVL15:
+ 243              	.LBB9:
+ 244              	.LBI9:
+  70:TMC-API/tmc/ic/TMC2660/TMC2660.c **** { // refreshes settings to prevent chip from loosing settings on brownout
+ 245              		.loc 1 70 13 view .LVU83
+ 246              	.LBB10:
+  72:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	static uint8_t read   = 0;
+ 247              		.loc 1 72 2 view .LVU84
+  73:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	static uint8_t rdsel  = 0;
+ 248              		.loc 1 73 2 view .LVU85
+  74:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 249              		.loc 1 74 2 view .LVU86
+  77:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 250              		.loc 1 77 2 view .LVU87
+  80:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	value &= ~TMC2660_SET_RDSEL(-1);                                        // clear RDSEL bits
+ 251              		.loc 1 80 2 view .LVU88
+  80:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	value &= ~TMC2660_SET_RDSEL(-1);                                        // clear RDSEL bits
+ 252              		.loc 1 80 20 is_stmt 0 view .LVU89
+ 253 0090 0F21     		movs	r1, #15
+ 254 0092 0020     		movs	r0, #0
+ 255 0094 FFF7FEFF 		bl	tmc2660_readInt
+ 256              	.LVL16:
+ 257 0098 0446     		mov	r4, r0
+ 258              	.LVL17:
+  81:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	value |= TMC2660_SET_RDSEL(rdsel % 3);                                  // clear set rdsel
+ 259              		.loc 1 81 2 is_stmt 1 view .LVU90
+  82:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660_readWrite(0, value);
+ 260              		.loc 1 82 2 view .LVU91
+  83:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660_readWrite(0, drvConf);
+ 261              		.loc 1 83 2 view .LVU92
+ 262 009a 20F03001 		bic	r1, r0, #48
+ 263              	.LVL18:
+  83:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660_readWrite(0, drvConf);
+ 264              		.loc 1 83 2 is_stmt 0 view .LVU93
+ 265 009e 0020     		movs	r0, #0
+ 266              	.LVL19:
+  83:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660_readWrite(0, drvConf);
+ 267              		.loc 1 83 2 view .LVU94
+ 268 00a0 FFF7FEFF 		bl	tmc2660_readWrite
+ 269              	.LVL20:
+  84:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 270              		.loc 1 84 2 is_stmt 1 view .LVU95
+ 271 00a4 2146     		mov	r1, r4
+  87:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 272              		.loc 1 87 7 is_stmt 0 view .LVU96
+ 273 00a6 114C     		ldr	r4, .L21
+ 274              	.LVL21:
+  84:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 275              		.loc 1 84 2 view .LVU97
+ 276 00a8 0020     		movs	r0, #0
+ 277 00aa FFF7FEFF 		bl	tmc2660_readWrite
+ 278              	.LVL22:
+  87:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 279              		.loc 1 87 2 is_stmt 1 view .LVU98
+  91:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 280              		.loc 1 91 72 is_stmt 0 view .LVU99
+ 281 00ae 6379     		ldrb	r3, [r4, #5]	@ zero_extendqisi2
+  87:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 282              		.loc 1 87 15 view .LVU100
+ 283 00b0 2279     		ldrb	r2, [r4, #4]	@ zero_extendqisi2
+  91:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 284              		.loc 1 91 72 view .LVU101
+ 285 00b2 43F00803 		orr	r3, r3, #8
+  91:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 286              		.loc 1 91 53 view .LVU102
+ 287 00b6 05EB8305 		add	r5, r5, r3, lsl #2
+ 288              	.LVL23:
+  87:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 289              		.loc 1 87 15 view .LVU103
+ 290 00ba 0132     		adds	r2, r2, #1
+  87:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 291              		.loc 1 87 20 view .LVU104
+ 292 00bc 0321     		movs	r1, #3
+ 293 00be B2FBF1F1 		udiv	r1, r2, r1
+ 294 00c2 01EB4101 		add	r1, r1, r1, lsl #1
+ 295 00c6 521A     		subs	r2, r2, r1
+  91:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 296              		.loc 1 91 2 view .LVU105
+ 297 00c8 0020     		movs	r0, #0
+ 298 00ca 6968     		ldr	r1, [r5, #4]
+  87:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 299              		.loc 1 87 7 view .LVU106
+ 300 00cc 2271     		strb	r2, [r4, #4]
+  91:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 301              		.loc 1 91 2 is_stmt 1 view .LVU107
+ 302 00ce FFF7FEFF 		bl	tmc2660_readWrite
+ 303              	.LVL24:
+  94:TMC-API/tmc/ic/TMC2660/TMC2660.c **** }
+ 304              		.loc 1 94 2 view .LVU108
+  94:TMC-API/tmc/ic/TMC2660/TMC2660.c **** }
+ 305              		.loc 1 94 17 is_stmt 0 view .LVU109
+ 306 00d2 6379     		ldrb	r3, [r4, #5]	@ zero_extendqisi2
+  94:TMC-API/tmc/ic/TMC2660/TMC2660.c **** }
+ 307              		.loc 1 94 8 view .LVU110
+ 308 00d4 3BB1     		cbz	r3, .L13
+  94:TMC-API/tmc/ic/TMC2660/TMC2660.c **** }
+ 309              		.loc 1 94 66 view .LVU111
+ 310 00d6 0133     		adds	r3, r3, #1
+  94:TMC-API/tmc/ic/TMC2660/TMC2660.c **** }
+ 311              		.loc 1 94 8 view .LVU112
+ 312 00d8 03F00703 		and	r3, r3, #7
+ 313              	.L12:
+  94:TMC-API/tmc/ic/TMC2660/TMC2660.c **** }
+ 314              		.loc 1 94 8 view .LVU113
+ 315 00dc 6371     		strb	r3, [r4, #5]
+ 316              	.LVL25:
+ 317              	.L7:
+  94:TMC-API/tmc/ic/TMC2660/TMC2660.c **** }
+ 318              		.loc 1 94 8 view .LVU114
+ 319              	.LBE10:
+ 320              	.LBE9:
+ 157:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	}
+ 158:TMC-API/tmc/ic/TMC2660/TMC2660.c **** }
+ 321              		.loc 1 158 1 view .LVU115
+ 322 00de F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 323              	.LVL26:
+ 324              	.L9:
+ 325              	.LBB12:
+ 326              	.LBB8:
+  65:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	TMC2660->isStandStillCurrentLimit = 0;
+ 327              		.loc 1 65 2 is_stmt 1 view .LVU116
+  66:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	errorTimer = 0;
+ 328              		.loc 1 66 2 view .LVU117
+  65:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	TMC2660->isStandStillCurrentLimit = 0;
+ 329              		.loc 1 65 36 is_stmt 0 view .LVU118
+ 330 00e0 0022     		movs	r2, #0
+ 331 00e2 2281     		strh	r2, [r4, #8]	@ movhi
+ 332 00e4 D0E7     		b	.L20
+ 333              	.LVL27:
+ 334              	.L13:
+  65:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	TMC2660->isStandStillCurrentLimit = 0;
+ 335              		.loc 1 65 36 view .LVU119
+ 336              	.LBE8:
+ 337              	.LBE12:
+ 338              	.LBB13:
+ 339              	.LBB11:
+  94:TMC-API/tmc/ic/TMC2660/TMC2660.c **** }
+ 340              		.loc 1 94 8 view .LVU120
+ 341 00e6 0423     		movs	r3, #4
+ 342 00e8 F8E7     		b	.L12
+ 343              	.L22:
+ 344 00ea 00BF     		.align	2
+ 345              	.L21:
+ 346 00ec 00000000 		.word	.LANCHOR1
+ 347              	.LBE11:
+ 348              	.LBE13:
+ 349              		.cfi_endproc
+ 350              	.LFE4:
+ 352              		.align	1
+ 353              		.global	tmc2660_reset
+ 354              		.syntax unified
+ 355              		.thumb
+ 356              		.thumb_func
+ 357              		.fpu softvfp
+ 359              	tmc2660_reset:
+ 360              	.LVL28:
+ 361              	.LFB5:
+ 159:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 160:TMC-API/tmc/ic/TMC2660/TMC2660.c **** uint8_t tmc2660_reset(TMC2660TypeDef *TMC2660, ConfigurationTypeDef *TMC2660_config)
+ 161:TMC-API/tmc/ic/TMC2660/TMC2660.c **** {
+ 362              		.loc 1 161 1 is_stmt 1 view -0
+ 363              		.cfi_startproc
+ 364              		@ args = 0, pretend = 0, frame = 0
+ 365              		@ frame_needed = 0, uses_anonymous_args = 0
+ 162:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	UNUSED(TMC2660_config);
+ 366              		.loc 1 162 2 view .LVU122
+ 163:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 164:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660_writeInt(0, TMC2660_DRVCONF,  TMC2660->registerResetState[TMC2660_DRVCONF]);
+ 367              		.loc 1 164 2 view .LVU123
+ 161:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	UNUSED(TMC2660_config);
+ 368              		.loc 1 161 1 is_stmt 0 view .LVU124
+ 369 00f0 10B5     		push	{r4, lr}
+ 370              	.LCFI2:
+ 371              		.cfi_def_cfa_offset 8
+ 372              		.cfi_offset 4, -8
+ 373              		.cfi_offset 14, -4
+ 374              		.loc 1 164 2 view .LVU125
+ 375 00f2 426C     		ldr	r2, [r0, #68]
+ 161:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	UNUSED(TMC2660_config);
+ 376              		.loc 1 161 1 view .LVU126
+ 377 00f4 0446     		mov	r4, r0
+ 378              		.loc 1 164 2 view .LVU127
+ 379 00f6 0721     		movs	r1, #7
+ 380              	.LVL29:
+ 381              		.loc 1 164 2 view .LVU128
+ 382 00f8 0020     		movs	r0, #0
+ 383              	.LVL30:
+ 384              		.loc 1 164 2 view .LVU129
+ 385 00fa FFF7FEFF 		bl	tmc2660_writeInt
+ 386              	.LVL31:
+ 165:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660_writeInt(0, TMC2660_DRVCTRL,  TMC2660->registerResetState[TMC2660_DRVCTRL]);
+ 387              		.loc 1 165 2 is_stmt 1 view .LVU130
+ 388 00fe 0021     		movs	r1, #0
+ 389 0100 A26A     		ldr	r2, [r4, #40]
+ 390 0102 0846     		mov	r0, r1
+ 391 0104 FFF7FEFF 		bl	tmc2660_writeInt
+ 392              	.LVL32:
+ 166:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660_writeInt(0, TMC2660_CHOPCONF, TMC2660->registerResetState[TMC2660_CHOPCONF]);
+ 393              		.loc 1 166 2 view .LVU131
+ 394 0108 A26B     		ldr	r2, [r4, #56]
+ 395 010a 0421     		movs	r1, #4
+ 396 010c 0020     		movs	r0, #0
+ 397 010e FFF7FEFF 		bl	tmc2660_writeInt
+ 398              	.LVL33:
+ 167:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660_writeInt(0, TMC2660_SMARTEN,  TMC2660->registerResetState[TMC2660_SMARTEN]);
+ 399              		.loc 1 167 2 view .LVU132
+ 400 0112 E26B     		ldr	r2, [r4, #60]
+ 401 0114 0521     		movs	r1, #5
+ 402 0116 0020     		movs	r0, #0
+ 403 0118 FFF7FEFF 		bl	tmc2660_writeInt
+ 404              	.LVL34:
+ 168:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660_writeInt(0, TMC2660_SGCSCONF, TMC2660->registerResetState[TMC2660_SGCSCONF]);
+ 405              		.loc 1 168 2 view .LVU133
+ 406 011c 226C     		ldr	r2, [r4, #64]
+ 407 011e 0621     		movs	r1, #6
+ 408 0120 0020     		movs	r0, #0
+ 409 0122 FFF7FEFF 		bl	tmc2660_writeInt
+ 410              	.LVL35:
+ 169:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 170:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	return 1;
+ 411              		.loc 1 170 2 view .LVU134
+ 171:TMC-API/tmc/ic/TMC2660/TMC2660.c **** }
+ 412              		.loc 1 171 1 is_stmt 0 view .LVU135
+ 413 0126 0120     		movs	r0, #1
+ 414 0128 10BD     		pop	{r4, pc}
+ 415              		.loc 1 171 1 view .LVU136
+ 416              		.cfi_endproc
+ 417              	.LFE5:
+ 419              		.align	1
+ 420              		.global	tmc2660_restore
+ 421              		.syntax unified
+ 422              		.thumb
+ 423              		.thumb_func
+ 424              		.fpu softvfp
+ 426              	tmc2660_restore:
+ 427              	.LVL36:
+ 428              	.LFB6:
+ 172:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 173:TMC-API/tmc/ic/TMC2660/TMC2660.c **** uint8_t tmc2660_restore(ConfigurationTypeDef *TMC2660_config)
+ 174:TMC-API/tmc/ic/TMC2660/TMC2660.c **** {
+ 429              		.loc 1 174 1 is_stmt 1 view -0
+ 430              		.cfi_startproc
+ 431              		@ args = 0, pretend = 0, frame = 0
+ 432              		@ frame_needed = 0, uses_anonymous_args = 0
+ 175:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660_writeInt(0, TMC2660_DRVCONF,  TMC2660_config->shadowRegister[TMC2660_DRVCONF | TMC2660_WRI
+ 433              		.loc 1 175 2 view .LVU138
+ 174:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660_writeInt(0, TMC2660_DRVCONF,  TMC2660_config->shadowRegister[TMC2660_DRVCONF | TMC2660_WRI
+ 434              		.loc 1 174 1 is_stmt 0 view .LVU139
+ 435 012a 10B5     		push	{r4, lr}
+ 436              	.LCFI3:
+ 437              		.cfi_def_cfa_offset 8
+ 438              		.cfi_offset 4, -8
+ 439              		.cfi_offset 14, -4
+ 440              		.loc 1 175 2 view .LVU140
+ 441 012c 026C     		ldr	r2, [r0, #64]
+ 174:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660_writeInt(0, TMC2660_DRVCONF,  TMC2660_config->shadowRegister[TMC2660_DRVCONF | TMC2660_WRI
+ 442              		.loc 1 174 1 view .LVU141
+ 443 012e 0446     		mov	r4, r0
+ 444              		.loc 1 175 2 view .LVU142
+ 445 0130 0721     		movs	r1, #7
+ 446 0132 0020     		movs	r0, #0
+ 447              	.LVL37:
+ 448              		.loc 1 175 2 view .LVU143
+ 449 0134 FFF7FEFF 		bl	tmc2660_writeInt
+ 450              	.LVL38:
+ 176:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660_writeInt(0, TMC2660_DRVCTRL,  TMC2660_config->shadowRegister[TMC2660_DRVCTRL | TMC2660_WRI
+ 451              		.loc 1 176 2 is_stmt 1 view .LVU144
+ 452 0138 0021     		movs	r1, #0
+ 453 013a 626A     		ldr	r2, [r4, #36]
+ 454 013c 0846     		mov	r0, r1
+ 455 013e FFF7FEFF 		bl	tmc2660_writeInt
+ 456              	.LVL39:
+ 177:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660_writeInt(0, TMC2660_CHOPCONF, TMC2660_config->shadowRegister[TMC2660_CHOPCONF | TMC2660_WR
+ 457              		.loc 1 177 2 view .LVU145
+ 458 0142 626B     		ldr	r2, [r4, #52]
+ 459 0144 0421     		movs	r1, #4
+ 460 0146 0020     		movs	r0, #0
+ 461 0148 FFF7FEFF 		bl	tmc2660_writeInt
+ 462              	.LVL40:
+ 178:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660_writeInt(0, TMC2660_SMARTEN,  TMC2660_config->shadowRegister[TMC2660_SMARTEN | TMC2660_WRI
+ 463              		.loc 1 178 2 view .LVU146
+ 464 014c A26B     		ldr	r2, [r4, #56]
+ 465 014e 0521     		movs	r1, #5
+ 466 0150 0020     		movs	r0, #0
+ 467 0152 FFF7FEFF 		bl	tmc2660_writeInt
+ 468              	.LVL41:
+ 179:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	tmc2660_writeInt(0, TMC2660_SGCSCONF, TMC2660_config->shadowRegister[TMC2660_SGCSCONF | TMC2660_WR
+ 469              		.loc 1 179 2 view .LVU147
+ 470 0156 E26B     		ldr	r2, [r4, #60]
+ 471 0158 0621     		movs	r1, #6
+ 472 015a 0020     		movs	r0, #0
+ 473 015c FFF7FEFF 		bl	tmc2660_writeInt
+ 474              	.LVL42:
+ 180:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 
+ 181:TMC-API/tmc/ic/TMC2660/TMC2660.c **** 	return 1;
+ 475              		.loc 1 181 2 view .LVU148
+ 182:TMC-API/tmc/ic/TMC2660/TMC2660.c **** }
+ 476              		.loc 1 182 1 is_stmt 0 view .LVU149
+ 477 0160 0120     		movs	r0, #1
+ 478 0162 10BD     		pop	{r4, pc}
+ 479              		.loc 1 182 1 view .LVU150
+ 480              		.cfi_endproc
+ 481              	.LFE6:
+ 483              		.global	tmc2660_defaultRegisterResetState
+ 484              		.global	tmc2660_defaultRegisterAccess
+ 485              		.section	.rodata
+ 486              		.align	2
+ 487              		.set	.LANCHOR0,. + 0
+ 490              	tmc2660_defaultRegisterAccess:
+ 491 0000 02000000 		.ascii	"\002\000\000\000\002\002\002\002"
+ 491      02020202 
+ 494              	tmc2660_defaultRegisterResetState:
+ 495 0008 00000000 		.word	0
+ 496 000c 00000000 		.word	0
+ 497 0010 00000000 		.word	0
+ 498 0014 00000000 		.word	0
+ 499 0018 35190900 		.word	596277
+ 500 001c 00000A00 		.word	655360
+ 501 0020 05050D00 		.word	853253
+ 502 0024 40F00E00 		.word	979008
+ 503              		.bss
+ 504              		.align	2
+ 505              		.set	.LANCHOR1,. + 0
+ 508              	errorTimer.4895:
+ 509 0000 00000000 		.space	4
+ 512              	read.4900:
+ 513 0004 00       		.space	1
+ 516              	write.4899:
+ 517 0005 00       		.space	1
+ 518              		.text
+ 519              	.Letext0:
+ 520              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 521              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 522              		.file 4 "TMC-API/tmc/helpers/Config.h"
+ 523              		.file 5 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 524              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 525              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 526              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 527              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 528              		.file 10 "TMC-API/tmc/ic/TMC2660/TMC2660.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 TMC2660.c
+C:\Users\Shubham\AppData\Local\Temp\ccMN51CY.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccMN51CY.s:23     .text:00000000 tmc2660_initConfig
+C:\Users\Shubham\AppData\Local\Temp\ccMN51CY.s:106    .text:00000040 $d
+C:\Users\Shubham\AppData\Local\Temp\ccMN51CY.s:110    .text:00000044 $t
+C:\Users\Shubham\AppData\Local\Temp\ccMN51CY.s:117    .text:00000044 tmc2660_writeConfiguration
+C:\Users\Shubham\AppData\Local\Temp\ccMN51CY.s:139    .text:00000046 tmc2660_periodicJob
+C:\Users\Shubham\AppData\Local\Temp\ccMN51CY.s:346    .text:000000ec $d
+C:\Users\Shubham\AppData\Local\Temp\ccMN51CY.s:352    .text:000000f0 $t
+C:\Users\Shubham\AppData\Local\Temp\ccMN51CY.s:359    .text:000000f0 tmc2660_reset
+C:\Users\Shubham\AppData\Local\Temp\ccMN51CY.s:426    .text:0000012a tmc2660_restore
+C:\Users\Shubham\AppData\Local\Temp\ccMN51CY.s:494    .rodata:00000008 tmc2660_defaultRegisterResetState
+C:\Users\Shubham\AppData\Local\Temp\ccMN51CY.s:490    .rodata:00000000 tmc2660_defaultRegisterAccess
+C:\Users\Shubham\AppData\Local\Temp\ccMN51CY.s:486    .rodata:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccMN51CY.s:504    .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccMN51CY.s:508    .bss:00000000 errorTimer.4895
+C:\Users\Shubham\AppData\Local\Temp\ccMN51CY.s:512    .bss:00000004 read.4900
+C:\Users\Shubham\AppData\Local\Temp\ccMN51CY.s:516    .bss:00000005 write.4899
+
+UNDEFINED SYMBOLS
+tmc2660_readInt
+tmc2660_readWrite
+tmc2660_writeInt

@@ -1,0 +1,3601 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"TMC2100_eval.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.arch armv7e-m
+  17              		.syntax unified
+  18              		.thumb
+  19              		.thumb_func
+  20              		.fpu softvfp
+  22              	writeRegister:
+  23              	.LVL0:
+  24              	.LFB10:
+  25              		.file 1 "boards/TMC2100_eval.c"
+   1:boards/TMC2100_eval.c **** #include "Rhino_standalone.h"
+   2:boards/TMC2100_eval.c **** 
+   3:boards/TMC2100_eval.c **** #include "Board.h"
+   4:boards/TMC2100_eval.c **** #include "tmc/ic/TMC5130/TMC5130_Register.h"
+   5:boards/TMC2100_eval.c **** #include "tmc/StepDir.h"
+   6:boards/TMC2100_eval.c **** #include "hal/Timer.h"
+   7:boards/TMC2100_eval.c **** 
+   8:boards/TMC2100_eval.c **** //#define VM_MIN  50   // VM[V/10] min
+   9:boards/TMC2100_eval.c **** //#define VM_MAX  480  // VM[V/10] max
+  10:boards/TMC2100_eval.c **** 
+  11:boards/TMC2100_eval.c **** #undef  TMC2100_MAX_VELOCITY
+  12:boards/TMC2100_eval.c **** #define TMC2100_MAX_VELOCITY  STEPDIR_MAX_VELOCITY
+  13:boards/TMC2100_eval.c **** 
+  14:boards/TMC2100_eval.c **** // Stepdir precision: 2^17 -> 17 digits of precision
+  15:boards/TMC2100_eval.c **** #define STEPDIR_PRECISION (1 << 17)
+  16:boards/TMC2100_eval.c **** 
+  17:boards/TMC2100_eval.c **** #define MOTORS 1
+  18:boards/TMC2100_eval.c **** 
+  19:boards/TMC2100_eval.c **** static uint32_t right(uint8_t motor, int32_t velocity);
+  20:boards/TMC2100_eval.c **** static uint32_t left(uint8_t motor, int32_t velocity);
+  21:boards/TMC2100_eval.c **** static uint32_t rotate(uint8_t motor, int32_t velocity);
+  22:boards/TMC2100_eval.c **** static uint32_t stop(uint8_t motor);
+  23:boards/TMC2100_eval.c **** static uint32_t moveTo(uint8_t motor, int32_t position);
+  24:boards/TMC2100_eval.c **** static uint32_t moveBy(uint8_t motor, int32_t *ticks);
+  25:boards/TMC2100_eval.c **** static uint32_t GAP(uint8_t type, uint8_t motor, int32_t *value);
+  26:boards/TMC2100_eval.c **** static uint32_t SAP(uint8_t type, uint8_t motor, int32_t value);
+  27:boards/TMC2100_eval.c **** static void readRegister(uint8_t motor, uint8_t address, int32_t *value);
+  28:boards/TMC2100_eval.c **** static void writeRegister(uint8_t motor, uint8_t address, int32_t value);
+  29:boards/TMC2100_eval.c **** 
+  30:boards/TMC2100_eval.c **** static void periodicJob(uint32_t tick);
+  31:boards/TMC2100_eval.c **** //static void checkErrors	(uint32_t tick);
+  32:boards/TMC2100_eval.c **** static void deInit(void);
+  33:boards/TMC2100_eval.c **** static uint32_t userFunction(uint8_t type, uint8_t motor, int32_t *value);
+  34:boards/TMC2100_eval.c **** 
+  35:boards/TMC2100_eval.c **** static uint8_t reset();
+  36:boards/TMC2100_eval.c **** static void enableDriver(DriverState state);
+  37:boards/TMC2100_eval.c **** 
+  38:boards/TMC2100_eval.c **** static uint32_t setStandAloneSettings(uint8_t i, int32_t value);
+  39:boards/TMC2100_eval.c **** static uint32_t getStandAloneSettings(uint8_t i, int32_t *value);
+  40:boards/TMC2100_eval.c **** 
+  41:boards/TMC2100_eval.c **** static IO_States lastEnable = IOS_OPEN; //TMCRhinoSA.Enable_StandStillPowerDownSettings.ENABLED_034
+  42:boards/TMC2100_eval.c **** 
+  43:boards/TMC2100_eval.c **** typedef struct
+  44:boards/TMC2100_eval.c **** {
+  45:boards/TMC2100_eval.c **** 	IOPinTypeDef  *CFG3;
+  46:boards/TMC2100_eval.c **** 	IOPinTypeDef  *CFG2;
+  47:boards/TMC2100_eval.c **** 	IOPinTypeDef  *CFG1;
+  48:boards/TMC2100_eval.c **** 	IOPinTypeDef  *CFG0;
+  49:boards/TMC2100_eval.c **** 	IOPinTypeDef  *STEP;
+  50:boards/TMC2100_eval.c **** 	IOPinTypeDef  *DIR;
+  51:boards/TMC2100_eval.c **** 	IOPinTypeDef  *CFG4;
+  52:boards/TMC2100_eval.c **** 	IOPinTypeDef  *CFG5;
+  53:boards/TMC2100_eval.c **** 	IOPinTypeDef  *ERROR;
+  54:boards/TMC2100_eval.c **** 	IOPinTypeDef  *INDEX;
+  55:boards/TMC2100_eval.c **** 	IOPinTypeDef  *CFG6_ENN;
+  56:boards/TMC2100_eval.c **** 	IOPinTypeDef  *AIN_REF_SW;
+  57:boards/TMC2100_eval.c **** 	IOPinTypeDef  *AIN_REF_PWM;
+  58:boards/TMC2100_eval.c **** 
+  59:boards/TMC2100_eval.c **** } PinsTypeDef;
+  60:boards/TMC2100_eval.c **** 
+  61:boards/TMC2100_eval.c **** static PinsTypeDef Pins;
+  62:boards/TMC2100_eval.c **** 
+  63:boards/TMC2100_eval.c **** static uint32_t rotate(uint8_t motor, int32_t velocity)
+  64:boards/TMC2100_eval.c **** {
+  65:boards/TMC2100_eval.c **** 	if(motor >= MOTORS)
+  66:boards/TMC2100_eval.c **** 		return TMC_ERROR_MOTOR;
+  67:boards/TMC2100_eval.c **** 
+  68:boards/TMC2100_eval.c **** 	StepDir_rotate(motor, velocity);
+  69:boards/TMC2100_eval.c **** 
+  70:boards/TMC2100_eval.c **** 	return TMC_ERROR_NONE;
+  71:boards/TMC2100_eval.c **** }
+  72:boards/TMC2100_eval.c **** 
+  73:boards/TMC2100_eval.c **** static uint32_t right(uint8_t motor, int32_t velocity)
+  74:boards/TMC2100_eval.c **** {
+  75:boards/TMC2100_eval.c **** 	return rotate(motor, velocity);
+  76:boards/TMC2100_eval.c **** }
+  77:boards/TMC2100_eval.c **** 
+  78:boards/TMC2100_eval.c **** static uint32_t left(uint8_t motor, int32_t velocity)
+  79:boards/TMC2100_eval.c **** {
+  80:boards/TMC2100_eval.c **** 	return rotate(motor, -velocity);
+  81:boards/TMC2100_eval.c **** }
+  82:boards/TMC2100_eval.c **** 
+  83:boards/TMC2100_eval.c **** static uint32_t stop(uint8_t motor)
+  84:boards/TMC2100_eval.c **** {
+  85:boards/TMC2100_eval.c **** 	return rotate(motor, 0);
+  86:boards/TMC2100_eval.c **** }
+  87:boards/TMC2100_eval.c **** 
+  88:boards/TMC2100_eval.c **** static uint32_t moveTo(uint8_t motor, int32_t position)
+  89:boards/TMC2100_eval.c **** {
+  90:boards/TMC2100_eval.c **** 	if(motor >= MOTORS)
+  91:boards/TMC2100_eval.c **** 		return TMC_ERROR_MOTOR;
+  92:boards/TMC2100_eval.c **** 
+  93:boards/TMC2100_eval.c **** 	StepDir_moveTo(motor, position);
+  94:boards/TMC2100_eval.c **** 
+  95:boards/TMC2100_eval.c **** 	return TMC_ERROR_NONE;
+  96:boards/TMC2100_eval.c **** }
+  97:boards/TMC2100_eval.c **** 
+  98:boards/TMC2100_eval.c **** static uint32_t moveBy(uint8_t motor, int32_t *ticks)
+  99:boards/TMC2100_eval.c **** {
+ 100:boards/TMC2100_eval.c **** 	if(motor >= MOTORS)
+ 101:boards/TMC2100_eval.c **** 		return TMC_ERROR_MOTOR;
+ 102:boards/TMC2100_eval.c **** 
+ 103:boards/TMC2100_eval.c **** 	// determine actual position and add numbers of ticks to move
+ 104:boards/TMC2100_eval.c **** 	*ticks += StepDir_getActualPosition(motor);
+ 105:boards/TMC2100_eval.c **** 
+ 106:boards/TMC2100_eval.c **** 	return moveTo(motor, *ticks);
+ 107:boards/TMC2100_eval.c **** }
+ 108:boards/TMC2100_eval.c **** 
+ 109:boards/TMC2100_eval.c **** static uint32_t handleParameter(uint8_t readWrite, uint8_t motor, uint8_t type, int32_t *value)
+ 110:boards/TMC2100_eval.c **** {
+ 111:boards/TMC2100_eval.c **** 	uint32_t errors = TMC_ERROR_NONE;
+ 112:boards/TMC2100_eval.c **** 
+ 113:boards/TMC2100_eval.c **** 	if(motor >= MOTORS)
+ 114:boards/TMC2100_eval.c **** 		return TMC_ERROR_MOTOR;
+ 115:boards/TMC2100_eval.c **** 
+ 116:boards/TMC2100_eval.c **** 	switch(type)
+ 117:boards/TMC2100_eval.c **** 	{
+ 118:boards/TMC2100_eval.c **** 	case 0:
+ 119:boards/TMC2100_eval.c **** 		// Target position
+ 120:boards/TMC2100_eval.c **** 		if(readWrite == READ) {
+ 121:boards/TMC2100_eval.c **** 			*value = StepDir_getTargetPosition(motor);
+ 122:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 123:boards/TMC2100_eval.c **** 			StepDir_moveTo(motor, *value);
+ 124:boards/TMC2100_eval.c **** 		}
+ 125:boards/TMC2100_eval.c **** 		break;
+ 126:boards/TMC2100_eval.c **** 	case 1:
+ 127:boards/TMC2100_eval.c **** 		// Actual position
+ 128:boards/TMC2100_eval.c **** 		if(readWrite == READ) {
+ 129:boards/TMC2100_eval.c **** 			*value = StepDir_getActualPosition(motor);
+ 130:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 131:boards/TMC2100_eval.c **** 			StepDir_setActualPosition(motor, *value);
+ 132:boards/TMC2100_eval.c **** 		}
+ 133:boards/TMC2100_eval.c **** 		break;
+ 134:boards/TMC2100_eval.c **** 	case 2:
+ 135:boards/TMC2100_eval.c **** 		// Target speed
+ 136:boards/TMC2100_eval.c **** 		if(readWrite == READ) {
+ 137:boards/TMC2100_eval.c **** 			*value = StepDir_getTargetVelocity(motor);
+ 138:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 139:boards/TMC2100_eval.c **** 			StepDir_rotate(motor, *value);
+ 140:boards/TMC2100_eval.c **** 		}
+ 141:boards/TMC2100_eval.c **** 		break;
+ 142:boards/TMC2100_eval.c **** 	case 3:
+ 143:boards/TMC2100_eval.c **** 		// Actual speed
+ 144:boards/TMC2100_eval.c **** 		if(readWrite == READ) {
+ 145:boards/TMC2100_eval.c **** 			*value = StepDir_getActualVelocity(motor);
+ 146:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 147:boards/TMC2100_eval.c **** 			errors |= TMC_ERROR_TYPE;
+ 148:boards/TMC2100_eval.c **** 		}
+ 149:boards/TMC2100_eval.c **** 		break;
+ 150:boards/TMC2100_eval.c **** 	case 4:
+ 151:boards/TMC2100_eval.c **** 		// Maximum speed
+ 152:boards/TMC2100_eval.c **** 		if(readWrite == READ) {
+ 153:boards/TMC2100_eval.c **** 			*value = StepDir_getVelocityMax(motor);
+ 154:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 155:boards/TMC2100_eval.c **** 			StepDir_setVelocityMax(motor, abs(*value));
+ 156:boards/TMC2100_eval.c **** 		}
+ 157:boards/TMC2100_eval.c **** 		break;
+ 158:boards/TMC2100_eval.c **** 	case 5:
+ 159:boards/TMC2100_eval.c **** 		// Maximum acceleration
+ 160:boards/TMC2100_eval.c **** 		if(readWrite == READ) {
+ 161:boards/TMC2100_eval.c **** 			*value = StepDir_getAcceleration(motor);
+ 162:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 163:boards/TMC2100_eval.c **** 			StepDir_setAcceleration(motor, *value);
+ 164:boards/TMC2100_eval.c **** 		}
+ 165:boards/TMC2100_eval.c **** 		break;
+ 166:boards/TMC2100_eval.c **** 	// getStandaloneSettin APs have been copied from from types 14-19 but also left here for backwards
+ 167:boards/TMC2100_eval.c **** 	case 6:
+ 168:boards/TMC2100_eval.c **** 	case 7:
+ 169:boards/TMC2100_eval.c **** 	case 8:
+ 170:boards/TMC2100_eval.c **** 	case 9:
+ 171:boards/TMC2100_eval.c **** 	case 10:
+ 172:boards/TMC2100_eval.c **** 	case 11:
+ 173:boards/TMC2100_eval.c **** 		// Position reached flag
+ 174:boards/TMC2100_eval.c **** 		if(readWrite == READ) {
+ 175:boards/TMC2100_eval.c **** 			if(type == 8)
+ 176:boards/TMC2100_eval.c **** 				*value = (StepDir_getStatus(motor) & STATUS_TARGET_REACHED)? 1:0;
+ 177:boards/TMC2100_eval.c **** 			else
+ 178:boards/TMC2100_eval.c **** 				errors |= TMC_ERROR_TYPE;
+ 179:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 180:boards/TMC2100_eval.c **** 			errors |= setStandAloneSettings(type-6, *value);
+ 181:boards/TMC2100_eval.c **** 		}
+ 182:boards/TMC2100_eval.c **** 		break;
+ 183:boards/TMC2100_eval.c **** 	case 12:
+ 184:boards/TMC2100_eval.c **** 		if(readWrite == READ) {
+ 185:boards/TMC2100_eval.c **** 			*value = (HAL.IOs->config->isHigh(Pins.AIN_REF_SW))? 1 : 0;
+ 186:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 187:boards/TMC2100_eval.c **** 			if(*value)
+ 188:boards/TMC2100_eval.c **** 				HAL.IOs->config->setHigh(Pins.AIN_REF_SW);
+ 189:boards/TMC2100_eval.c **** 			else
+ 190:boards/TMC2100_eval.c **** 				HAL.IOs->config->setLow(Pins.AIN_REF_SW);
+ 191:boards/TMC2100_eval.c **** 		}
+ 192:boards/TMC2100_eval.c **** 	break;
+ 193:boards/TMC2100_eval.c **** 
+ 194:boards/TMC2100_eval.c **** 	case 13:
+ 195:boards/TMC2100_eval.c **** 		if(readWrite == READ) {
+ 196:boards/TMC2100_eval.c **** 			*value = (HAL.IOs->config->isHigh(Pins.AIN_REF_PWM)) ? 1 : 0;
+ 197:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 198:boards/TMC2100_eval.c **** 			if(((uint32_t) *value) > 10000)
+ 199:boards/TMC2100_eval.c **** 				errors |= TMC_ERROR_TYPE;
+ 200:boards/TMC2100_eval.c **** 			else
+ 201:boards/TMC2100_eval.c **** 				Timer.setDuty(TIMER_CHANNEL_1, *value);
+ 202:boards/TMC2100_eval.c **** 		}
+ 203:boards/TMC2100_eval.c **** 	break;
+ 204:boards/TMC2100_eval.c **** 
+ 205:boards/TMC2100_eval.c **** 	// getStandaloneSettin APs have been copied from from types 6-11 but also left there for backwards
+ 206:boards/TMC2100_eval.c **** 
+ 207:boards/TMC2100_eval.c **** 	case 14:
+ 208:boards/TMC2100_eval.c **** 		// Chopper off time
+ 209:boards/TMC2100_eval.c **** 	case 15:
+ 210:boards/TMC2100_eval.c **** 		// Microstep Resolution, Interpolation and Chopper
+ 211:boards/TMC2100_eval.c **** 	case 16:
+ 212:boards/TMC2100_eval.c **** 		// Maximum current
+ 213:boards/TMC2100_eval.c **** 	case 17:
+ 214:boards/TMC2100_eval.c **** 		// Chopper hysteresis
+ 215:boards/TMC2100_eval.c **** 	case 18:
+ 216:boards/TMC2100_eval.c **** 		// Chopper blank time
+ 217:boards/TMC2100_eval.c **** 	case 19:
+ 218:boards/TMC2100_eval.c **** 		// Power down delay
+ 219:boards/TMC2100_eval.c **** 		if(readWrite == READ) {
+ 220:boards/TMC2100_eval.c **** 			getStandAloneSettings(type - 14, value);
+ 221:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 222:boards/TMC2100_eval.c **** 			errors |= setStandAloneSettings(type - 14, *value);
+ 223:boards/TMC2100_eval.c **** 		}
+ 224:boards/TMC2100_eval.c **** 	break;
+ 225:boards/TMC2100_eval.c **** 	case 50: // StepDir internal(0)/external(1)
+ 226:boards/TMC2100_eval.c **** 		if(readWrite == READ) {
+ 227:boards/TMC2100_eval.c **** 			*value = StepDir_getMode(motor);
+ 228:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 229:boards/TMC2100_eval.c **** 			StepDir_setMode(motor, *value);
+ 230:boards/TMC2100_eval.c **** 		}
+ 231:boards/TMC2100_eval.c **** 		break;
+ 232:boards/TMC2100_eval.c **** 	case 51: // StepDir interrupt frequency
+ 233:boards/TMC2100_eval.c **** 		if(readWrite == READ) {
+ 234:boards/TMC2100_eval.c **** 			*value = StepDir_getFrequency(motor);
+ 235:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 236:boards/TMC2100_eval.c **** 			StepDir_setFrequency(motor, *value);
+ 237:boards/TMC2100_eval.c **** 		}
+ 238:boards/TMC2100_eval.c **** 		break;
+ 239:boards/TMC2100_eval.c **** 
+ 240:boards/TMC2100_eval.c **** 	case 140:
+ 241:boards/TMC2100_eval.c **** 		// Microstep Resolution
+ 242:boards/TMC2100_eval.c **** 		if(readWrite == READ) {
+ 243:boards/TMC2100_eval.c **** 			errors |= TMC_ERROR_TYPE;
+ 244:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 245:boards/TMC2100_eval.c **** 			// microstep resolution without interpolation
+ 246:boards/TMC2100_eval.c **** 
+ 247:boards/TMC2100_eval.c **** 			errors |= getStandAloneSettings(1, value);
+ 248:boards/TMC2100_eval.c **** 
+ 249:boards/TMC2100_eval.c **** 			IO_States CFG[7];
+ 250:boards/TMC2100_eval.c **** 			TMCRhinoSA.getPins(CFG);
+ 251:boards/TMC2100_eval.c **** 
+ 252:boards/TMC2100_eval.c **** 			if((CFG[2] == IOS_LOW)        && (CFG[1] == IOS_LOW))   *value = 1;
+ 253:boards/TMC2100_eval.c **** 			else if((CFG[2] == IOS_LOW)   && (CFG[1] == IOS_HIGH))  *value = 2;
+ 254:boards/TMC2100_eval.c **** 			else if((CFG[2] == IOS_LOW)   && (CFG[1] == IOS_OPEN))  *value = 2;
+ 255:boards/TMC2100_eval.c **** 			else if((CFG[2] == IOS_HIGH)  && (CFG[1] == IOS_LOW))   *value = 4;
+ 256:boards/TMC2100_eval.c **** 			else if((CFG[2] == IOS_HIGH)  && (CFG[1] == IOS_HIGH))  *value = 16;
+ 257:boards/TMC2100_eval.c **** 			else if((CFG[2] == IOS_HIGH)  && (CFG[1] == IOS_OPEN))  *value = 4;
+ 258:boards/TMC2100_eval.c **** 			else if((CFG[2] == IOS_OPEN)  && (CFG[1] == IOS_LOW))   *value = 16;
+ 259:boards/TMC2100_eval.c **** 			else if((CFG[2] == IOS_OPEN)  && (CFG[1] == IOS_HIGH))  *value = 4;
+ 260:boards/TMC2100_eval.c **** 			else if((CFG[2] == IOS_OPEN)  && (CFG[1] == IOS_OPEN))  *value = 16;
+ 261:boards/TMC2100_eval.c **** 		}
+ 262:boards/TMC2100_eval.c **** 		break;
+ 263:boards/TMC2100_eval.c **** 	default:
+ 264:boards/TMC2100_eval.c **** 		errors |= TMC_ERROR_TYPE;
+ 265:boards/TMC2100_eval.c **** 		break;
+ 266:boards/TMC2100_eval.c **** 	}
+ 267:boards/TMC2100_eval.c **** 	return errors;
+ 268:boards/TMC2100_eval.c **** }
+ 269:boards/TMC2100_eval.c **** 
+ 270:boards/TMC2100_eval.c **** static uint32_t SAP(uint8_t type, uint8_t motor, int32_t value)
+ 271:boards/TMC2100_eval.c **** {
+ 272:boards/TMC2100_eval.c **** 	return handleParameter(WRITE, motor, type, &value);
+ 273:boards/TMC2100_eval.c **** }
+ 274:boards/TMC2100_eval.c **** 
+ 275:boards/TMC2100_eval.c **** static uint32_t GAP(uint8_t type, uint8_t motor, int32_t *value)
+ 276:boards/TMC2100_eval.c **** {
+ 277:boards/TMC2100_eval.c **** 	return handleParameter(READ, motor, type, value);
+ 278:boards/TMC2100_eval.c **** }
+ 279:boards/TMC2100_eval.c **** 
+ 280:boards/TMC2100_eval.c **** static void writeRegister(uint8_t motor, uint8_t address, int32_t value)
+ 281:boards/TMC2100_eval.c **** {
+  26              		.loc 1 281 1 view -0
+  27              		.cfi_startproc
+  28              		@ args = 0, pretend = 0, frame = 0
+  29              		@ frame_needed = 0, uses_anonymous_args = 0
+  30              		@ link register save eliminated.
+ 282:boards/TMC2100_eval.c **** 	UNUSED(address);
+  31              		.loc 1 282 2 view .LVU1
+ 283:boards/TMC2100_eval.c **** 	UNUSED(motor);
+  32              		.loc 1 283 2 view .LVU2
+ 284:boards/TMC2100_eval.c **** 
+ 285:boards/TMC2100_eval.c **** 	TMCRhinoSA.setInt(value);
+  33              		.loc 1 285 2 view .LVU3
+  34              		.loc 1 285 12 is_stmt 0 view .LVU4
+  35 0000 014B     		ldr	r3, .L2
+  36              		.loc 1 285 2 view .LVU5
+  37 0002 1046     		mov	r0, r2
+  38              	.LVL1:
+  39              		.loc 1 285 2 view .LVU6
+  40 0004 DB6B     		ldr	r3, [r3, #60]
+  41 0006 1847     		bx	r3	@ indirect register sibling call
+  42              	.LVL2:
+  43              	.L3:
+  44              		.loc 1 285 2 view .LVU7
+  45              		.align	2
+  46              	.L2:
+  47 0008 00000000 		.word	TMCRhinoSA
+  48              		.cfi_endproc
+  49              	.LFE10:
+  51              		.align	1
+  52              		.syntax unified
+  53              		.thumb
+  54              		.thumb_func
+  55              		.fpu softvfp
+  57              	readRegister:
+  58              	.LVL3:
+  59              	.LFB11:
+ 286:boards/TMC2100_eval.c **** }
+ 287:boards/TMC2100_eval.c **** 
+ 288:boards/TMC2100_eval.c **** static void readRegister(uint8_t motor, uint8_t address, int32_t *value)
+ 289:boards/TMC2100_eval.c **** {
+  60              		.loc 1 289 1 is_stmt 1 view -0
+  61              		.cfi_startproc
+  62              		@ args = 0, pretend = 0, frame = 0
+  63              		@ frame_needed = 0, uses_anonymous_args = 0
+ 290:boards/TMC2100_eval.c **** 	UNUSED(address);
+  64              		.loc 1 290 2 view .LVU9
+ 291:boards/TMC2100_eval.c **** 	UNUSED(motor);
+  65              		.loc 1 291 2 view .LVU10
+ 292:boards/TMC2100_eval.c **** 
+ 293:boards/TMC2100_eval.c **** 	*value = TMCRhinoSA.getInt();
+  66              		.loc 1 293 2 view .LVU11
+  67              		.loc 1 293 21 is_stmt 0 view .LVU12
+  68 000c 034B     		ldr	r3, .L5
+ 289:boards/TMC2100_eval.c **** 	UNUSED(address);
+  69              		.loc 1 289 1 view .LVU13
+  70 000e 10B5     		push	{r4, lr}
+  71              	.LCFI0:
+  72              		.cfi_def_cfa_offset 8
+  73              		.cfi_offset 4, -8
+  74              		.cfi_offset 14, -4
+  75              		.loc 1 293 11 view .LVU14
+  76 0010 1B6C     		ldr	r3, [r3, #64]
+ 289:boards/TMC2100_eval.c **** 	UNUSED(address);
+  77              		.loc 1 289 1 view .LVU15
+  78 0012 1446     		mov	r4, r2
+  79              		.loc 1 293 11 view .LVU16
+  80 0014 9847     		blx	r3
+  81              	.LVL4:
+  82              		.loc 1 293 9 view .LVU17
+  83 0016 2060     		str	r0, [r4]
+ 294:boards/TMC2100_eval.c **** }
+  84              		.loc 1 294 1 view .LVU18
+  85 0018 10BD     		pop	{r4, pc}
+  86              	.LVL5:
+  87              	.L6:
+  88              		.loc 1 294 1 view .LVU19
+  89 001a 00BF     		.align	2
+  90              	.L5:
+  91 001c 00000000 		.word	TMCRhinoSA
+  92              		.cfi_endproc
+  93              	.LFE11:
+  95              		.align	1
+  96              		.syntax unified
+  97              		.thumb
+  98              		.thumb_func
+  99              		.fpu softvfp
+ 101              	getStandAloneSettings:
+ 102              	.LVL6:
+ 103              	.LFB15:
+ 295:boards/TMC2100_eval.c **** 
+ 296:boards/TMC2100_eval.c **** static uint32_t userFunction(uint8_t type, uint8_t motor, int32_t *value)
+ 297:boards/TMC2100_eval.c **** {
+ 298:boards/TMC2100_eval.c **** 	uint32_t errors = 0;
+ 299:boards/TMC2100_eval.c **** 
+ 300:boards/TMC2100_eval.c **** 	switch(type)
+ 301:boards/TMC2100_eval.c **** 	{
+ 302:boards/TMC2100_eval.c **** 	case 0:  // Read StepDir status bits
+ 303:boards/TMC2100_eval.c **** 		*value = StepDir_getStatus(motor);
+ 304:boards/TMC2100_eval.c **** 		break;
+ 305:boards/TMC2100_eval.c **** 	case 1:  // When running with the TMC4330 v1.2: CFG5 is routed from DIO6 (Motion Controller) to DI
+ 306:boards/TMC2100_eval.c **** 		Pins.CFG5 = &HAL.IOs->pins->DIO6;
+ 307:boards/TMC2100_eval.c **** 		TMCRhinoSA.CFGPins[5] = Pins.CFG5;
+ 308:boards/TMC2100_eval.c **** 		HAL.IOs->config->toOutput(TMCRhinoSA.CFGPins[5]);
+ 309:boards/TMC2100_eval.c **** 		HAL.IOs->config->setLow(TMCRhinoSA.CFGPins[5]);
+ 310:boards/TMC2100_eval.c **** 		break;
+ 311:boards/TMC2100_eval.c **** 	default:
+ 312:boards/TMC2100_eval.c **** 		errors |= TMC_ERROR_TYPE;
+ 313:boards/TMC2100_eval.c **** 		break;
+ 314:boards/TMC2100_eval.c **** 	}
+ 315:boards/TMC2100_eval.c **** 
+ 316:boards/TMC2100_eval.c **** 	return errors;
+ 317:boards/TMC2100_eval.c **** }
+ 318:boards/TMC2100_eval.c **** 
+ 319:boards/TMC2100_eval.c **** static void periodicJob(uint32_t tick)
+ 320:boards/TMC2100_eval.c **** {
+ 321:boards/TMC2100_eval.c **** 	UNUSED(tick);
+ 322:boards/TMC2100_eval.c **** 
+ 323:boards/TMC2100_eval.c **** 	for(int motor = 0; motor < MOTORS; motor++)
+ 324:boards/TMC2100_eval.c **** 	{
+ 325:boards/TMC2100_eval.c **** 		StepDir_periodicJob(motor);
+ 326:boards/TMC2100_eval.c **** 	}
+ 327:boards/TMC2100_eval.c **** }
+ 328:boards/TMC2100_eval.c **** 
+ 329:boards/TMC2100_eval.c **** static uint32_t setStandAloneSettings(uint8_t i, int32_t value)
+ 330:boards/TMC2100_eval.c **** {
+ 331:boards/TMC2100_eval.c **** 	TMCRhinoTypeStandAloneConfigDef config;
+ 332:boards/TMC2100_eval.c **** 
+ 333:boards/TMC2100_eval.c **** 	uint32_t errors = TMC_ERROR_NONE;
+ 334:boards/TMC2100_eval.c **** 
+ 335:boards/TMC2100_eval.c **** 	if(i > 6)
+ 336:boards/TMC2100_eval.c **** 	{
+ 337:boards/TMC2100_eval.c **** 		errors |= TMC_ERROR_TYPE;
+ 338:boards/TMC2100_eval.c **** 		return errors;
+ 339:boards/TMC2100_eval.c **** 	}
+ 340:boards/TMC2100_eval.c **** 
+ 341:boards/TMC2100_eval.c **** 	if((value < 0) || (value > 2))
+ 342:boards/TMC2100_eval.c **** 	{
+ 343:boards/TMC2100_eval.c **** 		if((i != 1) || (value > 0x0F))
+ 344:boards/TMC2100_eval.c **** 		{
+ 345:boards/TMC2100_eval.c **** 			errors |= TMC_ERROR_VALUE;
+ 346:boards/TMC2100_eval.c **** 			return errors;
+ 347:boards/TMC2100_eval.c **** 		}
+ 348:boards/TMC2100_eval.c **** 	}
+ 349:boards/TMC2100_eval.c **** 
+ 350:boards/TMC2100_eval.c **** 	TMCRhinoSA.getConfig(&config);
+ 351:boards/TMC2100_eval.c **** 
+ 352:boards/TMC2100_eval.c **** 	switch(i)
+ 353:boards/TMC2100_eval.c **** 	{
+ 354:boards/TMC2100_eval.c **** 	case 0:
+ 355:boards/TMC2100_eval.c **** 		config.chopperOffTime = value;
+ 356:boards/TMC2100_eval.c **** 		break;
+ 357:boards/TMC2100_eval.c **** 	case 1:
+ 358:boards/TMC2100_eval.c **** 		switch(value)
+ 359:boards/TMC2100_eval.c **** 		{
+ 360:boards/TMC2100_eval.c **** 		case 0:
+ 361:boards/TMC2100_eval.c **** 			config.microstepResolution1 = TMCRhinoSA.MicrostepResolutionSettings1.BY1_INTERPOL0;
+ 362:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.BY1_INTERPOL0;
+ 363:boards/TMC2100_eval.c **** 			break;
+ 364:boards/TMC2100_eval.c **** 		case 1:
+ 365:boards/TMC2100_eval.c **** 			config.microstepResolution1 = TMCRhinoSA.MicrostepResolutionSettings1.BY2_INTERPOL0;
+ 366:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.BY2_INTERPOL0;
+ 367:boards/TMC2100_eval.c **** 			break;
+ 368:boards/TMC2100_eval.c **** 		case 2:
+ 369:boards/TMC2100_eval.c **** 			config.microstepResolution1 = TMCRhinoSA.MicrostepResolutionSettings1.BY2_INTERPOL256;
+ 370:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.BY2_INTERPOL256;
+ 371:boards/TMC2100_eval.c **** 			break;
+ 372:boards/TMC2100_eval.c **** 		case 3:
+ 373:boards/TMC2100_eval.c **** 			config.microstepResolution1 = TMCRhinoSA.MicrostepResolutionSettings1.BY4_INTERPOL0;
+ 374:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.BY4_INTERPOL0;
+ 375:boards/TMC2100_eval.c **** 			break;
+ 376:boards/TMC2100_eval.c **** 		case 4:
+ 377:boards/TMC2100_eval.c **** 			config.microstepResolution1 = TMCRhinoSA.MicrostepResolutionSettings1.BY4_INTERPOL256;
+ 378:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.BY4_INTERPOL256;
+ 379:boards/TMC2100_eval.c **** 			break;
+ 380:boards/TMC2100_eval.c **** 		case 5:
+ 381:boards/TMC2100_eval.c **** 			config.microstepResolution1 = TMCRhinoSA.MicrostepResolutionSettings1.BY16_INTERPOL0;
+ 382:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.BY16_INTERPOL0;
+ 383:boards/TMC2100_eval.c **** 			break;
+ 384:boards/TMC2100_eval.c **** 		case 6:
+ 385:boards/TMC2100_eval.c **** 			config.microstepResolution1 = TMCRhinoSA.MicrostepResolutionSettings1.BY16_INTERPOL256;
+ 386:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.BY16_INTERPOL256;
+ 387:boards/TMC2100_eval.c **** 			break;
+ 388:boards/TMC2100_eval.c **** 		case 7:
+ 389:boards/TMC2100_eval.c **** 			config.microstepResolution1 = TMCRhinoSA.MicrostepResolutionSettings1.PWM_CHOP_BY4_INTERPOL256;
+ 390:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.PWM_CHOP_BY4_INTERPOL256;
+ 391:boards/TMC2100_eval.c **** 			break;
+ 392:boards/TMC2100_eval.c **** 		case 8:
+ 393:boards/TMC2100_eval.c **** 			config.microstepResolution1 = TMCRhinoSA.MicrostepResolutionSettings1.PWM_CHOP_BY16_INTERPOL256;
+ 394:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.PWM_CHOP_BY16_INTERPOL256;
+ 395:boards/TMC2100_eval.c **** 			break;
+ 396:boards/TMC2100_eval.c **** 		}
+ 397:boards/TMC2100_eval.c **** 		break;
+ 398:boards/TMC2100_eval.c **** 	case 2:
+ 399:boards/TMC2100_eval.c **** 		config.currentSetting = value;
+ 400:boards/TMC2100_eval.c **** 		break;
+ 401:boards/TMC2100_eval.c **** 	case 3:
+ 402:boards/TMC2100_eval.c **** 		config.chopperHysteresis = value;
+ 403:boards/TMC2100_eval.c **** 		break;
+ 404:boards/TMC2100_eval.c **** 	case 4:
+ 405:boards/TMC2100_eval.c **** 		config.chopperBlankTime = value;
+ 406:boards/TMC2100_eval.c **** 		break;
+ 407:boards/TMC2100_eval.c **** 	case 5:
+ 408:boards/TMC2100_eval.c **** 		config.enableStandStillPowerDown = lastEnable = value;
+ 409:boards/TMC2100_eval.c **** 		break;
+ 410:boards/TMC2100_eval.c **** 	}
+ 411:boards/TMC2100_eval.c **** 
+ 412:boards/TMC2100_eval.c **** 	TMCRhinoSA.setConfig(&config);
+ 413:boards/TMC2100_eval.c **** 
+ 414:boards/TMC2100_eval.c **** 	return errors;
+ 415:boards/TMC2100_eval.c **** }
+ 416:boards/TMC2100_eval.c **** 
+ 417:boards/TMC2100_eval.c **** static uint32_t getStandAloneSettings(uint8_t i, int32_t *value)
+ 418:boards/TMC2100_eval.c **** {
+ 104              		.loc 1 418 1 is_stmt 1 view -0
+ 105              		.cfi_startproc
+ 106              		@ args = 0, pretend = 0, frame = 8
+ 107              		@ frame_needed = 0, uses_anonymous_args = 0
+ 419:boards/TMC2100_eval.c **** 	TMCRhinoTypeStandAloneConfigDef config;
+ 108              		.loc 1 419 2 view .LVU21
+ 420:boards/TMC2100_eval.c **** 
+ 421:boards/TMC2100_eval.c **** 	uint32_t errors = TMC_ERROR_NONE;
+ 109              		.loc 1 421 2 view .LVU22
+ 422:boards/TMC2100_eval.c **** 
+ 423:boards/TMC2100_eval.c **** 	if(i > 6)
+ 110              		.loc 1 423 2 view .LVU23
+ 111              		.loc 1 423 4 is_stmt 0 view .LVU24
+ 112 0020 0628     		cmp	r0, #6
+ 418:boards/TMC2100_eval.c **** 	TMCRhinoTypeStandAloneConfigDef config;
+ 113              		.loc 1 418 1 view .LVU25
+ 114 0022 73B5     		push	{r0, r1, r4, r5, r6, lr}
+ 115              	.LCFI1:
+ 116              		.cfi_def_cfa_offset 24
+ 117              		.cfi_offset 4, -16
+ 118              		.cfi_offset 5, -12
+ 119              		.cfi_offset 6, -8
+ 120              		.cfi_offset 14, -4
+ 418:boards/TMC2100_eval.c **** 	TMCRhinoTypeStandAloneConfigDef config;
+ 121              		.loc 1 418 1 view .LVU26
+ 122 0024 0446     		mov	r4, r0
+ 123 0026 0E46     		mov	r6, r1
+ 124              		.loc 1 423 4 view .LVU27
+ 125 0028 7BD8     		bhi	.L24
+ 424:boards/TMC2100_eval.c **** 	{
+ 425:boards/TMC2100_eval.c **** 		errors |= TMC_ERROR_TYPE;
+ 426:boards/TMC2100_eval.c **** 		return errors;
+ 427:boards/TMC2100_eval.c **** 	}
+ 428:boards/TMC2100_eval.c **** 
+ 429:boards/TMC2100_eval.c **** 	TMCRhinoSA.getConfig(&config);
+ 126              		.loc 1 429 2 is_stmt 1 view .LVU28
+ 127              		.loc 1 429 12 is_stmt 0 view .LVU29
+ 128 002a 404D     		ldr	r5, .L28
+ 129              		.loc 1 429 2 view .LVU30
+ 130 002c 6846     		mov	r0, sp
+ 131              	.LVL7:
+ 132              		.loc 1 429 2 view .LVU31
+ 133 002e 2B6B     		ldr	r3, [r5, #48]
+ 134 0030 013C     		subs	r4, r4, #1
+ 135 0032 9847     		blx	r3
+ 136              	.LVL8:
+ 430:boards/TMC2100_eval.c **** 
+ 431:boards/TMC2100_eval.c **** 	switch(i)
+ 137              		.loc 1 431 2 is_stmt 1 view .LVU32
+ 138 0034 2B46     		mov	r3, r5
+ 139 0036 042C     		cmp	r4, #4
+ 140 0038 04D8     		bhi	.L9
+ 141 003a DFE804F0 		tbb	[pc, r4]
+ 142              	.L11:
+ 143 003e 08       		.byte	(.L15-.L11)/2
+ 144 003f 66       		.byte	(.L14-.L11)/2
+ 145 0040 69       		.byte	(.L13-.L11)/2
+ 146 0041 6C       		.byte	(.L12-.L11)/2
+ 147 0042 6F       		.byte	(.L10-.L11)/2
+ 148 0043 00       		.p2align 1
+ 149              	.L9:
+ 432:boards/TMC2100_eval.c **** 	{
+ 433:boards/TMC2100_eval.c **** 	case 0:
+ 434:boards/TMC2100_eval.c **** 		*value = config.chopperOffTime;
+ 150              		.loc 1 434 3 view .LVU33
+ 151              		.loc 1 434 18 is_stmt 0 view .LVU34
+ 152 0044 9DF80030 		ldrb	r3, [sp]	@ zero_extendqisi2
+ 153              	.L27:
+ 435:boards/TMC2100_eval.c **** 		break;
+ 436:boards/TMC2100_eval.c **** 	case 1:
+ 437:boards/TMC2100_eval.c **** 		if(     (config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.BY1_INTERPOL0) &&
+ 438:boards/TMC2100_eval.c **** 			    (config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY1_INTERPOL0))
+ 439:boards/TMC2100_eval.c **** 			*value = 0;
+ 440:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.BY2_INTERPOL0) &&
+ 441:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY2_INTERPOL0))
+ 442:boards/TMC2100_eval.c **** 			*value = 1;
+ 154              		.loc 1 442 11 view .LVU35
+ 155 0048 3360     		str	r3, [r6]
+ 421:boards/TMC2100_eval.c **** 
+ 156              		.loc 1 421 11 view .LVU36
+ 157 004a 0020     		movs	r0, #0
+ 158              		.loc 1 442 11 view .LVU37
+ 159 004c 0BE0     		b	.L7
+ 160              	.L15:
+ 437:boards/TMC2100_eval.c **** 			    (config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY1_INTERPOL0))
+ 161              		.loc 1 437 3 is_stmt 1 view .LVU38
+ 437:boards/TMC2100_eval.c **** 			    (config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY1_INTERPOL0))
+ 162              		.loc 1 437 18 is_stmt 0 view .LVU39
+ 163 004e 9DF80120 		ldrb	r2, [sp, #1]	@ zero_extendqisi2
+ 437:boards/TMC2100_eval.c **** 			    (config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY1_INTERPOL0))
+ 164              		.loc 1 437 5 view .LVU40
+ 165 0052 E978     		ldrb	r1, [r5, #3]	@ zero_extendqisi2
+ 166 0054 9142     		cmp	r1, r2
+ 167 0056 08D1     		bne	.L16
+ 437:boards/TMC2100_eval.c **** 			    (config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY1_INTERPOL0))
+ 168              		.loc 1 437 98 discriminator 1 view .LVU41
+ 169 0058 9DF80200 		ldrb	r0, [sp, #2]	@ zero_extendqisi2
+ 170 005c 297B     		ldrb	r1, [r5, #12]	@ zero_extendqisi2
+ 171 005e 8842     		cmp	r0, r1
+ 172 0060 03D1     		bne	.L16
+ 439:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.BY2_INTERPOL0) &&
+ 173              		.loc 1 439 4 is_stmt 1 view .LVU42
+ 439:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.BY2_INTERPOL0) &&
+ 174              		.loc 1 439 11 is_stmt 0 view .LVU43
+ 175 0062 0020     		movs	r0, #0
+ 176 0064 3060     		str	r0, [r6]
+ 177              	.LVL9:
+ 178              	.L7:
+ 443:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.BY2_INTERPOL256) 
+ 444:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY2_INTERPOL256))
+ 445:boards/TMC2100_eval.c **** 			*value = 2;
+ 446:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.BY4_INTERPOL0) &&
+ 447:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY4_INTERPOL0))
+ 448:boards/TMC2100_eval.c **** 			*value = 3;
+ 449:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.BY4_INTERPOL256) 
+ 450:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY4_INTERPOL256))
+ 451:boards/TMC2100_eval.c **** 			*value = 4;
+ 452:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.BY16_INTERPOL0) &
+ 453:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY16_INTERPOL0))
+ 454:boards/TMC2100_eval.c **** 			*value = 5;
+ 455:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.BY16_INTERPOL256)
+ 456:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY16_INTERPOL256))
+ 457:boards/TMC2100_eval.c **** 			*value = 6;
+ 458:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.PWM_CHOP_BY4_INTE
+ 459:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.PWM_CHOP_BY4_INTERPOL25
+ 460:boards/TMC2100_eval.c **** 			*value = 7;
+ 461:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.PWM_CHOP_BY16_INT
+ 462:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.PWM_CHOP_BY16_INTERPOL2
+ 463:boards/TMC2100_eval.c **** 			*value = 8;
+ 464:boards/TMC2100_eval.c **** 		else
+ 465:boards/TMC2100_eval.c **** 			errors |= TMC_ERROR_VALUE;
+ 466:boards/TMC2100_eval.c **** 		break;
+ 467:boards/TMC2100_eval.c **** 	case 2:
+ 468:boards/TMC2100_eval.c **** 		*value = config.currentSetting;
+ 469:boards/TMC2100_eval.c **** 		break;
+ 470:boards/TMC2100_eval.c **** 	case 3:
+ 471:boards/TMC2100_eval.c **** 		*value = config.chopperHysteresis;
+ 472:boards/TMC2100_eval.c **** 		break;
+ 473:boards/TMC2100_eval.c **** 	case 4:
+ 474:boards/TMC2100_eval.c **** 		*value = config.chopperBlankTime;
+ 475:boards/TMC2100_eval.c **** 		break;
+ 476:boards/TMC2100_eval.c **** 	case 5:
+ 477:boards/TMC2100_eval.c **** 		*value = config.enableStandStillPowerDown;
+ 478:boards/TMC2100_eval.c **** 		break;
+ 479:boards/TMC2100_eval.c **** 	case 6:
+ 480:boards/TMC2100_eval.c **** 		*value = config.chopperOffTime;
+ 481:boards/TMC2100_eval.c **** 		break;
+ 482:boards/TMC2100_eval.c **** 	}
+ 483:boards/TMC2100_eval.c **** 	return errors;
+ 484:boards/TMC2100_eval.c **** }
+ 179              		.loc 1 484 1 view .LVU44
+ 180 0066 02B0     		add	sp, sp, #8
+ 181              	.LCFI2:
+ 182              		.cfi_remember_state
+ 183              		.cfi_def_cfa_offset 16
+ 184              		@ sp needed
+ 185 0068 70BD     		pop	{r4, r5, r6, pc}
+ 186              	.LVL10:
+ 187              	.L16:
+ 188              	.LCFI3:
+ 189              		.cfi_restore_state
+ 440:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY2_INTERPOL0))
+ 190              		.loc 1 440 8 is_stmt 1 view .LVU45
+ 440:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY2_INTERPOL0))
+ 191              		.loc 1 440 10 is_stmt 0 view .LVU46
+ 192 006a 1979     		ldrb	r1, [r3, #4]	@ zero_extendqisi2
+ 193 006c 9142     		cmp	r1, r2
+ 194 006e 06D1     		bne	.L17
+ 440:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY2_INTERPOL0))
+ 195              		.loc 1 440 98 discriminator 1 view .LVU47
+ 196 0070 9DF80200 		ldrb	r0, [sp, #2]	@ zero_extendqisi2
+ 197 0074 597B     		ldrb	r1, [r3, #13]	@ zero_extendqisi2
+ 198 0076 8842     		cmp	r0, r1
+ 199 0078 01D1     		bne	.L17
+ 442:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.BY2_INTERPOL256) 
+ 200              		.loc 1 442 4 is_stmt 1 view .LVU48
+ 442:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.BY2_INTERPOL256) 
+ 201              		.loc 1 442 11 is_stmt 0 view .LVU49
+ 202 007a 0123     		movs	r3, #1
+ 203 007c E4E7     		b	.L27
+ 204              	.L17:
+ 443:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.BY2_INTERPOL256) 
+ 205              		.loc 1 443 8 is_stmt 1 view .LVU50
+ 443:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.BY2_INTERPOL256) 
+ 206              		.loc 1 443 10 is_stmt 0 view .LVU51
+ 207 007e 5979     		ldrb	r1, [r3, #5]	@ zero_extendqisi2
+ 208 0080 9142     		cmp	r1, r2
+ 209 0082 06D1     		bne	.L18
+ 443:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.BY2_INTERPOL256) 
+ 210              		.loc 1 443 100 discriminator 1 view .LVU52
+ 211 0084 9DF80200 		ldrb	r0, [sp, #2]	@ zero_extendqisi2
+ 212 0088 997B     		ldrb	r1, [r3, #14]	@ zero_extendqisi2
+ 213 008a 8842     		cmp	r0, r1
+ 214 008c 01D1     		bne	.L18
+ 445:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.BY4_INTERPOL0) &&
+ 215              		.loc 1 445 4 is_stmt 1 view .LVU53
+ 445:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.BY4_INTERPOL0) &&
+ 216              		.loc 1 445 11 is_stmt 0 view .LVU54
+ 217 008e 0223     		movs	r3, #2
+ 218 0090 DAE7     		b	.L27
+ 219              	.L18:
+ 446:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY4_INTERPOL0))
+ 220              		.loc 1 446 8 is_stmt 1 view .LVU55
+ 446:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY4_INTERPOL0))
+ 221              		.loc 1 446 10 is_stmt 0 view .LVU56
+ 222 0092 9979     		ldrb	r1, [r3, #6]	@ zero_extendqisi2
+ 223 0094 9142     		cmp	r1, r2
+ 224 0096 06D1     		bne	.L19
+ 446:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY4_INTERPOL0))
+ 225              		.loc 1 446 98 discriminator 1 view .LVU57
+ 226 0098 9DF80200 		ldrb	r0, [sp, #2]	@ zero_extendqisi2
+ 227 009c D97B     		ldrb	r1, [r3, #15]	@ zero_extendqisi2
+ 228 009e 8842     		cmp	r0, r1
+ 229 00a0 01D1     		bne	.L19
+ 448:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.BY4_INTERPOL256) 
+ 230              		.loc 1 448 4 is_stmt 1 view .LVU58
+ 448:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.BY4_INTERPOL256) 
+ 231              		.loc 1 448 11 is_stmt 0 view .LVU59
+ 232 00a2 0323     		movs	r3, #3
+ 233 00a4 D0E7     		b	.L27
+ 234              	.L19:
+ 449:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY4_INTERPOL256))
+ 235              		.loc 1 449 8 is_stmt 1 view .LVU60
+ 449:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY4_INTERPOL256))
+ 236              		.loc 1 449 10 is_stmt 0 view .LVU61
+ 237 00a6 D979     		ldrb	r1, [r3, #7]	@ zero_extendqisi2
+ 238 00a8 9142     		cmp	r1, r2
+ 239 00aa 06D1     		bne	.L20
+ 449:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY4_INTERPOL256))
+ 240              		.loc 1 449 100 discriminator 1 view .LVU62
+ 241 00ac 9DF80200 		ldrb	r0, [sp, #2]	@ zero_extendqisi2
+ 242 00b0 197C     		ldrb	r1, [r3, #16]	@ zero_extendqisi2
+ 243 00b2 8842     		cmp	r0, r1
+ 244 00b4 01D1     		bne	.L20
+ 451:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.BY16_INTERPOL0) &
+ 245              		.loc 1 451 4 is_stmt 1 view .LVU63
+ 451:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.BY16_INTERPOL0) &
+ 246              		.loc 1 451 11 is_stmt 0 view .LVU64
+ 247 00b6 0423     		movs	r3, #4
+ 248 00b8 C6E7     		b	.L27
+ 249              	.L20:
+ 452:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY16_INTERPOL0))
+ 250              		.loc 1 452 8 is_stmt 1 view .LVU65
+ 452:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY16_INTERPOL0))
+ 251              		.loc 1 452 10 is_stmt 0 view .LVU66
+ 252 00ba 597A     		ldrb	r1, [r3, #9]	@ zero_extendqisi2
+ 253 00bc 9142     		cmp	r1, r2
+ 254 00be 06D1     		bne	.L21
+ 452:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY16_INTERPOL0))
+ 255              		.loc 1 452 99 discriminator 1 view .LVU67
+ 256 00c0 9DF80200 		ldrb	r0, [sp, #2]	@ zero_extendqisi2
+ 257 00c4 997C     		ldrb	r1, [r3, #18]	@ zero_extendqisi2
+ 258 00c6 8842     		cmp	r0, r1
+ 259 00c8 01D1     		bne	.L21
+ 454:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.BY16_INTERPOL256)
+ 260              		.loc 1 454 4 is_stmt 1 view .LVU68
+ 454:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.BY16_INTERPOL256)
+ 261              		.loc 1 454 11 is_stmt 0 view .LVU69
+ 262 00ca 0523     		movs	r3, #5
+ 263 00cc BCE7     		b	.L27
+ 264              	.L21:
+ 455:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY16_INTERPOL256))
+ 265              		.loc 1 455 8 is_stmt 1 view .LVU70
+ 455:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY16_INTERPOL256))
+ 266              		.loc 1 455 10 is_stmt 0 view .LVU71
+ 267 00ce 997A     		ldrb	r1, [r3, #10]	@ zero_extendqisi2
+ 268 00d0 9142     		cmp	r1, r2
+ 269 00d2 06D1     		bne	.L22
+ 455:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.BY16_INTERPOL256))
+ 270              		.loc 1 455 101 discriminator 1 view .LVU72
+ 271 00d4 9DF80200 		ldrb	r0, [sp, #2]	@ zero_extendqisi2
+ 272 00d8 D97C     		ldrb	r1, [r3, #19]	@ zero_extendqisi2
+ 273 00da 8842     		cmp	r0, r1
+ 274 00dc 01D1     		bne	.L22
+ 457:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.PWM_CHOP_BY4_INTE
+ 275              		.loc 1 457 4 is_stmt 1 view .LVU73
+ 457:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.PWM_CHOP_BY4_INTE
+ 276              		.loc 1 457 11 is_stmt 0 view .LVU74
+ 277 00de 0623     		movs	r3, #6
+ 278 00e0 B2E7     		b	.L27
+ 279              	.L22:
+ 458:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.PWM_CHOP_BY4_INTERPOL25
+ 280              		.loc 1 458 8 is_stmt 1 view .LVU75
+ 458:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.PWM_CHOP_BY4_INTERPOL25
+ 281              		.loc 1 458 10 is_stmt 0 view .LVU76
+ 282 00e2 197A     		ldrb	r1, [r3, #8]	@ zero_extendqisi2
+ 283 00e4 9142     		cmp	r1, r2
+ 284 00e6 06D1     		bne	.L23
+ 458:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.PWM_CHOP_BY4_INTERPOL25
+ 285              		.loc 1 458 109 discriminator 1 view .LVU77
+ 286 00e8 9DF80200 		ldrb	r0, [sp, #2]	@ zero_extendqisi2
+ 287 00ec 597C     		ldrb	r1, [r3, #17]	@ zero_extendqisi2
+ 288 00ee 8842     		cmp	r0, r1
+ 289 00f0 01D1     		bne	.L23
+ 460:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.PWM_CHOP_BY16_INT
+ 290              		.loc 1 460 4 is_stmt 1 view .LVU78
+ 460:boards/TMC2100_eval.c **** 		else if((config.microstepResolution1 == TMCRhinoSA.MicrostepResolutionSettings1.PWM_CHOP_BY16_INT
+ 291              		.loc 1 460 11 is_stmt 0 view .LVU79
+ 292 00f2 0723     		movs	r3, #7
+ 293 00f4 A8E7     		b	.L27
+ 294              	.L23:
+ 461:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.PWM_CHOP_BY16_INTERPOL2
+ 295              		.loc 1 461 8 is_stmt 1 view .LVU80
+ 461:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.PWM_CHOP_BY16_INTERPOL2
+ 296              		.loc 1 461 10 is_stmt 0 view .LVU81
+ 297 00f6 D97A     		ldrb	r1, [r3, #11]	@ zero_extendqisi2
+ 298 00f8 9142     		cmp	r1, r2
+ 299 00fa 14D1     		bne	.L26
+ 461:boards/TMC2100_eval.c **** 				(config.microstepResolution2 == TMCRhinoSA.MicrostepResolutionSettings2.PWM_CHOP_BY16_INTERPOL2
+ 300              		.loc 1 461 110 discriminator 1 view .LVU82
+ 301 00fc 9DF80220 		ldrb	r2, [sp, #2]	@ zero_extendqisi2
+ 302 0100 1B7D     		ldrb	r3, [r3, #20]	@ zero_extendqisi2
+ 303 0102 9A42     		cmp	r2, r3
+ 304 0104 0FD1     		bne	.L26
+ 463:boards/TMC2100_eval.c **** 		else
+ 305              		.loc 1 463 4 is_stmt 1 view .LVU83
+ 463:boards/TMC2100_eval.c **** 		else
+ 306              		.loc 1 463 11 is_stmt 0 view .LVU84
+ 307 0106 0823     		movs	r3, #8
+ 308 0108 9EE7     		b	.L27
+ 309              	.L14:
+ 468:boards/TMC2100_eval.c **** 		break;
+ 310              		.loc 1 468 3 is_stmt 1 view .LVU85
+ 468:boards/TMC2100_eval.c **** 		break;
+ 311              		.loc 1 468 18 is_stmt 0 view .LVU86
+ 312 010a 9DF80330 		ldrb	r3, [sp, #3]	@ zero_extendqisi2
+ 313 010e 9BE7     		b	.L27
+ 314              	.L13:
+ 471:boards/TMC2100_eval.c **** 		break;
+ 315              		.loc 1 471 3 is_stmt 1 view .LVU87
+ 471:boards/TMC2100_eval.c **** 		break;
+ 316              		.loc 1 471 18 is_stmt 0 view .LVU88
+ 317 0110 9DF80430 		ldrb	r3, [sp, #4]	@ zero_extendqisi2
+ 318 0114 98E7     		b	.L27
+ 319              	.L12:
+ 474:boards/TMC2100_eval.c **** 		break;
+ 320              		.loc 1 474 3 is_stmt 1 view .LVU89
+ 474:boards/TMC2100_eval.c **** 		break;
+ 321              		.loc 1 474 18 is_stmt 0 view .LVU90
+ 322 0116 9DF80530 		ldrb	r3, [sp, #5]	@ zero_extendqisi2
+ 323 011a 95E7     		b	.L27
+ 324              	.L10:
+ 477:boards/TMC2100_eval.c **** 		break;
+ 325              		.loc 1 477 3 is_stmt 1 view .LVU91
+ 477:boards/TMC2100_eval.c **** 		break;
+ 326              		.loc 1 477 18 is_stmt 0 view .LVU92
+ 327 011c 9DF80630 		ldrb	r3, [sp, #6]	@ zero_extendqisi2
+ 328 0120 92E7     		b	.L27
+ 329              	.LVL11:
+ 330              	.L24:
+ 426:boards/TMC2100_eval.c **** 	}
+ 331              		.loc 1 426 10 view .LVU93
+ 332 0122 0420     		movs	r0, #4
+ 333              	.LVL12:
+ 426:boards/TMC2100_eval.c **** 	}
+ 334              		.loc 1 426 10 view .LVU94
+ 335 0124 9FE7     		b	.L7
+ 336              	.LVL13:
+ 337              	.L26:
+ 465:boards/TMC2100_eval.c **** 		break;
+ 338              		.loc 1 465 11 view .LVU95
+ 339 0126 1020     		movs	r0, #16
+ 340              	.LVL14:
+ 465:boards/TMC2100_eval.c **** 		break;
+ 341              		.loc 1 465 11 view .LVU96
+ 342 0128 9DE7     		b	.L7
+ 343              	.L29:
+ 344 012a 00BF     		.align	2
+ 345              	.L28:
+ 346 012c 00000000 		.word	TMCRhinoSA
+ 347              		.cfi_endproc
+ 348              	.LFE15:
+ 350              		.align	1
+ 351              		.syntax unified
+ 352              		.thumb
+ 353              		.thumb_func
+ 354              		.fpu softvfp
+ 356              	enableDriver:
+ 357              	.LVL15:
+ 358              	.LFB19:
+ 485:boards/TMC2100_eval.c **** 
+ 486:boards/TMC2100_eval.c **** void TMC2100_init(void)
+ 487:boards/TMC2100_eval.c **** {
+ 488:boards/TMC2100_eval.c **** 	Pins.AIN_REF_PWM  = &HAL.IOs->pins->DIO11;
+ 489:boards/TMC2100_eval.c **** 	Pins.AIN_REF_SW   = &HAL.IOs->pins->DIO10;
+ 490:boards/TMC2100_eval.c **** 	Pins.CFG0         = &HAL.IOs->pins->SPI2_SDO;
+ 491:boards/TMC2100_eval.c **** 	Pins.CFG1         = &HAL.IOs->pins->SPI2_SDI;
+ 492:boards/TMC2100_eval.c **** 	Pins.CFG2         = &HAL.IOs->pins->SPI2_SCK;
+ 493:boards/TMC2100_eval.c **** 	Pins.CFG3         = &HAL.IOs->pins->SPI2_CSN0;
+ 494:boards/TMC2100_eval.c **** 	Pins.CFG4         = &HAL.IOs->pins->DIO13;
+ 495:boards/TMC2100_eval.c **** 	Pins.CFG5         = &HAL.IOs->pins->DIO12;
+ 496:boards/TMC2100_eval.c **** 	Pins.CFG6_ENN     = &HAL.IOs->pins->DIO0;
+ 497:boards/TMC2100_eval.c **** 	Pins.DIR          = &HAL.IOs->pins->DIO7;
+ 498:boards/TMC2100_eval.c **** 	Pins.ERROR        = &HAL.IOs->pins->DIO15;
+ 499:boards/TMC2100_eval.c **** 	Pins.INDEX        = &HAL.IOs->pins->DIO16;
+ 500:boards/TMC2100_eval.c **** 	Pins.STEP         = &HAL.IOs->pins->DIO6;
+ 501:boards/TMC2100_eval.c **** 
+ 502:boards/TMC2100_eval.c **** 	HAL.IOs->config->toOutput(Pins.STEP);
+ 503:boards/TMC2100_eval.c **** 	HAL.IOs->config->toOutput(Pins.DIR);
+ 504:boards/TMC2100_eval.c **** 	HAL.IOs->config->toOutput(Pins.AIN_REF_PWM);
+ 505:boards/TMC2100_eval.c **** 	HAL.IOs->config->toOutput(Pins.AIN_REF_SW);
+ 506:boards/TMC2100_eval.c **** 
+ 507:boards/TMC2100_eval.c **** 	HAL.IOs->config->toInput(Pins.ERROR);
+ 508:boards/TMC2100_eval.c **** 	HAL.IOs->config->toInput(Pins.INDEX);
+ 509:boards/TMC2100_eval.c **** 
+ 510:boards/TMC2100_eval.c **** 	TMCRhinoSA.CFGPins[0] = Pins.CFG0;
+ 511:boards/TMC2100_eval.c **** 	TMCRhinoSA.CFGPins[1] = Pins.CFG1;
+ 512:boards/TMC2100_eval.c **** 	TMCRhinoSA.CFGPins[2] = Pins.CFG2;
+ 513:boards/TMC2100_eval.c **** 	TMCRhinoSA.CFGPins[3] = Pins.CFG3;
+ 514:boards/TMC2100_eval.c **** 	TMCRhinoSA.CFGPins[4] = Pins.CFG4;
+ 515:boards/TMC2100_eval.c **** 	TMCRhinoSA.CFGPins[5] = Pins.CFG5;
+ 516:boards/TMC2100_eval.c **** 	TMCRhinoSA.CFGPins[6] = Pins.CFG6_ENN;
+ 517:boards/TMC2100_eval.c **** 
+ 518:boards/TMC2100_eval.c **** 	for(uint8_t i = 0; i < 7; i++)
+ 519:boards/TMC2100_eval.c **** 	{
+ 520:boards/TMC2100_eval.c **** 		HAL.IOs->config->toOutput(TMCRhinoSA.CFGPins[i]);
+ 521:boards/TMC2100_eval.c **** 		HAL.IOs->config->setLow(TMCRhinoSA.CFGPins[i]);
+ 522:boards/TMC2100_eval.c **** 	}
+ 523:boards/TMC2100_eval.c **** 
+ 524:boards/TMC2100_eval.c **** 	Evalboards.ch2.config->state = CONFIG_READY;
+ 525:boards/TMC2100_eval.c **** 
+ 526:boards/TMC2100_eval.c **** 	StepDir_init(STEPDIR_PRECISION);
+ 527:boards/TMC2100_eval.c **** 	StepDir_setPins(0, Pins.STEP, Pins.DIR, NULL);
+ 528:boards/TMC2100_eval.c **** 	StepDir_setVelocityMax(0, 20000);
+ 529:boards/TMC2100_eval.c **** 	StepDir_setAcceleration(0, 25000);
+ 530:boards/TMC2100_eval.c **** 
+ 531:boards/TMC2100_eval.c **** 	Evalboards.ch2.rotate          = rotate;
+ 532:boards/TMC2100_eval.c **** 	Evalboards.ch2.right           = right;
+ 533:boards/TMC2100_eval.c **** 	Evalboards.ch2.left            = left;
+ 534:boards/TMC2100_eval.c **** 	Evalboards.ch2.stop            = stop;
+ 535:boards/TMC2100_eval.c **** 	Evalboards.ch2.GAP             = GAP;
+ 536:boards/TMC2100_eval.c **** 	Evalboards.ch2.SAP             = SAP;
+ 537:boards/TMC2100_eval.c **** 	Evalboards.ch2.moveTo          = moveTo;
+ 538:boards/TMC2100_eval.c **** 	Evalboards.ch2.moveBy          = moveBy;
+ 539:boards/TMC2100_eval.c **** 	Evalboards.ch2.writeRegister   = writeRegister;
+ 540:boards/TMC2100_eval.c **** 	Evalboards.ch2.readRegister    = readRegister;
+ 541:boards/TMC2100_eval.c **** 	Evalboards.ch2.userFunction    = userFunction;
+ 542:boards/TMC2100_eval.c **** 	Evalboards.ch2.periodicJob     = periodicJob;
+ 543:boards/TMC2100_eval.c **** 	Evalboards.ch2.enableDriver    = enableDriver;
+ 544:boards/TMC2100_eval.c **** 	Evalboards.ch2.numberOfMotors  = MOTORS;
+ 545:boards/TMC2100_eval.c **** 	Evalboards.ch2.deInit          = deInit;
+ 546:boards/TMC2100_eval.c **** 
+ 547:boards/TMC2100_eval.c **** 	enableDriver(DRIVER_USE_GLOBAL_ENABLE);
+ 548:boards/TMC2100_eval.c **** 	reset();
+ 549:boards/TMC2100_eval.c **** 
+ 550:boards/TMC2100_eval.c **** #if defined(Startrampe)
+ 551:boards/TMC2100_eval.c **** 	Pins.AIN_REF_PWM->configuration.GPIO_Mode = GPIO_Mode_AF;
+ 552:boards/TMC2100_eval.c **** 	GPIO_PinAFConfig(Pins.AIN_REF_PWM->port, Pins.AIN_REF_PWM->bit, GPIO_AF_TIM1);
+ 553:boards/TMC2100_eval.c **** #elif defined(Landungsbruecke)
+ 554:boards/TMC2100_eval.c **** 	HAL.IOs->config->toOutput(Pins.AIN_REF_PWM);
+ 555:boards/TMC2100_eval.c **** 	Pins.AIN_REF_PWM->configuration.GPIO_Mode = GPIO_Mode_AF4;
+ 556:boards/TMC2100_eval.c **** #endif
+ 557:boards/TMC2100_eval.c **** 
+ 558:boards/TMC2100_eval.c **** 	HAL.IOs->config->set(Pins.AIN_REF_PWM);
+ 559:boards/TMC2100_eval.c **** 	Timer.init();
+ 560:boards/TMC2100_eval.c **** 	Timer.setDuty(TIMER_CHANNEL_1, 0);
+ 561:boards/TMC2100_eval.c **** }
+ 562:boards/TMC2100_eval.c **** 
+ 563:boards/TMC2100_eval.c **** static void deInit(void)
+ 564:boards/TMC2100_eval.c **** {
+ 565:boards/TMC2100_eval.c **** 	enableDriver(DRIVER_DISABLE);
+ 566:boards/TMC2100_eval.c **** 
+ 567:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.AIN_REF_PWM);
+ 568:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.AIN_REF_SW);
+ 569:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG0);
+ 570:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG1);
+ 571:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG2);
+ 572:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG3);
+ 573:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG4);
+ 574:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG5);
+ 575:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG6_ENN);
+ 576:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.DIR);
+ 577:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.ERROR);
+ 578:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.INDEX);
+ 579:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.STEP);
+ 580:boards/TMC2100_eval.c **** 
+ 581:boards/TMC2100_eval.c **** 	StepDir_deInit();
+ 582:boards/TMC2100_eval.c **** 	Timer.deInit();
+ 583:boards/TMC2100_eval.c **** }
+ 584:boards/TMC2100_eval.c **** 
+ 585:boards/TMC2100_eval.c **** static uint8_t reset()
+ 586:boards/TMC2100_eval.c **** {
+ 587:boards/TMC2100_eval.c **** 	if(StepDir_getActualVelocity(0) && !VitalSignsMonitor.brownOut)
+ 588:boards/TMC2100_eval.c **** 		return 0;
+ 589:boards/TMC2100_eval.c **** 
+ 590:boards/TMC2100_eval.c **** 	TMCRhinoSA.reset();
+ 591:boards/TMC2100_eval.c **** 
+ 592:boards/TMC2100_eval.c **** 	StepDir_init(STEPDIR_PRECISION);
+ 593:boards/TMC2100_eval.c **** 	StepDir_setPins(0, Pins.STEP, Pins.DIR, NULL);
+ 594:boards/TMC2100_eval.c **** 	StepDir_setVelocityMax(0, 20000);
+ 595:boards/TMC2100_eval.c **** 	StepDir_setAcceleration(0, 25000);
+ 596:boards/TMC2100_eval.c **** 
+ 597:boards/TMC2100_eval.c **** 	return 1;
+ 598:boards/TMC2100_eval.c **** }
+ 599:boards/TMC2100_eval.c **** 
+ 600:boards/TMC2100_eval.c **** static void enableDriver(DriverState state)
+ 601:boards/TMC2100_eval.c **** {
+ 359              		.loc 1 601 1 is_stmt 1 view -0
+ 360              		.cfi_startproc
+ 361              		@ args = 0, pretend = 0, frame = 8
+ 362              		@ frame_needed = 0, uses_anonymous_args = 0
+ 602:boards/TMC2100_eval.c **** 	TMCRhinoTypeStandAloneConfigDef config;
+ 363              		.loc 1 602 2 view .LVU98
+ 603:boards/TMC2100_eval.c **** 	TMCRhinoSA.getConfig(&config);
+ 364              		.loc 1 603 2 view .LVU99
+ 601:boards/TMC2100_eval.c **** 	TMCRhinoTypeStandAloneConfigDef config;
+ 365              		.loc 1 601 1 is_stmt 0 view .LVU100
+ 366 0130 07B5     		push	{r0, r1, r2, lr}
+ 367              	.LCFI4:
+ 368              		.cfi_def_cfa_offset 16
+ 369              		.cfi_offset 14, -4
+ 370              		.loc 1 603 12 view .LVU101
+ 371 0132 034B     		ldr	r3, .L31
+ 372              		.loc 1 603 2 view .LVU102
+ 373 0134 6846     		mov	r0, sp
+ 374              	.LVL16:
+ 375              		.loc 1 603 2 view .LVU103
+ 376 0136 1B6B     		ldr	r3, [r3, #48]
+ 377 0138 9847     		blx	r3
+ 378              	.LVL17:
+ 604:boards/TMC2100_eval.c **** 
+ 605:boards/TMC2100_eval.c **** 	if(state == DRIVER_USE_GLOBAL_ENABLE)
+ 379              		.loc 1 605 2 is_stmt 1 view .LVU104
+ 606:boards/TMC2100_eval.c **** 		state = Evalboards.driverEnable;
+ 607:boards/TMC2100_eval.c **** 
+ 608:boards/TMC2100_eval.c **** 	if(state == DRIVER_DISABLE)
+ 380              		.loc 1 608 2 view .LVU105
+ 609:boards/TMC2100_eval.c **** 	{
+ 610:boards/TMC2100_eval.c **** 		lastEnable = config.enableStandStillPowerDown;
+ 611:boards/TMC2100_eval.c **** 		config.enableStandStillPowerDown = TMCRhinoSA.EnableStandStillPowerDownSettings.DISABLED;
+ 612:boards/TMC2100_eval.c **** 	}
+ 613:boards/TMC2100_eval.c **** 	else
+ 614:boards/TMC2100_eval.c **** 	{
+ 615:boards/TMC2100_eval.c **** 		config.enableStandStillPowerDown = lastEnable;
+ 616:boards/TMC2100_eval.c **** 	}
+ 617:boards/TMC2100_eval.c **** }
+ 381              		.loc 1 617 1 is_stmt 0 view .LVU106
+ 382 013a 03B0     		add	sp, sp, #12
+ 383              	.LCFI5:
+ 384              		.cfi_def_cfa_offset 4
+ 385              		@ sp needed
+ 386 013c 5DF804FB 		ldr	pc, [sp], #4
+ 387              	.L32:
+ 388              		.align	2
+ 389              	.L31:
+ 390 0140 00000000 		.word	TMCRhinoSA
+ 391              		.cfi_endproc
+ 392              	.LFE19:
+ 394              		.align	1
+ 395              		.syntax unified
+ 396              		.thumb
+ 397              		.thumb_func
+ 398              		.fpu softvfp
+ 400              	deInit:
+ 401              	.LFB17:
+ 564:boards/TMC2100_eval.c **** 	enableDriver(DRIVER_DISABLE);
+ 402              		.loc 1 564 1 is_stmt 1 view -0
+ 403              		.cfi_startproc
+ 404              		@ args = 0, pretend = 0, frame = 0
+ 405              		@ frame_needed = 0, uses_anonymous_args = 0
+ 565:boards/TMC2100_eval.c **** 
+ 406              		.loc 1 565 2 view .LVU108
+ 564:boards/TMC2100_eval.c **** 	enableDriver(DRIVER_DISABLE);
+ 407              		.loc 1 564 1 is_stmt 0 view .LVU109
+ 408 0144 70B5     		push	{r4, r5, r6, lr}
+ 409              	.LCFI6:
+ 410              		.cfi_def_cfa_offset 16
+ 411              		.cfi_offset 4, -16
+ 412              		.cfi_offset 5, -12
+ 413              		.cfi_offset 6, -8
+ 414              		.cfi_offset 14, -4
+ 565:boards/TMC2100_eval.c **** 
+ 415              		.loc 1 565 2 view .LVU110
+ 416 0146 0020     		movs	r0, #0
+ 417 0148 FFF7F2FF 		bl	enableDriver
+ 418              	.LVL18:
+ 567:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.AIN_REF_SW);
+ 419              		.loc 1 567 2 is_stmt 1 view .LVU111
+ 567:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.AIN_REF_SW);
+ 420              		.loc 1 567 5 is_stmt 0 view .LVU112
+ 421 014c 1E4B     		ldr	r3, .L34
+ 567:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.AIN_REF_SW);
+ 422              		.loc 1 567 2 view .LVU113
+ 423 014e 1F4C     		ldr	r4, .L34+4
+ 567:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.AIN_REF_SW);
+ 424              		.loc 1 567 5 view .LVU114
+ 425 0150 DD68     		ldr	r5, [r3, #12]
+ 567:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.AIN_REF_SW);
+ 426              		.loc 1 567 2 view .LVU115
+ 427 0152 206B     		ldr	r0, [r4, #48]
+ 567:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.AIN_REF_SW);
+ 428              		.loc 1 567 17 view .LVU116
+ 429 0154 2B68     		ldr	r3, [r5]
+ 567:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.AIN_REF_SW);
+ 430              		.loc 1 567 2 view .LVU117
+ 431 0156 9B68     		ldr	r3, [r3, #8]
+ 432 0158 9847     		blx	r3
+ 433              	.LVL19:
+ 568:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG0);
+ 434              		.loc 1 568 2 is_stmt 1 view .LVU118
+ 568:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG0);
+ 435              		.loc 1 568 17 is_stmt 0 view .LVU119
+ 436 015a 2B68     		ldr	r3, [r5]
+ 568:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG0);
+ 437              		.loc 1 568 2 view .LVU120
+ 438 015c E06A     		ldr	r0, [r4, #44]
+ 439 015e 9B68     		ldr	r3, [r3, #8]
+ 440 0160 9847     		blx	r3
+ 441              	.LVL20:
+ 569:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG1);
+ 442              		.loc 1 569 2 is_stmt 1 view .LVU121
+ 569:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG1);
+ 443              		.loc 1 569 17 is_stmt 0 view .LVU122
+ 444 0162 2B68     		ldr	r3, [r5]
+ 569:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG1);
+ 445              		.loc 1 569 2 view .LVU123
+ 446 0164 E068     		ldr	r0, [r4, #12]
+ 447 0166 9B68     		ldr	r3, [r3, #8]
+ 448 0168 9847     		blx	r3
+ 449              	.LVL21:
+ 570:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG2);
+ 450              		.loc 1 570 2 is_stmt 1 view .LVU124
+ 570:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG2);
+ 451              		.loc 1 570 17 is_stmt 0 view .LVU125
+ 452 016a 2B68     		ldr	r3, [r5]
+ 570:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG2);
+ 453              		.loc 1 570 2 view .LVU126
+ 454 016c A068     		ldr	r0, [r4, #8]
+ 455 016e 9B68     		ldr	r3, [r3, #8]
+ 456 0170 9847     		blx	r3
+ 457              	.LVL22:
+ 571:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG3);
+ 458              		.loc 1 571 2 is_stmt 1 view .LVU127
+ 571:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG3);
+ 459              		.loc 1 571 17 is_stmt 0 view .LVU128
+ 460 0172 2B68     		ldr	r3, [r5]
+ 571:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG3);
+ 461              		.loc 1 571 2 view .LVU129
+ 462 0174 6068     		ldr	r0, [r4, #4]
+ 463 0176 9B68     		ldr	r3, [r3, #8]
+ 464 0178 9847     		blx	r3
+ 465              	.LVL23:
+ 572:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG4);
+ 466              		.loc 1 572 2 is_stmt 1 view .LVU130
+ 572:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG4);
+ 467              		.loc 1 572 17 is_stmt 0 view .LVU131
+ 468 017a 2B68     		ldr	r3, [r5]
+ 572:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG4);
+ 469              		.loc 1 572 2 view .LVU132
+ 470 017c 2068     		ldr	r0, [r4]
+ 471 017e 9B68     		ldr	r3, [r3, #8]
+ 472 0180 9847     		blx	r3
+ 473              	.LVL24:
+ 573:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG5);
+ 474              		.loc 1 573 2 is_stmt 1 view .LVU133
+ 573:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG5);
+ 475              		.loc 1 573 17 is_stmt 0 view .LVU134
+ 476 0182 2B68     		ldr	r3, [r5]
+ 573:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG5);
+ 477              		.loc 1 573 2 view .LVU135
+ 478 0184 A069     		ldr	r0, [r4, #24]
+ 479 0186 9B68     		ldr	r3, [r3, #8]
+ 480 0188 9847     		blx	r3
+ 481              	.LVL25:
+ 574:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG6_ENN);
+ 482              		.loc 1 574 2 is_stmt 1 view .LVU136
+ 574:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG6_ENN);
+ 483              		.loc 1 574 17 is_stmt 0 view .LVU137
+ 484 018a 2B68     		ldr	r3, [r5]
+ 574:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.CFG6_ENN);
+ 485              		.loc 1 574 2 view .LVU138
+ 486 018c E069     		ldr	r0, [r4, #28]
+ 487 018e 9B68     		ldr	r3, [r3, #8]
+ 488 0190 9847     		blx	r3
+ 489              	.LVL26:
+ 575:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.DIR);
+ 490              		.loc 1 575 2 is_stmt 1 view .LVU139
+ 575:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.DIR);
+ 491              		.loc 1 575 17 is_stmt 0 view .LVU140
+ 492 0192 2B68     		ldr	r3, [r5]
+ 575:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.DIR);
+ 493              		.loc 1 575 2 view .LVU141
+ 494 0194 A06A     		ldr	r0, [r4, #40]
+ 495 0196 9B68     		ldr	r3, [r3, #8]
+ 496 0198 9847     		blx	r3
+ 497              	.LVL27:
+ 576:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.ERROR);
+ 498              		.loc 1 576 2 is_stmt 1 view .LVU142
+ 576:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.ERROR);
+ 499              		.loc 1 576 17 is_stmt 0 view .LVU143
+ 500 019a 2B68     		ldr	r3, [r5]
+ 576:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.ERROR);
+ 501              		.loc 1 576 2 view .LVU144
+ 502 019c 6069     		ldr	r0, [r4, #20]
+ 503 019e 9B68     		ldr	r3, [r3, #8]
+ 504 01a0 9847     		blx	r3
+ 505              	.LVL28:
+ 577:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.INDEX);
+ 506              		.loc 1 577 2 is_stmt 1 view .LVU145
+ 577:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.INDEX);
+ 507              		.loc 1 577 17 is_stmt 0 view .LVU146
+ 508 01a2 2B68     		ldr	r3, [r5]
+ 577:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.INDEX);
+ 509              		.loc 1 577 2 view .LVU147
+ 510 01a4 206A     		ldr	r0, [r4, #32]
+ 511 01a6 9B68     		ldr	r3, [r3, #8]
+ 512 01a8 9847     		blx	r3
+ 513              	.LVL29:
+ 578:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.STEP);
+ 514              		.loc 1 578 2 is_stmt 1 view .LVU148
+ 578:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.STEP);
+ 515              		.loc 1 578 17 is_stmt 0 view .LVU149
+ 516 01aa 2B68     		ldr	r3, [r5]
+ 578:boards/TMC2100_eval.c **** 	HAL.IOs->config->reset(Pins.STEP);
+ 517              		.loc 1 578 2 view .LVU150
+ 518 01ac 606A     		ldr	r0, [r4, #36]
+ 519 01ae 9B68     		ldr	r3, [r3, #8]
+ 520 01b0 9847     		blx	r3
+ 521              	.LVL30:
+ 579:boards/TMC2100_eval.c **** 
+ 522              		.loc 1 579 2 is_stmt 1 view .LVU151
+ 579:boards/TMC2100_eval.c **** 
+ 523              		.loc 1 579 17 is_stmt 0 view .LVU152
+ 524 01b2 2B68     		ldr	r3, [r5]
+ 579:boards/TMC2100_eval.c **** 
+ 525              		.loc 1 579 2 view .LVU153
+ 526 01b4 2069     		ldr	r0, [r4, #16]
+ 527 01b6 9B68     		ldr	r3, [r3, #8]
+ 528 01b8 9847     		blx	r3
+ 529              	.LVL31:
+ 581:boards/TMC2100_eval.c **** 	Timer.deInit();
+ 530              		.loc 1 581 2 is_stmt 1 view .LVU154
+ 531 01ba FFF7FEFF 		bl	StepDir_deInit
+ 532              	.LVL32:
+ 582:boards/TMC2100_eval.c **** }
+ 533              		.loc 1 582 2 view .LVU155
+ 582:boards/TMC2100_eval.c **** }
+ 534              		.loc 1 582 7 is_stmt 0 view .LVU156
+ 535 01be 044B     		ldr	r3, .L34+8
+ 583:boards/TMC2100_eval.c **** 
+ 536              		.loc 1 583 1 view .LVU157
+ 537 01c0 BDE87040 		pop	{r4, r5, r6, lr}
+ 538              	.LCFI7:
+ 539              		.cfi_restore 14
+ 540              		.cfi_restore 6
+ 541              		.cfi_restore 5
+ 542              		.cfi_restore 4
+ 543              		.cfi_def_cfa_offset 0
+ 582:boards/TMC2100_eval.c **** }
+ 544              		.loc 1 582 2 view .LVU158
+ 545 01c4 5B68     		ldr	r3, [r3, #4]
+ 546 01c6 1847     		bx	r3	@ indirect register sibling call
+ 547              	.LVL33:
+ 548              	.L35:
+ 549              		.align	2
+ 550              	.L34:
+ 551 01c8 00000000 		.word	HAL
+ 552 01cc 00000000 		.word	.LANCHOR0
+ 553 01d0 00000000 		.word	Timer
+ 554              		.cfi_endproc
+ 555              	.LFE17:
+ 557              		.align	1
+ 558              		.syntax unified
+ 559              		.thumb
+ 560              		.thumb_func
+ 561              		.fpu softvfp
+ 563              	periodicJob:
+ 564              	.LVL34:
+ 565              	.LFB13:
+ 320:boards/TMC2100_eval.c **** 	UNUSED(tick);
+ 566              		.loc 1 320 1 is_stmt 1 view -0
+ 567              		.cfi_startproc
+ 568              		@ args = 0, pretend = 0, frame = 0
+ 569              		@ frame_needed = 0, uses_anonymous_args = 0
+ 570              		@ link register save eliminated.
+ 321:boards/TMC2100_eval.c **** 
+ 571              		.loc 1 321 2 view .LVU160
+ 323:boards/TMC2100_eval.c **** 	{
+ 572              		.loc 1 323 2 view .LVU161
+ 573              	.LBB2:
+ 323:boards/TMC2100_eval.c **** 	{
+ 574              		.loc 1 323 6 view .LVU162
+ 323:boards/TMC2100_eval.c **** 	{
+ 575              		.loc 1 323 21 view .LVU163
+ 325:boards/TMC2100_eval.c **** 	}
+ 576              		.loc 1 325 3 view .LVU164
+ 577 01d4 0020     		movs	r0, #0
+ 578              	.LVL35:
+ 325:boards/TMC2100_eval.c **** 	}
+ 579              		.loc 1 325 3 is_stmt 0 view .LVU165
+ 580 01d6 FFF7FEBF 		b	StepDir_periodicJob
+ 581              	.LVL36:
+ 582              	.LBE2:
+ 583              		.cfi_endproc
+ 584              	.LFE13:
+ 586              		.align	1
+ 587              		.syntax unified
+ 588              		.thumb
+ 589              		.thumb_func
+ 590              		.fpu softvfp
+ 592              	moveTo:
+ 593              	.LVL37:
+ 594              	.LFB5:
+  89:boards/TMC2100_eval.c **** 	if(motor >= MOTORS)
+ 595              		.loc 1 89 1 is_stmt 1 view -0
+ 596              		.cfi_startproc
+ 597              		@ args = 0, pretend = 0, frame = 0
+ 598              		@ frame_needed = 0, uses_anonymous_args = 0
+  90:boards/TMC2100_eval.c **** 		return TMC_ERROR_MOTOR;
+ 599              		.loc 1 90 2 view .LVU167
+  89:boards/TMC2100_eval.c **** 	if(motor >= MOTORS)
+ 600              		.loc 1 89 1 is_stmt 0 view .LVU168
+ 601 01da 10B5     		push	{r4, lr}
+ 602              	.LCFI8:
+ 603              		.cfi_def_cfa_offset 8
+ 604              		.cfi_offset 4, -8
+ 605              		.cfi_offset 14, -4
+  90:boards/TMC2100_eval.c **** 		return TMC_ERROR_MOTOR;
+ 606              		.loc 1 90 4 view .LVU169
+ 607 01dc 0446     		mov	r4, r0
+ 608 01de 18B9     		cbnz	r0, .L39
+  93:boards/TMC2100_eval.c **** 
+ 609              		.loc 1 93 2 is_stmt 1 view .LVU170
+ 610 01e0 FFF7FEFF 		bl	StepDir_moveTo
+ 611              	.LVL38:
+  95:boards/TMC2100_eval.c **** }
+ 612              		.loc 1 95 2 view .LVU171
+  95:boards/TMC2100_eval.c **** }
+ 613              		.loc 1 95 9 is_stmt 0 view .LVU172
+ 614 01e4 2046     		mov	r0, r4
+ 615              	.L37:
+  96:boards/TMC2100_eval.c **** 
+ 616              		.loc 1 96 1 view .LVU173
+ 617 01e6 10BD     		pop	{r4, pc}
+ 618              	.LVL39:
+ 619              	.L39:
+  91:boards/TMC2100_eval.c **** 
+ 620              		.loc 1 91 10 view .LVU174
+ 621 01e8 0820     		movs	r0, #8
+ 622              	.LVL40:
+  91:boards/TMC2100_eval.c **** 
+ 623              		.loc 1 91 10 view .LVU175
+ 624 01ea FCE7     		b	.L37
+ 625              		.cfi_endproc
+ 626              	.LFE5:
+ 628              		.align	1
+ 629              		.syntax unified
+ 630              		.thumb
+ 631              		.thumb_func
+ 632              		.fpu softvfp
+ 634              	rotate:
+ 635              	.LVL41:
+ 636              	.LFB1:
+  64:boards/TMC2100_eval.c **** 	if(motor >= MOTORS)
+ 637              		.loc 1 64 1 is_stmt 1 view -0
+ 638              		.cfi_startproc
+ 639              		@ args = 0, pretend = 0, frame = 0
+ 640              		@ frame_needed = 0, uses_anonymous_args = 0
+  65:boards/TMC2100_eval.c **** 		return TMC_ERROR_MOTOR;
+ 641              		.loc 1 65 2 view .LVU177
+  64:boards/TMC2100_eval.c **** 	if(motor >= MOTORS)
+ 642              		.loc 1 64 1 is_stmt 0 view .LVU178
+ 643 01ec 10B5     		push	{r4, lr}
+ 644              	.LCFI9:
+ 645              		.cfi_def_cfa_offset 8
+ 646              		.cfi_offset 4, -8
+ 647              		.cfi_offset 14, -4
+  65:boards/TMC2100_eval.c **** 		return TMC_ERROR_MOTOR;
+ 648              		.loc 1 65 4 view .LVU179
+ 649 01ee 0446     		mov	r4, r0
+ 650 01f0 18B9     		cbnz	r0, .L42
+  68:boards/TMC2100_eval.c **** 
+ 651              		.loc 1 68 2 is_stmt 1 view .LVU180
+ 652 01f2 FFF7FEFF 		bl	StepDir_rotate
+ 653              	.LVL42:
+  70:boards/TMC2100_eval.c **** }
+ 654              		.loc 1 70 2 view .LVU181
+  70:boards/TMC2100_eval.c **** }
+ 655              		.loc 1 70 9 is_stmt 0 view .LVU182
+ 656 01f6 2046     		mov	r0, r4
+ 657              	.L40:
+  71:boards/TMC2100_eval.c **** 
+ 658              		.loc 1 71 1 view .LVU183
+ 659 01f8 10BD     		pop	{r4, pc}
+ 660              	.LVL43:
+ 661              	.L42:
+  66:boards/TMC2100_eval.c **** 
+ 662              		.loc 1 66 10 view .LVU184
+ 663 01fa 0820     		movs	r0, #8
+ 664              	.LVL44:
+  66:boards/TMC2100_eval.c **** 
+ 665              		.loc 1 66 10 view .LVU185
+ 666 01fc FCE7     		b	.L40
+ 667              		.cfi_endproc
+ 668              	.LFE1:
+ 670              		.align	1
+ 671              		.syntax unified
+ 672              		.thumb
+ 673              		.thumb_func
+ 674              		.fpu softvfp
+ 676              	stop:
+ 677              	.LVL45:
+ 678              	.LFB4:
+  84:boards/TMC2100_eval.c **** 	return rotate(motor, 0);
+ 679              		.loc 1 84 1 is_stmt 1 view -0
+ 680              		.cfi_startproc
+ 681              		@ args = 0, pretend = 0, frame = 0
+ 682              		@ frame_needed = 0, uses_anonymous_args = 0
+ 683              		@ link register save eliminated.
+  85:boards/TMC2100_eval.c **** }
+ 684              		.loc 1 85 2 view .LVU187
+  85:boards/TMC2100_eval.c **** }
+ 685              		.loc 1 85 9 is_stmt 0 view .LVU188
+ 686 01fe 0021     		movs	r1, #0
+ 687 0200 F4E7     		b	rotate
+ 688              	.LVL46:
+  85:boards/TMC2100_eval.c **** }
+ 689              		.loc 1 85 9 view .LVU189
+ 690              		.cfi_endproc
+ 691              	.LFE4:
+ 693              		.align	1
+ 694              		.syntax unified
+ 695              		.thumb
+ 696              		.thumb_func
+ 697              		.fpu softvfp
+ 699              	left:
+ 700              	.LVL47:
+ 701              	.LFB3:
+  79:boards/TMC2100_eval.c **** 	return rotate(motor, -velocity);
+ 702              		.loc 1 79 1 is_stmt 1 view -0
+ 703              		.cfi_startproc
+ 704              		@ args = 0, pretend = 0, frame = 0
+ 705              		@ frame_needed = 0, uses_anonymous_args = 0
+ 706              		@ link register save eliminated.
+  80:boards/TMC2100_eval.c **** }
+ 707              		.loc 1 80 2 view .LVU191
+  80:boards/TMC2100_eval.c **** }
+ 708              		.loc 1 80 9 is_stmt 0 view .LVU192
+ 709 0202 4942     		rsbs	r1, r1, #0
+ 710              	.LVL48:
+  80:boards/TMC2100_eval.c **** }
+ 711              		.loc 1 80 9 view .LVU193
+ 712 0204 F2E7     		b	rotate
+ 713              	.LVL49:
+  80:boards/TMC2100_eval.c **** }
+ 714              		.loc 1 80 9 view .LVU194
+ 715              		.cfi_endproc
+ 716              	.LFE3:
+ 718              		.align	1
+ 719              		.syntax unified
+ 720              		.thumb
+ 721              		.thumb_func
+ 722              		.fpu softvfp
+ 724              	right:
+ 725              	.LVL50:
+ 726              	.LFB2:
+  74:boards/TMC2100_eval.c **** 	return rotate(motor, velocity);
+ 727              		.loc 1 74 1 is_stmt 1 view -0
+ 728              		.cfi_startproc
+ 729              		@ args = 0, pretend = 0, frame = 0
+ 730              		@ frame_needed = 0, uses_anonymous_args = 0
+ 731              		@ link register save eliminated.
+  75:boards/TMC2100_eval.c **** }
+ 732              		.loc 1 75 2 view .LVU196
+  75:boards/TMC2100_eval.c **** }
+ 733              		.loc 1 75 9 is_stmt 0 view .LVU197
+ 734 0206 F1E7     		b	rotate
+ 735              	.LVL51:
+  75:boards/TMC2100_eval.c **** }
+ 736              		.loc 1 75 9 view .LVU198
+ 737              		.cfi_endproc
+ 738              	.LFE2:
+ 740              		.align	1
+ 741              		.syntax unified
+ 742              		.thumb
+ 743              		.thumb_func
+ 744              		.fpu softvfp
+ 746              	setStandAloneSettings:
+ 747              	.LVL52:
+ 748              	.LFB14:
+ 330:boards/TMC2100_eval.c **** 	TMCRhinoTypeStandAloneConfigDef config;
+ 749              		.loc 1 330 1 is_stmt 1 view -0
+ 750              		.cfi_startproc
+ 751              		@ args = 0, pretend = 0, frame = 8
+ 752              		@ frame_needed = 0, uses_anonymous_args = 0
+ 331:boards/TMC2100_eval.c **** 
+ 753              		.loc 1 331 2 view .LVU200
+ 333:boards/TMC2100_eval.c **** 
+ 754              		.loc 1 333 2 view .LVU201
+ 335:boards/TMC2100_eval.c **** 	{
+ 755              		.loc 1 335 2 view .LVU202
+ 335:boards/TMC2100_eval.c **** 	{
+ 756              		.loc 1 335 4 is_stmt 0 view .LVU203
+ 757 0208 0628     		cmp	r0, #6
+ 330:boards/TMC2100_eval.c **** 	TMCRhinoTypeStandAloneConfigDef config;
+ 758              		.loc 1 330 1 view .LVU204
+ 759 020a 73B5     		push	{r0, r1, r4, r5, r6, lr}
+ 760              	.LCFI10:
+ 761              		.cfi_def_cfa_offset 24
+ 762              		.cfi_offset 4, -16
+ 763              		.cfi_offset 5, -12
+ 764              		.cfi_offset 6, -8
+ 765              		.cfi_offset 14, -4
+ 330:boards/TMC2100_eval.c **** 	TMCRhinoTypeStandAloneConfigDef config;
+ 766              		.loc 1 330 1 view .LVU205
+ 767 020c 0546     		mov	r5, r0
+ 768 020e 0C46     		mov	r4, r1
+ 335:boards/TMC2100_eval.c **** 	{
+ 769              		.loc 1 335 4 view .LVU206
+ 770 0210 5DD8     		bhi	.L67
+ 341:boards/TMC2100_eval.c **** 	{
+ 771              		.loc 1 341 2 is_stmt 1 view .LVU207
+ 341:boards/TMC2100_eval.c **** 	{
+ 772              		.loc 1 341 4 is_stmt 0 view .LVU208
+ 773 0212 0229     		cmp	r1, #2
+ 774 0214 03D9     		bls	.L48
+ 343:boards/TMC2100_eval.c **** 		{
+ 775              		.loc 1 343 3 is_stmt 1 view .LVU209
+ 343:boards/TMC2100_eval.c **** 		{
+ 776              		.loc 1 343 5 is_stmt 0 view .LVU210
+ 777 0216 0128     		cmp	r0, #1
+ 778 0218 5BD1     		bne	.L69
+ 343:boards/TMC2100_eval.c **** 		{
+ 779              		.loc 1 343 15 discriminator 1 view .LVU211
+ 780 021a 0F29     		cmp	r1, #15
+ 781 021c 59DC     		bgt	.L69
+ 782              	.L48:
+ 783              	.LVL53:
+ 784              	.LBB5:
+ 785              	.LBI5:
+ 329:boards/TMC2100_eval.c **** {
+ 786              		.loc 1 329 17 is_stmt 1 view .LVU212
+ 787              	.LBB6:
+ 350:boards/TMC2100_eval.c **** 
+ 788              		.loc 1 350 2 view .LVU213
+ 350:boards/TMC2100_eval.c **** 
+ 789              		.loc 1 350 12 is_stmt 0 view .LVU214
+ 790 021e 2E4E     		ldr	r6, .L71
+ 350:boards/TMC2100_eval.c **** 
+ 791              		.loc 1 350 2 view .LVU215
+ 792 0220 6846     		mov	r0, sp
+ 793              	.LVL54:
+ 350:boards/TMC2100_eval.c **** 
+ 794              		.loc 1 350 2 view .LVU216
+ 795 0222 336B     		ldr	r3, [r6, #48]
+ 796 0224 9847     		blx	r3
+ 797              	.LVL55:
+ 352:boards/TMC2100_eval.c **** 	{
+ 798              		.loc 1 352 2 is_stmt 1 view .LVU217
+ 799 0226 3346     		mov	r3, r6
+ 800 0228 052D     		cmp	r5, #5
+ 801 022a 06D8     		bhi	.L49
+ 802 022c DFE805F0 		tbb	[pc, r5]
+ 803              	.L51:
+ 804 0230 03       		.byte	(.L56-.L51)/2
+ 805 0231 0B       		.byte	(.L55-.L51)/2
+ 806 0232 43       		.byte	(.L54-.L51)/2
+ 807 0233 46       		.byte	(.L53-.L51)/2
+ 808 0234 49       		.byte	(.L52-.L51)/2
+ 809 0235 4C       		.byte	(.L50-.L51)/2
+ 810              		.p2align 1
+ 811              	.L56:
+ 355:boards/TMC2100_eval.c **** 		break;
+ 812              		.loc 1 355 3 view .LVU218
+ 355:boards/TMC2100_eval.c **** 		break;
+ 813              		.loc 1 355 25 is_stmt 0 view .LVU219
+ 814 0236 8DF80040 		strb	r4, [sp]
+ 356:boards/TMC2100_eval.c **** 	case 1:
+ 815              		.loc 1 356 3 is_stmt 1 view .LVU220
+ 816              	.LVL56:
+ 817              	.L49:
+ 412:boards/TMC2100_eval.c **** 
+ 818              		.loc 1 412 2 view .LVU221
+ 819 023a 6846     		mov	r0, sp
+ 820 023c DB6A     		ldr	r3, [r3, #44]
+ 821 023e 9847     		blx	r3
+ 822              	.LVL57:
+ 414:boards/TMC2100_eval.c **** }
+ 823              		.loc 1 414 2 view .LVU222
+ 414:boards/TMC2100_eval.c **** }
+ 824              		.loc 1 414 2 is_stmt 0 view .LVU223
+ 825 0240 0020     		movs	r0, #0
+ 826              	.LVL58:
+ 827              	.L46:
+ 414:boards/TMC2100_eval.c **** }
+ 828              		.loc 1 414 2 view .LVU224
+ 829              	.LBE6:
+ 830              	.LBE5:
+ 415:boards/TMC2100_eval.c **** 
+ 831              		.loc 1 415 1 view .LVU225
+ 832 0242 02B0     		add	sp, sp, #8
+ 833              	.LCFI11:
+ 834              		.cfi_remember_state
+ 835              		.cfi_def_cfa_offset 16
+ 836              		@ sp needed
+ 837 0244 70BD     		pop	{r4, r5, r6, pc}
+ 838              	.LVL59:
+ 839              	.L55:
+ 840              	.LCFI12:
+ 841              		.cfi_restore_state
+ 842              	.LBB8:
+ 843              	.LBB7:
+ 358:boards/TMC2100_eval.c **** 		{
+ 844              		.loc 1 358 3 is_stmt 1 view .LVU226
+ 845 0246 082C     		cmp	r4, #8
+ 846 0248 F7D8     		bhi	.L49
+ 847 024a DFE804F0 		tbb	[pc, r4]
+ 848              	.L58:
+ 849 024e 05       		.byte	(.L66-.L58)/2
+ 850 024f 0C       		.byte	(.L65-.L58)/2
+ 851 0250 11       		.byte	(.L64-.L58)/2
+ 852 0251 16       		.byte	(.L63-.L58)/2
+ 853 0252 1B       		.byte	(.L62-.L58)/2
+ 854 0253 20       		.byte	(.L61-.L58)/2
+ 855 0254 25       		.byte	(.L60-.L58)/2
+ 856 0255 2A       		.byte	(.L59-.L58)/2
+ 857 0256 2F       		.byte	(.L57-.L58)/2
+ 858 0257 00       		.p2align 1
+ 859              	.L66:
+ 361:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.BY1_INTERPOL0;
+ 860              		.loc 1 361 4 view .LVU227
+ 361:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.BY1_INTERPOL0;
+ 861              		.loc 1 361 32 is_stmt 0 view .LVU228
+ 862 0258 F278     		ldrb	r2, [r6, #3]	@ zero_extendqisi2
+ 863 025a 8DF80120 		strb	r2, [sp, #1]
+ 362:boards/TMC2100_eval.c **** 			break;
+ 864              		.loc 1 362 4 is_stmt 1 view .LVU229
+ 362:boards/TMC2100_eval.c **** 			break;
+ 865              		.loc 1 362 32 is_stmt 0 view .LVU230
+ 866 025e 327B     		ldrb	r2, [r6, #12]	@ zero_extendqisi2
+ 867              	.L70:
+ 366:boards/TMC2100_eval.c **** 			break;
+ 868              		.loc 1 366 32 view .LVU231
+ 869 0260 8DF80220 		strb	r2, [sp, #2]
+ 367:boards/TMC2100_eval.c **** 		case 2:
+ 870              		.loc 1 367 4 is_stmt 1 view .LVU232
+ 871 0264 E9E7     		b	.L49
+ 872              	.L65:
+ 365:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.BY2_INTERPOL0;
+ 873              		.loc 1 365 4 view .LVU233
+ 365:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.BY2_INTERPOL0;
+ 874              		.loc 1 365 32 is_stmt 0 view .LVU234
+ 875 0266 3279     		ldrb	r2, [r6, #4]	@ zero_extendqisi2
+ 876 0268 8DF80120 		strb	r2, [sp, #1]
+ 366:boards/TMC2100_eval.c **** 			break;
+ 877              		.loc 1 366 4 is_stmt 1 view .LVU235
+ 366:boards/TMC2100_eval.c **** 			break;
+ 878              		.loc 1 366 32 is_stmt 0 view .LVU236
+ 879 026c 727B     		ldrb	r2, [r6, #13]	@ zero_extendqisi2
+ 880 026e F7E7     		b	.L70
+ 881              	.L64:
+ 369:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.BY2_INTERPOL256;
+ 882              		.loc 1 369 4 is_stmt 1 view .LVU237
+ 369:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.BY2_INTERPOL256;
+ 883              		.loc 1 369 32 is_stmt 0 view .LVU238
+ 884 0270 7279     		ldrb	r2, [r6, #5]	@ zero_extendqisi2
+ 885 0272 8DF80120 		strb	r2, [sp, #1]
+ 370:boards/TMC2100_eval.c **** 			break;
+ 886              		.loc 1 370 4 is_stmt 1 view .LVU239
+ 370:boards/TMC2100_eval.c **** 			break;
+ 887              		.loc 1 370 32 is_stmt 0 view .LVU240
+ 888 0276 B27B     		ldrb	r2, [r6, #14]	@ zero_extendqisi2
+ 889 0278 F2E7     		b	.L70
+ 890              	.L63:
+ 373:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.BY4_INTERPOL0;
+ 891              		.loc 1 373 4 is_stmt 1 view .LVU241
+ 373:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.BY4_INTERPOL0;
+ 892              		.loc 1 373 32 is_stmt 0 view .LVU242
+ 893 027a B279     		ldrb	r2, [r6, #6]	@ zero_extendqisi2
+ 894 027c 8DF80120 		strb	r2, [sp, #1]
+ 374:boards/TMC2100_eval.c **** 			break;
+ 895              		.loc 1 374 4 is_stmt 1 view .LVU243
+ 374:boards/TMC2100_eval.c **** 			break;
+ 896              		.loc 1 374 32 is_stmt 0 view .LVU244
+ 897 0280 F27B     		ldrb	r2, [r6, #15]	@ zero_extendqisi2
+ 898 0282 EDE7     		b	.L70
+ 899              	.L62:
+ 377:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.BY4_INTERPOL256;
+ 900              		.loc 1 377 4 is_stmt 1 view .LVU245
+ 377:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.BY4_INTERPOL256;
+ 901              		.loc 1 377 32 is_stmt 0 view .LVU246
+ 902 0284 F279     		ldrb	r2, [r6, #7]	@ zero_extendqisi2
+ 903 0286 8DF80120 		strb	r2, [sp, #1]
+ 378:boards/TMC2100_eval.c **** 			break;
+ 904              		.loc 1 378 4 is_stmt 1 view .LVU247
+ 378:boards/TMC2100_eval.c **** 			break;
+ 905              		.loc 1 378 32 is_stmt 0 view .LVU248
+ 906 028a 327C     		ldrb	r2, [r6, #16]	@ zero_extendqisi2
+ 907 028c E8E7     		b	.L70
+ 908              	.L61:
+ 381:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.BY16_INTERPOL0;
+ 909              		.loc 1 381 4 is_stmt 1 view .LVU249
+ 381:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.BY16_INTERPOL0;
+ 910              		.loc 1 381 32 is_stmt 0 view .LVU250
+ 911 028e 727A     		ldrb	r2, [r6, #9]	@ zero_extendqisi2
+ 912 0290 8DF80120 		strb	r2, [sp, #1]
+ 382:boards/TMC2100_eval.c **** 			break;
+ 913              		.loc 1 382 4 is_stmt 1 view .LVU251
+ 382:boards/TMC2100_eval.c **** 			break;
+ 914              		.loc 1 382 32 is_stmt 0 view .LVU252
+ 915 0294 B27C     		ldrb	r2, [r6, #18]	@ zero_extendqisi2
+ 916 0296 E3E7     		b	.L70
+ 917              	.L60:
+ 385:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.BY16_INTERPOL256;
+ 918              		.loc 1 385 4 is_stmt 1 view .LVU253
+ 385:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.BY16_INTERPOL256;
+ 919              		.loc 1 385 32 is_stmt 0 view .LVU254
+ 920 0298 B27A     		ldrb	r2, [r6, #10]	@ zero_extendqisi2
+ 921 029a 8DF80120 		strb	r2, [sp, #1]
+ 386:boards/TMC2100_eval.c **** 			break;
+ 922              		.loc 1 386 4 is_stmt 1 view .LVU255
+ 386:boards/TMC2100_eval.c **** 			break;
+ 923              		.loc 1 386 32 is_stmt 0 view .LVU256
+ 924 029e F27C     		ldrb	r2, [r6, #19]	@ zero_extendqisi2
+ 925 02a0 DEE7     		b	.L70
+ 926              	.L59:
+ 389:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.PWM_CHOP_BY4_INTERPOL256;
+ 927              		.loc 1 389 4 is_stmt 1 view .LVU257
+ 389:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.PWM_CHOP_BY4_INTERPOL256;
+ 928              		.loc 1 389 32 is_stmt 0 view .LVU258
+ 929 02a2 327A     		ldrb	r2, [r6, #8]	@ zero_extendqisi2
+ 930 02a4 8DF80120 		strb	r2, [sp, #1]
+ 390:boards/TMC2100_eval.c **** 			break;
+ 931              		.loc 1 390 4 is_stmt 1 view .LVU259
+ 390:boards/TMC2100_eval.c **** 			break;
+ 932              		.loc 1 390 32 is_stmt 0 view .LVU260
+ 933 02a8 727C     		ldrb	r2, [r6, #17]	@ zero_extendqisi2
+ 934 02aa D9E7     		b	.L70
+ 935              	.L57:
+ 393:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.PWM_CHOP_BY16_INTERPOL256;
+ 936              		.loc 1 393 4 is_stmt 1 view .LVU261
+ 393:boards/TMC2100_eval.c **** 			config.microstepResolution2 = TMCRhinoSA.MicrostepResolutionSettings2.PWM_CHOP_BY16_INTERPOL256;
+ 937              		.loc 1 393 32 is_stmt 0 view .LVU262
+ 938 02ac F27A     		ldrb	r2, [r6, #11]	@ zero_extendqisi2
+ 939 02ae 8DF80120 		strb	r2, [sp, #1]
+ 394:boards/TMC2100_eval.c **** 			break;
+ 940              		.loc 1 394 4 is_stmt 1 view .LVU263
+ 394:boards/TMC2100_eval.c **** 			break;
+ 941              		.loc 1 394 32 is_stmt 0 view .LVU264
+ 942 02b2 327D     		ldrb	r2, [r6, #20]	@ zero_extendqisi2
+ 943 02b4 D4E7     		b	.L70
+ 944              	.LVL60:
+ 945              	.L54:
+ 399:boards/TMC2100_eval.c **** 		break;
+ 946              		.loc 1 399 3 is_stmt 1 view .LVU265
+ 399:boards/TMC2100_eval.c **** 		break;
+ 947              		.loc 1 399 25 is_stmt 0 view .LVU266
+ 948 02b6 8DF80340 		strb	r4, [sp, #3]
+ 400:boards/TMC2100_eval.c **** 	case 3:
+ 949              		.loc 1 400 3 is_stmt 1 view .LVU267
+ 950 02ba BEE7     		b	.L49
+ 951              	.L53:
+ 402:boards/TMC2100_eval.c **** 		break;
+ 952              		.loc 1 402 3 view .LVU268
+ 402:boards/TMC2100_eval.c **** 		break;
+ 953              		.loc 1 402 28 is_stmt 0 view .LVU269
+ 954 02bc 8DF80440 		strb	r4, [sp, #4]
+ 403:boards/TMC2100_eval.c **** 	case 4:
+ 955              		.loc 1 403 3 is_stmt 1 view .LVU270
+ 956 02c0 BBE7     		b	.L49
+ 957              	.L52:
+ 405:boards/TMC2100_eval.c **** 		break;
+ 958              		.loc 1 405 3 view .LVU271
+ 405:boards/TMC2100_eval.c **** 		break;
+ 959              		.loc 1 405 27 is_stmt 0 view .LVU272
+ 960 02c2 8DF80540 		strb	r4, [sp, #5]
+ 406:boards/TMC2100_eval.c **** 	case 5:
+ 961              		.loc 1 406 3 is_stmt 1 view .LVU273
+ 962 02c6 B8E7     		b	.L49
+ 963              	.L50:
+ 408:boards/TMC2100_eval.c **** 		break;
+ 964              		.loc 1 408 3 view .LVU274
+ 408:boards/TMC2100_eval.c **** 		break;
+ 965              		.loc 1 408 49 is_stmt 0 view .LVU275
+ 966 02c8 8DF80640 		strb	r4, [sp, #6]
+ 409:boards/TMC2100_eval.c **** 	}
+ 967              		.loc 1 409 3 is_stmt 1 view .LVU276
+ 968 02cc B5E7     		b	.L49
+ 969              	.LVL61:
+ 970              	.L67:
+ 409:boards/TMC2100_eval.c **** 	}
+ 971              		.loc 1 409 3 is_stmt 0 view .LVU277
+ 972              	.LBE7:
+ 973              	.LBE8:
+ 338:boards/TMC2100_eval.c **** 	}
+ 974              		.loc 1 338 10 view .LVU278
+ 975 02ce 0420     		movs	r0, #4
+ 976              	.LVL62:
+ 338:boards/TMC2100_eval.c **** 	}
+ 977              		.loc 1 338 10 view .LVU279
+ 978 02d0 B7E7     		b	.L46
+ 979              	.LVL63:
+ 980              	.L69:
+ 346:boards/TMC2100_eval.c **** 		}
+ 981              		.loc 1 346 11 view .LVU280
+ 982 02d2 1020     		movs	r0, #16
+ 983              	.LVL64:
+ 346:boards/TMC2100_eval.c **** 		}
+ 984              		.loc 1 346 11 view .LVU281
+ 985 02d4 B5E7     		b	.L46
+ 986              	.L72:
+ 987 02d6 00BF     		.align	2
+ 988              	.L71:
+ 989 02d8 00000000 		.word	TMCRhinoSA
+ 990              		.cfi_endproc
+ 991              	.LFE14:
+ 993              		.align	1
+ 994              		.syntax unified
+ 995              		.thumb
+ 996              		.thumb_func
+ 997              		.fpu softvfp
+ 999              	userFunction:
+ 1000              	.LVL65:
+ 1001              	.LFB12:
+ 297:boards/TMC2100_eval.c **** 	uint32_t errors = 0;
+ 1002              		.loc 1 297 1 is_stmt 1 view -0
+ 1003              		.cfi_startproc
+ 1004              		@ args = 0, pretend = 0, frame = 0
+ 1005              		@ frame_needed = 0, uses_anonymous_args = 0
+ 297:boards/TMC2100_eval.c **** 	uint32_t errors = 0;
+ 1006              		.loc 1 297 1 is_stmt 0 view .LVU283
+ 1007 02dc 38B5     		push	{r3, r4, r5, lr}
+ 1008              	.LCFI13:
+ 1009              		.cfi_def_cfa_offset 16
+ 1010              		.cfi_offset 3, -16
+ 1011              		.cfi_offset 4, -12
+ 1012              		.cfi_offset 5, -8
+ 1013              		.cfi_offset 14, -4
+ 297:boards/TMC2100_eval.c **** 	uint32_t errors = 0;
+ 1014              		.loc 1 297 1 view .LVU284
+ 1015 02de 0446     		mov	r4, r0
+ 1016 02e0 1546     		mov	r5, r2
+ 1017 02e2 0846     		mov	r0, r1
+ 1018              	.LVL66:
+ 298:boards/TMC2100_eval.c **** 
+ 1019              		.loc 1 298 2 is_stmt 1 view .LVU285
+ 300:boards/TMC2100_eval.c **** 	{
+ 1020              		.loc 1 300 2 view .LVU286
+ 1021 02e4 1CB1     		cbz	r4, .L74
+ 1022 02e6 012C     		cmp	r4, #1
+ 1023 02e8 06D0     		beq	.L75
+ 1024 02ea 0420     		movs	r0, #4
+ 1025              	.LVL67:
+ 1026              	.L73:
+ 317:boards/TMC2100_eval.c **** 
+ 1027              		.loc 1 317 1 is_stmt 0 view .LVU287
+ 1028 02ec 38BD     		pop	{r3, r4, r5, pc}
+ 1029              	.LVL68:
+ 1030              	.L74:
+ 303:boards/TMC2100_eval.c **** 		break;
+ 1031              		.loc 1 303 3 is_stmt 1 view .LVU288
+ 303:boards/TMC2100_eval.c **** 		break;
+ 1032              		.loc 1 303 12 is_stmt 0 view .LVU289
+ 1033 02ee FFF7FEFF 		bl	StepDir_getStatus
+ 1034              	.LVL69:
+ 303:boards/TMC2100_eval.c **** 		break;
+ 1035              		.loc 1 303 12 view .LVU290
+ 1036 02f2 2860     		str	r0, [r5]
+ 304:boards/TMC2100_eval.c **** 	case 1:  // When running with the TMC4330 v1.2: CFG5 is routed from DIO6 (Motion Controller) to DI
+ 1037              		.loc 1 304 3 is_stmt 1 view .LVU291
+ 1038              	.LVL70:
+ 1039              	.L77:
+ 1040              	.LBB11:
+ 1041              	.LBB12:
+ 310:boards/TMC2100_eval.c **** 	default:
+ 1042              		.loc 1 310 3 view .LVU292
+ 316:boards/TMC2100_eval.c **** }
+ 1043              		.loc 1 316 2 view .LVU293
+ 309:boards/TMC2100_eval.c **** 		break;
+ 1044              		.loc 1 309 3 is_stmt 0 view .LVU294
+ 1045 02f4 0020     		movs	r0, #0
+ 309:boards/TMC2100_eval.c **** 		break;
+ 1046              		.loc 1 309 3 view .LVU295
+ 1047              	.LBE12:
+ 1048              	.LBE11:
+ 316:boards/TMC2100_eval.c **** }
+ 1049              		.loc 1 316 2 is_stmt 1 view .LVU296
+ 316:boards/TMC2100_eval.c **** }
+ 1050              		.loc 1 316 9 is_stmt 0 view .LVU297
+ 1051 02f6 F9E7     		b	.L73
+ 1052              	.LVL71:
+ 1053              	.L75:
+ 1054              	.LBB14:
+ 1055              	.LBI11:
+ 296:boards/TMC2100_eval.c **** {
+ 1056              		.loc 1 296 17 is_stmt 1 view .LVU298
+ 1057              	.LBB13:
+ 306:boards/TMC2100_eval.c **** 		TMCRhinoSA.CFGPins[5] = Pins.CFG5;
+ 1058              		.loc 1 306 3 view .LVU299
+ 306:boards/TMC2100_eval.c **** 		TMCRhinoSA.CFGPins[5] = Pins.CFG5;
+ 1059              		.loc 1 306 19 is_stmt 0 view .LVU300
+ 1060 02f8 094B     		ldr	r3, .L78
+ 307:boards/TMC2100_eval.c **** 		HAL.IOs->config->toOutput(TMCRhinoSA.CFGPins[5]);
+ 1061              		.loc 1 307 13 view .LVU301
+ 1062 02fa 0A4D     		ldr	r5, .L78+4
+ 306:boards/TMC2100_eval.c **** 		TMCRhinoSA.CFGPins[5] = Pins.CFG5;
+ 1063              		.loc 1 306 19 view .LVU302
+ 1064 02fc DC68     		ldr	r4, [r3, #12]
+ 306:boards/TMC2100_eval.c **** 		TMCRhinoSA.CFGPins[5] = Pins.CFG5;
+ 1065              		.loc 1 306 13 view .LVU303
+ 1066 02fe 0A4B     		ldr	r3, .L78+8
+ 306:boards/TMC2100_eval.c **** 		TMCRhinoSA.CFGPins[5] = Pins.CFG5;
+ 1067              		.loc 1 306 15 view .LVU304
+ 1068 0300 6068     		ldr	r0, [r4, #4]
+ 1069              	.LVL72:
+ 306:boards/TMC2100_eval.c **** 		TMCRhinoSA.CFGPins[5] = Pins.CFG5;
+ 1070              		.loc 1 306 15 view .LVU305
+ 1071 0302 00F59470 		add	r0, r0, #296
+ 306:boards/TMC2100_eval.c **** 		TMCRhinoSA.CFGPins[5] = Pins.CFG5;
+ 1072              		.loc 1 306 13 view .LVU306
+ 1073 0306 D861     		str	r0, [r3, #28]
+ 307:boards/TMC2100_eval.c **** 		HAL.IOs->config->toOutput(TMCRhinoSA.CFGPins[5]);
+ 1074              		.loc 1 307 3 is_stmt 1 view .LVU307
+ 307:boards/TMC2100_eval.c **** 		HAL.IOs->config->toOutput(TMCRhinoSA.CFGPins[5]);
+ 1075              		.loc 1 307 25 is_stmt 0 view .LVU308
+ 1076 0308 6B6C     		ldr	r3, [r5, #68]
+ 1077 030a 5861     		str	r0, [r3, #20]
+ 308:boards/TMC2100_eval.c **** 		HAL.IOs->config->setLow(TMCRhinoSA.CFGPins[5]);
+ 1078              		.loc 1 308 3 is_stmt 1 view .LVU309
+ 308:boards/TMC2100_eval.c **** 		HAL.IOs->config->setLow(TMCRhinoSA.CFGPins[5]);
+ 1079              		.loc 1 308 18 is_stmt 0 view .LVU310
+ 1080 030c 2368     		ldr	r3, [r4]
+ 308:boards/TMC2100_eval.c **** 		HAL.IOs->config->setLow(TMCRhinoSA.CFGPins[5]);
+ 1081              		.loc 1 308 3 view .LVU311
+ 1082 030e DB68     		ldr	r3, [r3, #12]
+ 1083 0310 9847     		blx	r3
+ 1084              	.LVL73:
+ 309:boards/TMC2100_eval.c **** 		break;
+ 1085              		.loc 1 309 3 is_stmt 1 view .LVU312
+ 1086 0312 6A6C     		ldr	r2, [r5, #68]
+ 309:boards/TMC2100_eval.c **** 		break;
+ 1087              		.loc 1 309 18 is_stmt 0 view .LVU313
+ 1088 0314 2368     		ldr	r3, [r4]
+ 309:boards/TMC2100_eval.c **** 		break;
+ 1089              		.loc 1 309 3 view .LVU314
+ 1090 0316 5069     		ldr	r0, [r2, #20]
+ 1091 0318 9B69     		ldr	r3, [r3, #24]
+ 1092 031a 9847     		blx	r3
+ 1093              	.LVL74:
+ 1094 031c EAE7     		b	.L77
+ 1095              	.L79:
+ 1096 031e 00BF     		.align	2
+ 1097              	.L78:
+ 1098 0320 00000000 		.word	HAL
+ 1099 0324 00000000 		.word	TMCRhinoSA
+ 1100 0328 00000000 		.word	.LANCHOR0
+ 1101              	.LBE13:
+ 1102              	.LBE14:
+ 1103              		.cfi_endproc
+ 1104              	.LFE12:
+ 1106              		.align	1
+ 1107              		.syntax unified
+ 1108              		.thumb
+ 1109              		.thumb_func
+ 1110              		.fpu softvfp
+ 1112              	moveBy:
+ 1113              	.LVL75:
+ 1114              	.LFB6:
+  99:boards/TMC2100_eval.c **** 	if(motor >= MOTORS)
+ 1115              		.loc 1 99 1 is_stmt 1 view -0
+ 1116              		.cfi_startproc
+ 1117              		@ args = 0, pretend = 0, frame = 0
+ 1118              		@ frame_needed = 0, uses_anonymous_args = 0
+ 100:boards/TMC2100_eval.c **** 		return TMC_ERROR_MOTOR;
+ 1119              		.loc 1 100 2 view .LVU316
+  99:boards/TMC2100_eval.c **** 	if(motor >= MOTORS)
+ 1120              		.loc 1 99 1 is_stmt 0 view .LVU317
+ 1121 032c 38B5     		push	{r3, r4, r5, lr}
+ 1122              	.LCFI14:
+ 1123              		.cfi_def_cfa_offset 16
+ 1124              		.cfi_offset 3, -16
+ 1125              		.cfi_offset 4, -12
+ 1126              		.cfi_offset 5, -8
+ 1127              		.cfi_offset 14, -4
+  99:boards/TMC2100_eval.c **** 	if(motor >= MOTORS)
+ 1128              		.loc 1 99 1 view .LVU318
+ 1129 032e 0D46     		mov	r5, r1
+ 100:boards/TMC2100_eval.c **** 		return TMC_ERROR_MOTOR;
+ 1130              		.loc 1 100 4 view .LVU319
+ 1131 0330 0446     		mov	r4, r0
+ 1132 0332 48B9     		cbnz	r0, .L82
+ 1133              	.LVL76:
+ 1134              	.LBB19:
+ 1135              	.LBI19:
+  98:boards/TMC2100_eval.c **** {
+ 1136              		.loc 1 98 17 is_stmt 1 view .LVU320
+ 1137              	.LBB20:
+ 104:boards/TMC2100_eval.c **** 
+ 1138              		.loc 1 104 2 view .LVU321
+ 104:boards/TMC2100_eval.c **** 
+ 1139              		.loc 1 104 12 is_stmt 0 view .LVU322
+ 1140 0334 FFF7FEFF 		bl	StepDir_getActualPosition
+ 1141              	.LVL77:
+ 104:boards/TMC2100_eval.c **** 
+ 1142              		.loc 1 104 9 view .LVU323
+ 1143 0338 2968     		ldr	r1, [r5]
+ 1144 033a 0144     		add	r1, r1, r0
+ 1145 033c 2960     		str	r1, [r5]
+ 106:boards/TMC2100_eval.c **** }
+ 1146              		.loc 1 106 2 is_stmt 1 view .LVU324
+ 1147              	.LVL78:
+ 1148              	.LBB21:
+ 1149              	.LBI21:
+  88:boards/TMC2100_eval.c **** {
+ 1150              		.loc 1 88 17 view .LVU325
+ 1151              	.LBB22:
+  90:boards/TMC2100_eval.c **** 		return TMC_ERROR_MOTOR;
+ 1152              		.loc 1 90 2 view .LVU326
+  93:boards/TMC2100_eval.c **** 
+ 1153              		.loc 1 93 2 view .LVU327
+ 1154 033e 2046     		mov	r0, r4
+ 1155 0340 FFF7FEFF 		bl	StepDir_moveTo
+ 1156              	.LVL79:
+  95:boards/TMC2100_eval.c **** }
+ 1157              		.loc 1 95 2 view .LVU328
+  93:boards/TMC2100_eval.c **** 
+ 1158              		.loc 1 93 2 is_stmt 0 view .LVU329
+ 1159 0344 2046     		mov	r0, r4
+ 1160              	.L80:
+ 1161              	.LBE22:
+ 1162              	.LBE21:
+ 1163              	.LBE20:
+ 1164              	.LBE19:
+ 107:boards/TMC2100_eval.c **** 
+ 1165              		.loc 1 107 1 view .LVU330
+ 1166 0346 38BD     		pop	{r3, r4, r5, pc}
+ 1167              	.LVL80:
+ 1168              	.L82:
+ 101:boards/TMC2100_eval.c **** 
+ 1169              		.loc 1 101 10 view .LVU331
+ 1170 0348 0820     		movs	r0, #8
+ 1171              	.LVL81:
+ 101:boards/TMC2100_eval.c **** 
+ 1172              		.loc 1 101 10 view .LVU332
+ 1173 034a FCE7     		b	.L80
+ 1174              		.cfi_endproc
+ 1175              	.LFE6:
+ 1177              		.align	1
+ 1178              		.syntax unified
+ 1179              		.thumb
+ 1180              		.thumb_func
+ 1181              		.fpu softvfp
+ 1183              	GAP:
+ 1184              	.LVL82:
+ 1185              	.LFB9:
+ 276:boards/TMC2100_eval.c **** 	return handleParameter(READ, motor, type, value);
+ 1186              		.loc 1 276 1 is_stmt 1 view -0
+ 1187              		.cfi_startproc
+ 1188              		@ args = 0, pretend = 0, frame = 0
+ 1189              		@ frame_needed = 0, uses_anonymous_args = 0
+ 277:boards/TMC2100_eval.c **** }
+ 1190              		.loc 1 277 2 view .LVU334
+ 276:boards/TMC2100_eval.c **** 	return handleParameter(READ, motor, type, value);
+ 1191              		.loc 1 276 1 is_stmt 0 view .LVU335
+ 1192 034c 38B5     		push	{r3, r4, r5, lr}
+ 1193              	.LCFI15:
+ 1194              		.cfi_def_cfa_offset 16
+ 1195              		.cfi_offset 3, -16
+ 1196              		.cfi_offset 4, -12
+ 1197              		.cfi_offset 5, -8
+ 1198              		.cfi_offset 14, -4
+ 276:boards/TMC2100_eval.c **** 	return handleParameter(READ, motor, type, value);
+ 1199              		.loc 1 276 1 view .LVU336
+ 1200 034e 1546     		mov	r5, r2
+ 1201              	.LVL83:
+ 1202              	.LBB26:
+ 1203              	.LBI26:
+ 109:boards/TMC2100_eval.c **** {
+ 1204              		.loc 1 109 17 is_stmt 1 view .LVU337
+ 1205              	.LBB27:
+ 111:boards/TMC2100_eval.c **** 
+ 1206              		.loc 1 111 2 view .LVU338
+ 113:boards/TMC2100_eval.c **** 		return TMC_ERROR_MOTOR;
+ 1207              		.loc 1 113 2 view .LVU339
+ 113:boards/TMC2100_eval.c **** 		return TMC_ERROR_MOTOR;
+ 1208              		.loc 1 113 4 is_stmt 0 view .LVU340
+ 1209 0350 0029     		cmp	r1, #0
+ 1210 0352 58D1     		bne	.L99
+ 116:boards/TMC2100_eval.c **** 	{
+ 1211              		.loc 1 116 2 is_stmt 1 view .LVU341
+ 1212 0354 1328     		cmp	r0, #19
+ 1213 0356 0ED8     		bhi	.L85
+ 1214 0358 421E     		subs	r2, r0, #1
+ 1215              	.LVL84:
+ 116:boards/TMC2100_eval.c **** 	{
+ 1216              		.loc 1 116 2 is_stmt 0 view .LVU342
+ 1217 035a 122A     		cmp	r2, #18
+ 1218 035c 11D8     		bhi	.L86
+ 1219 035e DFE802F0 		tbb	[pc, r2]
+ 1220              	.LVL85:
+ 1221              	.L88:
+ 1222 0362 16       		.byte	(.L96-.L88)/2
+ 1223 0363 1A       		.byte	(.L95-.L88)/2
+ 1224 0364 1E       		.byte	(.L94-.L88)/2
+ 1225 0365 22       		.byte	(.L93-.L88)/2
+ 1226 0366 26       		.byte	(.L92-.L88)/2
+ 1227 0367 2A       		.byte	(.L91-.L88)/2
+ 1228 0368 2A       		.byte	(.L91-.L88)/2
+ 1229 0369 2A       		.byte	(.L91-.L88)/2
+ 1230 036a 2A       		.byte	(.L91-.L88)/2
+ 1231 036b 2A       		.byte	(.L91-.L88)/2
+ 1232 036c 2A       		.byte	(.L91-.L88)/2
+ 1233 036d 32       		.byte	(.L90-.L88)/2
+ 1234 036e 3D       		.byte	(.L89-.L88)/2
+ 1235 036f 44       		.byte	(.L87-.L88)/2
+ 1236 0370 44       		.byte	(.L87-.L88)/2
+ 1237 0371 44       		.byte	(.L87-.L88)/2
+ 1238 0372 44       		.byte	(.L87-.L88)/2
+ 1239 0373 44       		.byte	(.L87-.L88)/2
+ 1240 0374 44       		.byte	(.L87-.L88)/2
+ 1241 0375 00       		.p2align 1
+ 1242              	.L85:
+ 116:boards/TMC2100_eval.c **** 	{
+ 1243              		.loc 1 116 2 view .LVU343
+ 1244 0376 3228     		cmp	r0, #50
+ 1245 0378 3DD0     		beq	.L97
+ 1246 037a 3328     		cmp	r0, #51
+ 1247 037c 3FD0     		beq	.L98
+ 1248              	.LVL86:
+ 1249              	.L100:
+ 178:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1250              		.loc 1 178 12 view .LVU344
+ 1251 037e 0420     		movs	r0, #4
+ 1252              	.LVL87:
+ 178:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1253              		.loc 1 178 12 view .LVU345
+ 1254              	.LBE27:
+ 1255              	.LBE26:
+ 277:boards/TMC2100_eval.c **** }
+ 1256              		.loc 1 277 9 view .LVU346
+ 1257 0380 04E0     		b	.L83
+ 1258              	.LVL88:
+ 1259              	.L86:
+ 1260              	.LBB30:
+ 1261              	.LBB28:
+ 120:boards/TMC2100_eval.c **** 			*value = StepDir_getTargetPosition(motor);
+ 1262              		.loc 1 120 3 is_stmt 1 view .LVU347
+ 121:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1263              		.loc 1 121 4 view .LVU348
+ 121:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1264              		.loc 1 121 13 is_stmt 0 view .LVU349
+ 1265 0382 0020     		movs	r0, #0
+ 1266              	.LVL89:
+ 121:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1267              		.loc 1 121 13 view .LVU350
+ 1268 0384 FFF7FEFF 		bl	StepDir_getTargetPosition
+ 1269              	.LVL90:
+ 1270              	.L101:
+ 121:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1271              		.loc 1 121 11 view .LVU351
+ 1272 0388 2860     		str	r0, [r5]
+ 1273              	.L102:
+ 111:boards/TMC2100_eval.c **** 
+ 1274              		.loc 1 111 11 view .LVU352
+ 1275 038a 0020     		movs	r0, #0
+ 1276              	.LVL91:
+ 1277              	.L83:
+ 111:boards/TMC2100_eval.c **** 
+ 1278              		.loc 1 111 11 view .LVU353
+ 1279              	.LBE28:
+ 1280              	.LBE30:
+ 278:boards/TMC2100_eval.c **** 
+ 1281              		.loc 1 278 1 view .LVU354
+ 1282 038c 38BD     		pop	{r3, r4, r5, pc}
+ 1283              	.LVL92:
+ 1284              	.L96:
+ 1285              	.LBB31:
+ 1286              	.LBB29:
+ 128:boards/TMC2100_eval.c **** 			*value = StepDir_getActualPosition(motor);
+ 1287              		.loc 1 128 3 is_stmt 1 view .LVU355
+ 129:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1288              		.loc 1 129 4 view .LVU356
+ 129:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1289              		.loc 1 129 13 is_stmt 0 view .LVU357
+ 1290 038e 0020     		movs	r0, #0
+ 1291              	.LVL93:
+ 129:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1292              		.loc 1 129 13 view .LVU358
+ 1293 0390 FFF7FEFF 		bl	StepDir_getActualPosition
+ 1294              	.LVL94:
+ 1295 0394 F8E7     		b	.L101
+ 1296              	.LVL95:
+ 1297              	.L95:
+ 136:boards/TMC2100_eval.c **** 			*value = StepDir_getTargetVelocity(motor);
+ 1298              		.loc 1 136 3 is_stmt 1 view .LVU359
+ 137:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1299              		.loc 1 137 4 view .LVU360
+ 137:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1300              		.loc 1 137 13 is_stmt 0 view .LVU361
+ 1301 0396 0020     		movs	r0, #0
+ 1302              	.LVL96:
+ 137:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1303              		.loc 1 137 13 view .LVU362
+ 1304 0398 FFF7FEFF 		bl	StepDir_getTargetVelocity
+ 1305              	.LVL97:
+ 1306 039c F4E7     		b	.L101
+ 1307              	.LVL98:
+ 1308              	.L94:
+ 144:boards/TMC2100_eval.c **** 			*value = StepDir_getActualVelocity(motor);
+ 1309              		.loc 1 144 3 is_stmt 1 view .LVU363
+ 145:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1310              		.loc 1 145 4 view .LVU364
+ 145:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1311              		.loc 1 145 13 is_stmt 0 view .LVU365
+ 1312 039e 0020     		movs	r0, #0
+ 1313              	.LVL99:
+ 145:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1314              		.loc 1 145 13 view .LVU366
+ 1315 03a0 FFF7FEFF 		bl	StepDir_getActualVelocity
+ 1316              	.LVL100:
+ 1317 03a4 F0E7     		b	.L101
+ 1318              	.LVL101:
+ 1319              	.L93:
+ 152:boards/TMC2100_eval.c **** 			*value = StepDir_getVelocityMax(motor);
+ 1320              		.loc 1 152 3 is_stmt 1 view .LVU367
+ 153:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1321              		.loc 1 153 4 view .LVU368
+ 153:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1322              		.loc 1 153 13 is_stmt 0 view .LVU369
+ 1323 03a6 0020     		movs	r0, #0
+ 1324              	.LVL102:
+ 153:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1325              		.loc 1 153 13 view .LVU370
+ 1326 03a8 FFF7FEFF 		bl	StepDir_getVelocityMax
+ 1327              	.LVL103:
+ 1328 03ac ECE7     		b	.L101
+ 1329              	.LVL104:
+ 1330              	.L92:
+ 160:boards/TMC2100_eval.c **** 			*value = StepDir_getAcceleration(motor);
+ 1331              		.loc 1 160 3 is_stmt 1 view .LVU371
+ 161:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1332              		.loc 1 161 4 view .LVU372
+ 161:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1333              		.loc 1 161 13 is_stmt 0 view .LVU373
+ 1334 03ae 0020     		movs	r0, #0
+ 1335              	.LVL105:
+ 161:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1336              		.loc 1 161 13 view .LVU374
+ 1337 03b0 FFF7FEFF 		bl	StepDir_getAcceleration
+ 1338              	.LVL106:
+ 1339 03b4 E8E7     		b	.L101
+ 1340              	.LVL107:
+ 1341              	.L91:
+ 174:boards/TMC2100_eval.c **** 			if(type == 8)
+ 1342              		.loc 1 174 3 is_stmt 1 view .LVU375
+ 175:boards/TMC2100_eval.c **** 				*value = (StepDir_getStatus(motor) & STATUS_TARGET_REACHED)? 1:0;
+ 1343              		.loc 1 175 4 view .LVU376
+ 175:boards/TMC2100_eval.c **** 				*value = (StepDir_getStatus(motor) & STATUS_TARGET_REACHED)? 1:0;
+ 1344              		.loc 1 175 6 is_stmt 0 view .LVU377
+ 1345 03b6 0828     		cmp	r0, #8
+ 1346 03b8 E1D1     		bne	.L100
+ 176:boards/TMC2100_eval.c **** 			else
+ 1347              		.loc 1 176 5 is_stmt 1 view .LVU378
+ 176:boards/TMC2100_eval.c **** 			else
+ 1348              		.loc 1 176 15 is_stmt 0 view .LVU379
+ 1349 03ba 0020     		movs	r0, #0
+ 1350              	.LVL108:
+ 176:boards/TMC2100_eval.c **** 			else
+ 1351              		.loc 1 176 15 view .LVU380
+ 1352 03bc FFF7FEFF 		bl	StepDir_getStatus
+ 1353              	.LVL109:
+ 176:boards/TMC2100_eval.c **** 			else
+ 1354              		.loc 1 176 67 view .LVU381
+ 1355 03c0 C0F30010 		ubfx	r0, r0, #4, #1
+ 1356 03c4 E0E7     		b	.L101
+ 1357              	.LVL110:
+ 1358              	.L90:
+ 184:boards/TMC2100_eval.c **** 			*value = (HAL.IOs->config->isHigh(Pins.AIN_REF_SW))? 1 : 0;
+ 1359              		.loc 1 184 3 is_stmt 1 view .LVU382
+ 185:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1360              		.loc 1 185 4 view .LVU383
+ 185:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1361              		.loc 1 185 17 is_stmt 0 view .LVU384
+ 1362 03c6 114B     		ldr	r3, .L104
+ 185:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1363              		.loc 1 185 14 view .LVU385
+ 1364 03c8 114A     		ldr	r2, .L104+4
+ 185:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1365              		.loc 1 185 21 view .LVU386
+ 1366 03ca DB68     		ldr	r3, [r3, #12]
+ 185:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1367              		.loc 1 185 14 view .LVU387
+ 1368 03cc D06A     		ldr	r0, [r2, #44]
+ 1369              	.LVL111:
+ 185:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1370              		.loc 1 185 29 view .LVU388
+ 1371 03ce 1B68     		ldr	r3, [r3]
+ 185:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1372              		.loc 1 185 14 view .LVU389
+ 1373 03d0 5B6A     		ldr	r3, [r3, #36]
+ 1374              	.L103:
+ 196:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1375              		.loc 1 196 14 view .LVU390
+ 1376 03d2 9847     		blx	r3
+ 1377              	.LVL112:
+ 196:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1378              		.loc 1 196 61 view .LVU391
+ 1379 03d4 0038     		subs	r0, r0, #0
+ 1380 03d6 18BF     		it	ne
+ 1381 03d8 0120     		movne	r0, #1
+ 1382 03da D5E7     		b	.L101
+ 1383              	.LVL113:
+ 1384              	.L89:
+ 195:boards/TMC2100_eval.c **** 			*value = (HAL.IOs->config->isHigh(Pins.AIN_REF_PWM)) ? 1 : 0;
+ 1385              		.loc 1 195 3 is_stmt 1 view .LVU392
+ 196:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1386              		.loc 1 196 4 view .LVU393
+ 196:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1387              		.loc 1 196 17 is_stmt 0 view .LVU394
+ 1388 03dc 0B4B     		ldr	r3, .L104
+ 196:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1389              		.loc 1 196 14 view .LVU395
+ 1390 03de 0C4A     		ldr	r2, .L104+4
+ 196:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1391              		.loc 1 196 21 view .LVU396
+ 1392 03e0 DB68     		ldr	r3, [r3, #12]
+ 196:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1393              		.loc 1 196 14 view .LVU397
+ 1394 03e2 106B     		ldr	r0, [r2, #48]
+ 1395              	.LVL114:
+ 196:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1396              		.loc 1 196 29 view .LVU398
+ 1397 03e4 1B68     		ldr	r3, [r3]
+ 196:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1398              		.loc 1 196 14 view .LVU399
+ 1399 03e6 5B6A     		ldr	r3, [r3, #36]
+ 1400 03e8 F3E7     		b	.L103
+ 1401              	.LVL115:
+ 1402              	.L87:
+ 219:boards/TMC2100_eval.c **** 			getStandAloneSettings(type - 14, value);
+ 1403              		.loc 1 219 3 is_stmt 1 view .LVU400
+ 220:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1404              		.loc 1 220 4 view .LVU401
+ 1405 03ea 0E38     		subs	r0, r0, #14
+ 1406              	.LVL116:
+ 220:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1407              		.loc 1 220 4 is_stmt 0 view .LVU402
+ 1408 03ec 2946     		mov	r1, r5
+ 1409 03ee C0B2     		uxtb	r0, r0
+ 1410 03f0 FFF716FE 		bl	getStandAloneSettings
+ 1411              	.LVL117:
+ 1412 03f4 C9E7     		b	.L102
+ 1413              	.LVL118:
+ 1414              	.L97:
+ 226:boards/TMC2100_eval.c **** 			*value = StepDir_getMode(motor);
+ 1415              		.loc 1 226 3 is_stmt 1 view .LVU403
+ 227:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1416              		.loc 1 227 4 view .LVU404
+ 227:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1417              		.loc 1 227 13 is_stmt 0 view .LVU405
+ 1418 03f6 0846     		mov	r0, r1
+ 1419              	.LVL119:
+ 227:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1420              		.loc 1 227 13 view .LVU406
+ 1421 03f8 FFF7FEFF 		bl	StepDir_getMode
+ 1422              	.LVL120:
+ 227:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1423              		.loc 1 227 13 view .LVU407
+ 1424 03fc C4E7     		b	.L101
+ 1425              	.LVL121:
+ 1426              	.L98:
+ 233:boards/TMC2100_eval.c **** 			*value = StepDir_getFrequency(motor);
+ 1427              		.loc 1 233 3 is_stmt 1 view .LVU408
+ 234:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1428              		.loc 1 234 4 view .LVU409
+ 234:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1429              		.loc 1 234 13 is_stmt 0 view .LVU410
+ 1430 03fe 0846     		mov	r0, r1
+ 1431              	.LVL122:
+ 234:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1432              		.loc 1 234 13 view .LVU411
+ 1433 0400 FFF7FEFF 		bl	StepDir_getFrequency
+ 1434              	.LVL123:
+ 234:boards/TMC2100_eval.c **** 		} else if(readWrite == WRITE) {
+ 1435              		.loc 1 234 13 view .LVU412
+ 1436 0404 C0E7     		b	.L101
+ 1437              	.LVL124:
+ 1438              	.L99:
+ 114:boards/TMC2100_eval.c **** 
+ 1439              		.loc 1 114 10 view .LVU413
+ 1440 0406 0820     		movs	r0, #8
+ 1441              	.LVL125:
+ 114:boards/TMC2100_eval.c **** 
+ 1442              		.loc 1 114 10 view .LVU414
+ 1443 0408 C0E7     		b	.L83
+ 1444              	.L105:
+ 1445 040a 00BF     		.align	2
+ 1446              	.L104:
+ 1447 040c 00000000 		.word	HAL
+ 1448 0410 00000000 		.word	.LANCHOR0
+ 1449              	.LBE29:
+ 1450              	.LBE31:
+ 1451              		.cfi_endproc
+ 1452              	.LFE9:
+ 1454              		.align	1
+ 1455              		.syntax unified
+ 1456              		.thumb
+ 1457              		.thumb_func
+ 1458              		.fpu softvfp
+ 1460              	SAP:
+ 1461              	.LVL126:
+ 1462              	.LFB8:
+ 271:boards/TMC2100_eval.c **** 	return handleParameter(WRITE, motor, type, &value);
+ 1463              		.loc 1 271 1 is_stmt 1 view -0
+ 1464              		.cfi_startproc
+ 1465              		@ args = 0, pretend = 0, frame = 16
+ 1466              		@ frame_needed = 0, uses_anonymous_args = 0
+ 272:boards/TMC2100_eval.c **** }
+ 1467              		.loc 1 272 2 view .LVU416
+ 271:boards/TMC2100_eval.c **** 	return handleParameter(WRITE, motor, type, &value);
+ 1468              		.loc 1 271 1 is_stmt 0 view .LVU417
+ 1469 0414 1FB5     		push	{r0, r1, r2, r3, r4, lr}
+ 1470              	.LCFI16:
+ 1471              		.cfi_def_cfa_offset 24
+ 1472              		.cfi_offset 4, -8
+ 1473              		.cfi_offset 14, -4
+ 1474              	.LVL127:
+ 1475              	.LBB35:
+ 1476              	.LBI35:
+ 109:boards/TMC2100_eval.c **** {
+ 1477              		.loc 1 109 17 is_stmt 1 view .LVU418
+ 1478              	.LBB36:
+ 111:boards/TMC2100_eval.c **** 
+ 1479              		.loc 1 111 2 view .LVU419
+ 113:boards/TMC2100_eval.c **** 		return TMC_ERROR_MOTOR;
+ 1480              		.loc 1 113 2 view .LVU420
+ 113:boards/TMC2100_eval.c **** 		return TMC_ERROR_MOTOR;
+ 1481              		.loc 1 113 4 is_stmt 0 view .LVU421
+ 1482 0416 0C46     		mov	r4, r1
+ 1483              	.LBE36:
+ 1484              	.LBE35:
+ 271:boards/TMC2100_eval.c **** 	return handleParameter(WRITE, motor, type, &value);
+ 1485              		.loc 1 271 1 view .LVU422
+ 1486 0418 0192     		str	r2, [sp, #4]
+ 1487              	.LBB42:
+ 1488              	.LBB39:
+ 113:boards/TMC2100_eval.c **** 		return TMC_ERROR_MOTOR;
+ 1489              		.loc 1 113 4 view .LVU423
+ 1490 041a 0029     		cmp	r1, #0
+ 1491 041c 6AD1     		bne	.L123
+ 116:boards/TMC2100_eval.c **** 	{
+ 1492              		.loc 1 116 2 is_stmt 1 view .LVU424
+ 1493 041e 1328     		cmp	r0, #19
+ 1494 0420 0DD8     		bhi	.L108
+ 1495 0422 1328     		cmp	r0, #19
+ 1496 0424 11D8     		bhi	.L125
+ 1497 0426 DFE800F0 		tbb	[pc, r0]
+ 1498              	.L110:
+ 1499 042a 12       		.byte	(.L118-.L110)/2
+ 1500 042b 1A       		.byte	(.L117-.L110)/2
+ 1501 042c 1F       		.byte	(.L116-.L110)/2
+ 1502 042d 10       		.byte	(.L125-.L110)/2
+ 1503 042e 24       		.byte	(.L115-.L110)/2
+ 1504 042f 2C       		.byte	(.L114-.L110)/2
+ 1505 0430 31       		.byte	(.L113-.L110)/2
+ 1506 0431 31       		.byte	(.L113-.L110)/2
+ 1507 0432 31       		.byte	(.L113-.L110)/2
+ 1508 0433 31       		.byte	(.L113-.L110)/2
+ 1509 0434 31       		.byte	(.L113-.L110)/2
+ 1510 0435 31       		.byte	(.L113-.L110)/2
+ 1511 0436 38       		.byte	(.L112-.L110)/2
+ 1512 0437 45       		.byte	(.L111-.L110)/2
+ 1513 0438 50       		.byte	(.L109-.L110)/2
+ 1514 0439 50       		.byte	(.L109-.L110)/2
+ 1515 043a 50       		.byte	(.L109-.L110)/2
+ 1516 043b 50       		.byte	(.L109-.L110)/2
+ 1517 043c 50       		.byte	(.L109-.L110)/2
+ 1518 043d 50       		.byte	(.L109-.L110)/2
+ 1519              		.p2align 1
+ 1520              	.L108:
+ 1521 043e 3328     		cmp	r0, #51
+ 1522 0440 4AD0     		beq	.L119
+ 1523 0442 8C28     		cmp	r0, #140
+ 1524 0444 4DD0     		beq	.L120
+ 1525 0446 3228     		cmp	r0, #50
+ 1526 0448 41D0     		beq	.L121
+ 1527              	.LVL128:
+ 1528              	.L125:
+ 199:boards/TMC2100_eval.c **** 			else
+ 1529              		.loc 1 199 12 is_stmt 0 view .LVU425
+ 1530 044a 0424     		movs	r4, #4
+ 1531              	.LVL129:
+ 199:boards/TMC2100_eval.c **** 			else
+ 1532              		.loc 1 199 12 view .LVU426
+ 1533              	.LBE39:
+ 1534              	.LBE42:
+ 272:boards/TMC2100_eval.c **** }
+ 1535              		.loc 1 272 9 view .LVU427
+ 1536 044c 04E0     		b	.L106
+ 1537              	.LVL130:
+ 1538              	.L118:
+ 1539              	.LBB43:
+ 1540              	.LBB40:
+ 120:boards/TMC2100_eval.c **** 			*value = StepDir_getTargetPosition(motor);
+ 1541              		.loc 1 120 3 is_stmt 1 view .LVU428
+ 122:boards/TMC2100_eval.c **** 			StepDir_moveTo(motor, *value);
+ 1542              		.loc 1 122 10 view .LVU429
+ 123:boards/TMC2100_eval.c **** 		}
+ 1543              		.loc 1 123 4 view .LVU430
+ 1544 044e 0199     		ldr	r1, [sp, #4]
+ 1545              	.LVL131:
+ 123:boards/TMC2100_eval.c **** 		}
+ 1546              		.loc 1 123 4 is_stmt 0 view .LVU431
+ 1547 0450 0020     		movs	r0, #0
+ 1548              	.LVL132:
+ 123:boards/TMC2100_eval.c **** 		}
+ 1549              		.loc 1 123 4 view .LVU432
+ 1550 0452 FFF7FEFF 		bl	StepDir_moveTo
+ 1551              	.LVL133:
+ 1552              	.L126:
+ 111:boards/TMC2100_eval.c **** 
+ 1553              		.loc 1 111 11 view .LVU433
+ 1554 0456 0024     		movs	r4, #0
+ 1555              	.LVL134:
+ 1556              	.L106:
+ 111:boards/TMC2100_eval.c **** 
+ 1557              		.loc 1 111 11 view .LVU434
+ 1558              	.LBE40:
+ 1559              	.LBE43:
+ 273:boards/TMC2100_eval.c **** 
+ 1560              		.loc 1 273 1 view .LVU435
+ 1561 0458 2046     		mov	r0, r4
+ 1562 045a 04B0     		add	sp, sp, #16
+ 1563              	.LCFI17:
+ 1564              		.cfi_remember_state
+ 1565              		.cfi_def_cfa_offset 8
+ 1566              		@ sp needed
+ 1567 045c 10BD     		pop	{r4, pc}
+ 1568              	.LVL135:
+ 1569              	.L117:
+ 1570              	.LCFI18:
+ 1571              		.cfi_restore_state
+ 1572              	.LBB44:
+ 1573              	.LBB41:
+ 128:boards/TMC2100_eval.c **** 			*value = StepDir_getActualPosition(motor);
+ 1574              		.loc 1 128 3 is_stmt 1 view .LVU436
+ 130:boards/TMC2100_eval.c **** 			StepDir_setActualPosition(motor, *value);
+ 1575              		.loc 1 130 10 view .LVU437
+ 131:boards/TMC2100_eval.c **** 		}
+ 1576              		.loc 1 131 4 view .LVU438
+ 1577 045e 0199     		ldr	r1, [sp, #4]
+ 1578              	.LVL136:
+ 131:boards/TMC2100_eval.c **** 		}
+ 1579              		.loc 1 131 4 is_stmt 0 view .LVU439
+ 1580 0460 0020     		movs	r0, #0
+ 1581              	.LVL137:
+ 131:boards/TMC2100_eval.c **** 		}
+ 1582              		.loc 1 131 4 view .LVU440
+ 1583 0462 FFF7FEFF 		bl	StepDir_setActualPosition
+ 1584              	.LVL138:
+ 131:boards/TMC2100_eval.c **** 		}
+ 1585              		.loc 1 131 4 view .LVU441
+ 1586 0466 F6E7     		b	.L126
+ 1587              	.LVL139:
+ 1588              	.L116:
+ 136:boards/TMC2100_eval.c **** 			*value = StepDir_getTargetVelocity(motor);
+ 1589              		.loc 1 136 3 is_stmt 1 view .LVU442
+ 138:boards/TMC2100_eval.c **** 			StepDir_rotate(motor, *value);
+ 1590              		.loc 1 138 10 view .LVU443
+ 139:boards/TMC2100_eval.c **** 		}
+ 1591              		.loc 1 139 4 view .LVU444
+ 1592 0468 0199     		ldr	r1, [sp, #4]
+ 1593              	.LVL140:
+ 139:boards/TMC2100_eval.c **** 		}
+ 1594              		.loc 1 139 4 is_stmt 0 view .LVU445
+ 1595 046a 0020     		movs	r0, #0
+ 1596              	.LVL141:
+ 139:boards/TMC2100_eval.c **** 		}
+ 1597              		.loc 1 139 4 view .LVU446
+ 1598 046c FFF7FEFF 		bl	StepDir_rotate
+ 1599              	.LVL142:
+ 139:boards/TMC2100_eval.c **** 		}
+ 1600              		.loc 1 139 4 view .LVU447
+ 1601 0470 F1E7     		b	.L126
+ 1602              	.LVL143:
+ 1603              	.L115:
+ 152:boards/TMC2100_eval.c **** 			*value = StepDir_getVelocityMax(motor);
+ 1604              		.loc 1 152 3 is_stmt 1 view .LVU448
+ 154:boards/TMC2100_eval.c **** 			StepDir_setVelocityMax(motor, abs(*value));
+ 1605              		.loc 1 154 10 view .LVU449
+ 155:boards/TMC2100_eval.c **** 		}
+ 1606              		.loc 1 155 4 view .LVU450
+ 1607 0472 0199     		ldr	r1, [sp, #4]
+ 1608              	.LVL144:
+ 155:boards/TMC2100_eval.c **** 		}
+ 1609              		.loc 1 155 4 is_stmt 0 view .LVU451
+ 1610 0474 0029     		cmp	r1, #0
+ 1611 0476 B8BF     		it	lt
+ 1612 0478 4942     		rsblt	r1, r1, #0
+ 1613 047a 0020     		movs	r0, #0
+ 1614              	.LVL145:
+ 155:boards/TMC2100_eval.c **** 		}
+ 1615              		.loc 1 155 4 view .LVU452
+ 1616 047c FFF7FEFF 		bl	StepDir_setVelocityMax
+ 1617              	.LVL146:
+ 155:boards/TMC2100_eval.c **** 		}
+ 1618              		.loc 1 155 4 view .LVU453
+ 1619 0480 E9E7     		b	.L126
+ 1620              	.LVL147:
+ 1621              	.L114:
+ 160:boards/TMC2100_eval.c **** 			*value = StepDir_getAcceleration(motor);
+ 1622              		.loc 1 160 3 is_stmt 1 view .LVU454
+ 162:boards/TMC2100_eval.c **** 			StepDir_setAcceleration(motor, *value);
+ 1623              		.loc 1 162 10 view .LVU455
+ 163:boards/TMC2100_eval.c **** 		}
+ 1624              		.loc 1 163 4 view .LVU456
+ 1625 0482 0199     		ldr	r1, [sp, #4]
+ 1626              	.LVL148:
+ 163:boards/TMC2100_eval.c **** 		}
+ 1627              		.loc 1 163 4 is_stmt 0 view .LVU457
+ 1628 0484 0020     		movs	r0, #0
+ 1629              	.LVL149:
+ 163:boards/TMC2100_eval.c **** 		}
+ 1630              		.loc 1 163 4 view .LVU458
+ 1631 0486 FFF7FEFF 		bl	StepDir_setAcceleration
+ 1632              	.LVL150:
+ 163:boards/TMC2100_eval.c **** 		}
+ 1633              		.loc 1 163 4 view .LVU459
+ 1634 048a E4E7     		b	.L126
+ 1635              	.LVL151:
+ 1636              	.L113:
+ 174:boards/TMC2100_eval.c **** 			if(type == 8)
+ 1637              		.loc 1 174 3 is_stmt 1 view .LVU460
+ 179:boards/TMC2100_eval.c **** 			errors |= setStandAloneSettings(type-6, *value);
+ 1638              		.loc 1 179 10 view .LVU461
+ 180:boards/TMC2100_eval.c **** 		}
+ 1639              		.loc 1 180 4 view .LVU462
+ 180:boards/TMC2100_eval.c **** 		}
+ 1640              		.loc 1 180 14 is_stmt 0 view .LVU463
+ 1641 048c 0638     		subs	r0, r0, #6
+ 1642              	.LVL152:
+ 1643              	.L128:
+ 222:boards/TMC2100_eval.c **** 		}
+ 1644              		.loc 1 222 14 view .LVU464
+ 1645 048e 0199     		ldr	r1, [sp, #4]
+ 1646              	.LVL153:
+ 222:boards/TMC2100_eval.c **** 		}
+ 1647              		.loc 1 222 14 view .LVU465
+ 1648 0490 C0B2     		uxtb	r0, r0
+ 1649 0492 FFF7B9FE 		bl	setStandAloneSettings
+ 1650              	.LVL154:
+ 222:boards/TMC2100_eval.c **** 		}
+ 1651              		.loc 1 222 14 view .LVU466
+ 1652 0496 0446     		mov	r4, r0
+ 1653              	.LVL155:
+ 222:boards/TMC2100_eval.c **** 		}
+ 1654              		.loc 1 222 14 view .LVU467
+ 1655 0498 DEE7     		b	.L106
+ 1656              	.LVL156:
+ 1657              	.L112:
+ 184:boards/TMC2100_eval.c **** 			*value = (HAL.IOs->config->isHigh(Pins.AIN_REF_SW))? 1 : 0;
+ 1658              		.loc 1 184 3 is_stmt 1 view .LVU468
+ 186:boards/TMC2100_eval.c **** 			if(*value)
+ 1659              		.loc 1 186 10 view .LVU469
+ 187:boards/TMC2100_eval.c **** 				HAL.IOs->config->setHigh(Pins.AIN_REF_SW);
+ 1660              		.loc 1 187 4 view .LVU470
+ 1661 049a 174B     		ldr	r3, .L129
+ 1662 049c 174A     		ldr	r2, .L129+4
+ 1663              	.LVL157:
+ 187:boards/TMC2100_eval.c **** 				HAL.IOs->config->setHigh(Pins.AIN_REF_SW);
+ 1664              		.loc 1 187 4 is_stmt 0 view .LVU471
+ 1665 049e DB68     		ldr	r3, [r3, #12]
+ 187:boards/TMC2100_eval.c **** 				HAL.IOs->config->setHigh(Pins.AIN_REF_SW);
+ 1666              		.loc 1 187 6 view .LVU472
+ 1667 04a0 019C     		ldr	r4, [sp, #4]
+ 1668 04a2 1B68     		ldr	r3, [r3]
+ 1669 04a4 D06A     		ldr	r0, [r2, #44]
+ 1670              	.LVL158:
+ 187:boards/TMC2100_eval.c **** 				HAL.IOs->config->setHigh(Pins.AIN_REF_SW);
+ 1671              		.loc 1 187 6 view .LVU473
+ 1672 04a6 14B1     		cbz	r4, .L122
+ 188:boards/TMC2100_eval.c **** 			else
+ 1673              		.loc 1 188 5 is_stmt 1 view .LVU474
+ 1674 04a8 5B69     		ldr	r3, [r3, #20]
+ 1675 04aa 9847     		blx	r3
+ 1676              	.LVL159:
+ 188:boards/TMC2100_eval.c **** 			else
+ 1677              		.loc 1 188 5 is_stmt 0 view .LVU475
+ 1678 04ac D3E7     		b	.L126
+ 1679              	.LVL160:
+ 1680              	.L122:
+ 190:boards/TMC2100_eval.c **** 		}
+ 1681              		.loc 1 190 5 is_stmt 1 view .LVU476
+ 1682 04ae 9B69     		ldr	r3, [r3, #24]
+ 1683              	.LVL161:
+ 1684              	.L127:
+ 1685              	.LBB37:
+ 250:boards/TMC2100_eval.c **** 
+ 1686              		.loc 1 250 4 is_stmt 0 view .LVU477
+ 1687 04b0 9847     		blx	r3
+ 1688              	.LVL162:
+ 252:boards/TMC2100_eval.c **** 			else if((CFG[2] == IOS_LOW)   && (CFG[1] == IOS_HIGH))  *value = 2;
+ 1689              		.loc 1 252 4 is_stmt 1 view .LVU478
+ 1690 04b2 D1E7     		b	.L106
+ 1691              	.LVL163:
+ 1692              	.L111:
+ 252:boards/TMC2100_eval.c **** 			else if((CFG[2] == IOS_LOW)   && (CFG[1] == IOS_HIGH))  *value = 2;
+ 1693              		.loc 1 252 4 is_stmt 0 view .LVU479
+ 1694              	.LBE37:
+ 195:boards/TMC2100_eval.c **** 			*value = (HAL.IOs->config->isHigh(Pins.AIN_REF_PWM)) ? 1 : 0;
+ 1695              		.loc 1 195 3 is_stmt 1 view .LVU480
+ 197:boards/TMC2100_eval.c **** 			if(((uint32_t) *value) > 10000)
+ 1696              		.loc 1 197 10 view .LVU481
+ 198:boards/TMC2100_eval.c **** 				errors |= TMC_ERROR_TYPE;
+ 1697              		.loc 1 198 4 view .LVU482
+ 198:boards/TMC2100_eval.c **** 				errors |= TMC_ERROR_TYPE;
+ 1698              		.loc 1 198 19 is_stmt 0 view .LVU483
+ 1699 04b4 0199     		ldr	r1, [sp, #4]
+ 1700              	.LVL164:
+ 198:boards/TMC2100_eval.c **** 				errors |= TMC_ERROR_TYPE;
+ 1701              		.loc 1 198 6 view .LVU484
+ 1702 04b6 42F21073 		movw	r3, #10000
+ 1703 04ba 9942     		cmp	r1, r3
+ 1704 04bc C5D8     		bhi	.L125
+ 201:boards/TMC2100_eval.c **** 		}
+ 1705              		.loc 1 201 5 is_stmt 1 view .LVU485
+ 201:boards/TMC2100_eval.c **** 		}
+ 1706              		.loc 1 201 10 is_stmt 0 view .LVU486
+ 1707 04be 104B     		ldr	r3, .L129+8
+ 201:boards/TMC2100_eval.c **** 		}
+ 1708              		.loc 1 201 5 view .LVU487
+ 1709 04c0 89B2     		uxth	r1, r1
+ 1710 04c2 9B68     		ldr	r3, [r3, #8]
+ 1711 04c4 0020     		movs	r0, #0
+ 1712              	.LVL165:
+ 201:boards/TMC2100_eval.c **** 		}
+ 1713              		.loc 1 201 5 view .LVU488
+ 1714 04c6 9847     		blx	r3
+ 1715              	.LVL166:
+ 201:boards/TMC2100_eval.c **** 		}
+ 1716              		.loc 1 201 5 view .LVU489
+ 1717 04c8 C5E7     		b	.L126
+ 1718              	.LVL167:
+ 1719              	.L109:
+ 219:boards/TMC2100_eval.c **** 			getStandAloneSettings(type - 14, value);
+ 1720              		.loc 1 219 3 is_stmt 1 view .LVU490
+ 221:boards/TMC2100_eval.c **** 			errors |= setStandAloneSettings(type - 14, *value);
+ 1721              		.loc 1 221 10 view .LVU491
+ 222:boards/TMC2100_eval.c **** 		}
+ 1722              		.loc 1 222 4 view .LVU492
+ 222:boards/TMC2100_eval.c **** 		}
+ 1723              		.loc 1 222 14 is_stmt 0 view .LVU493
+ 1724 04ca 0E38     		subs	r0, r0, #14
+ 1725              	.LVL168:
+ 222:boards/TMC2100_eval.c **** 		}
+ 1726              		.loc 1 222 14 view .LVU494
+ 1727 04cc DFE7     		b	.L128
+ 1728              	.LVL169:
+ 1729              	.L121:
+ 226:boards/TMC2100_eval.c **** 			*value = StepDir_getMode(motor);
+ 1730              		.loc 1 226 3 is_stmt 1 view .LVU495
+ 228:boards/TMC2100_eval.c **** 			StepDir_setMode(motor, *value);
+ 1731              		.loc 1 228 10 view .LVU496
+ 229:boards/TMC2100_eval.c **** 		}
+ 1732              		.loc 1 229 4 view .LVU497
+ 1733 04ce D1B2     		uxtb	r1, r2
+ 1734              	.LVL170:
+ 229:boards/TMC2100_eval.c **** 		}
+ 1735              		.loc 1 229 4 is_stmt 0 view .LVU498
+ 1736 04d0 2046     		mov	r0, r4
+ 1737              	.LVL171:
+ 229:boards/TMC2100_eval.c **** 		}
+ 1738              		.loc 1 229 4 view .LVU499
+ 1739 04d2 FFF7FEFF 		bl	StepDir_setMode
+ 1740              	.LVL172:
+ 229:boards/TMC2100_eval.c **** 		}
+ 1741              		.loc 1 229 4 view .LVU500
+ 1742 04d6 BFE7     		b	.L106
+ 1743              	.LVL173:
+ 1744              	.L119:
+ 233:boards/TMC2100_eval.c **** 			*value = StepDir_getFrequency(motor);
+ 1745              		.loc 1 233 3 is_stmt 1 view .LVU501
+ 235:boards/TMC2100_eval.c **** 			StepDir_setFrequency(motor, *value);
+ 1746              		.loc 1 235 10 view .LVU502
+ 236:boards/TMC2100_eval.c **** 		}
+ 1747              		.loc 1 236 4 view .LVU503
+ 1748 04d8 1146     		mov	r1, r2
+ 1749              	.LVL174:
+ 236:boards/TMC2100_eval.c **** 		}
+ 1750              		.loc 1 236 4 is_stmt 0 view .LVU504
+ 1751 04da 2046     		mov	r0, r4
+ 1752              	.LVL175:
+ 236:boards/TMC2100_eval.c **** 		}
+ 1753              		.loc 1 236 4 view .LVU505
+ 1754 04dc FFF7FEFF 		bl	StepDir_setFrequency
+ 1755              	.LVL176:
+ 236:boards/TMC2100_eval.c **** 		}
+ 1756              		.loc 1 236 4 view .LVU506
+ 1757 04e0 BAE7     		b	.L106
+ 1758              	.LVL177:
+ 1759              	.L120:
+ 242:boards/TMC2100_eval.c **** 			errors |= TMC_ERROR_TYPE;
+ 1760              		.loc 1 242 3 is_stmt 1 view .LVU507
+ 244:boards/TMC2100_eval.c **** 			// microstep resolution without interpolation
+ 1761              		.loc 1 244 10 view .LVU508
+ 1762              	.LBB38:
+ 247:boards/TMC2100_eval.c **** 
+ 1763              		.loc 1 247 4 view .LVU509
+ 247:boards/TMC2100_eval.c **** 
+ 1764              		.loc 1 247 14 is_stmt 0 view .LVU510
+ 1765 04e2 01A9     		add	r1, sp, #4
+ 1766              	.LVL178:
+ 247:boards/TMC2100_eval.c **** 
+ 1767              		.loc 1 247 14 view .LVU511
+ 1768 04e4 0120     		movs	r0, #1
+ 1769              	.LVL179:
+ 247:boards/TMC2100_eval.c **** 
+ 1770              		.loc 1 247 14 view .LVU512
+ 1771 04e6 FFF79BFD 		bl	getStandAloneSettings
+ 1772              	.LVL180:
+ 250:boards/TMC2100_eval.c **** 
+ 1773              		.loc 1 250 14 view .LVU513
+ 1774 04ea 064B     		ldr	r3, .L129+12
+ 247:boards/TMC2100_eval.c **** 
+ 1775              		.loc 1 247 14 view .LVU514
+ 1776 04ec 0446     		mov	r4, r0
+ 1777              	.LVL181:
+ 249:boards/TMC2100_eval.c **** 			TMCRhinoSA.getPins(CFG);
+ 1778              		.loc 1 249 4 is_stmt 1 view .LVU515
+ 250:boards/TMC2100_eval.c **** 
+ 1779              		.loc 1 250 4 view .LVU516
+ 1780 04ee 9B6B     		ldr	r3, [r3, #56]
+ 1781 04f0 02A8     		add	r0, sp, #8
+ 1782              	.LVL182:
+ 250:boards/TMC2100_eval.c **** 
+ 1783              		.loc 1 250 4 is_stmt 0 view .LVU517
+ 1784 04f2 DDE7     		b	.L127
+ 1785              	.LVL183:
+ 1786              	.L123:
+ 250:boards/TMC2100_eval.c **** 
+ 1787              		.loc 1 250 4 view .LVU518
+ 1788              	.LBE38:
+ 114:boards/TMC2100_eval.c **** 
+ 1789              		.loc 1 114 10 view .LVU519
+ 1790 04f4 0824     		movs	r4, #8
+ 1791 04f6 AFE7     		b	.L106
+ 1792              	.L130:
+ 1793              		.align	2
+ 1794              	.L129:
+ 1795 04f8 00000000 		.word	HAL
+ 1796 04fc 00000000 		.word	.LANCHOR0
+ 1797 0500 00000000 		.word	Timer
+ 1798 0504 00000000 		.word	TMCRhinoSA
+ 1799              	.LBE41:
+ 1800              	.LBE44:
+ 1801              		.cfi_endproc
+ 1802              	.LFE8:
+ 1804              		.align	1
+ 1805              		.global	TMC2100_init
+ 1806              		.syntax unified
+ 1807              		.thumb
+ 1808              		.thumb_func
+ 1809              		.fpu softvfp
+ 1811              	TMC2100_init:
+ 1812              	.LFB16:
+ 487:boards/TMC2100_eval.c **** 	Pins.AIN_REF_PWM  = &HAL.IOs->pins->DIO11;
+ 1813              		.loc 1 487 1 is_stmt 1 view -0
+ 1814              		.cfi_startproc
+ 1815              		@ args = 0, pretend = 0, frame = 0
+ 1816              		@ frame_needed = 0, uses_anonymous_args = 0
+ 488:boards/TMC2100_eval.c **** 	Pins.AIN_REF_SW   = &HAL.IOs->pins->DIO10;
+ 1817              		.loc 1 488 2 view .LVU521
+ 488:boards/TMC2100_eval.c **** 	Pins.AIN_REF_SW   = &HAL.IOs->pins->DIO10;
+ 1818              		.loc 1 488 26 is_stmt 0 view .LVU522
+ 1819 0508 6E4B     		ldr	r3, .L142
+ 487:boards/TMC2100_eval.c **** 	Pins.AIN_REF_PWM  = &HAL.IOs->pins->DIO11;
+ 1820              		.loc 1 487 1 view .LVU523
+ 1821 050a 2DE9F041 		push	{r4, r5, r6, r7, r8, lr}
+ 1822              	.LCFI19:
+ 1823              		.cfi_def_cfa_offset 24
+ 1824              		.cfi_offset 4, -24
+ 1825              		.cfi_offset 5, -20
+ 1826              		.cfi_offset 6, -16
+ 1827              		.cfi_offset 7, -12
+ 1828              		.cfi_offset 8, -8
+ 1829              		.cfi_offset 14, -4
+ 488:boards/TMC2100_eval.c **** 	Pins.AIN_REF_SW   = &HAL.IOs->pins->DIO10;
+ 1830              		.loc 1 488 26 view .LVU524
+ 1831 050e DE68     		ldr	r6, [r3, #12]
+ 488:boards/TMC2100_eval.c **** 	Pins.AIN_REF_SW   = &HAL.IOs->pins->DIO10;
+ 1832              		.loc 1 488 20 view .LVU525
+ 1833 0510 6D4C     		ldr	r4, .L142+4
+ 488:boards/TMC2100_eval.c **** 	Pins.AIN_REF_SW   = &HAL.IOs->pins->DIO10;
+ 1834              		.loc 1 488 30 view .LVU526
+ 1835 0512 7068     		ldr	r0, [r6, #4]
+ 510:boards/TMC2100_eval.c **** 	TMCRhinoSA.CFGPins[1] = Pins.CFG1;
+ 1836              		.loc 1 510 12 view .LVU527
+ 1837 0514 6D4F     		ldr	r7, .L142+8
+ 488:boards/TMC2100_eval.c **** 	Pins.AIN_REF_SW   = &HAL.IOs->pins->DIO10;
+ 1838              		.loc 1 488 22 view .LVU528
+ 1839 0516 00F5E473 		add	r3, r0, #456
+ 488:boards/TMC2100_eval.c **** 	Pins.AIN_REF_SW   = &HAL.IOs->pins->DIO10;
+ 1840              		.loc 1 488 20 view .LVU529
+ 1841 051a 2363     		str	r3, [r4, #48]
+ 489:boards/TMC2100_eval.c **** 	Pins.CFG0         = &HAL.IOs->pins->SPI2_SDO;
+ 1842              		.loc 1 489 2 is_stmt 1 view .LVU530
+ 489:boards/TMC2100_eval.c **** 	Pins.CFG0         = &HAL.IOs->pins->SPI2_SDO;
+ 1843              		.loc 1 489 22 is_stmt 0 view .LVU531
+ 1844 051c 00F5D473 		add	r3, r0, #424
+ 489:boards/TMC2100_eval.c **** 	Pins.CFG0         = &HAL.IOs->pins->SPI2_SDO;
+ 1845              		.loc 1 489 20 view .LVU532
+ 1846 0520 E362     		str	r3, [r4, #44]
+ 490:boards/TMC2100_eval.c **** 	Pins.CFG1         = &HAL.IOs->pins->SPI2_SDI;
+ 1847              		.loc 1 490 2 is_stmt 1 view .LVU533
+ 490:boards/TMC2100_eval.c **** 	Pins.CFG1         = &HAL.IOs->pins->SPI2_SDI;
+ 1848              		.loc 1 490 22 is_stmt 0 view .LVU534
+ 1849 0522 00F52273 		add	r3, r0, #648
+ 490:boards/TMC2100_eval.c **** 	Pins.CFG1         = &HAL.IOs->pins->SPI2_SDI;
+ 1850              		.loc 1 490 20 view .LVU535
+ 1851 0526 E360     		str	r3, [r4, #12]
+ 491:boards/TMC2100_eval.c **** 	Pins.CFG2         = &HAL.IOs->pins->SPI2_SCK;
+ 1852              		.loc 1 491 2 is_stmt 1 view .LVU536
+ 491:boards/TMC2100_eval.c **** 	Pins.CFG2         = &HAL.IOs->pins->SPI2_SCK;
+ 1853              		.loc 1 491 22 is_stmt 0 view .LVU537
+ 1854 0528 00F52A73 		add	r3, r0, #680
+ 491:boards/TMC2100_eval.c **** 	Pins.CFG2         = &HAL.IOs->pins->SPI2_SCK;
+ 1855              		.loc 1 491 20 view .LVU538
+ 1856 052c A360     		str	r3, [r4, #8]
+ 492:boards/TMC2100_eval.c **** 	Pins.CFG3         = &HAL.IOs->pins->SPI2_CSN0;
+ 1857              		.loc 1 492 2 is_stmt 1 view .LVU539
+ 492:boards/TMC2100_eval.c **** 	Pins.CFG3         = &HAL.IOs->pins->SPI2_CSN0;
+ 1858              		.loc 1 492 22 is_stmt 0 view .LVU540
+ 1859 052e 00F51A73 		add	r3, r0, #616
+ 492:boards/TMC2100_eval.c **** 	Pins.CFG3         = &HAL.IOs->pins->SPI2_CSN0;
+ 1860              		.loc 1 492 20 view .LVU541
+ 1861 0532 6360     		str	r3, [r4, #4]
+ 493:boards/TMC2100_eval.c **** 	Pins.CFG4         = &HAL.IOs->pins->DIO13;
+ 1862              		.loc 1 493 2 is_stmt 1 view .LVU542
+ 493:boards/TMC2100_eval.c **** 	Pins.CFG4         = &HAL.IOs->pins->DIO13;
+ 1863              		.loc 1 493 22 is_stmt 0 view .LVU543
+ 1864 0534 00F50273 		add	r3, r0, #520
+ 493:boards/TMC2100_eval.c **** 	Pins.CFG4         = &HAL.IOs->pins->DIO13;
+ 1865              		.loc 1 493 20 view .LVU544
+ 1866 0538 2360     		str	r3, [r4]
+ 494:boards/TMC2100_eval.c **** 	Pins.CFG5         = &HAL.IOs->pins->DIO12;
+ 1867              		.loc 1 494 2 is_stmt 1 view .LVU545
+ 494:boards/TMC2100_eval.c **** 	Pins.CFG5         = &HAL.IOs->pins->DIO12;
+ 1868              		.loc 1 494 22 is_stmt 0 view .LVU546
+ 1869 053a 00F55A73 		add	r3, r0, #872
+ 494:boards/TMC2100_eval.c **** 	Pins.CFG5         = &HAL.IOs->pins->DIO12;
+ 1870              		.loc 1 494 20 view .LVU547
+ 1871 053e A361     		str	r3, [r4, #24]
+ 495:boards/TMC2100_eval.c **** 	Pins.CFG6_ENN     = &HAL.IOs->pins->DIO0;
+ 1872              		.loc 1 495 2 is_stmt 1 view .LVU548
+ 495:boards/TMC2100_eval.c **** 	Pins.CFG6_ENN     = &HAL.IOs->pins->DIO0;
+ 1873              		.loc 1 495 22 is_stmt 0 view .LVU549
+ 1874 0540 00F55273 		add	r3, r0, #840
+ 495:boards/TMC2100_eval.c **** 	Pins.CFG6_ENN     = &HAL.IOs->pins->DIO0;
+ 1875              		.loc 1 495 20 view .LVU550
+ 1876 0544 E361     		str	r3, [r4, #28]
+ 496:boards/TMC2100_eval.c **** 	Pins.DIR          = &HAL.IOs->pins->DIO7;
+ 1877              		.loc 1 496 2 is_stmt 1 view .LVU551
+ 496:boards/TMC2100_eval.c **** 	Pins.DIR          = &HAL.IOs->pins->DIO7;
+ 1878              		.loc 1 496 22 is_stmt 0 view .LVU552
+ 1879 0546 00F16803 		add	r3, r0, #104
+ 496:boards/TMC2100_eval.c **** 	Pins.DIR          = &HAL.IOs->pins->DIO7;
+ 1880              		.loc 1 496 20 view .LVU553
+ 1881 054a A362     		str	r3, [r4, #40]
+ 497:boards/TMC2100_eval.c **** 	Pins.ERROR        = &HAL.IOs->pins->DIO15;
+ 1882              		.loc 1 497 2 is_stmt 1 view .LVU554
+ 497:boards/TMC2100_eval.c **** 	Pins.ERROR        = &HAL.IOs->pins->DIO15;
+ 1883              		.loc 1 497 22 is_stmt 0 view .LVU555
+ 1884 054c 00F5A473 		add	r3, r0, #328
+ 497:boards/TMC2100_eval.c **** 	Pins.ERROR        = &HAL.IOs->pins->DIO15;
+ 1885              		.loc 1 497 20 view .LVU556
+ 1886 0550 6361     		str	r3, [r4, #20]
+ 498:boards/TMC2100_eval.c **** 	Pins.INDEX        = &HAL.IOs->pins->DIO16;
+ 1887              		.loc 1 498 2 is_stmt 1 view .LVU557
+ 498:boards/TMC2100_eval.c **** 	Pins.INDEX        = &HAL.IOs->pins->DIO16;
+ 1888              		.loc 1 498 22 is_stmt 0 view .LVU558
+ 1889 0552 00F56A73 		add	r3, r0, #936
+ 498:boards/TMC2100_eval.c **** 	Pins.INDEX        = &HAL.IOs->pins->DIO16;
+ 1890              		.loc 1 498 20 view .LVU559
+ 1891 0556 2362     		str	r3, [r4, #32]
+ 499:boards/TMC2100_eval.c **** 	Pins.STEP         = &HAL.IOs->pins->DIO6;
+ 1892              		.loc 1 499 2 is_stmt 1 view .LVU560
+ 499:boards/TMC2100_eval.c **** 	Pins.STEP         = &HAL.IOs->pins->DIO6;
+ 1893              		.loc 1 499 22 is_stmt 0 view .LVU561
+ 1894 0558 00F57273 		add	r3, r0, #968
+ 499:boards/TMC2100_eval.c **** 	Pins.STEP         = &HAL.IOs->pins->DIO6;
+ 1895              		.loc 1 499 20 view .LVU562
+ 1896 055c 6362     		str	r3, [r4, #36]
+ 500:boards/TMC2100_eval.c **** 
+ 1897              		.loc 1 500 2 is_stmt 1 view .LVU563
+ 502:boards/TMC2100_eval.c **** 	HAL.IOs->config->toOutput(Pins.DIR);
+ 1898              		.loc 1 502 17 is_stmt 0 view .LVU564
+ 1899 055e 3368     		ldr	r3, [r6]
+ 500:boards/TMC2100_eval.c **** 
+ 1900              		.loc 1 500 22 view .LVU565
+ 1901 0560 00F59470 		add	r0, r0, #296
+ 502:boards/TMC2100_eval.c **** 	HAL.IOs->config->toOutput(Pins.DIR);
+ 1902              		.loc 1 502 2 view .LVU566
+ 1903 0564 DB68     		ldr	r3, [r3, #12]
+ 500:boards/TMC2100_eval.c **** 
+ 1904              		.loc 1 500 20 view .LVU567
+ 1905 0566 2061     		str	r0, [r4, #16]
+ 502:boards/TMC2100_eval.c **** 	HAL.IOs->config->toOutput(Pins.DIR);
+ 1906              		.loc 1 502 2 is_stmt 1 view .LVU568
+ 1907 0568 9847     		blx	r3
+ 1908              	.LVL184:
+ 503:boards/TMC2100_eval.c **** 	HAL.IOs->config->toOutput(Pins.AIN_REF_PWM);
+ 1909              		.loc 1 503 2 view .LVU569
+ 503:boards/TMC2100_eval.c **** 	HAL.IOs->config->toOutput(Pins.AIN_REF_PWM);
+ 1910              		.loc 1 503 17 is_stmt 0 view .LVU570
+ 1911 056a 3368     		ldr	r3, [r6]
+ 503:boards/TMC2100_eval.c **** 	HAL.IOs->config->toOutput(Pins.AIN_REF_PWM);
+ 1912              		.loc 1 503 2 view .LVU571
+ 1913 056c 6069     		ldr	r0, [r4, #20]
+ 1914 056e DB68     		ldr	r3, [r3, #12]
+ 1915 0570 9847     		blx	r3
+ 1916              	.LVL185:
+ 504:boards/TMC2100_eval.c **** 	HAL.IOs->config->toOutput(Pins.AIN_REF_SW);
+ 1917              		.loc 1 504 2 is_stmt 1 view .LVU572
+ 504:boards/TMC2100_eval.c **** 	HAL.IOs->config->toOutput(Pins.AIN_REF_SW);
+ 1918              		.loc 1 504 17 is_stmt 0 view .LVU573
+ 1919 0572 3368     		ldr	r3, [r6]
+ 504:boards/TMC2100_eval.c **** 	HAL.IOs->config->toOutput(Pins.AIN_REF_SW);
+ 1920              		.loc 1 504 2 view .LVU574
+ 1921 0574 206B     		ldr	r0, [r4, #48]
+ 1922 0576 DB68     		ldr	r3, [r3, #12]
+ 1923 0578 9847     		blx	r3
+ 1924              	.LVL186:
+ 505:boards/TMC2100_eval.c **** 
+ 1925              		.loc 1 505 2 is_stmt 1 view .LVU575
+ 505:boards/TMC2100_eval.c **** 
+ 1926              		.loc 1 505 17 is_stmt 0 view .LVU576
+ 1927 057a 3368     		ldr	r3, [r6]
+ 505:boards/TMC2100_eval.c **** 
+ 1928              		.loc 1 505 2 view .LVU577
+ 1929 057c E06A     		ldr	r0, [r4, #44]
+ 1930 057e DB68     		ldr	r3, [r3, #12]
+ 1931 0580 9847     		blx	r3
+ 1932              	.LVL187:
+ 507:boards/TMC2100_eval.c **** 	HAL.IOs->config->toInput(Pins.INDEX);
+ 1933              		.loc 1 507 2 is_stmt 1 view .LVU578
+ 507:boards/TMC2100_eval.c **** 	HAL.IOs->config->toInput(Pins.INDEX);
+ 1934              		.loc 1 507 17 is_stmt 0 view .LVU579
+ 1935 0582 3368     		ldr	r3, [r6]
+ 507:boards/TMC2100_eval.c **** 	HAL.IOs->config->toInput(Pins.INDEX);
+ 1936              		.loc 1 507 2 view .LVU580
+ 1937 0584 206A     		ldr	r0, [r4, #32]
+ 1938 0586 1B69     		ldr	r3, [r3, #16]
+ 1939 0588 9847     		blx	r3
+ 1940              	.LVL188:
+ 508:boards/TMC2100_eval.c **** 
+ 1941              		.loc 1 508 2 is_stmt 1 view .LVU581
+ 508:boards/TMC2100_eval.c **** 
+ 1942              		.loc 1 508 17 is_stmt 0 view .LVU582
+ 1943 058a 3368     		ldr	r3, [r6]
+ 508:boards/TMC2100_eval.c **** 
+ 1944              		.loc 1 508 2 view .LVU583
+ 1945 058c 606A     		ldr	r0, [r4, #36]
+ 1946 058e 1B69     		ldr	r3, [r3, #16]
+ 1947 0590 9847     		blx	r3
+ 1948              	.LVL189:
+ 510:boards/TMC2100_eval.c **** 	TMCRhinoSA.CFGPins[1] = Pins.CFG1;
+ 1949              		.loc 1 510 2 is_stmt 1 view .LVU584
+ 510:boards/TMC2100_eval.c **** 	TMCRhinoSA.CFGPins[1] = Pins.CFG1;
+ 1950              		.loc 1 510 12 is_stmt 0 view .LVU585
+ 1951 0592 7B6C     		ldr	r3, [r7, #68]
+ 510:boards/TMC2100_eval.c **** 	TMCRhinoSA.CFGPins[1] = Pins.CFG1;
+ 1952              		.loc 1 510 24 view .LVU586
+ 1953 0594 E268     		ldr	r2, [r4, #12]
+ 1954 0596 1A60     		str	r2, [r3]
+ 511:boards/TMC2100_eval.c **** 	TMCRhinoSA.CFGPins[2] = Pins.CFG2;
+ 1955              		.loc 1 511 2 is_stmt 1 view .LVU587
+ 511:boards/TMC2100_eval.c **** 	TMCRhinoSA.CFGPins[2] = Pins.CFG2;
+ 1956              		.loc 1 511 24 is_stmt 0 view .LVU588
+ 1957 0598 A268     		ldr	r2, [r4, #8]
+ 1958 059a 5A60     		str	r2, [r3, #4]
+ 512:boards/TMC2100_eval.c **** 	TMCRhinoSA.CFGPins[3] = Pins.CFG3;
+ 1959              		.loc 1 512 2 is_stmt 1 view .LVU589
+ 512:boards/TMC2100_eval.c **** 	TMCRhinoSA.CFGPins[3] = Pins.CFG3;
+ 1960              		.loc 1 512 24 is_stmt 0 view .LVU590
+ 1961 059c 6268     		ldr	r2, [r4, #4]
+ 1962 059e 9A60     		str	r2, [r3, #8]
+ 513:boards/TMC2100_eval.c **** 	TMCRhinoSA.CFGPins[4] = Pins.CFG4;
+ 1963              		.loc 1 513 2 is_stmt 1 view .LVU591
+ 513:boards/TMC2100_eval.c **** 	TMCRhinoSA.CFGPins[4] = Pins.CFG4;
+ 1964              		.loc 1 513 24 is_stmt 0 view .LVU592
+ 1965 05a0 2268     		ldr	r2, [r4]
+ 1966 05a2 DA60     		str	r2, [r3, #12]
+ 514:boards/TMC2100_eval.c **** 	TMCRhinoSA.CFGPins[5] = Pins.CFG5;
+ 1967              		.loc 1 514 2 is_stmt 1 view .LVU593
+ 514:boards/TMC2100_eval.c **** 	TMCRhinoSA.CFGPins[5] = Pins.CFG5;
+ 1968              		.loc 1 514 24 is_stmt 0 view .LVU594
+ 1969 05a4 A269     		ldr	r2, [r4, #24]
+ 1970 05a6 1A61     		str	r2, [r3, #16]
+ 515:boards/TMC2100_eval.c **** 	TMCRhinoSA.CFGPins[6] = Pins.CFG6_ENN;
+ 1971              		.loc 1 515 2 is_stmt 1 view .LVU595
+ 515:boards/TMC2100_eval.c **** 	TMCRhinoSA.CFGPins[6] = Pins.CFG6_ENN;
+ 1972              		.loc 1 515 24 is_stmt 0 view .LVU596
+ 1973 05a8 E269     		ldr	r2, [r4, #28]
+ 1974 05aa 5A61     		str	r2, [r3, #20]
+ 516:boards/TMC2100_eval.c **** 
+ 1975              		.loc 1 516 2 is_stmt 1 view .LVU597
+ 516:boards/TMC2100_eval.c **** 
+ 1976              		.loc 1 516 24 is_stmt 0 view .LVU598
+ 1977 05ac A26A     		ldr	r2, [r4, #40]
+ 1978 05ae 9A61     		str	r2, [r3, #24]
+ 518:boards/TMC2100_eval.c **** 	{
+ 1979              		.loc 1 518 2 is_stmt 1 view .LVU599
+ 1980              	.LBB48:
+ 518:boards/TMC2100_eval.c **** 	{
+ 1981              		.loc 1 518 6 view .LVU600
+ 1982              	.LVL190:
+ 518:boards/TMC2100_eval.c **** 	{
+ 1983              		.loc 1 518 21 view .LVU601
+ 1984              	.LBE48:
+ 516:boards/TMC2100_eval.c **** 
+ 1985              		.loc 1 516 24 is_stmt 0 view .LVU602
+ 1986 05b0 0025     		movs	r5, #0
+ 1987              	.LVL191:
+ 1988              	.L132:
+ 1989              	.LBB49:
+ 520:boards/TMC2100_eval.c **** 		HAL.IOs->config->setLow(TMCRhinoSA.CFGPins[i]);
+ 1990              		.loc 1 520 3 is_stmt 1 discriminator 3 view .LVU603
+ 1991 05b2 7A6C     		ldr	r2, [r7, #68]
+ 520:boards/TMC2100_eval.c **** 		HAL.IOs->config->setLow(TMCRhinoSA.CFGPins[i]);
+ 1992              		.loc 1 520 18 is_stmt 0 discriminator 3 view .LVU604
+ 1993 05b4 3368     		ldr	r3, [r6]
+ 520:boards/TMC2100_eval.c **** 		HAL.IOs->config->setLow(TMCRhinoSA.CFGPins[i]);
+ 1994              		.loc 1 520 3 discriminator 3 view .LVU605
+ 1995 05b6 5059     		ldr	r0, [r2, r5]
+ 1996 05b8 DB68     		ldr	r3, [r3, #12]
+ 1997 05ba 9847     		blx	r3
+ 1998              	.LVL192:
+ 521:boards/TMC2100_eval.c **** 	}
+ 1999              		.loc 1 521 3 is_stmt 1 discriminator 3 view .LVU606
+ 2000 05bc 7A6C     		ldr	r2, [r7, #68]
+ 521:boards/TMC2100_eval.c **** 	}
+ 2001              		.loc 1 521 18 is_stmt 0 discriminator 3 view .LVU607
+ 2002 05be 3368     		ldr	r3, [r6]
+ 521:boards/TMC2100_eval.c **** 	}
+ 2003              		.loc 1 521 3 discriminator 3 view .LVU608
+ 2004 05c0 5059     		ldr	r0, [r2, r5]
+ 2005 05c2 9B69     		ldr	r3, [r3, #24]
+ 2006 05c4 0435     		adds	r5, r5, #4
+ 2007 05c6 9847     		blx	r3
+ 2008              	.LVL193:
+ 518:boards/TMC2100_eval.c **** 	{
+ 2009              		.loc 1 518 28 is_stmt 1 discriminator 3 view .LVU609
+ 518:boards/TMC2100_eval.c **** 	{
+ 2010              		.loc 1 518 21 discriminator 3 view .LVU610
+ 518:boards/TMC2100_eval.c **** 	{
+ 2011              		.loc 1 518 2 is_stmt 0 discriminator 3 view .LVU611
+ 2012 05c8 1C2D     		cmp	r5, #28
+ 2013 05ca F2D1     		bne	.L132
+ 2014              	.LBE49:
+ 524:boards/TMC2100_eval.c **** 
+ 2015              		.loc 1 524 2 is_stmt 1 view .LVU612
+ 524:boards/TMC2100_eval.c **** 
+ 2016              		.loc 1 524 16 is_stmt 0 view .LVU613
+ 2017 05cc 404D     		ldr	r5, .L142+12
+ 524:boards/TMC2100_eval.c **** 
+ 2018              		.loc 1 524 31 view .LVU614
+ 2019 05ce D5F89030 		ldr	r3, [r5, #144]
+ 2020 05d2 4FF00008 		mov	r8, #0
+ 2021 05d6 83F80080 		strb	r8, [r3]
+ 526:boards/TMC2100_eval.c **** 	StepDir_setPins(0, Pins.STEP, Pins.DIR, NULL);
+ 2022              		.loc 1 526 2 is_stmt 1 view .LVU615
+ 2023 05da 4FF40030 		mov	r0, #131072
+ 2024 05de FFF7FEFF 		bl	StepDir_init
+ 2025              	.LVL194:
+ 527:boards/TMC2100_eval.c **** 	StepDir_setVelocityMax(0, 20000);
+ 2026              		.loc 1 527 2 view .LVU616
+ 2027 05e2 D4E90412 		ldrd	r1, r2, [r4, #16]
+ 2028 05e6 4346     		mov	r3, r8
+ 2029 05e8 4046     		mov	r0, r8
+ 2030 05ea FFF7FEFF 		bl	StepDir_setPins
+ 2031              	.LVL195:
+ 528:boards/TMC2100_eval.c **** 	StepDir_setAcceleration(0, 25000);
+ 2032              		.loc 1 528 2 view .LVU617
+ 2033 05ee 44F62061 		movw	r1, #20000
+ 2034 05f2 4046     		mov	r0, r8
+ 2035 05f4 FFF7FEFF 		bl	StepDir_setVelocityMax
+ 2036              	.LVL196:
+ 529:boards/TMC2100_eval.c **** 
+ 2037              		.loc 1 529 2 view .LVU618
+ 2038 05f8 46F2A811 		movw	r1, #25000
+ 2039 05fc 4046     		mov	r0, r8
+ 2040 05fe FFF7FEFF 		bl	StepDir_setAcceleration
+ 2041              	.LVL197:
+ 531:boards/TMC2100_eval.c **** 	Evalboards.ch2.right           = right;
+ 2042              		.loc 1 531 2 view .LVU619
+ 531:boards/TMC2100_eval.c **** 	Evalboards.ch2.right           = right;
+ 2043              		.loc 1 531 33 is_stmt 0 view .LVU620
+ 2044 0602 344B     		ldr	r3, .L142+16
+ 2045 0604 C5F89C30 		str	r3, [r5, #156]
+ 532:boards/TMC2100_eval.c **** 	Evalboards.ch2.left            = left;
+ 2046              		.loc 1 532 2 is_stmt 1 view .LVU621
+ 532:boards/TMC2100_eval.c **** 	Evalboards.ch2.left            = left;
+ 2047              		.loc 1 532 33 is_stmt 0 view .LVU622
+ 2048 0608 334B     		ldr	r3, .L142+20
+ 2049 060a C5F89830 		str	r3, [r5, #152]
+ 533:boards/TMC2100_eval.c **** 	Evalboards.ch2.stop            = stop;
+ 2050              		.loc 1 533 2 is_stmt 1 view .LVU623
+ 533:boards/TMC2100_eval.c **** 	Evalboards.ch2.stop            = stop;
+ 2051              		.loc 1 533 33 is_stmt 0 view .LVU624
+ 2052 060e 334B     		ldr	r3, .L142+24
+ 2053 0610 C5F89430 		str	r3, [r5, #148]
+ 534:boards/TMC2100_eval.c **** 	Evalboards.ch2.GAP             = GAP;
+ 2054              		.loc 1 534 2 is_stmt 1 view .LVU625
+ 534:boards/TMC2100_eval.c **** 	Evalboards.ch2.GAP             = GAP;
+ 2055              		.loc 1 534 33 is_stmt 0 view .LVU626
+ 2056 0614 324B     		ldr	r3, .L142+28
+ 2057 0616 C5F8A030 		str	r3, [r5, #160]
+ 535:boards/TMC2100_eval.c **** 	Evalboards.ch2.SAP             = SAP;
+ 2058              		.loc 1 535 2 is_stmt 1 view .LVU627
+ 535:boards/TMC2100_eval.c **** 	Evalboards.ch2.SAP             = SAP;
+ 2059              		.loc 1 535 33 is_stmt 0 view .LVU628
+ 2060 061a 324B     		ldr	r3, .L142+32
+ 2061 061c C5F8B430 		str	r3, [r5, #180]
+ 536:boards/TMC2100_eval.c **** 	Evalboards.ch2.moveTo          = moveTo;
+ 2062              		.loc 1 536 2 is_stmt 1 view .LVU629
+ 536:boards/TMC2100_eval.c **** 	Evalboards.ch2.moveTo          = moveTo;
+ 2063              		.loc 1 536 33 is_stmt 0 view .LVU630
+ 2064 0620 314B     		ldr	r3, .L142+36
+ 2065 0622 C5F8B030 		str	r3, [r5, #176]
+ 537:boards/TMC2100_eval.c **** 	Evalboards.ch2.moveBy          = moveBy;
+ 2066              		.loc 1 537 2 is_stmt 1 view .LVU631
+ 537:boards/TMC2100_eval.c **** 	Evalboards.ch2.moveBy          = moveBy;
+ 2067              		.loc 1 537 33 is_stmt 0 view .LVU632
+ 2068 0626 314B     		ldr	r3, .L142+40
+ 2069 0628 C5F8A430 		str	r3, [r5, #164]
+ 538:boards/TMC2100_eval.c **** 	Evalboards.ch2.writeRegister   = writeRegister;
+ 2070              		.loc 1 538 2 is_stmt 1 view .LVU633
+ 538:boards/TMC2100_eval.c **** 	Evalboards.ch2.writeRegister   = writeRegister;
+ 2071              		.loc 1 538 33 is_stmt 0 view .LVU634
+ 2072 062c 304B     		ldr	r3, .L142+44
+ 2073 062e C5F8A830 		str	r3, [r5, #168]
+ 539:boards/TMC2100_eval.c **** 	Evalboards.ch2.readRegister    = readRegister;
+ 2074              		.loc 1 539 2 is_stmt 1 view .LVU635
+ 539:boards/TMC2100_eval.c **** 	Evalboards.ch2.readRegister    = readRegister;
+ 2075              		.loc 1 539 33 is_stmt 0 view .LVU636
+ 2076 0632 304B     		ldr	r3, .L142+48
+ 2077 0634 C5F8C430 		str	r3, [r5, #196]
+ 540:boards/TMC2100_eval.c **** 	Evalboards.ch2.userFunction    = userFunction;
+ 2078              		.loc 1 540 2 is_stmt 1 view .LVU637
+ 540:boards/TMC2100_eval.c **** 	Evalboards.ch2.userFunction    = userFunction;
+ 2079              		.loc 1 540 33 is_stmt 0 view .LVU638
+ 2080 0638 2F4B     		ldr	r3, .L142+52
+ 2081 063a C5F8C030 		str	r3, [r5, #192]
+ 541:boards/TMC2100_eval.c **** 	Evalboards.ch2.periodicJob     = periodicJob;
+ 2082              		.loc 1 541 2 is_stmt 1 view .LVU639
+ 541:boards/TMC2100_eval.c **** 	Evalboards.ch2.periodicJob     = periodicJob;
+ 2083              		.loc 1 541 33 is_stmt 0 view .LVU640
+ 2084 063e 2F4B     		ldr	r3, .L142+56
+ 2085 0640 C5F8CC30 		str	r3, [r5, #204]
+ 542:boards/TMC2100_eval.c **** 	Evalboards.ch2.enableDriver    = enableDriver;
+ 2086              		.loc 1 542 2 is_stmt 1 view .LVU641
+ 542:boards/TMC2100_eval.c **** 	Evalboards.ch2.enableDriver    = enableDriver;
+ 2087              		.loc 1 542 33 is_stmt 0 view .LVU642
+ 2088 0644 2E4B     		ldr	r3, .L142+60
+ 2089 0646 C5F8D030 		str	r3, [r5, #208]
+ 543:boards/TMC2100_eval.c **** 	Evalboards.ch2.numberOfMotors  = MOTORS;
+ 2090              		.loc 1 543 2 is_stmt 1 view .LVU643
+ 543:boards/TMC2100_eval.c **** 	Evalboards.ch2.numberOfMotors  = MOTORS;
+ 2091              		.loc 1 543 33 is_stmt 0 view .LVU644
+ 2092 064a 2E4B     		ldr	r3, .L142+64
+ 2093 064c C5F8DC30 		str	r3, [r5, #220]
+ 544:boards/TMC2100_eval.c **** 	Evalboards.ch2.deInit          = deInit;
+ 2094              		.loc 1 544 2 is_stmt 1 view .LVU645
+ 544:boards/TMC2100_eval.c **** 	Evalboards.ch2.deInit          = deInit;
+ 2095              		.loc 1 544 33 is_stmt 0 view .LVU646
+ 2096 0650 0123     		movs	r3, #1
+ 2097 0652 85F88C30 		strb	r3, [r5, #140]
+ 545:boards/TMC2100_eval.c **** 
+ 2098              		.loc 1 545 2 is_stmt 1 view .LVU647
+ 547:boards/TMC2100_eval.c **** 	reset();
+ 2099              		.loc 1 547 2 is_stmt 0 view .LVU648
+ 2100 0656 0220     		movs	r0, #2
+ 545:boards/TMC2100_eval.c **** 
+ 2101              		.loc 1 545 33 view .LVU649
+ 2102 0658 2B4B     		ldr	r3, .L142+68
+ 2103 065a C5F8D430 		str	r3, [r5, #212]
+ 547:boards/TMC2100_eval.c **** 	reset();
+ 2104              		.loc 1 547 2 is_stmt 1 view .LVU650
+ 2105 065e FFF767FD 		bl	enableDriver
+ 2106              	.LVL198:
+ 548:boards/TMC2100_eval.c **** 
+ 2107              		.loc 1 548 2 view .LVU651
+ 2108              	.LBB50:
+ 2109              	.LBI50:
+ 585:boards/TMC2100_eval.c **** {
+ 2110              		.loc 1 585 16 view .LVU652
+ 2111              	.LBB51:
+ 587:boards/TMC2100_eval.c **** 		return 0;
+ 2112              		.loc 1 587 2 view .LVU653
+ 587:boards/TMC2100_eval.c **** 		return 0;
+ 2113              		.loc 1 587 5 is_stmt 0 view .LVU654
+ 2114 0662 4046     		mov	r0, r8
+ 2115 0664 FFF7FEFF 		bl	StepDir_getActualVelocity
+ 2116              	.LVL199:
+ 587:boards/TMC2100_eval.c **** 		return 0;
+ 2117              		.loc 1 587 4 view .LVU655
+ 2118 0668 10B1     		cbz	r0, .L133
+ 587:boards/TMC2100_eval.c **** 		return 0;
+ 2119              		.loc 1 587 55 view .LVU656
+ 2120 066a 284B     		ldr	r3, .L142+72
+ 587:boards/TMC2100_eval.c **** 		return 0;
+ 2121              		.loc 1 587 34 view .LVU657
+ 2122 066c 9B78     		ldrb	r3, [r3, #2]	@ zero_extendqisi2
+ 2123 066e ABB1     		cbz	r3, .L134
+ 2124              	.L133:
+ 590:boards/TMC2100_eval.c **** 
+ 2125              		.loc 1 590 2 is_stmt 1 view .LVU658
+ 2126 0670 BB6A     		ldr	r3, [r7, #40]
+ 2127 0672 9847     		blx	r3
+ 2128              	.LVL200:
+ 592:boards/TMC2100_eval.c **** 	StepDir_setPins(0, Pins.STEP, Pins.DIR, NULL);
+ 2129              		.loc 1 592 2 view .LVU659
+ 2130 0674 4FF40030 		mov	r0, #131072
+ 2131 0678 FFF7FEFF 		bl	StepDir_init
+ 2132              	.LVL201:
+ 593:boards/TMC2100_eval.c **** 	StepDir_setVelocityMax(0, 20000);
+ 2133              		.loc 1 593 2 view .LVU660
+ 2134 067c 0023     		movs	r3, #0
+ 2135 067e D4E90412 		ldrd	r1, r2, [r4, #16]
+ 2136 0682 1846     		mov	r0, r3
+ 2137 0684 FFF7FEFF 		bl	StepDir_setPins
+ 2138              	.LVL202:
+ 594:boards/TMC2100_eval.c **** 	StepDir_setAcceleration(0, 25000);
+ 2139              		.loc 1 594 2 view .LVU661
+ 2140 0688 44F62061 		movw	r1, #20000
+ 2141 068c 0020     		movs	r0, #0
+ 2142 068e FFF7FEFF 		bl	StepDir_setVelocityMax
+ 2143              	.LVL203:
+ 595:boards/TMC2100_eval.c **** 
+ 2144              		.loc 1 595 2 view .LVU662
+ 2145 0692 46F2A811 		movw	r1, #25000
+ 2146 0696 0020     		movs	r0, #0
+ 2147 0698 FFF7FEFF 		bl	StepDir_setAcceleration
+ 2148              	.LVL204:
+ 597:boards/TMC2100_eval.c **** }
+ 2149              		.loc 1 597 2 view .LVU663
+ 2150              	.L134:
+ 2151              	.LBE51:
+ 2152              	.LBE50:
+ 554:boards/TMC2100_eval.c **** 	Pins.AIN_REF_PWM->configuration.GPIO_Mode = GPIO_Mode_AF4;
+ 2153              		.loc 1 554 2 view .LVU664
+ 554:boards/TMC2100_eval.c **** 	Pins.AIN_REF_PWM->configuration.GPIO_Mode = GPIO_Mode_AF4;
+ 2154              		.loc 1 554 17 is_stmt 0 view .LVU665
+ 2155 069c 3368     		ldr	r3, [r6]
+ 554:boards/TMC2100_eval.c **** 	Pins.AIN_REF_PWM->configuration.GPIO_Mode = GPIO_Mode_AF4;
+ 2156              		.loc 1 554 2 view .LVU666
+ 2157 069e 206B     		ldr	r0, [r4, #48]
+ 2158 06a0 DB68     		ldr	r3, [r3, #12]
+ 2159 06a2 9847     		blx	r3
+ 2160              	.LVL205:
+ 555:boards/TMC2100_eval.c **** #endif
+ 2161              		.loc 1 555 2 is_stmt 1 view .LVU667
+ 555:boards/TMC2100_eval.c **** #endif
+ 2162              		.loc 1 555 6 is_stmt 0 view .LVU668
+ 2163 06a4 206B     		ldr	r0, [r4, #48]
+ 559:boards/TMC2100_eval.c **** 	Timer.setDuty(TIMER_CHANNEL_1, 0);
+ 2164              		.loc 1 559 7 view .LVU669
+ 2165 06a6 1A4C     		ldr	r4, .L142+76
+ 555:boards/TMC2100_eval.c **** #endif
+ 2166              		.loc 1 555 44 view .LVU670
+ 2167 06a8 0423     		movs	r3, #4
+ 2168 06aa 4375     		strb	r3, [r0, #21]
+ 558:boards/TMC2100_eval.c **** 	Timer.init();
+ 2169              		.loc 1 558 2 is_stmt 1 view .LVU671
+ 558:boards/TMC2100_eval.c **** 	Timer.init();
+ 2170              		.loc 1 558 17 is_stmt 0 view .LVU672
+ 2171 06ac 3368     		ldr	r3, [r6]
+ 558:boards/TMC2100_eval.c **** 	Timer.init();
+ 2172              		.loc 1 558 2 view .LVU673
+ 2173 06ae 1B68     		ldr	r3, [r3]
+ 2174 06b0 9847     		blx	r3
+ 2175              	.LVL206:
+ 559:boards/TMC2100_eval.c **** 	Timer.setDuty(TIMER_CHANNEL_1, 0);
+ 2176              		.loc 1 559 2 is_stmt 1 view .LVU674
+ 2177 06b2 2368     		ldr	r3, [r4]
+ 2178 06b4 9847     		blx	r3
+ 2179              	.LVL207:
+ 560:boards/TMC2100_eval.c **** }
+ 2180              		.loc 1 560 2 view .LVU675
+ 2181 06b6 0021     		movs	r1, #0
+ 2182 06b8 A368     		ldr	r3, [r4, #8]
+ 2183 06ba 0846     		mov	r0, r1
+ 561:boards/TMC2100_eval.c **** 
+ 2184              		.loc 1 561 1 is_stmt 0 view .LVU676
+ 2185 06bc BDE8F041 		pop	{r4, r5, r6, r7, r8, lr}
+ 2186              	.LCFI20:
+ 2187              		.cfi_restore 14
+ 2188              		.cfi_restore 8
+ 2189              		.cfi_restore 7
+ 2190              		.cfi_restore 6
+ 2191              		.cfi_restore 5
+ 2192              		.cfi_restore 4
+ 2193              		.cfi_def_cfa_offset 0
+ 560:boards/TMC2100_eval.c **** }
+ 2194              		.loc 1 560 2 view .LVU677
+ 2195 06c0 1847     		bx	r3	@ indirect register sibling call
+ 2196              	.LVL208:
+ 2197              	.L143:
+ 2198 06c2 00BF     		.align	2
+ 2199              	.L142:
+ 2200 06c4 00000000 		.word	HAL
+ 2201 06c8 00000000 		.word	.LANCHOR0
+ 2202 06cc 00000000 		.word	TMCRhinoSA
+ 2203 06d0 00000000 		.word	Evalboards
+ 2204 06d4 00000000 		.word	rotate
+ 2205 06d8 00000000 		.word	right
+ 2206 06dc 00000000 		.word	left
+ 2207 06e0 00000000 		.word	stop
+ 2208 06e4 00000000 		.word	GAP
+ 2209 06e8 00000000 		.word	SAP
+ 2210 06ec 00000000 		.word	moveTo
+ 2211 06f0 00000000 		.word	moveBy
+ 2212 06f4 00000000 		.word	writeRegister
+ 2213 06f8 00000000 		.word	readRegister
+ 2214 06fc 00000000 		.word	userFunction
+ 2215 0700 00000000 		.word	periodicJob
+ 2216 0704 00000000 		.word	enableDriver
+ 2217 0708 00000000 		.word	deInit
+ 2218 070c 00000000 		.word	VitalSignsMonitor
+ 2219 0710 00000000 		.word	Timer
+ 2220              		.cfi_endproc
+ 2221              	.LFE16:
+ 2223              		.comm	TMCRhinoSA,72,4
+ 2224              		.comm	TMCMotionController,532,4
+ 2225              		.comm	TMCDriver,532,4
+ 2226              		.comm	Evalboards,244,4
+ 2227              		.comm	VitalSignsMonitor,20,4
+ 2228              		.comm	hwid,1,1
+ 2229              		.comm	HAL,48,4
+ 2230              		.comm	UART,40,4
+ 2231              		.comm	Timer,16,4
+ 2232              		.comm	WLAN,36,4
+ 2233              		.comm	RS232,36,4
+ 2234              		.comm	LEDs,28,4
+ 2235              		.comm	USB,36,4
+ 2236              		.comm	uart0_interrupt,1,1
+ 2237              		.comm	ADCs,32,4
+ 2238              		.comm	SPI,44,4
+ 2239              		.comm	IOMap,2088,4
+ 2240              		.comm	IOs,52,4
+ 2241              		.comm	Cpu,8,4
+ 2242              		.bss
+ 2243              		.align	2
+ 2244              		.set	.LANCHOR0,. + 0
+ 2247              	Pins:
+ 2248 0000 00000000 		.space	52
+ 2248      00000000 
+ 2248      00000000 
+ 2248      00000000 
+ 2248      00000000 
+ 2251              	ADCValue:
+ 2252 0034 00000000 		.space	12
+ 2252      00000000 
+ 2252      00000000 
+ 2253              		.text
+ 2254              	.Letext0:
+ 2255              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 2256              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 2257              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 2258              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 2259              		.file 6 "TMC-API/tmc/helpers/Config.h"
+ 2260              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 2261              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 2262              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 2263              		.file 10 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\in
+ 2264              		.file 11 "TMC-API/tmc/helpers/API_Header.h"
+ 2265              		.file 12 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 2266              		.file 13 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 2267              		.file 14 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 2268              		.file 15 "./hal/IOs.h"
+ 2269              		.file 16 "./hal/IOMap.h"
+ 2270              		.file 17 "./hal/SPI.h"
+ 2271              		.file 18 "./hal/ADCs.h"
+ 2272              		.file 19 "./hal/RXTX.h"
+ 2273              		.file 20 "./hal/USB.h"
+ 2274              		.file 21 "./hal/LEDs.h"
+ 2275              		.file 22 "./hal/RS232.h"
+ 2276              		.file 23 "./hal/WLAN.h"
+ 2277              		.file 24 "./hal/Timer.h"
+ 2278              		.file 25 "./hal/UART.h"
+ 2279              		.file 26 "./hal/HAL.h"
+ 2280              		.file 27 "./tmc/VitalSignsMonitor.h"
+ 2281              		.file 28 "boards/Board.h"
+ 2282              		.file 29 "boards/TMCDriver.h"
+ 2283              		.file 30 "boards/TMCMotionController.h"
+ 2284              		.file 31 "boards/Rhino_standalone.h"
+ 2285              		.file 32 "./tmc/StepDir.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 TMC2100_eval.c
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:22     .text:00000000 writeRegister
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:47     .text:00000008 $d
+                            *COM*:00000048 TMCRhinoSA
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:51     .text:0000000c $t
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:57     .text:0000000c readRegister
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:91     .text:0000001c $d
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:95     .text:00000020 $t
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:101    .text:00000020 getStandAloneSettings
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:143    .text:0000003e $d
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:346    .text:0000012c $d
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:350    .text:00000130 $t
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:356    .text:00000130 enableDriver
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:390    .text:00000140 $d
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:394    .text:00000144 $t
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:400    .text:00000144 deInit
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:551    .text:000001c8 $d
+                            *COM*:00000030 HAL
+                            *COM*:00000010 Timer
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:557    .text:000001d4 $t
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:563    .text:000001d4 periodicJob
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:592    .text:000001da moveTo
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:634    .text:000001ec rotate
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:676    .text:000001fe stop
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:699    .text:00000202 left
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:724    .text:00000206 right
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:746    .text:00000208 setStandAloneSettings
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:804    .text:00000230 $d
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:810    .text:00000236 $t
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:849    .text:0000024e $d
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:989    .text:000002d8 $d
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:993    .text:000002dc $t
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:999    .text:000002dc userFunction
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:1098   .text:00000320 $d
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:1106   .text:0000032c $t
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:1112   .text:0000032c moveBy
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:1183   .text:0000034c GAP
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:1222   .text:00000362 $d
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:1447   .text:0000040c $d
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:1454   .text:00000414 $t
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:1460   .text:00000414 SAP
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:1499   .text:0000042a $d
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:1519   .text:0000043e $t
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:1795   .text:000004f8 $d
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:1804   .text:00000508 $t
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:1811   .text:00000508 TMC2100_init
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:2200   .text:000006c4 $d
+                            *COM*:000000f4 Evalboards
+                            *COM*:00000014 VitalSignsMonitor
+                            *COM*:00000214 TMCMotionController
+                            *COM*:00000214 TMCDriver
+                            *COM*:00000001 hwid
+                            *COM*:00000028 UART
+                            *COM*:00000024 WLAN
+                            *COM*:00000024 RS232
+                            *COM*:0000001c LEDs
+                            *COM*:00000024 USB
+                            *COM*:00000001 uart0_interrupt
+                            *COM*:00000020 ADCs
+                            *COM*:0000002c SPI
+                            *COM*:00000828 IOMap
+                            *COM*:00000034 IOs
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:2243   .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:2247   .bss:00000000 Pins
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:2251   .bss:00000034 ADCValue
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:148    .text:00000043 $d
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:148    .text:00000044 $t
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:858    .text:00000257 $d
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:858    .text:00000258 $t
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:1241   .text:00000375 $d
+C:\Users\Shubham\AppData\Local\Temp\ccwposIa.s:1241   .text:00000376 $t
+
+UNDEFINED SYMBOLS
+StepDir_deInit
+StepDir_periodicJob
+StepDir_moveTo
+StepDir_rotate
+StepDir_getStatus
+StepDir_getActualPosition
+StepDir_getTargetPosition
+StepDir_getTargetVelocity
+StepDir_getActualVelocity
+StepDir_getVelocityMax
+StepDir_getAcceleration
+StepDir_getMode
+StepDir_getFrequency
+StepDir_setActualPosition
+StepDir_setVelocityMax
+StepDir_setAcceleration
+StepDir_setMode
+StepDir_setFrequency
+StepDir_init
+StepDir_setPins

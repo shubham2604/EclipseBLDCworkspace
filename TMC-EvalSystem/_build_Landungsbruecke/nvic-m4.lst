@@ -1,0 +1,501 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"nvic-m4.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.global	enable_irq
+  17              		.arch armv7e-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	enable_irq:
+  24              	.LVL0:
+  25              	.LFB0:
+  26              		.file 1 "hal/Landungsbruecke/freescale/nvic-m4.c"
+   1:hal/Landungsbruecke/freescale/nvic-m4.c **** #include "hal/derivative.h"
+   2:hal/Landungsbruecke/freescale/nvic-m4.c **** 
+   3:hal/Landungsbruecke/freescale/nvic-m4.c **** /***********************************************************************/
+   4:hal/Landungsbruecke/freescale/nvic-m4.c **** /*
+   5:hal/Landungsbruecke/freescale/nvic-m4.c ****  * Initialize the NVIC to enable the specified IRQ.
+   6:hal/Landungsbruecke/freescale/nvic-m4.c ****  *
+   7:hal/Landungsbruecke/freescale/nvic-m4.c ****  * NOTE: The function only initializes the NVIC to enable a single IRQ.
+   8:hal/Landungsbruecke/freescale/nvic-m4.c ****  * Interrupts will also need to be enabled in the ARM core. This can be
+   9:hal/Landungsbruecke/freescale/nvic-m4.c ****  * done using the EnableInterrupts; macro.
+  10:hal/Landungsbruecke/freescale/nvic-m4.c ****  *
+  11:hal/Landungsbruecke/freescale/nvic-m4.c ****  * Parameters:
+  12:hal/Landungsbruecke/freescale/nvic-m4.c ****  * irq    irq number to be enabled (the irq number NOT the vector number)
+  13:hal/Landungsbruecke/freescale/nvic-m4.c ****  */
+  14:hal/Landungsbruecke/freescale/nvic-m4.c **** 
+  15:hal/Landungsbruecke/freescale/nvic-m4.c **** void enable_irq (int irq)
+  16:hal/Landungsbruecke/freescale/nvic-m4.c **** {
+  27              		.loc 1 16 1 view -0
+  28              		.cfi_startproc
+  29              		@ args = 0, pretend = 0, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  17:hal/Landungsbruecke/freescale/nvic-m4.c **** 
+  18:hal/Landungsbruecke/freescale/nvic-m4.c ****     int div;
+  31              		.loc 1 18 5 view .LVU1
+  19:hal/Landungsbruecke/freescale/nvic-m4.c **** 
+  20:hal/Landungsbruecke/freescale/nvic-m4.c ****     /* Make sure that the IRQ is an allowable number. Right now up to 91 is
+  21:hal/Landungsbruecke/freescale/nvic-m4.c ****      * used.
+  22:hal/Landungsbruecke/freescale/nvic-m4.c ****      */
+  23:hal/Landungsbruecke/freescale/nvic-m4.c ****    // if(irq > 91)
+  24:hal/Landungsbruecke/freescale/nvic-m4.c ****         //printf("\nERR! Invalid IRQ value passed to enable irq function!\n");
+  25:hal/Landungsbruecke/freescale/nvic-m4.c **** 
+  26:hal/Landungsbruecke/freescale/nvic-m4.c ****     /* Determine which of the NVICISERs corresponds to the irq */
+  27:hal/Landungsbruecke/freescale/nvic-m4.c ****     div = irq/32;
+  32              		.loc 1 27 5 view .LVU2
+  33              		.loc 1 27 9 is_stmt 0 view .LVU3
+  34 0000 0028     		cmp	r0, #0
+  35 0002 0246     		mov	r2, r0
+  36 0004 B8BF     		it	lt
+  37 0006 00F11F02 		addlt	r2, r0, #31
+  38 000a 5211     		asrs	r2, r2, #5
+  39              	.LVL1:
+  28:hal/Landungsbruecke/freescale/nvic-m4.c **** 
+  29:hal/Landungsbruecke/freescale/nvic-m4.c ****     switch (div)
+  40              		.loc 1 29 5 is_stmt 1 view .LVU4
+  41 000c 012A     		cmp	r2, #1
+  16:hal/Landungsbruecke/freescale/nvic-m4.c **** 
+  42              		.loc 1 16 1 is_stmt 0 view .LVU5
+  43 000e 10B5     		push	{r4, lr}
+  44              	.LCFI0:
+  45              		.cfi_def_cfa_offset 8
+  46              		.cfi_offset 4, -8
+  47              		.cfi_offset 14, -4
+  48 0010 214B     		ldr	r3, .L6
+  49              		.loc 1 29 5 view .LVU6
+  50 0012 1BD0     		beq	.L3
+  51 0014 022A     		cmp	r2, #2
+  52 0016 2BD0     		beq	.L4
+  53 0018 8AB9     		cbnz	r2, .L5
+  30:hal/Landungsbruecke/freescale/nvic-m4.c ****     {
+  31:hal/Landungsbruecke/freescale/nvic-m4.c ****     	case 0x0:
+  32:hal/Landungsbruecke/freescale/nvic-m4.c ****               NVICICPR0 |= 1 << (irq%32);
+  54              		.loc 1 32 15 is_stmt 1 view .LVU7
+  55              		.loc 1 32 37 is_stmt 0 view .LVU8
+  56 001a 4242     		rsbs	r2, r0, #0
+  57              	.LVL2:
+  58              		.loc 1 32 37 view .LVU9
+  59 001c 02F01F02 		and	r2, r2, #31
+  60              		.loc 1 32 25 view .LVU10
+  61 0020 D3F88011 		ldr	r1, [r3, #384]
+  62              		.loc 1 32 37 view .LVU11
+  63 0024 00F01F00 		and	r0, r0, #31
+  64              	.LVL3:
+  65              		.loc 1 32 37 view .LVU12
+  66 0028 58BF     		it	pl
+  67 002a 5042     		rsbpl	r0, r2, #0
+  68              		.loc 1 32 30 view .LVU13
+  69 002c 0122     		movs	r2, #1
+  70 002e 02FA00F0 		lsl	r0, r2, r0
+  71              		.loc 1 32 25 view .LVU14
+  72 0032 0143     		orrs	r1, r1, r0
+  73 0034 C3F88011 		str	r1, [r3, #384]
+  33:hal/Landungsbruecke/freescale/nvic-m4.c ****               NVICISER0 |= 1 << (irq%32);
+  74              		.loc 1 33 15 is_stmt 1 view .LVU15
+  75              		.loc 1 33 25 is_stmt 0 view .LVU16
+  76 0038 1A68     		ldr	r2, [r3]
+  77 003a 1043     		orrs	r0, r0, r2
+  78 003c 1860     		str	r0, [r3]
+  34:hal/Landungsbruecke/freescale/nvic-m4.c ****               break;
+  79              		.loc 1 34 15 is_stmt 1 view .LVU17
+  80              	.L5:
+  35:hal/Landungsbruecke/freescale/nvic-m4.c ****     	case 0x1:
+  36:hal/Landungsbruecke/freescale/nvic-m4.c ****               NVICICPR1 |= 1 << (irq%32);
+  37:hal/Landungsbruecke/freescale/nvic-m4.c ****               NVICISER1 |= 1 << (irq%32);
+  38:hal/Landungsbruecke/freescale/nvic-m4.c ****               break;
+  39:hal/Landungsbruecke/freescale/nvic-m4.c ****     	case 0x2:
+  40:hal/Landungsbruecke/freescale/nvic-m4.c ****               NVICICPR2 |= 1 << (irq%32);
+  41:hal/Landungsbruecke/freescale/nvic-m4.c ****               NVICISER2 |= 1 << (irq%32);
+  42:hal/Landungsbruecke/freescale/nvic-m4.c ****               break;
+  43:hal/Landungsbruecke/freescale/nvic-m4.c ****     }
+  44:hal/Landungsbruecke/freescale/nvic-m4.c ****     // FISCHSUPPECHECK welche Prioritäten für welche Interrupts
+  45:hal/Landungsbruecke/freescale/nvic-m4.c ****     NVICIP88 = 0x03;	// PortB Prio3
+  81              		.loc 1 45 5 view .LVU18
+  82              		.loc 1 45 14 is_stmt 0 view .LVU19
+  83 003e 164B     		ldr	r3, .L6
+  84 0040 0322     		movs	r2, #3
+  85 0042 83F85823 		strb	r2, [r3, #856]
+  46:hal/Landungsbruecke/freescale/nvic-m4.c ****     NVICIP64 = 0x03;	// FTM2 Prio3
+  86              		.loc 1 46 5 is_stmt 1 view .LVU20
+  87              		.loc 1 46 14 is_stmt 0 view .LVU21
+  88 0046 83F84023 		strb	r2, [r3, #832]
+  47:hal/Landungsbruecke/freescale/nvic-m4.c **** }
+  89              		.loc 1 47 1 view .LVU22
+  90 004a 10BD     		pop	{r4, pc}
+  91              	.LVL4:
+  92              	.L3:
+  36:hal/Landungsbruecke/freescale/nvic-m4.c ****               NVICISER1 |= 1 << (irq%32);
+  93              		.loc 1 36 15 is_stmt 1 view .LVU23
+  36:hal/Landungsbruecke/freescale/nvic-m4.c ****               NVICISER1 |= 1 << (irq%32);
+  94              		.loc 1 36 37 is_stmt 0 view .LVU24
+  95 004c 4442     		rsbs	r4, r0, #0
+  96 004e 04F01F04 		and	r4, r4, #31
+  36:hal/Landungsbruecke/freescale/nvic-m4.c ****               NVICISER1 |= 1 << (irq%32);
+  97              		.loc 1 36 25 view .LVU25
+  98 0052 D3F88411 		ldr	r1, [r3, #388]
+  36:hal/Landungsbruecke/freescale/nvic-m4.c ****               NVICISER1 |= 1 << (irq%32);
+  99              		.loc 1 36 37 view .LVU26
+ 100 0056 00F01F00 		and	r0, r0, #31
+ 101              	.LVL5:
+  36:hal/Landungsbruecke/freescale/nvic-m4.c ****               NVICISER1 |= 1 << (irq%32);
+ 102              		.loc 1 36 37 view .LVU27
+ 103 005a 58BF     		it	pl
+ 104 005c 6042     		rsbpl	r0, r4, #0
+  36:hal/Landungsbruecke/freescale/nvic-m4.c ****               NVICISER1 |= 1 << (irq%32);
+ 105              		.loc 1 36 30 view .LVU28
+ 106 005e 02FA00F0 		lsl	r0, r2, r0
+  36:hal/Landungsbruecke/freescale/nvic-m4.c ****               NVICISER1 |= 1 << (irq%32);
+ 107              		.loc 1 36 25 view .LVU29
+ 108 0062 0143     		orrs	r1, r1, r0
+ 109 0064 C3F88411 		str	r1, [r3, #388]
+  37:hal/Landungsbruecke/freescale/nvic-m4.c ****               break;
+ 110              		.loc 1 37 15 is_stmt 1 view .LVU30
+  37:hal/Landungsbruecke/freescale/nvic-m4.c ****               break;
+ 111              		.loc 1 37 25 is_stmt 0 view .LVU31
+ 112 0068 5A68     		ldr	r2, [r3, #4]
+ 113              	.LVL6:
+  37:hal/Landungsbruecke/freescale/nvic-m4.c ****               break;
+ 114              		.loc 1 37 25 view .LVU32
+ 115 006a 1043     		orrs	r0, r0, r2
+ 116 006c 5860     		str	r0, [r3, #4]
+  38:hal/Landungsbruecke/freescale/nvic-m4.c ****     	case 0x2:
+ 117              		.loc 1 38 15 is_stmt 1 view .LVU33
+ 118 006e E6E7     		b	.L5
+ 119              	.LVL7:
+ 120              	.L4:
+  40:hal/Landungsbruecke/freescale/nvic-m4.c ****               NVICISER2 |= 1 << (irq%32);
+ 121              		.loc 1 40 15 view .LVU34
+  40:hal/Landungsbruecke/freescale/nvic-m4.c ****               NVICISER2 |= 1 << (irq%32);
+ 122              		.loc 1 40 37 is_stmt 0 view .LVU35
+ 123 0070 4242     		rsbs	r2, r0, #0
+ 124              	.LVL8:
+  40:hal/Landungsbruecke/freescale/nvic-m4.c ****               NVICISER2 |= 1 << (irq%32);
+ 125              		.loc 1 40 37 view .LVU36
+ 126 0072 02F01F02 		and	r2, r2, #31
+  40:hal/Landungsbruecke/freescale/nvic-m4.c ****               NVICISER2 |= 1 << (irq%32);
+ 127              		.loc 1 40 25 view .LVU37
+ 128 0076 D3F88811 		ldr	r1, [r3, #392]
+  40:hal/Landungsbruecke/freescale/nvic-m4.c ****               NVICISER2 |= 1 << (irq%32);
+ 129              		.loc 1 40 37 view .LVU38
+ 130 007a 00F01F00 		and	r0, r0, #31
+ 131              	.LVL9:
+  40:hal/Landungsbruecke/freescale/nvic-m4.c ****               NVICISER2 |= 1 << (irq%32);
+ 132              		.loc 1 40 37 view .LVU39
+ 133 007e 58BF     		it	pl
+ 134 0080 5042     		rsbpl	r0, r2, #0
+  40:hal/Landungsbruecke/freescale/nvic-m4.c ****               NVICISER2 |= 1 << (irq%32);
+ 135              		.loc 1 40 30 view .LVU40
+ 136 0082 0122     		movs	r2, #1
+ 137 0084 02FA00F0 		lsl	r0, r2, r0
+  40:hal/Landungsbruecke/freescale/nvic-m4.c ****               NVICISER2 |= 1 << (irq%32);
+ 138              		.loc 1 40 25 view .LVU41
+ 139 0088 0143     		orrs	r1, r1, r0
+ 140 008a C3F88811 		str	r1, [r3, #392]
+  41:hal/Landungsbruecke/freescale/nvic-m4.c ****               break;
+ 141              		.loc 1 41 15 is_stmt 1 view .LVU42
+  41:hal/Landungsbruecke/freescale/nvic-m4.c ****               break;
+ 142              		.loc 1 41 25 is_stmt 0 view .LVU43
+ 143 008e 9A68     		ldr	r2, [r3, #8]
+ 144 0090 1043     		orrs	r0, r0, r2
+ 145 0092 9860     		str	r0, [r3, #8]
+  42:hal/Landungsbruecke/freescale/nvic-m4.c ****     }
+ 146              		.loc 1 42 15 is_stmt 1 view .LVU44
+ 147 0094 D3E7     		b	.L5
+ 148              	.L7:
+ 149 0096 00BF     		.align	2
+ 150              	.L6:
+ 151 0098 00E100E0 		.word	-536813312
+ 152              		.cfi_endproc
+ 153              	.LFE0:
+ 155              		.align	1
+ 156              		.global	disable_irq
+ 157              		.syntax unified
+ 158              		.thumb
+ 159              		.thumb_func
+ 160              		.fpu softvfp
+ 162              	disable_irq:
+ 163              	.LVL10:
+ 164              	.LFB1:
+  48:hal/Landungsbruecke/freescale/nvic-m4.c **** /***********************************************************************/
+  49:hal/Landungsbruecke/freescale/nvic-m4.c **** /*
+  50:hal/Landungsbruecke/freescale/nvic-m4.c ****  * Initialize the NVIC to disable the specified IRQ.
+  51:hal/Landungsbruecke/freescale/nvic-m4.c ****  *
+  52:hal/Landungsbruecke/freescale/nvic-m4.c ****  * NOTE: The function only initializes the NVIC to disable a single IRQ.
+  53:hal/Landungsbruecke/freescale/nvic-m4.c ****  * If you want to disable all interrupts, then use the DisableInterrupts
+  54:hal/Landungsbruecke/freescale/nvic-m4.c ****  * macro instead.
+  55:hal/Landungsbruecke/freescale/nvic-m4.c ****  *
+  56:hal/Landungsbruecke/freescale/nvic-m4.c ****  * Parameters:
+  57:hal/Landungsbruecke/freescale/nvic-m4.c ****  * irq    irq number to be disabled (the irq number NOT the vector number)
+  58:hal/Landungsbruecke/freescale/nvic-m4.c ****  */
+  59:hal/Landungsbruecke/freescale/nvic-m4.c **** 
+  60:hal/Landungsbruecke/freescale/nvic-m4.c **** void disable_irq (int irq)
+  61:hal/Landungsbruecke/freescale/nvic-m4.c **** {
+ 165              		.loc 1 61 1 view -0
+ 166              		.cfi_startproc
+ 167              		@ args = 0, pretend = 0, frame = 0
+ 168              		@ frame_needed = 0, uses_anonymous_args = 0
+ 169              		@ link register save eliminated.
+  62:hal/Landungsbruecke/freescale/nvic-m4.c **** 
+  63:hal/Landungsbruecke/freescale/nvic-m4.c ****     /* Make sure that the IRQ is an allowable number. Right now up to 32 is
+  64:hal/Landungsbruecke/freescale/nvic-m4.c ****      * used.
+  65:hal/Landungsbruecke/freescale/nvic-m4.c ****      *
+  66:hal/Landungsbruecke/freescale/nvic-m4.c ****      * NOTE: If you are using the interrupt definitions from the header
+  67:hal/Landungsbruecke/freescale/nvic-m4.c ****      * file, you MUST SUBTRACT 16!!!
+  68:hal/Landungsbruecke/freescale/nvic-m4.c ****      */
+  69:hal/Landungsbruecke/freescale/nvic-m4.c ****     if(irq > 128)
+ 170              		.loc 1 69 5 view .LVU46
+ 171              		.loc 1 69 7 is_stmt 0 view .LVU47
+ 172 009c 8028     		cmp	r0, #128
+ 173 009e 0F49     		ldr	r1, .L13
+ 174 00a0 00F01F02 		and	r2, r0, #31
+ 175 00a4 4FF00103 		mov	r3, #1
+ 176 00a8 03DD     		ble	.L9
+  70:hal/Landungsbruecke/freescale/nvic-m4.c ****     {
+  71:hal/Landungsbruecke/freescale/nvic-m4.c ****       /* Set the ICER register accordingly */
+  72:hal/Landungsbruecke/freescale/nvic-m4.c ****       NVICICER3 = 1 << (irq%32);
+ 177              		.loc 1 72 7 is_stmt 1 view .LVU48
+ 178              		.loc 1 72 21 is_stmt 0 view .LVU49
+ 179 00aa 9340     		lsls	r3, r3, r2
+ 180              		.loc 1 72 17 view .LVU50
+ 181 00ac C1F88C30 		str	r3, [r1, #140]
+ 182 00b0 7047     		bx	lr
+ 183              	.L9:
+  73:hal/Landungsbruecke/freescale/nvic-m4.c ****     }
+  74:hal/Landungsbruecke/freescale/nvic-m4.c ****     else if(irq > 64)
+ 184              		.loc 1 74 10 is_stmt 1 view .LVU51
+ 185              		.loc 1 74 12 is_stmt 0 view .LVU52
+ 186 00b2 4028     		cmp	r0, #64
+ 187 00b4 03DD     		ble	.L11
+  75:hal/Landungsbruecke/freescale/nvic-m4.c ****     {
+  76:hal/Landungsbruecke/freescale/nvic-m4.c ****       /* Set the ICER register accordingly */
+  77:hal/Landungsbruecke/freescale/nvic-m4.c ****       NVICICER2 = 1 << (irq%32);
+ 188              		.loc 1 77 7 is_stmt 1 view .LVU53
+ 189              		.loc 1 77 21 is_stmt 0 view .LVU54
+ 190 00b6 9340     		lsls	r3, r3, r2
+ 191              		.loc 1 77 17 view .LVU55
+ 192 00b8 C1F88830 		str	r3, [r1, #136]
+ 193 00bc 7047     		bx	lr
+ 194              	.L11:
+  78:hal/Landungsbruecke/freescale/nvic-m4.c ****     }
+  79:hal/Landungsbruecke/freescale/nvic-m4.c ****     else if(irq > 32)
+ 195              		.loc 1 79 10 is_stmt 1 view .LVU56
+ 196              		.loc 1 79 12 is_stmt 0 view .LVU57
+ 197 00be 2028     		cmp	r0, #32
+ 198 00c0 03DD     		ble	.L12
+  80:hal/Landungsbruecke/freescale/nvic-m4.c ****     {
+  81:hal/Landungsbruecke/freescale/nvic-m4.c ****       /* Set the ICER register accordingly */
+  82:hal/Landungsbruecke/freescale/nvic-m4.c ****       NVICICER1 = 1 << (irq%32);
+ 199              		.loc 1 82 7 is_stmt 1 view .LVU58
+ 200              		.loc 1 82 21 is_stmt 0 view .LVU59
+ 201 00c2 9340     		lsls	r3, r3, r2
+ 202              		.loc 1 82 17 view .LVU60
+ 203 00c4 C1F88430 		str	r3, [r1, #132]
+ 204 00c8 7047     		bx	lr
+ 205              	.L12:
+  83:hal/Landungsbruecke/freescale/nvic-m4.c ****     }
+  84:hal/Landungsbruecke/freescale/nvic-m4.c ****     else
+  85:hal/Landungsbruecke/freescale/nvic-m4.c ****     {
+  86:hal/Landungsbruecke/freescale/nvic-m4.c ****       /* Set the ICER register accordingly */
+  87:hal/Landungsbruecke/freescale/nvic-m4.c ****       NVICICER0 = 1 << (irq%32);
+ 206              		.loc 1 87 7 is_stmt 1 view .LVU61
+ 207              		.loc 1 87 28 is_stmt 0 view .LVU62
+ 208 00ca 4042     		rsbs	r0, r0, #0
+ 209              	.LVL11:
+ 210              		.loc 1 87 28 view .LVU63
+ 211 00cc 00F01F00 		and	r0, r0, #31
+ 212 00d0 58BF     		it	pl
+ 213 00d2 4242     		rsbpl	r2, r0, #0
+ 214              		.loc 1 87 21 view .LVU64
+ 215 00d4 9340     		lsls	r3, r3, r2
+ 216              		.loc 1 87 17 view .LVU65
+ 217 00d6 C1F88030 		str	r3, [r1, #128]
+  88:hal/Landungsbruecke/freescale/nvic-m4.c ****     }
+  89:hal/Landungsbruecke/freescale/nvic-m4.c **** }
+ 218              		.loc 1 89 1 view .LVU66
+ 219 00da 7047     		bx	lr
+ 220              	.L14:
+ 221              		.align	2
+ 222              	.L13:
+ 223 00dc 00E100E0 		.word	-536813312
+ 224              		.cfi_endproc
+ 225              	.LFE1:
+ 227              		.align	1
+ 228              		.global	set_irq_priority
+ 229              		.syntax unified
+ 230              		.thumb
+ 231              		.thumb_func
+ 232              		.fpu softvfp
+ 234              	set_irq_priority:
+ 235              	.LVL12:
+ 236              	.LFB2:
+  90:hal/Landungsbruecke/freescale/nvic-m4.c **** /***********************************************************************/
+  91:hal/Landungsbruecke/freescale/nvic-m4.c **** /*
+  92:hal/Landungsbruecke/freescale/nvic-m4.c ****  * Initialize the NVIC to set specified IRQ priority.
+  93:hal/Landungsbruecke/freescale/nvic-m4.c ****  *
+  94:hal/Landungsbruecke/freescale/nvic-m4.c ****  * NOTE: The function only initializes the NVIC to set a single IRQ priority.
+  95:hal/Landungsbruecke/freescale/nvic-m4.c ****  * Interrupts will also need to be enabled in the ARM core. This can be
+  96:hal/Landungsbruecke/freescale/nvic-m4.c ****  * done using the EnableInterrupts; macro.
+  97:hal/Landungsbruecke/freescale/nvic-m4.c ****  *
+  98:hal/Landungsbruecke/freescale/nvic-m4.c ****  * Parameters:
+  99:hal/Landungsbruecke/freescale/nvic-m4.c ****  * irq    irq number to be enabled (the irq number NOT the vector number)
+ 100:hal/Landungsbruecke/freescale/nvic-m4.c ****  * prio   irq priority. 0-3 levels. 0 max priority
+ 101:hal/Landungsbruecke/freescale/nvic-m4.c ****  */
+ 102:hal/Landungsbruecke/freescale/nvic-m4.c **** 
+ 103:hal/Landungsbruecke/freescale/nvic-m4.c **** void set_irq_priority (int irq, int prio)
+ 104:hal/Landungsbruecke/freescale/nvic-m4.c **** {
+ 237              		.loc 1 104 1 is_stmt 1 view -0
+ 238              		.cfi_startproc
+ 239              		@ args = 0, pretend = 0, frame = 0
+ 240              		@ frame_needed = 0, uses_anonymous_args = 0
+ 241              		@ link register save eliminated.
+ 105:hal/Landungsbruecke/freescale/nvic-m4.c ****     /*irq priority pointer*/
+ 106:hal/Landungsbruecke/freescale/nvic-m4.c ****     uint32 *prio_reg;
+ 242              		.loc 1 106 5 view .LVU68
+ 107:hal/Landungsbruecke/freescale/nvic-m4.c ****     uint8 err = 0;
+ 243              		.loc 1 107 5 view .LVU69
+ 108:hal/Landungsbruecke/freescale/nvic-m4.c ****     uint8 div = 0;
+ 244              		.loc 1 108 5 view .LVU70
+ 109:hal/Landungsbruecke/freescale/nvic-m4.c ****     uint8 off = 0;
+ 245              		.loc 1 109 5 view .LVU71
+ 110:hal/Landungsbruecke/freescale/nvic-m4.c **** 
+ 111:hal/Landungsbruecke/freescale/nvic-m4.c ****     /* Make sure that the IRQ is an allowable number. Right now up to 32 is
+ 112:hal/Landungsbruecke/freescale/nvic-m4.c ****      * used.
+ 113:hal/Landungsbruecke/freescale/nvic-m4.c ****      *
+ 114:hal/Landungsbruecke/freescale/nvic-m4.c ****      * NOTE: If you are using the interrupt definitions from the header
+ 115:hal/Landungsbruecke/freescale/nvic-m4.c ****      * file, you MUST SUBTRACT 16!!!
+ 116:hal/Landungsbruecke/freescale/nvic-m4.c ****      */
+ 117:hal/Landungsbruecke/freescale/nvic-m4.c ****     if(irq > 32)
+ 246              		.loc 1 117 5 view .LVU72
+ 247              		.loc 1 117 7 is_stmt 0 view .LVU73
+ 248 00e0 2028     		cmp	r0, #32
+ 249 00e2 01DC     		bgt	.L15
+ 118:hal/Landungsbruecke/freescale/nvic-m4.c ****     {
+ 119:hal/Landungsbruecke/freescale/nvic-m4.c ****         err = 1;
+ 120:hal/Landungsbruecke/freescale/nvic-m4.c ****     }
+ 121:hal/Landungsbruecke/freescale/nvic-m4.c **** 
+ 122:hal/Landungsbruecke/freescale/nvic-m4.c ****     if(prio > 3)
+ 250              		.loc 1 122 5 is_stmt 1 view .LVU74
+ 251              		.loc 1 122 7 is_stmt 0 view .LVU75
+ 252 00e4 0329     		cmp	r1, #3
+ 253 00e6 00DD     		ble	.L21
+ 254              	.L15:
+ 123:hal/Landungsbruecke/freescale/nvic-m4.c ****     {
+ 124:hal/Landungsbruecke/freescale/nvic-m4.c ****         err = 1;
+ 125:hal/Landungsbruecke/freescale/nvic-m4.c ****     }
+ 126:hal/Landungsbruecke/freescale/nvic-m4.c **** 
+ 127:hal/Landungsbruecke/freescale/nvic-m4.c ****     if(err != 1)
+ 128:hal/Landungsbruecke/freescale/nvic-m4.c ****     {
+ 129:hal/Landungsbruecke/freescale/nvic-m4.c ****         /* Determine which of the NVICIPx corresponds to the irq */
+ 130:hal/Landungsbruecke/freescale/nvic-m4.c ****         div = irq / 4;
+ 131:hal/Landungsbruecke/freescale/nvic-m4.c ****         off = irq % 4;
+ 132:hal/Landungsbruecke/freescale/nvic-m4.c ****         prio_reg = (uint32 *)((uint32)&NVIC_IP(div));
+ 133:hal/Landungsbruecke/freescale/nvic-m4.c ****         /* Assign priority to IRQ */
+ 134:hal/Landungsbruecke/freescale/nvic-m4.c ****         *prio_reg |= ( (prio&0x3) << (8 - ARM_INTERRUPT_LEVEL_BITS) ) << (off  * 8);
+ 135:hal/Landungsbruecke/freescale/nvic-m4.c ****     }
+ 136:hal/Landungsbruecke/freescale/nvic-m4.c **** }
+ 255              		.loc 1 136 1 view .LVU76
+ 256 00e8 7047     		bx	lr
+ 257              	.L21:
+ 127:hal/Landungsbruecke/freescale/nvic-m4.c ****     {
+ 258              		.loc 1 127 5 is_stmt 1 view .LVU77
+ 130:hal/Landungsbruecke/freescale/nvic-m4.c ****         off = irq % 4;
+ 259              		.loc 1 130 9 view .LVU78
+ 260              	.LVL13:
+ 131:hal/Landungsbruecke/freescale/nvic-m4.c ****         prio_reg = (uint32 *)((uint32)&NVIC_IP(div));
+ 261              		.loc 1 131 9 view .LVU79
+ 132:hal/Landungsbruecke/freescale/nvic-m4.c ****         /* Assign priority to IRQ */
+ 262              		.loc 1 132 9 view .LVU80
+ 130:hal/Landungsbruecke/freescale/nvic-m4.c ****         off = irq % 4;
+ 263              		.loc 1 130 19 is_stmt 0 view .LVU81
+ 264 00ea 0028     		cmp	r0, #0
+ 265 00ec 0346     		mov	r3, r0
+ 266 00ee B8BF     		it	lt
+ 267 00f0 C31C     		addlt	r3, r0, #3
+ 131:hal/Landungsbruecke/freescale/nvic-m4.c ****         prio_reg = (uint32 *)((uint32)&NVIC_IP(div));
+ 268              		.loc 1 131 19 view .LVU82
+ 269 00f2 4242     		rsbs	r2, r0, #0
+ 132:hal/Landungsbruecke/freescale/nvic-m4.c ****         /* Assign priority to IRQ */
+ 270              		.loc 1 132 39 view .LVU83
+ 271 00f4 C3F38703 		ubfx	r3, r3, #2, #8
+ 131:hal/Landungsbruecke/freescale/nvic-m4.c ****         prio_reg = (uint32 *)((uint32)&NVIC_IP(div));
+ 272              		.loc 1 131 19 view .LVU84
+ 273 00f8 02F00302 		and	r2, r2, #3
+ 274 00fc 00F00300 		and	r0, r0, #3
+ 275              	.LVL14:
+ 132:hal/Landungsbruecke/freescale/nvic-m4.c ****         /* Assign priority to IRQ */
+ 276              		.loc 1 132 18 view .LVU85
+ 277 0100 03F16043 		add	r3, r3, #-536870912
+ 131:hal/Landungsbruecke/freescale/nvic-m4.c ****         prio_reg = (uint32 *)((uint32)&NVIC_IP(div));
+ 278              		.loc 1 131 19 view .LVU86
+ 279 0104 58BF     		it	pl
+ 280 0106 5042     		rsbpl	r0, r2, #0
+ 132:hal/Landungsbruecke/freescale/nvic-m4.c ****         /* Assign priority to IRQ */
+ 281              		.loc 1 132 18 view .LVU87
+ 282 0108 03F56443 		add	r3, r3, #58368
+ 283              	.LVL15:
+ 134:hal/Landungsbruecke/freescale/nvic-m4.c ****     }
+ 284              		.loc 1 134 9 is_stmt 1 view .LVU88
+ 134:hal/Landungsbruecke/freescale/nvic-m4.c ****     }
+ 285              		.loc 1 134 35 is_stmt 0 view .LVU89
+ 286 010c 8901     		lsls	r1, r1, #6
+ 287              	.LVL16:
+ 134:hal/Landungsbruecke/freescale/nvic-m4.c ****     }
+ 288              		.loc 1 134 80 view .LVU90
+ 289 010e C0B2     		uxtb	r0, r0
+ 134:hal/Landungsbruecke/freescale/nvic-m4.c ****     }
+ 290              		.loc 1 134 35 view .LVU91
+ 291 0110 C9B2     		uxtb	r1, r1
+ 134:hal/Landungsbruecke/freescale/nvic-m4.c ****     }
+ 292              		.loc 1 134 80 view .LVU92
+ 293 0112 C000     		lsls	r0, r0, #3
+ 134:hal/Landungsbruecke/freescale/nvic-m4.c ****     }
+ 294              		.loc 1 134 71 view .LVU93
+ 295 0114 01FA00F0 		lsl	r0, r1, r0
+ 134:hal/Landungsbruecke/freescale/nvic-m4.c ****     }
+ 296              		.loc 1 134 19 view .LVU94
+ 297 0118 1968     		ldr	r1, [r3]
+ 298 011a 0843     		orrs	r0, r0, r1
+ 299 011c 1860     		str	r0, [r3]
+ 300              		.loc 1 136 1 view .LVU95
+ 301 011e 7047     		bx	lr
+ 302              		.cfi_endproc
+ 303              	.LFE2:
+ 305              		.comm	Cpu,8,4
+ 306              	.Letext0:
+ 307              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 308              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 309              		.file 4 "TMC-API/tmc/helpers/Types.h"
+ 310              		.file 5 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 311              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 312              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 313              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 314              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 315              		.file 10 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 316              		.file 11 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 317              		.file 12 "./hal/Landungsbruecke/freescale/Cpu.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 nvic-m4.c
+C:\Users\Shubham\AppData\Local\Temp\cc4H57z4.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\cc4H57z4.s:23     .text:00000000 enable_irq
+C:\Users\Shubham\AppData\Local\Temp\cc4H57z4.s:151    .text:00000098 $d
+C:\Users\Shubham\AppData\Local\Temp\cc4H57z4.s:155    .text:0000009c $t
+C:\Users\Shubham\AppData\Local\Temp\cc4H57z4.s:162    .text:0000009c disable_irq
+C:\Users\Shubham\AppData\Local\Temp\cc4H57z4.s:223    .text:000000dc $d
+C:\Users\Shubham\AppData\Local\Temp\cc4H57z4.s:227    .text:000000e0 $t
+C:\Users\Shubham\AppData\Local\Temp\cc4H57z4.s:234    .text:000000e0 set_irq_priority
+                            *COM*:00000008 Cpu
+
+NO UNDEFINED SYMBOLS

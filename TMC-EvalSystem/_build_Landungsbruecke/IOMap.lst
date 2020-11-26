@@ -1,0 +1,2652 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"IOMap.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.arch armv7e-m
+  17              		.syntax unified
+  18              		.thumb
+  19              		.thumb_func
+  20              		.fpu softvfp
+  22              	init:
+  23              	.LFB0:
+  24              		.file 1 "hal/Landungsbruecke/tmc/IOMap.c"
+   1:hal/Landungsbruecke/tmc/IOMap.c **** #include "hal/HAL.h"
+   2:hal/Landungsbruecke/tmc/IOMap.c **** #include "hal/IOMap.h"
+   3:hal/Landungsbruecke/tmc/IOMap.c **** #include "hal/Landungsbruecke/freescale/PDD/GPIO_PDD.h"
+   4:hal/Landungsbruecke/tmc/IOMap.c **** 
+   5:hal/Landungsbruecke/tmc/IOMap.c **** static void init();
+   6:hal/Landungsbruecke/tmc/IOMap.c **** 
+   7:hal/Landungsbruecke/tmc/IOMap.c **** static IOPinTypeDef *_pins[] =
+   8:hal/Landungsbruecke/tmc/IOMap.c **** {
+   9:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.ID_CLK,
+  10:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.ID_CH0,
+  11:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.ID_CH1,
+  12:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.DIO0,
+  13:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.DIO1,
+  14:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.DIO2,
+  15:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.DIO3,
+  16:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.DIO4,
+  17:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.DIO5,
+  18:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.DIO6,
+  19:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.DIO7,
+  20:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.DIO8,
+  21:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.DIO9,
+  22:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.DIO10,
+  23:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.DIO11,
+  24:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.CLK16,
+  25:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.SPI2_CSN0,
+  26:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.SPI2_CSN1,
+  27:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.SPI2_CSN2,
+  28:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.SPI2_SCK,
+  29:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.SPI2_SDO,
+  30:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.SPI2_SDI,
+  31:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.SPI1_CSN,
+  32:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.SPI1_SCK,
+  33:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.SPI1_SDI,
+  34:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.SPI1_SDO,
+  35:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.DIO12,
+  36:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.DIO13,
+  37:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.DIO14,
+  38:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.DIO15,
+  39:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.DIO16,
+  40:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.DIO17,
+  41:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.DIO18,
+  42:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.DIO19,
+  43:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.WIRELESS_TX,
+  44:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.WIRELESS_RX,
+  45:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.WIRELESS_NRST,
+  46:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.RS232_TX,
+  47:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.RS232_RX,
+  48:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.USB_V_BUS,
+  49:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.USB_V_DM,
+  50:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.USB_V_DP,
+  51:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.LED_STAT,
+  52:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.LED_ERROR,
+  53:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.EXTIO_2,
+  54:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.EXTIO_3,
+  55:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.EXTIO_4,
+  56:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.EXTIO_5,
+  57:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.EXTIO_6,
+  58:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.EXTIO_7,
+  59:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.EEPROM_SCK,
+  60:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.EEPROM_SI,
+  61:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.EEPROM_SO,
+  62:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.EEPROM_NCS,
+  63:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.MIXED0,
+  64:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.MIXED1,
+  65:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.MIXED2,
+  66:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.MIXED3,
+  67:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.MIXED4,
+  68:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.MIXED5,
+  69:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.MIXED6,
+  70:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.ID_HW_0,
+  71:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.ID_HW_1,
+  72:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.ID_HW_2,
+  73:hal/Landungsbruecke/tmc/IOMap.c **** 	&IOMap.DUMMY
+  74:hal/Landungsbruecke/tmc/IOMap.c **** };
+  75:hal/Landungsbruecke/tmc/IOMap.c **** 
+  76:hal/Landungsbruecke/tmc/IOMap.c **** IOPinMapTypeDef IOMap =
+  77:hal/Landungsbruecke/tmc/IOMap.c **** {
+  78:hal/Landungsbruecke/tmc/IOMap.c **** 	.init    = init,
+  79:hal/Landungsbruecke/tmc/IOMap.c **** 	.pins    = &_pins[0],
+  80:hal/Landungsbruecke/tmc/IOMap.c **** 	.ID_CLK  =  // IOPinTypeDef ID_CLK
+  81:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+  82:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOB_PSOR),        // uint32_t *setBitRegister;
+  83:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOB_PCOR),        // uint32_t *resetBitRegister;
+  84:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTB_BASE_PTR,       // Peripheral Port Base Pointer
+  85:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTB_BASE_PTR,         // Peripheral PTA base pointer, GPIO;
+  86:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_20,      // uint32_t pinBitWeight Pin masks;
+  87:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 20,                   // uint8_t bit;
+  88:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+  89:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+  90:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+  91:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+  92:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+  93:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+  94:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+  95:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+  96:hal/Landungsbruecke/tmc/IOMap.c **** 
+  97:hal/Landungsbruecke/tmc/IOMap.c **** 	.ID_CH0 =  // IOPinTypeDef ID_CH0
+  98:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+  99:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOB_PSOR),        // uint32_t *setBitRegister;
+ 100:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOB_PCOR),        // uint32_t *resetBitRegister;
+ 101:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTB_BASE_PTR,       // Peripheral Port Base Pointer
+ 102:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTB_BASE_PTR,         // Peripheral PTA base pointer, GPIO;
+ 103:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_18,      // uint32_t pinBitWeight;
+ 104:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 18,                   // uint8_t bit;
+ 105:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 106:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 107:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 108:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 109:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 110:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 111:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 112:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 113:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 114:hal/Landungsbruecke/tmc/IOMap.c **** 	.ID_CH1 =  // IOPinTypeDef ID_CH1
+ 115:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 116:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOB_PSOR),        // __IO uint16_t *setBitRegister;
+ 117:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOB_PCOR),        // __IO uint16_t *resetBitRegister;
+ 118:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTB_BASE_PTR,       // GPIO_TypeDef *port;
+ 119:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTB_BASE_PTR,
+ 120:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_19,      // uint32_t pinBitWeight;
+ 121:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 19,                   // uint8_t pinBitWeight;
+ 122:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 123:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 124:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 125:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 126:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 127:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 128:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 129:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 130:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 131:hal/Landungsbruecke/tmc/IOMap.c **** 	.DIO0 =  // IOPinTypeDef DIO0
+ 132:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 133:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOA_PSOR),        // __IO uint16_t *setBitRegister;
+ 134:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOA_PCOR),        // __IO uint16_t *resetBitRegister;
+ 135:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTA_BASE_PTR,       // GPIO_TypeDef *port;
+ 136:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTA_BASE_PTR,
+ 137:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_12,      // uint32_t pinBitWeight;
+ 138:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 12,                   // uint8_t pinBitWeight;
+ 139:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 140:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 141:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 142:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 143:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 144:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 145:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 146:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 147:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 148:hal/Landungsbruecke/tmc/IOMap.c **** 	.DIO1 =  // IOPinTypeDef DIO1
+ 149:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 150:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOA_PSOR),        // __IO uint16_t *setBitRegister;
+ 151:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOA_PCOR),        // __IO uint16_t *resetBitRegister;
+ 152:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTA_BASE_PTR,       // GPIO_TypeDef *port;
+ 153:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTA_BASE_PTR,
+ 154:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_13,      // uint32_t pinBitWeight;
+ 155:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 13,                   // uint8_t pinBitWeight;
+ 156:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 157:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 158:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 159:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 160:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 161:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 162:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 163:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 164:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 165:hal/Landungsbruecke/tmc/IOMap.c **** 	.DIO2 =  // IOPinTypeDef
+ 166:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 167:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOB_PSOR),        // __IO uint16_t *setBitRegister;
+ 168:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOB_PCOR),        // __IO uint16_t *resetBitRegister;
+ 169:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTB_BASE_PTR,       // GPIO_TypeDef *port;
+ 170:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTB_BASE_PTR,
+ 171:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_0,       // uint32_t pinBitWeight;
+ 172:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 0,                    // uint8_t pinBitWeight;
+ 173:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 174:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 175:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 176:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 177:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 178:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 179:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 180:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 181:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 182:hal/Landungsbruecke/tmc/IOMap.c **** 	.DIO3 =  // IOPinTypeDef DIO3
+ 183:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 184:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOB_PSOR),        // __IO uint16_t *setBitRegister;
+ 185:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOB_PCOR),        // __IO uint16_t *resetBitRegister;
+ 186:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTB_BASE_PTR,       // GPIO_TypeDef *port;
+ 187:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTB_BASE_PTR,
+ 188:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_1,       // uint32_t pinBitWeight;
+ 189:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 1,                    // uint8_t pinBitWeight;
+ 190:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 191:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 192:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 193:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 194:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 195:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 196:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 197:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 198:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 199:hal/Landungsbruecke/tmc/IOMap.c **** 	.DIO4 =  // IOPinTypeDef DIO4
+ 200:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 201:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOB_PSOR),        // __IO uint16_t *setBitRegister;
+ 202:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOB_PCOR),        // __IO uint16_t *resetBitRegister;
+ 203:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTB_BASE_PTR,       // GPIO_TypeDef *port;
+ 204:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTB_BASE_PTR,
+ 205:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_2,       // uint32_t pinBitWeight;
+ 206:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 2,                    // uint8_t pinBitWeight;
+ 207:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 208:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 209:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 210:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 211:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 212:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 213:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 214:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 215:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 216:hal/Landungsbruecke/tmc/IOMap.c **** 	.DIO5 =  // IOPinTypeDef DIO5
+ 217:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 218:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOB_PSOR),        // __IO uint16_t *setBitRegister;
+ 219:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOB_PCOR),        // __IO uint16_t *resetBitRegister;
+ 220:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTB_BASE_PTR,       // GPIO_TypeDef *port;
+ 221:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTB_BASE_PTR,
+ 222:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_3,       // uint32_t pinBitWeight;
+ 223:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 3,                    // uint8_t pinBitWeight;
+ 224:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 225:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 226:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 227:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 228:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 229:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 230:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 231:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 232:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 233:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 234:hal/Landungsbruecke/tmc/IOMap.c **** 	.DIO6 =  // IOPinTypeDef DIO6
+ 235:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 236:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOC_PSOR),        // __IO uint16_t *setBitRegister;
+ 237:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOC_PCOR),        // __IO uint16_t *resetBitRegister;
+ 238:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTC_BASE_PTR,       // GPIO_TypeDef *port;
+ 239:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTC_BASE_PTR,
+ 240:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_2,       // uint32_t pinBitWeight;
+ 241:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 2,                    // uint8_t pinBitWeight;
+ 242:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 243:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 244:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 245:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 246:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 247:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 248:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 249:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 250:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 251:hal/Landungsbruecke/tmc/IOMap.c **** 	.DIO7 =  // IOPinTypeDef DIO7
+ 252:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 253:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOC_PSOR),        // __IO uint16_t *setBitRegister;
+ 254:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOC_PCOR),        // __IO uint16_t *resetBitRegister;
+ 255:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTC_BASE_PTR,       // GPIO_TypeDef *port;
+ 256:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTC_BASE_PTR,
+ 257:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_1,       // uint32_t pinBitWeight;
+ 258:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 1,                    // uint8_t pinBitWeight;
+ 259:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 260:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 261:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 262:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 263:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 264:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 265:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 266:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 267:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 268:hal/Landungsbruecke/tmc/IOMap.c **** 	.DIO8 =  // IOPinTypeDef DIO8
+ 269:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 270:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOD_PSOR),        // __IO uint16_t *setBitRegister;
+ 271:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOD_PCOR),        // __IO uint16_t *resetBitRegister;
+ 272:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTD_BASE_PTR,       // GPIO_TypeDef *port;
+ 273:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTD_BASE_PTR,
+ 274:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_5,       // uint32_t pinBitWeight;
+ 275:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 5,                    // uint8_t pinBitWeight;
+ 276:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 277:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 278:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 279:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 280:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 281:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 282:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 283:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 284:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 285:hal/Landungsbruecke/tmc/IOMap.c **** 	.DIO9 =  // IOPinTypeDef DIO9
+ 286:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 287:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOD_PSOR),        // __IO uint16_t *setBitRegister;
+ 288:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOD_PCOR),        // __IO uint16_t *resetBitRegister;
+ 289:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTD_BASE_PTR,       // GPIO_TypeDef *port;
+ 290:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTD_BASE_PTR,
+ 291:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_4,       // uint32_t pinBitWeight;
+ 292:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 4,                    // uint8_t pinBitWeight;
+ 293:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 294:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 295:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 296:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 297:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 298:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 299:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 300:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 301:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 302:hal/Landungsbruecke/tmc/IOMap.c **** 	.DIO10 =  // IOPinTypeDef DIO10
+ 303:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 304:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOD_PSOR),        // __IO uint16_t *setBitRegister;
+ 305:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOD_PCOR),        // __IO uint16_t *resetBitRegister;
+ 306:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTD_BASE_PTR,       // GPIO_TypeDef *port;
+ 307:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTD_BASE_PTR,
+ 308:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_7,       // uint32_t pinBitWeight;
+ 309:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 7,                    // uint8_t pinBitWeight;
+ 310:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 311:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 312:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 313:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 314:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 315:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 316:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 317:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 318:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 319:hal/Landungsbruecke/tmc/IOMap.c **** 	.DIO11 =  // IOPinTypeDef DIO11
+ 320:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 321:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOD_PSOR),        // __IO uint16_t *setBitRegister;
+ 322:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOD_PCOR),        // __IO uint16_t *resetBitRegister;
+ 323:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTD_BASE_PTR,       // GPIO_TypeDef *port;
+ 324:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTD_BASE_PTR,
+ 325:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_6,       // uint32_t pinBitWeight;
+ 326:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 6,                    // uint8_t pinBitWeight;
+ 327:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 328:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 329:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 330:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 331:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 332:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 333:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 334:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 335:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 336:hal/Landungsbruecke/tmc/IOMap.c **** 	.CLK16 =  // IOPinTypeDef CLK16
+ 337:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 338:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOC_PSOR),        // __IO uint16_t *setBitRegister;
+ 339:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOC_PCOR),        // __IO uint16_t *resetBitRegister;
+ 340:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTC_BASE_PTR,       // GPIO_TypeDef *port;
+ 341:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTC_BASE_PTR,
+ 342:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_3,       // uint32_t pinBitWeight;
+ 343:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 3,                    // uint8_t pinBitWeight;
+ 344:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 345:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 346:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AF5,            // GPIOMode_TypeDef GPIO_Mode; ??
+ 347:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 348:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 349:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 350:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 351:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 352:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 353:hal/Landungsbruecke/tmc/IOMap.c **** 	.SPI2_CSN0 =  // IOPinTypeDef SPI2_CSN0
+ 354:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 355:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOC_PSOR),        // __IO uint16_t *setBitRegister;
+ 356:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOC_PCOR),        // __IO uint16_t *resetBitRegister;
+ 357:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTC_BASE_PTR,       // GPIO_TypeDef *port;
+ 358:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTC_BASE_PTR,
+ 359:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_0,       // uint32_t pinBitWeight;
+ 360:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 0,                    // uint8_t pinBitWeight;
+ 361:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 362:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 363:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 364:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 365:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 366:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 367:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 368:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 369:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 370:hal/Landungsbruecke/tmc/IOMap.c **** 	.SPI2_CSN1 =  // IOPinTypeDef SPI2_CSN1
+ 371:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 372:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOA_PSOR),        // __IO uint16_t *setBitRegister;
+ 373:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOA_PCOR),        // __IO uint16_t *resetBitRegister;
+ 374:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTA_BASE_PTR,       // GPIO_TypeDef *port;
+ 375:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTA_BASE_PTR,
+ 376:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_5,       // uint32_t pinBitWeight;
+ 377:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 5,                    // uint8_t pinBitWeight;
+ 378:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 379:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 380:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 381:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 382:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 383:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 384:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 385:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 386:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 387:hal/Landungsbruecke/tmc/IOMap.c **** 	.SPI2_CSN2 =  // IOPinTypeDef SPI2_CSN2
+ 388:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 389:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOC_PSOR),        // __IO uint16_t *setBitRegister;
+ 390:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOC_PCOR),        // __IO uint16_t *resetBitRegister;
+ 391:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTC_BASE_PTR,       // GPIO_TypeDef *port;
+ 392:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTC_BASE_PTR,
+ 393:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_4,       // uint32_t pinBitWeight;
+ 394:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 4,                    // uint8_t pinBitWeight;
+ 395:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 396:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 397:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 398:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 399:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 400:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 401:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 402:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 403:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 404:hal/Landungsbruecke/tmc/IOMap.c **** 	.SPI2_SCK =  // IOPinTypeDef SPI2_SCK
+ 405:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 406:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOB_PSOR),        // __IO uint16_t *setBitRegister;
+ 407:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOB_PCOR),        // __IO uint16_t *resetBitRegister;
+ 408:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTB_BASE_PTR,       // GPIO_TypeDef *port;
+ 409:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTB_BASE_PTR,
+ 410:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_21,      // uint32_t pinBitWeight;
+ 411:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 21,                   // uint8_t pinBitWeight;
+ 412:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 413:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 414:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 415:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 416:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 417:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 418:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 419:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 420:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 421:hal/Landungsbruecke/tmc/IOMap.c **** 	.SPI2_SDO =  // IOPinTypeDef SPI2_SDO
+ 422:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 423:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOB_PSOR),        // __IO uint16_t *setBitRegister;
+ 424:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOB_PCOR),        // __IO uint16_t *resetBitRegister;
+ 425:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTB_BASE_PTR,       // GPIO_TypeDef *port;
+ 426:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTB_BASE_PTR,
+ 427:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_23,      // uint32_t pinBitWeight;
+ 428:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 23,                   // uint8_t pinBitWeight;
+ 429:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 430:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 431:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 432:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 433:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 434:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 435:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 436:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 437:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 438:hal/Landungsbruecke/tmc/IOMap.c **** 	.SPI2_SDI =  // IOPinTypeDef SPI2_SDI
+ 439:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 440:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOB_PSOR),        // __IO uint16_t *setBitRegister;
+ 441:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOB_PCOR),        // __IO uint16_t *resetBitRegister;
+ 442:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTB_BASE_PTR,       // GPIO_TypeDef *port;
+ 443:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTB_BASE_PTR,
+ 444:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_22,      // uint32_t pinBitWeight;
+ 445:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 22,                   // uint8_t pinBitWeight;
+ 446:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 447:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 448:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 449:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 450:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 451:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 452:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 453:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 454:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 455:hal/Landungsbruecke/tmc/IOMap.c **** 	.SPI1_CSN =  // IOPinTypeDef SPI1_CSN
+ 456:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 457:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOB_PSOR),        // __IO uint16_t *setBitRegister;
+ 458:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOB_PCOR),        // __IO uint16_t *resetBitRegister;
+ 459:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTB_BASE_PTR,       // GPIO_TypeDef *port;
+ 460:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTB_BASE_PTR,
+ 461:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_10,      // uint32_t pinBitWeight;
+ 462:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 10,                   // uint8_t pinBitWeight;
+ 463:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 464:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 465:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 466:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 467:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 468:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 469:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 470:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 471:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 472:hal/Landungsbruecke/tmc/IOMap.c **** 	.SPI1_SCK =  // IOPinTypeDef SPI1_SCK
+ 473:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 474:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOB_PSOR),        // __IO uint16_t *setBitRegister;
+ 475:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOB_PCOR),        // __IO uint16_t *resetBitRegister;
+ 476:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTB_BASE_PTR,       // GPIO_TypeDef *port;
+ 477:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTB_BASE_PTR,
+ 478:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_11,      // uint32_t pinBitWeight;
+ 479:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 11,                   // uint8_t pinBitWeight;
+ 480:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 481:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 482:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 483:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 484:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 485:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 486:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 487:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 488:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 489:hal/Landungsbruecke/tmc/IOMap.c **** 	.SPI1_SDO =  // IOPinTypeDef SPI1_SDO
+ 490:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 491:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOB_PSOR),        // __IO uint16_t *setBitRegister;
+ 492:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOB_PCOR),        // __IO uint16_t *resetBitRegister;
+ 493:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTB_BASE_PTR,       // GPIO_TypeDef *port;
+ 494:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTB_BASE_PTR,
+ 495:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_17,      // uint32_t pinBitWeight;
+ 496:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 17,                   // uint8_t pinBitWeight;
+ 497:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 498:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 499:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 500:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 501:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 502:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 503:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 504:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 505:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 506:hal/Landungsbruecke/tmc/IOMap.c **** 	.SPI1_SDI =  // IOPinTypeDef SPI1_SDI
+ 507:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 508:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOB_PSOR),        // __IO uint16_t *setBitRegister;
+ 509:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOB_PCOR),        // __IO uint16_t *resetBitRegister;
+ 510:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTB_BASE_PTR,       // GPIO_TypeDef *port;
+ 511:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTB_BASE_PTR,
+ 512:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_16,      // uint32_t pinBitWeight;
+ 513:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 16,                   // uint8_t pinBitWeight;
+ 514:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 515:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 516:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 517:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 518:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 519:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 520:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 521:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 522:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 523:hal/Landungsbruecke/tmc/IOMap.c **** 	.DIO12 =  // IOPinTypeDef DIO12
+ 524:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 525:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOC_PSOR),        // __IO uint16_t *setBitRegister;
+ 526:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOC_PCOR),        // __IO uint16_t *resetBitRegister;
+ 527:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTC_BASE_PTR,       // GPIO_TypeDef *port;
+ 528:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTC_BASE_PTR,
+ 529:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_16,      // uint32_t pinBitWeight;
+ 530:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 16,                   // uint8_t pinBitWeight;
+ 531:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 532:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 533:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 534:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 535:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 536:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 537:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 538:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 539:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 540:hal/Landungsbruecke/tmc/IOMap.c **** 	.DIO13 =  // IOPinTypeDef DIO13
+ 541:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 542:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOC_PSOR),        // __IO uint16_t *setBitRegister;
+ 543:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOC_PCOR),        // __IO uint16_t *resetBitRegister;
+ 544:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTC_BASE_PTR,       // GPIO_TypeDef *port;
+ 545:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTC_BASE_PTR,
+ 546:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_17,      // uint32_t pinBitWeight;
+ 547:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 17,                   // uint8_t pinBitWeight;
+ 548:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 549:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 550:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 551:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 552:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 553:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 554:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 555:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 556:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 557:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 558:hal/Landungsbruecke/tmc/IOMap.c **** 	.DIO14 =  // IOPinTypeDef DIO14
+ 559:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 560:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOC_PSOR),        // __IO uint16_t *setBitRegister;
+ 561:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOC_PCOR),        // __IO uint16_t *resetBitRegister;
+ 562:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTC_BASE_PTR,       // GPIO_TypeDef *port;
+ 563:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTC_BASE_PTR,
+ 564:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_18,      // uint32_t pinBitWeight;
+ 565:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 18,                   // uint8_t pinBitWeight;
+ 566:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 567:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 568:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 569:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 570:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 571:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 572:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 573:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 574:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 575:hal/Landungsbruecke/tmc/IOMap.c **** 	.DIO15 =  // IOPinTypeDef DIO15
+ 576:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 577:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOD_PSOR),        // __IO uint16_t *setBitRegister;
+ 578:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOD_PCOR),        // __IO uint16_t *resetBitRegister;
+ 579:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTD_BASE_PTR,       // GPIO_TypeDef *port;
+ 580:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTD_BASE_PTR,
+ 581:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_1,       // uint32_t pinBitWeight;
+ 582:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 1,                    // uint8_t pinBitWeight;
+ 583:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 584:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 585:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 586:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 587:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 588:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 589:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 590:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 591:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 592:hal/Landungsbruecke/tmc/IOMap.c **** 	.DIO16 =  // IOPinTypeDef DIO16
+ 593:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 594:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOD_PSOR),        // __IO uint16_t *setBitRegister;
+ 595:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOD_PCOR),        // __IO uint16_t *resetBitRegister;
+ 596:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTD_BASE_PTR,       // GPIO_TypeDef *port;
+ 597:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTD_BASE_PTR,
+ 598:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_0,       // uint32_t pinBitWeight;
+ 599:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 0,                    // uint8_t pinBitWeight;
+ 600:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 601:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 602:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 603:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 604:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 605:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 606:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 607:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 608:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 609:hal/Landungsbruecke/tmc/IOMap.c **** 	.DIO17 =  // IOPinTypeDef DIO17
+ 610:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 611:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOD_PSOR),        // __IO uint16_t *setBitRegister;
+ 612:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOD_PCOR),        // __IO uint16_t *resetBitRegister;
+ 613:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTD_BASE_PTR,       // GPIO_TypeDef *port;
+ 614:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTD_BASE_PTR,
+ 615:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_3,       // uint32_t pinBitWeight;
+ 616:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 3,                    // uint8_t pinBitWeight;
+ 617:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 618:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 619:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 620:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 621:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 622:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 623:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 624:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 625:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 626:hal/Landungsbruecke/tmc/IOMap.c **** 	.DIO18 =  // IOPinTypeDef DIO18
+ 627:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 628:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOD_PSOR),        // __IO uint16_t *setBitRegister;
+ 629:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOD_PCOR),        // __IO uint16_t *resetBitRegister;
+ 630:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTD_BASE_PTR,       // GPIO_TypeDef *port;
+ 631:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTD_BASE_PTR,
+ 632:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_2,       // uint32_t pinBitWeight;
+ 633:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 2,                    // uint8_t pinBitWeight;
+ 634:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 635:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 636:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 637:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 638:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 639:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 640:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 641:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 642:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 643:hal/Landungsbruecke/tmc/IOMap.c **** 	.DIO19 =  // IOPinTypeDef DIO19
+ 644:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 645:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOC_PSOR),        // __IO uint16_t *setBitRegister;
+ 646:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOC_PCOR),        // __IO uint16_t *resetBitRegister;
+ 647:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTC_BASE_PTR,       // GPIO_TypeDef *port;
+ 648:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTC_BASE_PTR,
+ 649:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_15,      // uint32_t pinBitWeight;
+ 650:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 15,                   // uint8_t pinBitWeight;
+ 651:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 652:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 653:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 654:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 655:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 656:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 657:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 658:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 659:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 660:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 661:hal/Landungsbruecke/tmc/IOMap.c **** 	.WIRELESS_TX =  // IOPinTypeDef WIRELESS_TX
+ 662:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 663:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOA_PSOR),        // __IO uint16_t *setBitRegister;
+ 664:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOA_PCOR),        // __IO uint16_t *resetBitRegister;
+ 665:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTA_BASE_PTR,       // GPIO_TypeDef *port;
+ 666:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTA_BASE_PTR,
+ 667:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_14,      // uint32_t pinBitWeight;
+ 668:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 14,                   // uint8_t pinBitWeight;
+ 669:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 670:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 671:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 672:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 673:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 674:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 675:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 676:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 677:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 678:hal/Landungsbruecke/tmc/IOMap.c **** 	.WIRELESS_RX =  // IOPinTypeDef WIRELESS_RX
+ 679:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 680:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOA_PSOR),        // __IO uint16_t *setBitRegister;
+ 681:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOA_PCOR),        // __IO uint16_t *resetBitRegister;
+ 682:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTA_BASE_PTR,       // GPIO_TypeDef *port;
+ 683:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTA_BASE_PTR,
+ 684:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_15,      // uint32_t pinBitWeight;
+ 685:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 15,                   // uint8_t pinBitWeight;
+ 686:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 687:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 688:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 689:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 690:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 691:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 692:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 693:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 694:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 695:hal/Landungsbruecke/tmc/IOMap.c **** 	.WIRELESS_NRST =  // IOPinTypeDef WIRELESS_NRST
+ 696:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 697:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOA_PSOR),        // __IO uint16_t *setBitRegister;
+ 698:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOA_PCOR),        // __IO uint16_t *resetBitRegister;
+ 699:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTA_BASE_PTR,       // GPIO_TypeDef *port;
+ 700:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTA_BASE_PTR,
+ 701:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_16,      // uint32_t pinBitWeight;
+ 702:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 16,                   // uint8_t pinBitWeight;
+ 703:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 704:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 705:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 706:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 707:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 708:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 709:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 710:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 711:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 712:hal/Landungsbruecke/tmc/IOMap.c **** 	.RS232_TX =  // IOPinTypeDef RS232_TX
+ 713:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 714:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOE_PSOR),        // __IO uint16_t *setBitRegister;
+ 715:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOE_PCOR),        // __IO uint16_t *resetBitRegister;
+ 716:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTE_BASE_PTR,       // GPIO_TypeDef *port;
+ 717:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTE_BASE_PTR,
+ 718:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_24,      // uint32_t pinBitWeight;
+ 719:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 24,                   // uint8_t pinBitWeight;
+ 720:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 721:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 722:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 723:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 724:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 725:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 726:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 727:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 728:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 729:hal/Landungsbruecke/tmc/IOMap.c **** 	.RS232_RX =  // IOPinTypeDef RS232_RX
+ 730:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 731:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOE_PSOR),        // __IO uint16_t *setBitRegister;
+ 732:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOE_PCOR),        // __IO uint16_t *resetBitRegister;
+ 733:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTE_BASE_PTR,       // GPIO_TypeDef *port;
+ 734:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTE_BASE_PTR,
+ 735:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_25,      // uint32_t pinBitWeight;
+ 736:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 25,                   // uint8_t pinBitWeight;
+ 737:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 738:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 739:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 740:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 741:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 742:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 743:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 744:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 745:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 746:hal/Landungsbruecke/tmc/IOMap.c **** 	.USB_V_BUS =  // IOPinTypeDef USB_V_BU
+ 747:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 748:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOA_PSOR),        // __IO uint16_t *setBitRegister;
+ 749:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOA_PCOR),        // __IO uint16_t *resetBitRegister;
+ 750:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTA_BASE_PTR,       // GPIO_TypeDef *port;
+ 751:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTA_BASE_PTR,         // GPIO_TypeDef *port;
+ 752:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_4,       // uint32_t pinBitWeight;
+ 753:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 4,                    // uint8_t pinBitWeight;
+ 754:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 755:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 756:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 757:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 758:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_100MHz,        // GPIOOType_TypeDef GPIO_OType;
+ 759:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 760:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 761:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 762:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 763:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 764:hal/Landungsbruecke/tmc/IOMap.c **** 	.LED_STAT =  // IOPinTypeDef LED_STAT
+ 765:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 766:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOA_PSOR),        // __IO uint16_t *setBitRegister;
+ 767:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOA_PCOR),        // __IO uint16_t *resetBitRegister;
+ 768:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTA_BASE_PTR,       // GPIO_TypeDef *port;
+ 769:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTA_BASE_PTR,
+ 770:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_2,       // uint32_t pinBitWeight;
+ 771:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 2,                    // uint8_t pinBitWeight;
+ 772:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 773:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 774:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 775:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 776:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 777:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 778:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 779:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 780:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 781:hal/Landungsbruecke/tmc/IOMap.c **** 	.LED_ERROR =  // IOPinTypeDef LED_ERROR
+ 782:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 783:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOA_PSOR),        // __IO uint16_t *setBitRegister;
+ 784:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOA_PCOR),        // __IO uint16_t *resetBitRegister;
+ 785:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTA_BASE_PTR,       // GPIO_TypeDef *port;
+ 786:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTA_BASE_PTR,
+ 787:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_1,       // uint32_t pinBitWeight;
+ 788:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 1,                    // uint8_t pinBitWeight;
+ 789:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 790:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 791:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 792:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 793:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 794:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 795:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 796:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 797:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 798:hal/Landungsbruecke/tmc/IOMap.c **** 	.EXTIO_2 =  // IOPinTypeDef EXTIO_2
+ 799:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 800:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOE_PSOR),        // __IO uint16_t *setBitRegister;
+ 801:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOE_PCOR),        // __IO uint16_t *resetBitRegister;
+ 802:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTE_BASE_PTR,       // GPIO_TypeDef *port;
+ 803:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTE_BASE_PTR,
+ 804:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_0,       // uint32_t pinBitWeight;
+ 805:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 0,                    // uint8_t pinBitWeight;
+ 806:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 807:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 808:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 809:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 810:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 811:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 812:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 813:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 814:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 815:hal/Landungsbruecke/tmc/IOMap.c **** 	.EXTIO_3 =  // IOPinTypeDef EXTIO_3
+ 816:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 817:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOE_PSOR),        // __IO uint16_t *setBitRegister;
+ 818:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOE_PCOR),        // __IO uint16_t *resetBitRegister;
+ 819:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTE_BASE_PTR,       // GPIO_TypeDef *port;
+ 820:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTE_BASE_PTR,
+ 821:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_1,       // uint32_t pinBitWeight;
+ 822:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 1,                    // uint8_t pinBitWeight;
+ 823:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 824:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 825:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 826:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 827:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 828:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 829:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 830:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 831:hal/Landungsbruecke/tmc/IOMap.c **** 	.EXTIO_4 =  // IOPinTypeDef EXTIO_4
+ 832:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 833:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOE_PSOR),        // __IO uint16_t *setBitRegister;
+ 834:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOE_PCOR),        // __IO uint16_t *resetBitRegister;
+ 835:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTE_BASE_PTR,       // GPIO_TypeDef *port;
+ 836:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTE_BASE_PTR,
+ 837:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_2,       // uint32_t pinBitWeight;
+ 838:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 2,                    // uint8_t pinBitWeight;
+ 839:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 840:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 841:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 842:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 843:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 844:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 845:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 846:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 847:hal/Landungsbruecke/tmc/IOMap.c **** 	.EXTIO_5 =  // IOPinTypeDef EXTIO_5
+ 848:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 849:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOE_PSOR),        // __IO uint16_t *setBitRegister;
+ 850:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOE_PCOR),        // __IO uint16_t *resetBitRegister;
+ 851:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTE_BASE_PTR,       // GPIO_TypeDef *port;
+ 852:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTE_BASE_PTR,
+ 853:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_3,       // uint32_t pinBitWeight;
+ 854:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 3,                    // uint8_t pinBitWeight;
+ 855:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 856:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 857:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 858:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 859:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 860:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 861:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 862:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 863:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 864:hal/Landungsbruecke/tmc/IOMap.c **** 	.EXTIO_6 =  // IOPinTypeDef EXTIO_6
+ 865:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 866:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOE_PSOR),        // __IO uint16_t *setBitRegister;
+ 867:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOE_PCOR),        // __IO uint16_t *resetBitRegister;
+ 868:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTE_BASE_PTR,       // GPIO_TypeDef *port;
+ 869:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTE_BASE_PTR,
+ 870:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_4,       // uint32_t pinBitWeight;
+ 871:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 4,                    // uint8_t pinBitWeight;
+ 872:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 873:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 874:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 875:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 876:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 877:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 878:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 879:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 880:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 881:hal/Landungsbruecke/tmc/IOMap.c **** 	.EXTIO_7=  // IOPinTypeDef EXTIO_7
+ 882:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 883:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOE_PSOR),        // __IO uint16_t *setBitRegister;
+ 884:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOE_PCOR),        // __IO uint16_t *resetBitRegister;
+ 885:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTE_BASE_PTR,       // GPIO_TypeDef *port;
+ 886:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTE_BASE_PTR,
+ 887:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_5,       // uint32_t pinBitWeight;
+ 888:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 5,                    // uint8_t pinBitWeight;
+ 889:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 890:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 891:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 892:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 893:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 894:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 895:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 896:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 897:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 898:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 899:hal/Landungsbruecke/tmc/IOMap.c **** 	.EEPROM_SCK =  // IOPinTypeDef EEPROM_SCK
+ 900:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 901:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOC_PSOR),        // __IO uint16_t *setBitRegister;
+ 902:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOC_PCOR),        // __IO uint16_t *resetBitRegister;
+ 903:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTC_BASE_PTR,       // GPIO_TypeDef *port;
+ 904:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTC_BASE_PTR,
+ 905:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_5,       // uint32_t pinBitWeight;
+ 906:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 5,                    // uint8_t pinBitWeight;
+ 907:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 908:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 909:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 910:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 911:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 912:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 913:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 914:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 915:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 916:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 917:hal/Landungsbruecke/tmc/IOMap.c **** 	.EEPROM_SI =  // IOPinTypeDef EEPROM_SI
+ 918:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 919:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOC_PSOR),        // __IO uint16_t *setBitRegister;
+ 920:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOC_PCOR),        // __IO uint16_t *resetBitRegister;
+ 921:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTC_BASE_PTR,       // GPIO_TypeDef *port;
+ 922:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTC_BASE_PTR,
+ 923:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_7,       // uint32_t pinBitWeight;
+ 924:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 7,                    // uint8_t pinBitWeight;
+ 925:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 926:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 927:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 928:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 929:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 930:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 931:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 932:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 933:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 934:hal/Landungsbruecke/tmc/IOMap.c **** 	.EEPROM_SO =  // IOPinTypeDef EEPROM_SO
+ 935:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 936:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOC_PSOR),        // __IO uint16_t *setBitRegister;
+ 937:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOC_PCOR),        // __IO uint16_t *resetBitRegister;
+ 938:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTC_BASE_PTR,       // GPIO_TypeDef *port;
+ 939:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTC_BASE_PTR,
+ 940:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_6,       // uint32_t pinBitWeight;
+ 941:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 6,                    // uint8_t pinBitWeight;
+ 942:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 943:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 944:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 945:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 946:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 947:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 948:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 949:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 950:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 951:hal/Landungsbruecke/tmc/IOMap.c **** 	.EEPROM_NCS =  // IOPinTypeDef
+ 952:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 953:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOC_PSOR),        // __IO uint16_t *setBitRegister;
+ 954:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOC_PCOR),        // __IO uint16_t *resetBitRegister;
+ 955:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTC_BASE_PTR,       // GPIO_TypeDef *port;
+ 956:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTC_BASE_PTR,
+ 957:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_8,       // uint32_t pinBitWeight;
+ 958:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 8,                    // uint8_t pinBitWeight;
+ 959:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 960:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 961:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 962:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 963:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 964:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 965:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 966:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 967:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 968:hal/Landungsbruecke/tmc/IOMap.c **** 	.MIXED0 =  // IOPinTypeDef
+ 969:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 970:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOC_PSOR),        // __IO uint16_t *setBitRegister;
+ 971:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOC_PCOR),        // __IO uint16_t *resetBitRegister;
+ 972:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTC_BASE_PTR,       // GPIO_TypeDef *port;
+ 973:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTC_BASE_PTR,
+ 974:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_11,      // uint32_t pinBitWeight;
+ 975:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 11,                   // uint8_t pinBitWeight;
+ 976:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 977:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 978:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 979:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 980:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 981:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 982:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+ 983:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+ 984:hal/Landungsbruecke/tmc/IOMap.c **** 
+ 985:hal/Landungsbruecke/tmc/IOMap.c **** 	.MIXED1 =  // IOPinTypeDef
+ 986:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+ 987:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOC_PSOR),        // __IO uint16_t *setBitRegister;
+ 988:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOC_PCOR),        // __IO uint16_t *resetBitRegister;
+ 989:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTC_BASE_PTR,       // GPIO_TypeDef *port;
+ 990:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTC_BASE_PTR,
+ 991:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_12,      // uint32_t pinBitWeight;
+ 992:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 12,                   // uint8_t pinBitWeight;
+ 993:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+ 994:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+ 995:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+ 996:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+ 997:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+ 998:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+ 999:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+1000:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+1001:hal/Landungsbruecke/tmc/IOMap.c **** 
+1002:hal/Landungsbruecke/tmc/IOMap.c **** 	.MIXED2 =  // IOPinTypeDef
+1003:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+1004:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOC_PSOR),        // __IO uint16_t *setBitRegister;
+1005:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOC_PCOR),        // __IO uint16_t *resetBitRegister;
+1006:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTC_BASE_PTR,       // GPIO_TypeDef *port;
+1007:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTC_BASE_PTR,
+1008:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_13,      // uint32_t pinBitWeight;
+1009:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 13,                   // uint8_t pinBitWeight;
+1010:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+1011:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+1012:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+1013:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+1014:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+1015:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+1016:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+1017:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+1018:hal/Landungsbruecke/tmc/IOMap.c **** 
+1019:hal/Landungsbruecke/tmc/IOMap.c **** 	.MIXED3 =  // IOPinTypeDef
+1020:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+1021:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOC_PSOR),        // __IO uint16_t *setBitRegister;
+1022:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOC_PCOR),        // __IO uint16_t *resetBitRegister;
+1023:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTC_BASE_PTR,       // GPIO_TypeDef *port;
+1024:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTC_BASE_PTR,
+1025:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_14,      // uint32_t pinBitWeight;
+1026:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 14,                   // uint8_t pinBitWeight;
+1027:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+1028:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+1029:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+1030:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+1031:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+1032:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+1033:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+1034:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+1035:hal/Landungsbruecke/tmc/IOMap.c **** 
+1036:hal/Landungsbruecke/tmc/IOMap.c **** 	.MIXED4 =  // IOPinTypeDef
+1037:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+1038:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOC_PSOR),        // __IO uint16_t *setBitRegister;
+1039:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOC_PCOR),        // __IO uint16_t *resetBitRegister;
+1040:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTC_BASE_PTR,       // GPIO_TypeDef *port;
+1041:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTC_BASE_PTR,
+1042:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_10,      // uint32_t pinBitWeight;
+1043:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 10,                   // uint8_t pinBitWeight;
+1044:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+1045:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+1046:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+1047:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+1048:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+1049:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+1050:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+1051:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+1052:hal/Landungsbruecke/tmc/IOMap.c **** 
+1053:hal/Landungsbruecke/tmc/IOMap.c **** 	.MIXED5 =  // IOPinTypeDef
+1054:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+1055:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOC_PSOR),        // __IO uint16_t *setBitRegister;
+1056:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOC_PCOR),        // __IO uint16_t *resetBitRegister;
+1057:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTC_BASE_PTR,       // GPIO_TypeDef *port;
+1058:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTC_BASE_PTR,
+1059:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_9,       // uint32_t pinBitWeight;
+1060:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 9,                    // uint8_t pinBitWeight;
+1061:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+1062:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+1063:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+1064:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+1065:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+1066:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+1067:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+1068:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+1069:hal/Landungsbruecke/tmc/IOMap.c **** 
+1070:hal/Landungsbruecke/tmc/IOMap.c **** 	.MIXED6 =  // IOPinTypeDef
+1071:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+1072:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOE_PSOR),        // __IO uint16_t *setBitRegister;
+1073:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOE_PCOR),        // __IO uint16_t *resetBitRegister;
+1074:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTE_BASE_PTR,       // GPIO_TypeDef *port;
+1075:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTE_BASE_PTR,
+1076:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_6,       // uint32_t pinBitWeight;
+1077:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 6,                    // uint8_t pinBitWeight;
+1078:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+1079:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+1080:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+1081:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+1082:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+1083:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+1084:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+1085:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+1086:hal/Landungsbruecke/tmc/IOMap.c **** 
+1087:hal/Landungsbruecke/tmc/IOMap.c **** 	.ID_HW_0 =  // IOPinTypeDef
+1088:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+1089:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOE_PSOR),        // __IO uint16_t *setBitRegister;
+1090:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOE_PCOR),        // __IO uint16_t *resetBitRegister;
+1091:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTE_BASE_PTR,       // GPIO_TypeDef *port;
+1092:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTE_BASE_PTR,
+1093:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_26,      // uint32_t pinBitWeight;
+1094:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 26,                   // uint8_t pinBitWeight;
+1095:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+1096:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+1097:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+1098:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+1099:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+1100:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+1101:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+1102:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+1103:hal/Landungsbruecke/tmc/IOMap.c **** 
+1104:hal/Landungsbruecke/tmc/IOMap.c **** 	.ID_HW_1 =  // IOPinTypeDef
+1105:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+1106:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOA_PSOR),        // __IO uint16_t *setBitRegister;
+1107:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOA_PCOR),        // __IO uint16_t *resetBitRegister;
+1108:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTA_BASE_PTR,       // GPIO_TypeDef *port;
+1109:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTA_BASE_PTR,
+1110:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_17,      // uint32_t pinBitWeight;
+1111:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 17,                   // uint8_t pinBitWeight;
+1112:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+1113:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+1114:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+1115:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+1116:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+1117:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+1118:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+1119:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+1120:hal/Landungsbruecke/tmc/IOMap.c **** 
+1121:hal/Landungsbruecke/tmc/IOMap.c **** 	.ID_HW_2 =  // IOPinTypeDef
+1122:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+1123:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOB_PSOR),        // __IO uint16_t *setBitRegister;
+1124:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOB_PCOR),        // __IO uint16_t *resetBitRegister;
+1125:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTB_BASE_PTR,       // GPIO_TypeDef *port;
+1126:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTB_BASE_PTR,
+1127:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = GPIO_PDD_PIN_9,       // uint32_t pinBitWeight;
+1128:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = 9,                    // uint8_t pinBitWeight;
+1129:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+1130:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+1131:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+1132:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+1133:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+1134:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+1135:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+1136:hal/Landungsbruecke/tmc/IOMap.c **** 	},
+1137:hal/Landungsbruecke/tmc/IOMap.c **** 
+1138:hal/Landungsbruecke/tmc/IOMap.c **** 	.DUMMY =  // Dummy Pin
+1139:hal/Landungsbruecke/tmc/IOMap.c **** 	{
+1140:hal/Landungsbruecke/tmc/IOMap.c **** 		.setBitRegister      = &(GPIOA_PSOR),        // __IO uint16_t *setBitRegister;
+1141:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetBitRegister    = &(GPIOA_PCOR),        // __IO uint16_t *resetBitRegister;
+1142:hal/Landungsbruecke/tmc/IOMap.c **** 		.portBase            = PORTA_BASE_PTR,       // GPIO_TypeDef *port;
+1143:hal/Landungsbruecke/tmc/IOMap.c **** 		.GPIOBase            = PTA_BASE_PTR,
+1144:hal/Landungsbruecke/tmc/IOMap.c **** 		.bitWeight           = DUMMY_BITWEIGHT,      // invalid
+1145:hal/Landungsbruecke/tmc/IOMap.c **** 		.bit                 = -1,                   // invalid
+1146:hal/Landungsbruecke/tmc/IOMap.c **** 		.resetConfiguration  =
+1147:hal/Landungsbruecke/tmc/IOMap.c **** 		{
+1148:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Mode   = GPIO_Mode_AN,             // GPIOMode_TypeDef GPIO_Mode;
+1149:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_OType  = GPIO_OType_PP,            // GPIOSpeed_TypeDef GPIO_Speed;
+1150:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_Speed  = GPIO_Speed_50MHz,         // GPIOOType_TypeDef GPIO_OType;
+1151:hal/Landungsbruecke/tmc/IOMap.c **** 			.GPIO_PuPd   = GPIO_PuPd_NOPULL          // GPIOPuPd_TypeDef GPIO_PuPd;
+1152:hal/Landungsbruecke/tmc/IOMap.c **** 		}
+1153:hal/Landungsbruecke/tmc/IOMap.c **** 	}
+1154:hal/Landungsbruecke/tmc/IOMap.c **** };
+1155:hal/Landungsbruecke/tmc/IOMap.c **** 
+1156:hal/Landungsbruecke/tmc/IOMap.c **** 
+1157:hal/Landungsbruecke/tmc/IOMap.c **** static void init()
+1158:hal/Landungsbruecke/tmc/IOMap.c **** {
+  25              		.loc 1 1158 1 view -0
+  26              		.cfi_startproc
+  27              		@ args = 0, pretend = 0, frame = 0
+  28              		@ frame_needed = 0, uses_anonymous_args = 0
+1159:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->ID_CLK);
+  29              		.loc 1 1159 2 view .LVU1
+  30              		.loc 1 1159 5 is_stmt 0 view .LVU2
+  31 0000 B24B     		ldr	r3, .L2
+1158:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->ID_CLK);
+  32              		.loc 1 1158 1 view .LVU3
+  33 0002 10B5     		push	{r4, lr}
+  34              	.LCFI0:
+  35              		.cfi_def_cfa_offset 8
+  36              		.cfi_offset 4, -8
+  37              		.cfi_offset 14, -4
+  38              		.loc 1 1159 5 view .LVU4
+  39 0004 DC68     		ldr	r4, [r3, #12]
+  40              		.loc 1 1159 17 view .LVU5
+  41 0006 D4E90030 		ldrd	r3, r0, [r4]
+  42              		.loc 1 1159 2 view .LVU6
+  43 000a 9B68     		ldr	r3, [r3, #8]
+  44 000c 0830     		adds	r0, r0, #8
+  45 000e 9847     		blx	r3
+  46              	.LVL0:
+1160:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->ID_CH0);
+  47              		.loc 1 1160 2 is_stmt 1 view .LVU7
+  48              		.loc 1 1160 17 is_stmt 0 view .LVU8
+  49 0010 D4E90030 		ldrd	r3, r0, [r4]
+  50              		.loc 1 1160 2 view .LVU9
+  51 0014 9B68     		ldr	r3, [r3, #8]
+  52 0016 2830     		adds	r0, r0, #40
+  53 0018 9847     		blx	r3
+  54              	.LVL1:
+1161:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->ID_CH1);
+  55              		.loc 1 1161 2 is_stmt 1 view .LVU10
+  56              		.loc 1 1161 17 is_stmt 0 view .LVU11
+  57 001a D4E90030 		ldrd	r3, r0, [r4]
+  58              		.loc 1 1161 2 view .LVU12
+  59 001e 9B68     		ldr	r3, [r3, #8]
+  60 0020 4830     		adds	r0, r0, #72
+  61 0022 9847     		blx	r3
+  62              	.LVL2:
+1162:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->DIO0);
+  63              		.loc 1 1162 2 is_stmt 1 view .LVU13
+  64              		.loc 1 1162 17 is_stmt 0 view .LVU14
+  65 0024 D4E90030 		ldrd	r3, r0, [r4]
+  66              		.loc 1 1162 2 view .LVU15
+  67 0028 9B68     		ldr	r3, [r3, #8]
+  68 002a 6830     		adds	r0, r0, #104
+  69 002c 9847     		blx	r3
+  70              	.LVL3:
+1163:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->DIO1);
+  71              		.loc 1 1163 2 is_stmt 1 view .LVU16
+  72              		.loc 1 1163 17 is_stmt 0 view .LVU17
+  73 002e D4E90030 		ldrd	r3, r0, [r4]
+  74              		.loc 1 1163 2 view .LVU18
+  75 0032 9B68     		ldr	r3, [r3, #8]
+  76 0034 8830     		adds	r0, r0, #136
+  77 0036 9847     		blx	r3
+  78              	.LVL4:
+1164:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->DIO2);
+  79              		.loc 1 1164 2 is_stmt 1 view .LVU19
+  80              		.loc 1 1164 17 is_stmt 0 view .LVU20
+  81 0038 D4E90030 		ldrd	r3, r0, [r4]
+  82              		.loc 1 1164 2 view .LVU21
+  83 003c 9B68     		ldr	r3, [r3, #8]
+  84 003e A830     		adds	r0, r0, #168
+  85 0040 9847     		blx	r3
+  86              	.LVL5:
+1165:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->DIO3);
+  87              		.loc 1 1165 2 is_stmt 1 view .LVU22
+  88              		.loc 1 1165 17 is_stmt 0 view .LVU23
+  89 0042 D4E90030 		ldrd	r3, r0, [r4]
+  90              		.loc 1 1165 2 view .LVU24
+  91 0046 9B68     		ldr	r3, [r3, #8]
+  92 0048 C830     		adds	r0, r0, #200
+  93 004a 9847     		blx	r3
+  94              	.LVL6:
+1166:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->DIO4);
+  95              		.loc 1 1166 2 is_stmt 1 view .LVU25
+  96              		.loc 1 1166 17 is_stmt 0 view .LVU26
+  97 004c D4E90030 		ldrd	r3, r0, [r4]
+  98              		.loc 1 1166 2 view .LVU27
+  99 0050 9B68     		ldr	r3, [r3, #8]
+ 100 0052 E830     		adds	r0, r0, #232
+ 101 0054 9847     		blx	r3
+ 102              	.LVL7:
+1167:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->DIO5);
+ 103              		.loc 1 1167 2 is_stmt 1 view .LVU28
+ 104              		.loc 1 1167 17 is_stmt 0 view .LVU29
+ 105 0056 D4E90030 		ldrd	r3, r0, [r4]
+ 106              		.loc 1 1167 2 view .LVU30
+ 107 005a 9B68     		ldr	r3, [r3, #8]
+ 108 005c 00F58470 		add	r0, r0, #264
+ 109 0060 9847     		blx	r3
+ 110              	.LVL8:
+1168:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->DIO6);
+ 111              		.loc 1 1168 2 is_stmt 1 view .LVU31
+ 112              		.loc 1 1168 17 is_stmt 0 view .LVU32
+ 113 0062 D4E90030 		ldrd	r3, r0, [r4]
+ 114              		.loc 1 1168 2 view .LVU33
+ 115 0066 9B68     		ldr	r3, [r3, #8]
+ 116 0068 00F59470 		add	r0, r0, #296
+ 117 006c 9847     		blx	r3
+ 118              	.LVL9:
+1169:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->DIO7);
+ 119              		.loc 1 1169 2 is_stmt 1 view .LVU34
+ 120              		.loc 1 1169 17 is_stmt 0 view .LVU35
+ 121 006e D4E90030 		ldrd	r3, r0, [r4]
+ 122              		.loc 1 1169 2 view .LVU36
+ 123 0072 9B68     		ldr	r3, [r3, #8]
+ 124 0074 00F5A470 		add	r0, r0, #328
+ 125 0078 9847     		blx	r3
+ 126              	.LVL10:
+1170:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->DIO8);
+ 127              		.loc 1 1170 2 is_stmt 1 view .LVU37
+ 128              		.loc 1 1170 17 is_stmt 0 view .LVU38
+ 129 007a D4E90030 		ldrd	r3, r0, [r4]
+ 130              		.loc 1 1170 2 view .LVU39
+ 131 007e 9B68     		ldr	r3, [r3, #8]
+ 132 0080 00F5B470 		add	r0, r0, #360
+ 133 0084 9847     		blx	r3
+ 134              	.LVL11:
+1171:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->DIO9);
+ 135              		.loc 1 1171 2 is_stmt 1 view .LVU40
+ 136              		.loc 1 1171 17 is_stmt 0 view .LVU41
+ 137 0086 D4E90030 		ldrd	r3, r0, [r4]
+ 138              		.loc 1 1171 2 view .LVU42
+ 139 008a 9B68     		ldr	r3, [r3, #8]
+ 140 008c 00F5C470 		add	r0, r0, #392
+ 141 0090 9847     		blx	r3
+ 142              	.LVL12:
+1172:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->DIO10);
+ 143              		.loc 1 1172 2 is_stmt 1 view .LVU43
+ 144              		.loc 1 1172 17 is_stmt 0 view .LVU44
+ 145 0092 D4E90030 		ldrd	r3, r0, [r4]
+ 146              		.loc 1 1172 2 view .LVU45
+ 147 0096 9B68     		ldr	r3, [r3, #8]
+ 148 0098 00F5D470 		add	r0, r0, #424
+ 149 009c 9847     		blx	r3
+ 150              	.LVL13:
+1173:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->DIO11);
+ 151              		.loc 1 1173 2 is_stmt 1 view .LVU46
+ 152              		.loc 1 1173 17 is_stmt 0 view .LVU47
+ 153 009e D4E90030 		ldrd	r3, r0, [r4]
+ 154              		.loc 1 1173 2 view .LVU48
+ 155 00a2 9B68     		ldr	r3, [r3, #8]
+ 156 00a4 00F5E470 		add	r0, r0, #456
+ 157 00a8 9847     		blx	r3
+ 158              	.LVL14:
+1174:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI2_CSN0);
+ 159              		.loc 1 1174 2 is_stmt 1 view .LVU49
+ 160              		.loc 1 1174 17 is_stmt 0 view .LVU50
+ 161 00aa D4E90030 		ldrd	r3, r0, [r4]
+ 162              		.loc 1 1174 2 view .LVU51
+ 163 00ae 9B68     		ldr	r3, [r3, #8]
+ 164 00b0 00F50270 		add	r0, r0, #520
+ 165 00b4 9847     		blx	r3
+ 166              	.LVL15:
+1175:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI2_CSN1);
+ 167              		.loc 1 1175 2 is_stmt 1 view .LVU52
+ 168              		.loc 1 1175 17 is_stmt 0 view .LVU53
+ 169 00b6 D4E90030 		ldrd	r3, r0, [r4]
+ 170              		.loc 1 1175 2 view .LVU54
+ 171 00ba 9B68     		ldr	r3, [r3, #8]
+ 172 00bc 00F50A70 		add	r0, r0, #552
+ 173 00c0 9847     		blx	r3
+ 174              	.LVL16:
+1176:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI2_CSN2);
+ 175              		.loc 1 1176 2 is_stmt 1 view .LVU55
+ 176              		.loc 1 1176 17 is_stmt 0 view .LVU56
+ 177 00c2 D4E90030 		ldrd	r3, r0, [r4]
+ 178              		.loc 1 1176 2 view .LVU57
+ 179 00c6 9B68     		ldr	r3, [r3, #8]
+ 180 00c8 00F51270 		add	r0, r0, #584
+ 181 00cc 9847     		blx	r3
+ 182              	.LVL17:
+1177:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI2_SCK);
+ 183              		.loc 1 1177 2 is_stmt 1 view .LVU58
+ 184              		.loc 1 1177 17 is_stmt 0 view .LVU59
+ 185 00ce D4E90030 		ldrd	r3, r0, [r4]
+ 186              		.loc 1 1177 2 view .LVU60
+ 187 00d2 9B68     		ldr	r3, [r3, #8]
+ 188 00d4 00F51A70 		add	r0, r0, #616
+ 189 00d8 9847     		blx	r3
+ 190              	.LVL18:
+1178:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI2_SDO);
+ 191              		.loc 1 1178 2 is_stmt 1 view .LVU61
+ 192              		.loc 1 1178 17 is_stmt 0 view .LVU62
+ 193 00da D4E90030 		ldrd	r3, r0, [r4]
+ 194              		.loc 1 1178 2 view .LVU63
+ 195 00de 9B68     		ldr	r3, [r3, #8]
+ 196 00e0 00F52270 		add	r0, r0, #648
+ 197 00e4 9847     		blx	r3
+ 198              	.LVL19:
+1179:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI2_SDI);
+ 199              		.loc 1 1179 2 is_stmt 1 view .LVU64
+ 200              		.loc 1 1179 17 is_stmt 0 view .LVU65
+ 201 00e6 D4E90030 		ldrd	r3, r0, [r4]
+ 202              		.loc 1 1179 2 view .LVU66
+ 203 00ea 9B68     		ldr	r3, [r3, #8]
+ 204 00ec 00F52A70 		add	r0, r0, #680
+ 205 00f0 9847     		blx	r3
+ 206              	.LVL20:
+1180:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI1_CSN);
+ 207              		.loc 1 1180 2 is_stmt 1 view .LVU67
+ 208              		.loc 1 1180 17 is_stmt 0 view .LVU68
+ 209 00f2 D4E90030 		ldrd	r3, r0, [r4]
+ 210              		.loc 1 1180 2 view .LVU69
+ 211 00f6 9B68     		ldr	r3, [r3, #8]
+ 212 00f8 00F53270 		add	r0, r0, #712
+ 213 00fc 9847     		blx	r3
+ 214              	.LVL21:
+1181:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI1_SCK);
+ 215              		.loc 1 1181 2 is_stmt 1 view .LVU70
+ 216              		.loc 1 1181 17 is_stmt 0 view .LVU71
+ 217 00fe D4E90030 		ldrd	r3, r0, [r4]
+ 218              		.loc 1 1181 2 view .LVU72
+ 219 0102 9B68     		ldr	r3, [r3, #8]
+ 220 0104 00F53A70 		add	r0, r0, #744
+ 221 0108 9847     		blx	r3
+ 222              	.LVL22:
+1182:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI1_SDI);
+ 223              		.loc 1 1182 2 is_stmt 1 view .LVU73
+ 224              		.loc 1 1182 17 is_stmt 0 view .LVU74
+ 225 010a D4E90030 		ldrd	r3, r0, [r4]
+ 226              		.loc 1 1182 2 view .LVU75
+ 227 010e 9B68     		ldr	r3, [r3, #8]
+ 228 0110 00F54270 		add	r0, r0, #776
+ 229 0114 9847     		blx	r3
+ 230              	.LVL23:
+1183:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->SPI1_SDO);
+ 231              		.loc 1 1183 2 is_stmt 1 view .LVU76
+ 232              		.loc 1 1183 17 is_stmt 0 view .LVU77
+ 233 0116 D4E90030 		ldrd	r3, r0, [r4]
+ 234              		.loc 1 1183 2 view .LVU78
+ 235 011a 9B68     		ldr	r3, [r3, #8]
+ 236 011c 00F54A70 		add	r0, r0, #808
+ 237 0120 9847     		blx	r3
+ 238              	.LVL24:
+1184:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->DIO12);
+ 239              		.loc 1 1184 2 is_stmt 1 view .LVU79
+ 240              		.loc 1 1184 17 is_stmt 0 view .LVU80
+ 241 0122 D4E90030 		ldrd	r3, r0, [r4]
+ 242              		.loc 1 1184 2 view .LVU81
+ 243 0126 9B68     		ldr	r3, [r3, #8]
+ 244 0128 00F55270 		add	r0, r0, #840
+ 245 012c 9847     		blx	r3
+ 246              	.LVL25:
+1185:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->DIO13);
+ 247              		.loc 1 1185 2 is_stmt 1 view .LVU82
+ 248              		.loc 1 1185 17 is_stmt 0 view .LVU83
+ 249 012e D4E90030 		ldrd	r3, r0, [r4]
+ 250              		.loc 1 1185 2 view .LVU84
+ 251 0132 9B68     		ldr	r3, [r3, #8]
+ 252 0134 00F55A70 		add	r0, r0, #872
+ 253 0138 9847     		blx	r3
+ 254              	.LVL26:
+1186:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->DIO14);
+ 255              		.loc 1 1186 2 is_stmt 1 view .LVU85
+ 256              		.loc 1 1186 17 is_stmt 0 view .LVU86
+ 257 013a D4E90030 		ldrd	r3, r0, [r4]
+ 258              		.loc 1 1186 2 view .LVU87
+ 259 013e 9B68     		ldr	r3, [r3, #8]
+ 260 0140 00F56270 		add	r0, r0, #904
+ 261 0144 9847     		blx	r3
+ 262              	.LVL27:
+1187:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->DIO15);
+ 263              		.loc 1 1187 2 is_stmt 1 view .LVU88
+ 264              		.loc 1 1187 17 is_stmt 0 view .LVU89
+ 265 0146 D4E90030 		ldrd	r3, r0, [r4]
+ 266              		.loc 1 1187 2 view .LVU90
+ 267 014a 9B68     		ldr	r3, [r3, #8]
+ 268 014c 00F56A70 		add	r0, r0, #936
+ 269 0150 9847     		blx	r3
+ 270              	.LVL28:
+1188:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->DIO16);
+ 271              		.loc 1 1188 2 is_stmt 1 view .LVU91
+ 272              		.loc 1 1188 17 is_stmt 0 view .LVU92
+ 273 0152 D4E90030 		ldrd	r3, r0, [r4]
+ 274              		.loc 1 1188 2 view .LVU93
+ 275 0156 9B68     		ldr	r3, [r3, #8]
+ 276 0158 00F57270 		add	r0, r0, #968
+ 277 015c 9847     		blx	r3
+ 278              	.LVL29:
+1189:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->DIO17);
+ 279              		.loc 1 1189 2 is_stmt 1 view .LVU94
+ 280              		.loc 1 1189 17 is_stmt 0 view .LVU95
+ 281 015e D4E90030 		ldrd	r3, r0, [r4]
+ 282              		.loc 1 1189 2 view .LVU96
+ 283 0162 9B68     		ldr	r3, [r3, #8]
+ 284 0164 00F57A70 		add	r0, r0, #1000
+ 285 0168 9847     		blx	r3
+ 286              	.LVL30:
+1190:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->DIO18);
+ 287              		.loc 1 1190 2 is_stmt 1 view .LVU97
+ 288              		.loc 1 1190 17 is_stmt 0 view .LVU98
+ 289 016a D4E90030 		ldrd	r3, r0, [r4]
+ 290              		.loc 1 1190 2 view .LVU99
+ 291 016e 9B68     		ldr	r3, [r3, #8]
+ 292 0170 00F58160 		add	r0, r0, #1032
+ 293 0174 9847     		blx	r3
+ 294              	.LVL31:
+1191:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->DIO19);
+ 295              		.loc 1 1191 2 is_stmt 1 view .LVU100
+ 296              		.loc 1 1191 17 is_stmt 0 view .LVU101
+ 297 0176 D4E90030 		ldrd	r3, r0, [r4]
+ 298              		.loc 1 1191 2 view .LVU102
+ 299 017a 9B68     		ldr	r3, [r3, #8]
+ 300 017c 00F58560 		add	r0, r0, #1064
+ 301 0180 9847     		blx	r3
+ 302              	.LVL32:
+1192:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->WIRELESS_TX);
+ 303              		.loc 1 1192 2 is_stmt 1 view .LVU103
+ 304              		.loc 1 1192 17 is_stmt 0 view .LVU104
+ 305 0182 D4E90030 		ldrd	r3, r0, [r4]
+ 306              		.loc 1 1192 2 view .LVU105
+ 307 0186 9B68     		ldr	r3, [r3, #8]
+ 308 0188 00F58960 		add	r0, r0, #1096
+ 309 018c 9847     		blx	r3
+ 310              	.LVL33:
+1193:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->WIRELESS_RX);
+ 311              		.loc 1 1193 2 is_stmt 1 view .LVU106
+ 312              		.loc 1 1193 17 is_stmt 0 view .LVU107
+ 313 018e D4E90030 		ldrd	r3, r0, [r4]
+ 314              		.loc 1 1193 2 view .LVU108
+ 315 0192 9B68     		ldr	r3, [r3, #8]
+ 316 0194 00F58D60 		add	r0, r0, #1128
+ 317 0198 9847     		blx	r3
+ 318              	.LVL34:
+1194:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->WIRELESS_NRST);
+ 319              		.loc 1 1194 2 is_stmt 1 view .LVU109
+ 320              		.loc 1 1194 17 is_stmt 0 view .LVU110
+ 321 019a D4E90030 		ldrd	r3, r0, [r4]
+ 322              		.loc 1 1194 2 view .LVU111
+ 323 019e 9B68     		ldr	r3, [r3, #8]
+ 324 01a0 00F59160 		add	r0, r0, #1160
+ 325 01a4 9847     		blx	r3
+ 326              	.LVL35:
+1195:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->RS232_TX);
+ 327              		.loc 1 1195 2 is_stmt 1 view .LVU112
+ 328              		.loc 1 1195 17 is_stmt 0 view .LVU113
+ 329 01a6 D4E90030 		ldrd	r3, r0, [r4]
+ 330              		.loc 1 1195 2 view .LVU114
+ 331 01aa 9B68     		ldr	r3, [r3, #8]
+ 332 01ac 00F59560 		add	r0, r0, #1192
+ 333 01b0 9847     		blx	r3
+ 334              	.LVL36:
+1196:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->RS232_RX);
+ 335              		.loc 1 1196 2 is_stmt 1 view .LVU115
+ 336              		.loc 1 1196 17 is_stmt 0 view .LVU116
+ 337 01b2 D4E90030 		ldrd	r3, r0, [r4]
+ 338              		.loc 1 1196 2 view .LVU117
+ 339 01b6 9B68     		ldr	r3, [r3, #8]
+ 340 01b8 00F59960 		add	r0, r0, #1224
+ 341 01bc 9847     		blx	r3
+ 342              	.LVL37:
+1197:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->USB_V_BUS);
+ 343              		.loc 1 1197 2 is_stmt 1 view .LVU118
+ 344              		.loc 1 1197 17 is_stmt 0 view .LVU119
+ 345 01be D4E90030 		ldrd	r3, r0, [r4]
+ 346              		.loc 1 1197 2 view .LVU120
+ 347 01c2 9B68     		ldr	r3, [r3, #8]
+ 348 01c4 00F59D60 		add	r0, r0, #1256
+ 349 01c8 9847     		blx	r3
+ 350              	.LVL38:
+1198:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->LED_STAT);
+ 351              		.loc 1 1198 2 is_stmt 1 view .LVU121
+ 352              		.loc 1 1198 17 is_stmt 0 view .LVU122
+ 353 01ca D4E90030 		ldrd	r3, r0, [r4]
+ 354              		.loc 1 1198 2 view .LVU123
+ 355 01ce 9B68     		ldr	r3, [r3, #8]
+ 356 01d0 00F5A960 		add	r0, r0, #1352
+ 357 01d4 9847     		blx	r3
+ 358              	.LVL39:
+1199:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->LED_ERROR);
+ 359              		.loc 1 1199 2 is_stmt 1 view .LVU124
+ 360              		.loc 1 1199 17 is_stmt 0 view .LVU125
+ 361 01d6 D4E90030 		ldrd	r3, r0, [r4]
+ 362              		.loc 1 1199 2 view .LVU126
+ 363 01da 9B68     		ldr	r3, [r3, #8]
+ 364 01dc 00F5AD60 		add	r0, r0, #1384
+ 365 01e0 9847     		blx	r3
+ 366              	.LVL40:
+1200:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->EXTIO_2);
+ 367              		.loc 1 1200 2 is_stmt 1 view .LVU127
+ 368              		.loc 1 1200 17 is_stmt 0 view .LVU128
+ 369 01e2 D4E90030 		ldrd	r3, r0, [r4]
+ 370              		.loc 1 1200 2 view .LVU129
+ 371 01e6 9B68     		ldr	r3, [r3, #8]
+ 372 01e8 00F5B160 		add	r0, r0, #1416
+ 373 01ec 9847     		blx	r3
+ 374              	.LVL41:
+1201:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->EXTIO_3);
+ 375              		.loc 1 1201 2 is_stmt 1 view .LVU130
+ 376              		.loc 1 1201 17 is_stmt 0 view .LVU131
+ 377 01ee D4E90030 		ldrd	r3, r0, [r4]
+ 378              		.loc 1 1201 2 view .LVU132
+ 379 01f2 9B68     		ldr	r3, [r3, #8]
+ 380 01f4 00F5B560 		add	r0, r0, #1448
+ 381 01f8 9847     		blx	r3
+ 382              	.LVL42:
+1202:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->EXTIO_4);
+ 383              		.loc 1 1202 2 is_stmt 1 view .LVU133
+ 384              		.loc 1 1202 17 is_stmt 0 view .LVU134
+ 385 01fa D4E90030 		ldrd	r3, r0, [r4]
+ 386              		.loc 1 1202 2 view .LVU135
+ 387 01fe 9B68     		ldr	r3, [r3, #8]
+ 388 0200 00F5B960 		add	r0, r0, #1480
+ 389 0204 9847     		blx	r3
+ 390              	.LVL43:
+1203:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->EXTIO_5);
+ 391              		.loc 1 1203 2 is_stmt 1 view .LVU136
+ 392              		.loc 1 1203 17 is_stmt 0 view .LVU137
+ 393 0206 D4E90030 		ldrd	r3, r0, [r4]
+ 394              		.loc 1 1203 2 view .LVU138
+ 395 020a 9B68     		ldr	r3, [r3, #8]
+ 396 020c 00F5BD60 		add	r0, r0, #1512
+ 397 0210 9847     		blx	r3
+ 398              	.LVL44:
+1204:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->EEPROM_SCK);
+ 399              		.loc 1 1204 2 is_stmt 1 view .LVU139
+ 400              		.loc 1 1204 17 is_stmt 0 view .LVU140
+ 401 0212 D4E90030 		ldrd	r3, r0, [r4]
+ 402              		.loc 1 1204 2 view .LVU141
+ 403 0216 9B68     		ldr	r3, [r3, #8]
+ 404 0218 00F5C960 		add	r0, r0, #1608
+ 405 021c 9847     		blx	r3
+ 406              	.LVL45:
+1205:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->EEPROM_SI);
+ 407              		.loc 1 1205 2 is_stmt 1 view .LVU142
+ 408              		.loc 1 1205 17 is_stmt 0 view .LVU143
+ 409 021e D4E90030 		ldrd	r3, r0, [r4]
+ 410              		.loc 1 1205 2 view .LVU144
+ 411 0222 9B68     		ldr	r3, [r3, #8]
+ 412 0224 00F5CD60 		add	r0, r0, #1640
+ 413 0228 9847     		blx	r3
+ 414              	.LVL46:
+1206:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->EEPROM_SO);
+ 415              		.loc 1 1206 2 is_stmt 1 view .LVU145
+ 416              		.loc 1 1206 17 is_stmt 0 view .LVU146
+ 417 022a D4E90030 		ldrd	r3, r0, [r4]
+ 418              		.loc 1 1206 2 view .LVU147
+ 419 022e 9B68     		ldr	r3, [r3, #8]
+ 420 0230 00F5D160 		add	r0, r0, #1672
+ 421 0234 9847     		blx	r3
+ 422              	.LVL47:
+1207:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->EEPROM_NCS);
+ 423              		.loc 1 1207 2 is_stmt 1 view .LVU148
+ 424              		.loc 1 1207 17 is_stmt 0 view .LVU149
+ 425 0236 D4E90030 		ldrd	r3, r0, [r4]
+ 426              		.loc 1 1207 2 view .LVU150
+ 427 023a 9B68     		ldr	r3, [r3, #8]
+ 428 023c 00F5D560 		add	r0, r0, #1704
+ 429 0240 9847     		blx	r3
+ 430              	.LVL48:
+1208:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->CLK16);
+ 431              		.loc 1 1208 2 is_stmt 1 view .LVU151
+ 432              		.loc 1 1208 17 is_stmt 0 view .LVU152
+ 433 0242 D4E90030 		ldrd	r3, r0, [r4]
+ 434              		.loc 1 1208 2 view .LVU153
+ 435 0246 9B68     		ldr	r3, [r3, #8]
+ 436 0248 00F5F470 		add	r0, r0, #488
+ 437 024c 9847     		blx	r3
+ 438              	.LVL49:
+1209:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->MIXED0);
+ 439              		.loc 1 1209 2 is_stmt 1 view .LVU154
+ 440              		.loc 1 1209 17 is_stmt 0 view .LVU155
+ 441 024e D4E90030 		ldrd	r3, r0, [r4]
+ 442              		.loc 1 1209 2 view .LVU156
+ 443 0252 9B68     		ldr	r3, [r3, #8]
+ 444 0254 00F5D960 		add	r0, r0, #1736
+ 445 0258 9847     		blx	r3
+ 446              	.LVL50:
+1210:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->MIXED1);
+ 447              		.loc 1 1210 2 is_stmt 1 view .LVU157
+ 448              		.loc 1 1210 17 is_stmt 0 view .LVU158
+ 449 025a D4E90030 		ldrd	r3, r0, [r4]
+ 450              		.loc 1 1210 2 view .LVU159
+ 451 025e 9B68     		ldr	r3, [r3, #8]
+ 452 0260 00F5DD60 		add	r0, r0, #1768
+ 453 0264 9847     		blx	r3
+ 454              	.LVL51:
+1211:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->MIXED2);
+ 455              		.loc 1 1211 2 is_stmt 1 view .LVU160
+ 456              		.loc 1 1211 17 is_stmt 0 view .LVU161
+ 457 0266 D4E90030 		ldrd	r3, r0, [r4]
+ 458              		.loc 1 1211 2 view .LVU162
+ 459 026a 9B68     		ldr	r3, [r3, #8]
+ 460 026c 00F5E160 		add	r0, r0, #1800
+ 461 0270 9847     		blx	r3
+ 462              	.LVL52:
+1212:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->MIXED3);
+ 463              		.loc 1 1212 2 is_stmt 1 view .LVU163
+ 464              		.loc 1 1212 17 is_stmt 0 view .LVU164
+ 465 0272 D4E90030 		ldrd	r3, r0, [r4]
+ 466              		.loc 1 1212 2 view .LVU165
+ 467 0276 9B68     		ldr	r3, [r3, #8]
+ 468 0278 00F5E560 		add	r0, r0, #1832
+ 469 027c 9847     		blx	r3
+ 470              	.LVL53:
+1213:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->MIXED4);
+ 471              		.loc 1 1213 2 is_stmt 1 view .LVU166
+ 472              		.loc 1 1213 17 is_stmt 0 view .LVU167
+ 473 027e D4E90030 		ldrd	r3, r0, [r4]
+ 474              		.loc 1 1213 2 view .LVU168
+ 475 0282 9B68     		ldr	r3, [r3, #8]
+ 476 0284 00F5E960 		add	r0, r0, #1864
+ 477 0288 9847     		blx	r3
+ 478              	.LVL54:
+1214:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->MIXED5);
+ 479              		.loc 1 1214 2 is_stmt 1 view .LVU169
+ 480              		.loc 1 1214 17 is_stmt 0 view .LVU170
+ 481 028a D4E90030 		ldrd	r3, r0, [r4]
+ 482              		.loc 1 1214 2 view .LVU171
+ 483 028e 9B68     		ldr	r3, [r3, #8]
+ 484 0290 00F5ED60 		add	r0, r0, #1896
+ 485 0294 9847     		blx	r3
+ 486              	.LVL55:
+1215:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->MIXED6);
+ 487              		.loc 1 1215 2 is_stmt 1 view .LVU172
+ 488              		.loc 1 1215 17 is_stmt 0 view .LVU173
+ 489 0296 D4E90030 		ldrd	r3, r0, [r4]
+ 490              		.loc 1 1215 2 view .LVU174
+ 491 029a 9B68     		ldr	r3, [r3, #8]
+ 492 029c 00F5F160 		add	r0, r0, #1928
+ 493 02a0 9847     		blx	r3
+ 494              	.LVL56:
+1216:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->ID_HW_0);
+ 495              		.loc 1 1216 2 is_stmt 1 view .LVU175
+ 496              		.loc 1 1216 17 is_stmt 0 view .LVU176
+ 497 02a2 D4E90030 		ldrd	r3, r0, [r4]
+ 498              		.loc 1 1216 2 view .LVU177
+ 499 02a6 9B68     		ldr	r3, [r3, #8]
+ 500 02a8 00F5F560 		add	r0, r0, #1960
+ 501 02ac 9847     		blx	r3
+ 502              	.LVL57:
+1217:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->ID_HW_1);
+ 503              		.loc 1 1217 2 is_stmt 1 view .LVU178
+ 504              		.loc 1 1217 17 is_stmt 0 view .LVU179
+ 505 02ae D4E90030 		ldrd	r3, r0, [r4]
+ 506              		.loc 1 1217 2 view .LVU180
+ 507 02b2 9B68     		ldr	r3, [r3, #8]
+ 508 02b4 00F5F960 		add	r0, r0, #1992
+ 509 02b8 9847     		blx	r3
+ 510              	.LVL58:
+1218:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->ID_HW_2);
+ 511              		.loc 1 1218 2 is_stmt 1 view .LVU181
+ 512              		.loc 1 1218 17 is_stmt 0 view .LVU182
+ 513 02ba D4E90030 		ldrd	r3, r0, [r4]
+1219:hal/Landungsbruecke/tmc/IOMap.c **** }
+ 514              		.loc 1 1219 1 view .LVU183
+ 515 02be BDE81040 		pop	{r4, lr}
+ 516              	.LCFI1:
+ 517              		.cfi_restore 14
+ 518              		.cfi_restore 4
+ 519              		.cfi_def_cfa_offset 0
+1218:hal/Landungsbruecke/tmc/IOMap.c **** 	HAL.IOs->config->reset(&HAL.IOs->pins->ID_HW_2);
+ 520              		.loc 1 1218 2 view .LVU184
+ 521 02c2 9B68     		ldr	r3, [r3, #8]
+ 522 02c4 00F5FD60 		add	r0, r0, #2024
+ 523 02c8 1847     		bx	r3	@ indirect register sibling call
+ 524              	.LVL59:
+ 525              	.L3:
+ 526 02ca 00BF     		.align	2
+ 527              	.L2:
+ 528 02cc 00000000 		.word	HAL
+ 529              		.cfi_endproc
+ 530              	.LFE0:
+ 532              		.comm	hwid,1,1
+ 533              		.comm	HAL,48,4
+ 534              		.comm	UART,40,4
+ 535              		.comm	Timer,16,4
+ 536              		.comm	WLAN,36,4
+ 537              		.comm	RS232,36,4
+ 538              		.comm	LEDs,28,4
+ 539              		.comm	USB,36,4
+ 540              		.comm	uart0_interrupt,1,1
+ 541              		.comm	ADCs,32,4
+ 542              		.comm	SPI,44,4
+ 543              		.global	IOMap
+ 544              		.comm	IOs,52,4
+ 545              		.comm	Cpu,8,4
+ 546              		.data
+ 547              		.align	2
+ 550              	_pins:
+ 551 0000 08000000 		.word	IOMap+8
+ 552 0004 28000000 		.word	IOMap+40
+ 553 0008 48000000 		.word	IOMap+72
+ 554 000c 68000000 		.word	IOMap+104
+ 555 0010 88000000 		.word	IOMap+136
+ 556 0014 A8000000 		.word	IOMap+168
+ 557 0018 C8000000 		.word	IOMap+200
+ 558 001c E8000000 		.word	IOMap+232
+ 559 0020 08010000 		.word	IOMap+264
+ 560 0024 28010000 		.word	IOMap+296
+ 561 0028 48010000 		.word	IOMap+328
+ 562 002c 68010000 		.word	IOMap+360
+ 563 0030 88010000 		.word	IOMap+392
+ 564 0034 A8010000 		.word	IOMap+424
+ 565 0038 C8010000 		.word	IOMap+456
+ 566 003c E8010000 		.word	IOMap+488
+ 567 0040 08020000 		.word	IOMap+520
+ 568 0044 28020000 		.word	IOMap+552
+ 569 0048 48020000 		.word	IOMap+584
+ 570 004c 68020000 		.word	IOMap+616
+ 571 0050 88020000 		.word	IOMap+648
+ 572 0054 A8020000 		.word	IOMap+680
+ 573 0058 C8020000 		.word	IOMap+712
+ 574 005c E8020000 		.word	IOMap+744
+ 575 0060 08030000 		.word	IOMap+776
+ 576 0064 28030000 		.word	IOMap+808
+ 577 0068 48030000 		.word	IOMap+840
+ 578 006c 68030000 		.word	IOMap+872
+ 579 0070 88030000 		.word	IOMap+904
+ 580 0074 A8030000 		.word	IOMap+936
+ 581 0078 C8030000 		.word	IOMap+968
+ 582 007c E8030000 		.word	IOMap+1000
+ 583 0080 08040000 		.word	IOMap+1032
+ 584 0084 28040000 		.word	IOMap+1064
+ 585 0088 48040000 		.word	IOMap+1096
+ 586 008c 68040000 		.word	IOMap+1128
+ 587 0090 88040000 		.word	IOMap+1160
+ 588 0094 A8040000 		.word	IOMap+1192
+ 589 0098 C8040000 		.word	IOMap+1224
+ 590 009c E8040000 		.word	IOMap+1256
+ 591 00a0 08050000 		.word	IOMap+1288
+ 592 00a4 28050000 		.word	IOMap+1320
+ 593 00a8 48050000 		.word	IOMap+1352
+ 594 00ac 68050000 		.word	IOMap+1384
+ 595 00b0 88050000 		.word	IOMap+1416
+ 596 00b4 A8050000 		.word	IOMap+1448
+ 597 00b8 C8050000 		.word	IOMap+1480
+ 598 00bc E8050000 		.word	IOMap+1512
+ 599 00c0 08060000 		.word	IOMap+1544
+ 600 00c4 28060000 		.word	IOMap+1576
+ 601 00c8 48060000 		.word	IOMap+1608
+ 602 00cc 68060000 		.word	IOMap+1640
+ 603 00d0 88060000 		.word	IOMap+1672
+ 604 00d4 A8060000 		.word	IOMap+1704
+ 605 00d8 C8060000 		.word	IOMap+1736
+ 606 00dc E8060000 		.word	IOMap+1768
+ 607 00e0 08070000 		.word	IOMap+1800
+ 608 00e4 28070000 		.word	IOMap+1832
+ 609 00e8 48070000 		.word	IOMap+1864
+ 610 00ec 68070000 		.word	IOMap+1896
+ 611 00f0 88070000 		.word	IOMap+1928
+ 612 00f4 A8070000 		.word	IOMap+1960
+ 613 00f8 C8070000 		.word	IOMap+1992
+ 614 00fc E8070000 		.word	IOMap+2024
+ 615 0100 08080000 		.word	IOMap+2056
+ 618              	IOMap:
+ 619 0104 00000000 		.word	init
+ 620 0108 00000000 		.word	_pins
+ 621 010c 00A00440 		.word	1074044928
+ 622 0110 40F00F40 		.word	1074786368
+ 623 0114 44F00F40 		.word	1074786372
+ 624 0118 48F00F40 		.word	1074786376
+ 625 011c 00001000 		.word	1048576
+ 626 0120 14       		.byte	20
+ 627 0121 00000000 		.space	4
+ 628 0125 00       		.byte	0
+ 629 0126 02       		.byte	2
+ 630 0127 00       		.byte	0
+ 631 0128 00       		.byte	0
+ 632 0129 000000   		.space	3
+ 633 012c 00A00440 		.word	1074044928
+ 634 0130 40F00F40 		.word	1074786368
+ 635 0134 44F00F40 		.word	1074786372
+ 636 0138 48F00F40 		.word	1074786376
+ 637 013c 00000400 		.word	262144
+ 638 0140 12       		.byte	18
+ 639 0141 00000000 		.space	4
+ 640 0145 00       		.byte	0
+ 641 0146 02       		.byte	2
+ 642 0147 00       		.byte	0
+ 643 0148 00       		.byte	0
+ 644 0149 000000   		.space	3
+ 645 014c 00A00440 		.word	1074044928
+ 646 0150 40F00F40 		.word	1074786368
+ 647 0154 44F00F40 		.word	1074786372
+ 648 0158 48F00F40 		.word	1074786376
+ 649 015c 00000800 		.word	524288
+ 650 0160 13       		.byte	19
+ 651 0161 00000000 		.space	4
+ 652 0165 00       		.byte	0
+ 653 0166 02       		.byte	2
+ 654 0167 00       		.byte	0
+ 655 0168 00       		.byte	0
+ 656 0169 000000   		.space	3
+ 657 016c 00900440 		.word	1074040832
+ 658 0170 00F00F40 		.word	1074786304
+ 659 0174 04F00F40 		.word	1074786308
+ 660 0178 08F00F40 		.word	1074786312
+ 661 017c 00100000 		.word	4096
+ 662 0180 0C       		.byte	12
+ 663 0181 00000000 		.space	4
+ 664 0185 00       		.byte	0
+ 665 0186 02       		.byte	2
+ 666 0187 00       		.byte	0
+ 667 0188 00       		.byte	0
+ 668 0189 000000   		.space	3
+ 669 018c 00900440 		.word	1074040832
+ 670 0190 00F00F40 		.word	1074786304
+ 671 0194 04F00F40 		.word	1074786308
+ 672 0198 08F00F40 		.word	1074786312
+ 673 019c 00200000 		.word	8192
+ 674 01a0 0D       		.byte	13
+ 675 01a1 00000000 		.space	4
+ 676 01a5 00       		.byte	0
+ 677 01a6 02       		.byte	2
+ 678 01a7 00       		.byte	0
+ 679 01a8 00       		.byte	0
+ 680 01a9 000000   		.space	3
+ 681 01ac 00A00440 		.word	1074044928
+ 682 01b0 40F00F40 		.word	1074786368
+ 683 01b4 44F00F40 		.word	1074786372
+ 684 01b8 48F00F40 		.word	1074786376
+ 685 01bc 01000000 		.word	1
+ 686 01c0 00       		.byte	0
+ 687 01c1 00000000 		.space	4
+ 688 01c5 00       		.byte	0
+ 689 01c6 02       		.byte	2
+ 690 01c7 00       		.byte	0
+ 691 01c8 00       		.byte	0
+ 692 01c9 000000   		.space	3
+ 693 01cc 00A00440 		.word	1074044928
+ 694 01d0 40F00F40 		.word	1074786368
+ 695 01d4 44F00F40 		.word	1074786372
+ 696 01d8 48F00F40 		.word	1074786376
+ 697 01dc 02000000 		.word	2
+ 698 01e0 01       		.byte	1
+ 699 01e1 00000000 		.space	4
+ 700 01e5 00       		.byte	0
+ 701 01e6 02       		.byte	2
+ 702 01e7 00       		.byte	0
+ 703 01e8 00       		.byte	0
+ 704 01e9 000000   		.space	3
+ 705 01ec 00A00440 		.word	1074044928
+ 706 01f0 40F00F40 		.word	1074786368
+ 707 01f4 44F00F40 		.word	1074786372
+ 708 01f8 48F00F40 		.word	1074786376
+ 709 01fc 04000000 		.word	4
+ 710 0200 02       		.byte	2
+ 711 0201 00000000 		.space	4
+ 712 0205 00       		.byte	0
+ 713 0206 02       		.byte	2
+ 714 0207 00       		.byte	0
+ 715 0208 00       		.byte	0
+ 716 0209 000000   		.space	3
+ 717 020c 00A00440 		.word	1074044928
+ 718 0210 40F00F40 		.word	1074786368
+ 719 0214 44F00F40 		.word	1074786372
+ 720 0218 48F00F40 		.word	1074786376
+ 721 021c 08000000 		.word	8
+ 722 0220 03       		.byte	3
+ 723 0221 00000000 		.space	4
+ 724 0225 00       		.byte	0
+ 725 0226 02       		.byte	2
+ 726 0227 00       		.byte	0
+ 727 0228 00       		.byte	0
+ 728 0229 000000   		.space	3
+ 729 022c 00B00440 		.word	1074049024
+ 730 0230 80F00F40 		.word	1074786432
+ 731 0234 84F00F40 		.word	1074786436
+ 732 0238 88F00F40 		.word	1074786440
+ 733 023c 04000000 		.word	4
+ 734 0240 02       		.byte	2
+ 735 0241 00000000 		.space	4
+ 736 0245 00       		.byte	0
+ 737 0246 02       		.byte	2
+ 738 0247 00       		.byte	0
+ 739 0248 00       		.byte	0
+ 740 0249 000000   		.space	3
+ 741 024c 00B00440 		.word	1074049024
+ 742 0250 80F00F40 		.word	1074786432
+ 743 0254 84F00F40 		.word	1074786436
+ 744 0258 88F00F40 		.word	1074786440
+ 745 025c 02000000 		.word	2
+ 746 0260 01       		.byte	1
+ 747 0261 00000000 		.space	4
+ 748 0265 00       		.byte	0
+ 749 0266 02       		.byte	2
+ 750 0267 00       		.byte	0
+ 751 0268 00       		.byte	0
+ 752 0269 000000   		.space	3
+ 753 026c 00C00440 		.word	1074053120
+ 754 0270 C0F00F40 		.word	1074786496
+ 755 0274 C4F00F40 		.word	1074786500
+ 756 0278 C8F00F40 		.word	1074786504
+ 757 027c 20000000 		.word	32
+ 758 0280 05       		.byte	5
+ 759 0281 00000000 		.space	4
+ 760 0285 00       		.byte	0
+ 761 0286 02       		.byte	2
+ 762 0287 00       		.byte	0
+ 763 0288 00       		.byte	0
+ 764 0289 000000   		.space	3
+ 765 028c 00C00440 		.word	1074053120
+ 766 0290 C0F00F40 		.word	1074786496
+ 767 0294 C4F00F40 		.word	1074786500
+ 768 0298 C8F00F40 		.word	1074786504
+ 769 029c 10000000 		.word	16
+ 770 02a0 04       		.byte	4
+ 771 02a1 00000000 		.space	4
+ 772 02a5 00       		.byte	0
+ 773 02a6 02       		.byte	2
+ 774 02a7 00       		.byte	0
+ 775 02a8 00       		.byte	0
+ 776 02a9 000000   		.space	3
+ 777 02ac 00C00440 		.word	1074053120
+ 778 02b0 C0F00F40 		.word	1074786496
+ 779 02b4 C4F00F40 		.word	1074786500
+ 780 02b8 C8F00F40 		.word	1074786504
+ 781 02bc 80000000 		.word	128
+ 782 02c0 07       		.byte	7
+ 783 02c1 00000000 		.space	4
+ 784 02c5 00       		.byte	0
+ 785 02c6 02       		.byte	2
+ 786 02c7 00       		.byte	0
+ 787 02c8 00       		.byte	0
+ 788 02c9 000000   		.space	3
+ 789 02cc 00C00440 		.word	1074053120
+ 790 02d0 C0F00F40 		.word	1074786496
+ 791 02d4 C4F00F40 		.word	1074786500
+ 792 02d8 C8F00F40 		.word	1074786504
+ 793 02dc 40000000 		.word	64
+ 794 02e0 06       		.byte	6
+ 795 02e1 00000000 		.space	4
+ 796 02e5 00       		.byte	0
+ 797 02e6 02       		.byte	2
+ 798 02e7 00       		.byte	0
+ 799 02e8 00       		.byte	0
+ 800 02e9 000000   		.space	3
+ 801 02ec 00B00440 		.word	1074049024
+ 802 02f0 80F00F40 		.word	1074786432
+ 803 02f4 84F00F40 		.word	1074786436
+ 804 02f8 88F00F40 		.word	1074786440
+ 805 02fc 08000000 		.word	8
+ 806 0300 03       		.byte	3
+ 807 0301 00000000 		.space	4
+ 808 0305 05       		.byte	5
+ 809 0306 02       		.byte	2
+ 810 0307 00       		.byte	0
+ 811 0308 00       		.byte	0
+ 812 0309 000000   		.space	3
+ 813 030c 00B00440 		.word	1074049024
+ 814 0310 80F00F40 		.word	1074786432
+ 815 0314 84F00F40 		.word	1074786436
+ 816 0318 88F00F40 		.word	1074786440
+ 817 031c 01000000 		.word	1
+ 818 0320 00       		.byte	0
+ 819 0321 00000000 		.space	4
+ 820 0325 00       		.byte	0
+ 821 0326 02       		.byte	2
+ 822 0327 00       		.byte	0
+ 823 0328 00       		.byte	0
+ 824 0329 000000   		.space	3
+ 825 032c 00900440 		.word	1074040832
+ 826 0330 00F00F40 		.word	1074786304
+ 827 0334 04F00F40 		.word	1074786308
+ 828 0338 08F00F40 		.word	1074786312
+ 829 033c 20000000 		.word	32
+ 830 0340 05       		.byte	5
+ 831 0341 00000000 		.space	4
+ 832 0345 00       		.byte	0
+ 833 0346 02       		.byte	2
+ 834 0347 00       		.byte	0
+ 835 0348 00       		.byte	0
+ 836 0349 000000   		.space	3
+ 837 034c 00B00440 		.word	1074049024
+ 838 0350 80F00F40 		.word	1074786432
+ 839 0354 84F00F40 		.word	1074786436
+ 840 0358 88F00F40 		.word	1074786440
+ 841 035c 10000000 		.word	16
+ 842 0360 04       		.byte	4
+ 843 0361 00000000 		.space	4
+ 844 0365 00       		.byte	0
+ 845 0366 02       		.byte	2
+ 846 0367 00       		.byte	0
+ 847 0368 00       		.byte	0
+ 848 0369 000000   		.space	3
+ 849 036c 00A00440 		.word	1074044928
+ 850 0370 40F00F40 		.word	1074786368
+ 851 0374 44F00F40 		.word	1074786372
+ 852 0378 48F00F40 		.word	1074786376
+ 853 037c 00002000 		.word	2097152
+ 854 0380 15       		.byte	21
+ 855 0381 00000000 		.space	4
+ 856 0385 00       		.byte	0
+ 857 0386 02       		.byte	2
+ 858 0387 00       		.byte	0
+ 859 0388 00       		.byte	0
+ 860 0389 000000   		.space	3
+ 861 038c 00A00440 		.word	1074044928
+ 862 0390 40F00F40 		.word	1074786368
+ 863 0394 44F00F40 		.word	1074786372
+ 864 0398 48F00F40 		.word	1074786376
+ 865 039c 00008000 		.word	8388608
+ 866 03a0 17       		.byte	23
+ 867 03a1 00000000 		.space	4
+ 868 03a5 00       		.byte	0
+ 869 03a6 02       		.byte	2
+ 870 03a7 00       		.byte	0
+ 871 03a8 00       		.byte	0
+ 872 03a9 000000   		.space	3
+ 873 03ac 00A00440 		.word	1074044928
+ 874 03b0 40F00F40 		.word	1074786368
+ 875 03b4 44F00F40 		.word	1074786372
+ 876 03b8 48F00F40 		.word	1074786376
+ 877 03bc 00004000 		.word	4194304
+ 878 03c0 16       		.byte	22
+ 879 03c1 00000000 		.space	4
+ 880 03c5 00       		.byte	0
+ 881 03c6 02       		.byte	2
+ 882 03c7 00       		.byte	0
+ 883 03c8 00       		.byte	0
+ 884 03c9 000000   		.space	3
+ 885 03cc 00A00440 		.word	1074044928
+ 886 03d0 40F00F40 		.word	1074786368
+ 887 03d4 44F00F40 		.word	1074786372
+ 888 03d8 48F00F40 		.word	1074786376
+ 889 03dc 00040000 		.word	1024
+ 890 03e0 0A       		.byte	10
+ 891 03e1 00000000 		.space	4
+ 892 03e5 00       		.byte	0
+ 893 03e6 02       		.byte	2
+ 894 03e7 00       		.byte	0
+ 895 03e8 00       		.byte	0
+ 896 03e9 000000   		.space	3
+ 897 03ec 00A00440 		.word	1074044928
+ 898 03f0 40F00F40 		.word	1074786368
+ 899 03f4 44F00F40 		.word	1074786372
+ 900 03f8 48F00F40 		.word	1074786376
+ 901 03fc 00080000 		.word	2048
+ 902 0400 0B       		.byte	11
+ 903 0401 00000000 		.space	4
+ 904 0405 00       		.byte	0
+ 905 0406 02       		.byte	2
+ 906 0407 00       		.byte	0
+ 907 0408 00       		.byte	0
+ 908 0409 000000   		.space	3
+ 909 040c 00A00440 		.word	1074044928
+ 910 0410 40F00F40 		.word	1074786368
+ 911 0414 44F00F40 		.word	1074786372
+ 912 0418 48F00F40 		.word	1074786376
+ 913 041c 00000100 		.word	65536
+ 914 0420 10       		.byte	16
+ 915 0421 00000000 		.space	4
+ 916 0425 00       		.byte	0
+ 917 0426 02       		.byte	2
+ 918 0427 00       		.byte	0
+ 919 0428 00       		.byte	0
+ 920 0429 000000   		.space	3
+ 921 042c 00A00440 		.word	1074044928
+ 922 0430 40F00F40 		.word	1074786368
+ 923 0434 44F00F40 		.word	1074786372
+ 924 0438 48F00F40 		.word	1074786376
+ 925 043c 00000200 		.word	131072
+ 926 0440 11       		.byte	17
+ 927 0441 00000000 		.space	4
+ 928 0445 00       		.byte	0
+ 929 0446 02       		.byte	2
+ 930 0447 00       		.byte	0
+ 931 0448 00       		.byte	0
+ 932 0449 000000   		.space	3
+ 933 044c 00B00440 		.word	1074049024
+ 934 0450 80F00F40 		.word	1074786432
+ 935 0454 84F00F40 		.word	1074786436
+ 936 0458 88F00F40 		.word	1074786440
+ 937 045c 00000100 		.word	65536
+ 938 0460 10       		.byte	16
+ 939 0461 00000000 		.space	4
+ 940 0465 00       		.byte	0
+ 941 0466 02       		.byte	2
+ 942 0467 00       		.byte	0
+ 943 0468 00       		.byte	0
+ 944 0469 000000   		.space	3
+ 945 046c 00B00440 		.word	1074049024
+ 946 0470 80F00F40 		.word	1074786432
+ 947 0474 84F00F40 		.word	1074786436
+ 948 0478 88F00F40 		.word	1074786440
+ 949 047c 00000200 		.word	131072
+ 950 0480 11       		.byte	17
+ 951 0481 00000000 		.space	4
+ 952 0485 00       		.byte	0
+ 953 0486 02       		.byte	2
+ 954 0487 00       		.byte	0
+ 955 0488 00       		.byte	0
+ 956 0489 000000   		.space	3
+ 957 048c 00B00440 		.word	1074049024
+ 958 0490 80F00F40 		.word	1074786432
+ 959 0494 84F00F40 		.word	1074786436
+ 960 0498 88F00F40 		.word	1074786440
+ 961 049c 00000400 		.word	262144
+ 962 04a0 12       		.byte	18
+ 963 04a1 00000000 		.space	4
+ 964 04a5 00       		.byte	0
+ 965 04a6 02       		.byte	2
+ 966 04a7 00       		.byte	0
+ 967 04a8 00       		.byte	0
+ 968 04a9 000000   		.space	3
+ 969 04ac 00C00440 		.word	1074053120
+ 970 04b0 C0F00F40 		.word	1074786496
+ 971 04b4 C4F00F40 		.word	1074786500
+ 972 04b8 C8F00F40 		.word	1074786504
+ 973 04bc 02000000 		.word	2
+ 974 04c0 01       		.byte	1
+ 975 04c1 00000000 		.space	4
+ 976 04c5 00       		.byte	0
+ 977 04c6 02       		.byte	2
+ 978 04c7 00       		.byte	0
+ 979 04c8 00       		.byte	0
+ 980 04c9 000000   		.space	3
+ 981 04cc 00C00440 		.word	1074053120
+ 982 04d0 C0F00F40 		.word	1074786496
+ 983 04d4 C4F00F40 		.word	1074786500
+ 984 04d8 C8F00F40 		.word	1074786504
+ 985 04dc 01000000 		.word	1
+ 986 04e0 00       		.byte	0
+ 987 04e1 00000000 		.space	4
+ 988 04e5 00       		.byte	0
+ 989 04e6 02       		.byte	2
+ 990 04e7 00       		.byte	0
+ 991 04e8 00       		.byte	0
+ 992 04e9 000000   		.space	3
+ 993 04ec 00C00440 		.word	1074053120
+ 994 04f0 C0F00F40 		.word	1074786496
+ 995 04f4 C4F00F40 		.word	1074786500
+ 996 04f8 C8F00F40 		.word	1074786504
+ 997 04fc 08000000 		.word	8
+ 998 0500 03       		.byte	3
+ 999 0501 00000000 		.space	4
+ 1000 0505 00       		.byte	0
+ 1001 0506 02       		.byte	2
+ 1002 0507 00       		.byte	0
+ 1003 0508 00       		.byte	0
+ 1004 0509 000000   		.space	3
+ 1005 050c 00C00440 		.word	1074053120
+ 1006 0510 C0F00F40 		.word	1074786496
+ 1007 0514 C4F00F40 		.word	1074786500
+ 1008 0518 C8F00F40 		.word	1074786504
+ 1009 051c 04000000 		.word	4
+ 1010 0520 02       		.byte	2
+ 1011 0521 00000000 		.space	4
+ 1012 0525 00       		.byte	0
+ 1013 0526 02       		.byte	2
+ 1014 0527 00       		.byte	0
+ 1015 0528 00       		.byte	0
+ 1016 0529 000000   		.space	3
+ 1017 052c 00B00440 		.word	1074049024
+ 1018 0530 80F00F40 		.word	1074786432
+ 1019 0534 84F00F40 		.word	1074786436
+ 1020 0538 88F00F40 		.word	1074786440
+ 1021 053c 00800000 		.word	32768
+ 1022 0540 0F       		.byte	15
+ 1023 0541 00000000 		.space	4
+ 1024 0545 00       		.byte	0
+ 1025 0546 02       		.byte	2
+ 1026 0547 00       		.byte	0
+ 1027 0548 00       		.byte	0
+ 1028 0549 000000   		.space	3
+ 1029 054c 00900440 		.word	1074040832
+ 1030 0550 00F00F40 		.word	1074786304
+ 1031 0554 04F00F40 		.word	1074786308
+ 1032 0558 08F00F40 		.word	1074786312
+ 1033 055c 00400000 		.word	16384
+ 1034 0560 0E       		.byte	14
+ 1035 0561 00000000 		.space	4
+ 1036 0565 00       		.byte	0
+ 1037 0566 02       		.byte	2
+ 1038 0567 00       		.byte	0
+ 1039 0568 00       		.byte	0
+ 1040 0569 000000   		.space	3
+ 1041 056c 00900440 		.word	1074040832
+ 1042 0570 00F00F40 		.word	1074786304
+ 1043 0574 04F00F40 		.word	1074786308
+ 1044 0578 08F00F40 		.word	1074786312
+ 1045 057c 00800000 		.word	32768
+ 1046 0580 0F       		.byte	15
+ 1047 0581 00000000 		.space	4
+ 1048 0585 00       		.byte	0
+ 1049 0586 02       		.byte	2
+ 1050 0587 00       		.byte	0
+ 1051 0588 00       		.byte	0
+ 1052 0589 000000   		.space	3
+ 1053 058c 00900440 		.word	1074040832
+ 1054 0590 00F00F40 		.word	1074786304
+ 1055 0594 04F00F40 		.word	1074786308
+ 1056 0598 08F00F40 		.word	1074786312
+ 1057 059c 00000100 		.word	65536
+ 1058 05a0 10       		.byte	16
+ 1059 05a1 00000000 		.space	4
+ 1060 05a5 00       		.byte	0
+ 1061 05a6 02       		.byte	2
+ 1062 05a7 00       		.byte	0
+ 1063 05a8 00       		.byte	0
+ 1064 05a9 000000   		.space	3
+ 1065 05ac 00D00440 		.word	1074057216
+ 1066 05b0 00F10F40 		.word	1074786560
+ 1067 05b4 04F10F40 		.word	1074786564
+ 1068 05b8 08F10F40 		.word	1074786568
+ 1069 05bc 00000001 		.word	16777216
+ 1070 05c0 18       		.byte	24
+ 1071 05c1 00000000 		.space	4
+ 1072 05c5 00       		.byte	0
+ 1073 05c6 02       		.byte	2
+ 1074 05c7 00       		.byte	0
+ 1075 05c8 00       		.byte	0
+ 1076 05c9 000000   		.space	3
+ 1077 05cc 00D00440 		.word	1074057216
+ 1078 05d0 00F10F40 		.word	1074786560
+ 1079 05d4 04F10F40 		.word	1074786564
+ 1080 05d8 08F10F40 		.word	1074786568
+ 1081 05dc 00000002 		.word	33554432
+ 1082 05e0 19       		.byte	25
+ 1083 05e1 00000000 		.space	4
+ 1084 05e5 00       		.byte	0
+ 1085 05e6 02       		.byte	2
+ 1086 05e7 00       		.byte	0
+ 1087 05e8 00       		.byte	0
+ 1088 05e9 000000   		.space	3
+ 1089 05ec 00900440 		.word	1074040832
+ 1090 05f0 00F00F40 		.word	1074786304
+ 1091 05f4 04F00F40 		.word	1074786308
+ 1092 05f8 08F00F40 		.word	1074786312
+ 1093 05fc 10000000 		.word	16
+ 1094 0600 04       		.byte	4
+ 1095 0601 00000000 		.space	4
+ 1096 0605 00       		.byte	0
+ 1097 0606 03       		.byte	3
+ 1098 0607 00       		.byte	0
+ 1099 0608 00       		.byte	0
+ 1100 0609 000000   		.space	3
+ 1101 060c 00000000 		.space	64
+ 1101      00000000 
+ 1101      00000000 
+ 1101      00000000 
+ 1101      00000000 
+ 1102 064c 00900440 		.word	1074040832
+ 1103 0650 00F00F40 		.word	1074786304
+ 1104 0654 04F00F40 		.word	1074786308
+ 1105 0658 08F00F40 		.word	1074786312
+ 1106 065c 04000000 		.word	4
+ 1107 0660 02       		.byte	2
+ 1108 0661 00000000 		.space	4
+ 1109 0665 00       		.byte	0
+ 1110 0666 02       		.byte	2
+ 1111 0667 00       		.byte	0
+ 1112 0668 00       		.byte	0
+ 1113 0669 000000   		.space	3
+ 1114 066c 00900440 		.word	1074040832
+ 1115 0670 00F00F40 		.word	1074786304
+ 1116 0674 04F00F40 		.word	1074786308
+ 1117 0678 08F00F40 		.word	1074786312
+ 1118 067c 02000000 		.word	2
+ 1119 0680 01       		.byte	1
+ 1120 0681 00000000 		.space	4
+ 1121 0685 00       		.byte	0
+ 1122 0686 02       		.byte	2
+ 1123 0687 00       		.byte	0
+ 1124 0688 00       		.byte	0
+ 1125 0689 000000   		.space	3
+ 1126 068c 00D00440 		.word	1074057216
+ 1127 0690 00F10F40 		.word	1074786560
+ 1128 0694 04F10F40 		.word	1074786564
+ 1129 0698 08F10F40 		.word	1074786568
+ 1130 069c 01000000 		.word	1
+ 1131 06a0 00       		.byte	0
+ 1132 06a1 00000000 		.space	4
+ 1133 06a5 00       		.byte	0
+ 1134 06a6 02       		.byte	2
+ 1135 06a7 00       		.byte	0
+ 1136 06a8 00       		.byte	0
+ 1137 06a9 000000   		.space	3
+ 1138 06ac 00D00440 		.word	1074057216
+ 1139 06b0 00F10F40 		.word	1074786560
+ 1140 06b4 04F10F40 		.word	1074786564
+ 1141 06b8 08F10F40 		.word	1074786568
+ 1142 06bc 02000000 		.word	2
+ 1143 06c0 01       		.byte	1
+ 1144 06c1 00000000 		.space	4
+ 1145 06c5 00       		.byte	0
+ 1146 06c6 02       		.byte	2
+ 1147 06c7 00       		.byte	0
+ 1148 06c8 00       		.byte	0
+ 1149 06c9 000000   		.space	3
+ 1150 06cc 00D00440 		.word	1074057216
+ 1151 06d0 00F10F40 		.word	1074786560
+ 1152 06d4 04F10F40 		.word	1074786564
+ 1153 06d8 08F10F40 		.word	1074786568
+ 1154 06dc 04000000 		.word	4
+ 1155 06e0 02       		.byte	2
+ 1156 06e1 00000000 		.space	4
+ 1157 06e5 00       		.byte	0
+ 1158 06e6 02       		.byte	2
+ 1159 06e7 00       		.byte	0
+ 1160 06e8 00       		.byte	0
+ 1161 06e9 000000   		.space	3
+ 1162 06ec 00D00440 		.word	1074057216
+ 1163 06f0 00F10F40 		.word	1074786560
+ 1164 06f4 04F10F40 		.word	1074786564
+ 1165 06f8 08F10F40 		.word	1074786568
+ 1166 06fc 08000000 		.word	8
+ 1167 0700 03       		.byte	3
+ 1168 0701 00000000 		.space	4
+ 1169 0705 00       		.byte	0
+ 1170 0706 02       		.byte	2
+ 1171 0707 00       		.byte	0
+ 1172 0708 00       		.byte	0
+ 1173 0709 000000   		.space	3
+ 1174 070c 00D00440 		.word	1074057216
+ 1175 0710 00F10F40 		.word	1074786560
+ 1176 0714 04F10F40 		.word	1074786564
+ 1177 0718 08F10F40 		.word	1074786568
+ 1178 071c 10000000 		.word	16
+ 1179 0720 04       		.byte	4
+ 1180 0721 00000000 		.space	4
+ 1181 0725 00       		.byte	0
+ 1182 0726 02       		.byte	2
+ 1183 0727 00       		.byte	0
+ 1184 0728 00       		.byte	0
+ 1185 0729 000000   		.space	3
+ 1186 072c 00D00440 		.word	1074057216
+ 1187 0730 00F10F40 		.word	1074786560
+ 1188 0734 04F10F40 		.word	1074786564
+ 1189 0738 08F10F40 		.word	1074786568
+ 1190 073c 20000000 		.word	32
+ 1191 0740 05       		.byte	5
+ 1192 0741 00000000 		.space	4
+ 1193 0745 00       		.byte	0
+ 1194 0746 02       		.byte	2
+ 1195 0747 00       		.byte	0
+ 1196 0748 00       		.byte	0
+ 1197 0749 000000   		.space	3
+ 1198 074c 00B00440 		.word	1074049024
+ 1199 0750 80F00F40 		.word	1074786432
+ 1200 0754 84F00F40 		.word	1074786436
+ 1201 0758 88F00F40 		.word	1074786440
+ 1202 075c 20000000 		.word	32
+ 1203 0760 05       		.byte	5
+ 1204 0761 00000000 		.space	4
+ 1205 0765 00       		.byte	0
+ 1206 0766 02       		.byte	2
+ 1207 0767 00       		.byte	0
+ 1208 0768 00       		.byte	0
+ 1209 0769 000000   		.space	3
+ 1210 076c 00B00440 		.word	1074049024
+ 1211 0770 80F00F40 		.word	1074786432
+ 1212 0774 84F00F40 		.word	1074786436
+ 1213 0778 88F00F40 		.word	1074786440
+ 1214 077c 80000000 		.word	128
+ 1215 0780 07       		.byte	7
+ 1216 0781 00000000 		.space	4
+ 1217 0785 00       		.byte	0
+ 1218 0786 02       		.byte	2
+ 1219 0787 00       		.byte	0
+ 1220 0788 00       		.byte	0
+ 1221 0789 000000   		.space	3
+ 1222 078c 00B00440 		.word	1074049024
+ 1223 0790 80F00F40 		.word	1074786432
+ 1224 0794 84F00F40 		.word	1074786436
+ 1225 0798 88F00F40 		.word	1074786440
+ 1226 079c 40000000 		.word	64
+ 1227 07a0 06       		.byte	6
+ 1228 07a1 00000000 		.space	4
+ 1229 07a5 00       		.byte	0
+ 1230 07a6 02       		.byte	2
+ 1231 07a7 00       		.byte	0
+ 1232 07a8 00       		.byte	0
+ 1233 07a9 000000   		.space	3
+ 1234 07ac 00B00440 		.word	1074049024
+ 1235 07b0 80F00F40 		.word	1074786432
+ 1236 07b4 84F00F40 		.word	1074786436
+ 1237 07b8 88F00F40 		.word	1074786440
+ 1238 07bc 00010000 		.word	256
+ 1239 07c0 08       		.byte	8
+ 1240 07c1 00000000 		.space	4
+ 1241 07c5 00       		.byte	0
+ 1242 07c6 02       		.byte	2
+ 1243 07c7 00       		.byte	0
+ 1244 07c8 00       		.byte	0
+ 1245 07c9 000000   		.space	3
+ 1246 07cc 00B00440 		.word	1074049024
+ 1247 07d0 80F00F40 		.word	1074786432
+ 1248 07d4 84F00F40 		.word	1074786436
+ 1249 07d8 88F00F40 		.word	1074786440
+ 1250 07dc 00080000 		.word	2048
+ 1251 07e0 0B       		.byte	11
+ 1252 07e1 00000000 		.space	4
+ 1253 07e5 00       		.byte	0
+ 1254 07e6 02       		.byte	2
+ 1255 07e7 00       		.byte	0
+ 1256 07e8 00       		.byte	0
+ 1257 07e9 000000   		.space	3
+ 1258 07ec 00B00440 		.word	1074049024
+ 1259 07f0 80F00F40 		.word	1074786432
+ 1260 07f4 84F00F40 		.word	1074786436
+ 1261 07f8 88F00F40 		.word	1074786440
+ 1262 07fc 00100000 		.word	4096
+ 1263 0800 0C       		.byte	12
+ 1264 0801 00000000 		.space	4
+ 1265 0805 00       		.byte	0
+ 1266 0806 02       		.byte	2
+ 1267 0807 00       		.byte	0
+ 1268 0808 00       		.byte	0
+ 1269 0809 000000   		.space	3
+ 1270 080c 00B00440 		.word	1074049024
+ 1271 0810 80F00F40 		.word	1074786432
+ 1272 0814 84F00F40 		.word	1074786436
+ 1273 0818 88F00F40 		.word	1074786440
+ 1274 081c 00200000 		.word	8192
+ 1275 0820 0D       		.byte	13
+ 1276 0821 00000000 		.space	4
+ 1277 0825 00       		.byte	0
+ 1278 0826 02       		.byte	2
+ 1279 0827 00       		.byte	0
+ 1280 0828 00       		.byte	0
+ 1281 0829 000000   		.space	3
+ 1282 082c 00B00440 		.word	1074049024
+ 1283 0830 80F00F40 		.word	1074786432
+ 1284 0834 84F00F40 		.word	1074786436
+ 1285 0838 88F00F40 		.word	1074786440
+ 1286 083c 00400000 		.word	16384
+ 1287 0840 0E       		.byte	14
+ 1288 0841 00000000 		.space	4
+ 1289 0845 00       		.byte	0
+ 1290 0846 02       		.byte	2
+ 1291 0847 00       		.byte	0
+ 1292 0848 00       		.byte	0
+ 1293 0849 000000   		.space	3
+ 1294 084c 00B00440 		.word	1074049024
+ 1295 0850 80F00F40 		.word	1074786432
+ 1296 0854 84F00F40 		.word	1074786436
+ 1297 0858 88F00F40 		.word	1074786440
+ 1298 085c 00040000 		.word	1024
+ 1299 0860 0A       		.byte	10
+ 1300 0861 00000000 		.space	4
+ 1301 0865 00       		.byte	0
+ 1302 0866 02       		.byte	2
+ 1303 0867 00       		.byte	0
+ 1304 0868 00       		.byte	0
+ 1305 0869 000000   		.space	3
+ 1306 086c 00B00440 		.word	1074049024
+ 1307 0870 80F00F40 		.word	1074786432
+ 1308 0874 84F00F40 		.word	1074786436
+ 1309 0878 88F00F40 		.word	1074786440
+ 1310 087c 00020000 		.word	512
+ 1311 0880 09       		.byte	9
+ 1312 0881 00000000 		.space	4
+ 1313 0885 00       		.byte	0
+ 1314 0886 02       		.byte	2
+ 1315 0887 00       		.byte	0
+ 1316 0888 00       		.byte	0
+ 1317 0889 000000   		.space	3
+ 1318 088c 00D00440 		.word	1074057216
+ 1319 0890 00F10F40 		.word	1074786560
+ 1320 0894 04F10F40 		.word	1074786564
+ 1321 0898 08F10F40 		.word	1074786568
+ 1322 089c 40000000 		.word	64
+ 1323 08a0 06       		.byte	6
+ 1324 08a1 00000000 		.space	4
+ 1325 08a5 00       		.byte	0
+ 1326 08a6 02       		.byte	2
+ 1327 08a7 00       		.byte	0
+ 1328 08a8 00       		.byte	0
+ 1329 08a9 000000   		.space	3
+ 1330 08ac 00D00440 		.word	1074057216
+ 1331 08b0 00F10F40 		.word	1074786560
+ 1332 08b4 04F10F40 		.word	1074786564
+ 1333 08b8 08F10F40 		.word	1074786568
+ 1334 08bc 00000004 		.word	67108864
+ 1335 08c0 1A       		.byte	26
+ 1336 08c1 00000000 		.space	4
+ 1337 08c5 00       		.byte	0
+ 1338 08c6 02       		.byte	2
+ 1339 08c7 00       		.byte	0
+ 1340 08c8 00       		.byte	0
+ 1341 08c9 000000   		.space	3
+ 1342 08cc 00900440 		.word	1074040832
+ 1343 08d0 00F00F40 		.word	1074786304
+ 1344 08d4 04F00F40 		.word	1074786308
+ 1345 08d8 08F00F40 		.word	1074786312
+ 1346 08dc 00000200 		.word	131072
+ 1347 08e0 11       		.byte	17
+ 1348 08e1 00000000 		.space	4
+ 1349 08e5 00       		.byte	0
+ 1350 08e6 02       		.byte	2
+ 1351 08e7 00       		.byte	0
+ 1352 08e8 00       		.byte	0
+ 1353 08e9 000000   		.space	3
+ 1354 08ec 00A00440 		.word	1074044928
+ 1355 08f0 40F00F40 		.word	1074786368
+ 1356 08f4 44F00F40 		.word	1074786372
+ 1357 08f8 48F00F40 		.word	1074786376
+ 1358 08fc 00020000 		.word	512
+ 1359 0900 09       		.byte	9
+ 1360 0901 00000000 		.space	4
+ 1361 0905 00       		.byte	0
+ 1362 0906 02       		.byte	2
+ 1363 0907 00       		.byte	0
+ 1364 0908 00       		.byte	0
+ 1365 0909 000000   		.space	3
+ 1366 090c 00900440 		.word	1074040832
+ 1367 0910 00F00F40 		.word	1074786304
+ 1368 0914 04F00F40 		.word	1074786308
+ 1369 0918 08F00F40 		.word	1074786312
+ 1370 091c 00000000 		.word	0
+ 1371 0920 FF       		.byte	-1
+ 1372 0921 00000000 		.space	4
+ 1373 0925 00       		.byte	0
+ 1374 0926 02       		.byte	2
+ 1375 0927 00       		.byte	0
+ 1376 0928 00       		.byte	0
+ 1377 0929 000000   		.space	3
+ 1378              		.bss
+ 1379              		.align	1
+ 1382              	ADCValue:
+ 1383 0000 00000000 		.space	12
+ 1383      00000000 
+ 1383      00000000 
+ 1384              		.text
+ 1385              	.Letext0:
+ 1386              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 1387              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1388              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1389              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 1390              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1391              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1392              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1393              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1394              		.file 10 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 1395              		.file 11 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 1396              		.file 12 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 1397              		.file 13 "./hal/IOs.h"
+ 1398              		.file 14 "./hal/IOMap.h"
+ 1399              		.file 15 "./hal/SPI.h"
+ 1400              		.file 16 "./hal/ADCs.h"
+ 1401              		.file 17 "./hal/RXTX.h"
+ 1402              		.file 18 "./hal/USB.h"
+ 1403              		.file 19 "./hal/LEDs.h"
+ 1404              		.file 20 "./hal/RS232.h"
+ 1405              		.file 21 "./hal/WLAN.h"
+ 1406              		.file 22 "./hal/Timer.h"
+ 1407              		.file 23 "./hal/UART.h"
+ 1408              		.file 24 "./hal/HAL.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 IOMap.c
+C:\Users\Shubham\AppData\Local\Temp\cc5UJQI3.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\cc5UJQI3.s:22     .text:00000000 init
+C:\Users\Shubham\AppData\Local\Temp\cc5UJQI3.s:528    .text:000002cc $d
+                            *COM*:00000030 HAL
+                            *COM*:00000001 hwid
+                            *COM*:00000028 UART
+                            *COM*:00000010 Timer
+                            *COM*:00000024 WLAN
+                            *COM*:00000024 RS232
+                            *COM*:0000001c LEDs
+                            *COM*:00000024 USB
+                            *COM*:00000001 uart0_interrupt
+                            *COM*:00000020 ADCs
+                            *COM*:0000002c SPI
+C:\Users\Shubham\AppData\Local\Temp\cc5UJQI3.s:618    .data:00000104 IOMap
+                            *COM*:00000034 IOs
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\cc5UJQI3.s:547    .data:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\cc5UJQI3.s:550    .data:00000000 _pins
+C:\Users\Shubham\AppData\Local\Temp\cc5UJQI3.s:1379   .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\cc5UJQI3.s:1382   .bss:00000000 ADCValue
+
+NO UNDEFINED SYMBOLS

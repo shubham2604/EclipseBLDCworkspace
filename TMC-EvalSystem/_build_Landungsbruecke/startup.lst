@@ -1,0 +1,98 @@
+   1              	# 1 "hal/Landungsbruecke/freescale/startup.S"
+   1              	/********************************************************************************
+   0              	
+   0              	
+   2              	  * \file      startup.s
+   3              	  * \brief     Startup file for Kinetis L (KL25Z).
+   4              	  *            This module performs:
+   5              	  *                - Set the initial SP
+   6              	  *                - Set the initial PC == __thumb_startup,
+   7              	  *                - Branches to main in the C library (which eventually
+   8              	  *                  calls main()).
+   9              	  ******************************************************************************/
+  10              	  .syntax unified
+  11              	  .cpu cortex-m4
+  12              	  .thumb
+  13              	
+  14              	.global g_pfnVectors
+  15              	.global Default_Handler
+  16              	
+  17              	/* start address for the initialization values of the .data section. defined in linker script */
+  18 0000 00000000 	.word ___ROM_AT
+  19              	/* start address for the .data section. defined in linker script */
+  20 0004 00000000 	.word _sdata
+  21              	/* end address for the .data section. defined in linker script */
+  22 0008 00000000 	.word _edata
+  23              	/* start address for the .bss section. defined in linker script */
+  24 000c 00000000 	.word __START_BSS
+  25              	/* end address for the .bss section. defined in linker script */
+  26 0010 00000000 	.word __END_BSS
+  27              	
+  28              	/**
+  29              	 * \brief  This is the code that gets called when the processor first
+  30              	 *          starts execution following a reset event. Only the absolutely
+  31              	 *          necessary set is performed, after which the application
+  32              	 *          supplied main() routine is called.
+  33              	 * \param  None
+  34              	 * \retval : None
+  35              	*/
+  36              	  .section .text.__thumb_startup
+  37              	  .weak __thumb_startup
+  39              	__thumb_startup:
+  40              	/* Call the C hardware init function (which also has to switch off the watchdog) */
+  41 0000 FFF7FEFF 	  bl  __init_hardware
+  42              	
+  43              	/* Copy the data segment initializers from flash to SRAM: */
+  44 0004 0021     	  movs r1, #0
+  45 0006 03E0     	  b LoopCopyDataInit
+  46              	
+  47              	CopyDataInit:
+  48 0008 0A4B     	  ldr r3, =___ROM_AT
+  49 000a 5B58     	  ldr r3, [r3, r1]
+  50 000c 4350     	  str r3, [r0, r1]
+  51 000e 0431     	  adds r1, r1, #4
+  52              	
+  53              	LoopCopyDataInit:
+  54 0010 0948     	  ldr r0, =_sdata
+  55 0012 0A4B     	  ldr r3, =_edata
+  56 0014 4218     	  adds r2, r0, r1
+  57 0016 9A42     	  cmp r2, r3
+  58 0018 F6D3     	  bcc CopyDataInit
+  59 001a 094A     	  ldr r2, =__START_BSS
+  60 001c 02E0     	  b LoopFillZerobss
+  61              	
+  62              	/* Zero fill the bss segment: */
+  63              	FillZerobss:
+  64 001e 0023     	  movs r3, #0
+  65 0020 1360     	  str r3, [r2]
+  66 0022 0432     	  adds r2, r2, #4
+  67              	
+  68              	LoopFillZerobss:
+  69 0024 074B     	  ldr r3, = __END_BSS
+  70 0026 9A42     	  cmp r2, r3
+  71 0028 F9D3     	  bcc FillZerobss
+  72              	/* Call the application's entry point: */
+  73 002a FFF7FEFF 	  bl main
+  74 002e 8047     	  blx r0   /*Call the startup code of the application (address returned by the main() function of t
+  75 0030 7047     	  bx lr
+DEFINED SYMBOLS
+hal/Landungsbruecke/freescale/startup.S:39     .text.__thumb_startup:00000000 __thumb_startup
+hal/Landungsbruecke/freescale/startup.S:41     .text.__thumb_startup:00000000 $t
+hal/Landungsbruecke/freescale/startup.S:53     .text.__thumb_startup:00000010 LoopCopyDataInit
+hal/Landungsbruecke/freescale/startup.S:47     .text.__thumb_startup:00000008 CopyDataInit
+hal/Landungsbruecke/freescale/startup.S:68     .text.__thumb_startup:00000024 LoopFillZerobss
+hal/Landungsbruecke/freescale/startup.S:63     .text.__thumb_startup:0000001e FillZerobss
+hal/Landungsbruecke/freescale/startup.S:76     .text.__thumb_startup:00000032 $d
+hal/Landungsbruecke/freescale/startup.S:76     .text.__thumb_startup:00000034 $d
+                            .text:00000000 $d
+
+UNDEFINED SYMBOLS
+g_pfnVectors
+Default_Handler
+___ROM_AT
+_sdata
+_edata
+__START_BSS
+__END_BSS
+__init_hardware
+main

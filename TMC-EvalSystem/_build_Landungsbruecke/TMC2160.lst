@@ -1,0 +1,1120 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"TMC2160.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.global	tmc2160_writeDatagram
+  17              		.arch armv7e-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	tmc2160_writeDatagram:
+  24              	.LVL0:
+  25              	.LFB0:
+  26              		.file 1 "TMC-API/tmc/ic/TMC2160/TMC2160.c"
+   1:TMC-API/tmc/ic/TMC2160/TMC2160.c **** /*
+   2:TMC-API/tmc/ic/TMC2160/TMC2160.c ****  * TMC2160.c
+   3:TMC-API/tmc/ic/TMC2160/TMC2160.c ****  *
+   4:TMC-API/tmc/ic/TMC2160/TMC2160.c ****  *  Created on: 13.08.2018
+   5:TMC-API/tmc/ic/TMC2160/TMC2160.c ****  *      Author: LK
+   6:TMC-API/tmc/ic/TMC2160/TMC2160.c ****  */
+   7:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+   8:TMC-API/tmc/ic/TMC2160/TMC2160.c **** #include "TMC2160.h"
+   9:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+  10:TMC-API/tmc/ic/TMC2160/TMC2160.c **** // => SPI wrapper
+  11:TMC-API/tmc/ic/TMC2160/TMC2160.c **** extern void tmc2160_readWriteArray(uint8_t channel, uint8_t *data, size_t length);
+  12:TMC-API/tmc/ic/TMC2160/TMC2160.c **** // <= SPI wrapper
+  13:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+  14:TMC-API/tmc/ic/TMC2160/TMC2160.c **** // Writes (x1 << 24) | (x2 << 16) | (x3 << 8) | x4 to the given address
+  15:TMC-API/tmc/ic/TMC2160/TMC2160.c **** void tmc2160_writeDatagram(TMC2160TypeDef *tmc2160, uint8_t address, uint8_t x1, uint8_t x2, uint8_
+  16:TMC-API/tmc/ic/TMC2160/TMC2160.c **** {
+  27              		.loc 1 16 1 view -0
+  28              		.cfi_startproc
+  29              		@ args = 8, pretend = 0, frame = 8
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  17:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	uint8_t data[5] = { address | TMC2160_WRITE_BIT, x1, x2, x3, x4 };
+  31              		.loc 1 17 2 view .LVU1
+  16:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	uint8_t data[5] = { address | TMC2160_WRITE_BIT, x1, x2, x3, x4 };
+  32              		.loc 1 16 1 is_stmt 0 view .LVU2
+  33 0000 2DE9F743 		push	{r0, r1, r2, r4, r5, r6, r7, r8, r9, lr}
+  34              	.LCFI0:
+  35              		.cfi_def_cfa_offset 40
+  36              		.cfi_offset 4, -28
+  37              		.cfi_offset 5, -24
+  38              		.cfi_offset 6, -20
+  39              		.cfi_offset 7, -16
+  40              		.cfi_offset 8, -12
+  41              		.cfi_offset 9, -8
+  42              		.cfi_offset 14, -4
+  16:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	uint8_t data[5] = { address | TMC2160_WRITE_BIT, x1, x2, x3, x4 };
+  43              		.loc 1 16 1 view .LVU3
+  44 0004 9846     		mov	r8, r3
+  45              		.loc 1 17 10 view .LVU4
+  46 0006 61F07F03 		orn	r3, r1, #127
+  47              	.LVL1:
+  48              		.loc 1 17 10 view .LVU5
+  49 000a 8DF80030 		strb	r3, [sp]
+  18:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160_readWriteArray(tmc2160->config->channel, &data[0], 5);
+  50              		.loc 1 18 2 view .LVU6
+  51 000e 0368     		ldr	r3, [r0]
+  16:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	uint8_t data[5] = { address | TMC2160_WRITE_BIT, x1, x2, x3, x4 };
+  52              		.loc 1 16 1 view .LVU7
+  53 0010 9DF82890 		ldrb	r9, [sp, #40]	@ zero_extendqisi2
+  54 0014 9DF82C50 		ldrb	r5, [sp, #44]	@ zero_extendqisi2
+  17:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	uint8_t data[5] = { address | TMC2160_WRITE_BIT, x1, x2, x3, x4 };
+  55              		.loc 1 17 10 view .LVU8
+  56 0018 8DF80120 		strb	r2, [sp, #1]
+  16:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	uint8_t data[5] = { address | TMC2160_WRITE_BIT, x1, x2, x3, x4 };
+  57              		.loc 1 16 1 view .LVU9
+  58 001c 0446     		mov	r4, r0
+  59 001e 1746     		mov	r7, r2
+  60              		.loc 1 18 2 view .LVU10
+  61 0020 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+  62              	.LVL2:
+  17:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	uint8_t data[5] = { address | TMC2160_WRITE_BIT, x1, x2, x3, x4 };
+  63              		.loc 1 17 10 view .LVU11
+  64 0024 8DF80450 		strb	r5, [sp, #4]
+  65              		.loc 1 18 2 is_stmt 1 view .LVU12
+  16:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	uint8_t data[5] = { address | TMC2160_WRITE_BIT, x1, x2, x3, x4 };
+  66              		.loc 1 16 1 is_stmt 0 view .LVU13
+  67 0028 0E46     		mov	r6, r1
+  68              		.loc 1 18 2 view .LVU14
+  69 002a 0522     		movs	r2, #5
+  70              	.LVL3:
+  71              		.loc 1 18 2 view .LVU15
+  72 002c 6946     		mov	r1, sp
+  73              	.LVL4:
+  17:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	uint8_t data[5] = { address | TMC2160_WRITE_BIT, x1, x2, x3, x4 };
+  74              		.loc 1 17 10 view .LVU16
+  75 002e 8DF80280 		strb	r8, [sp, #2]
+  76 0032 8DF80390 		strb	r9, [sp, #3]
+  77              		.loc 1 18 2 view .LVU17
+  78 0036 FFF7FEFF 		bl	tmc2160_readWriteArray
+  79              	.LVL5:
+  19:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+  20:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	int value = (x1 << 24) | (x2 << 16) | (x3 << 8) | x4;
+  80              		.loc 1 20 2 is_stmt 1 view .LVU18
+  21:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+  22:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	// Write to the shadow register and mark the register dirty
+  23:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	address = TMC_ADDRESS(address);
+  81              		.loc 1 23 2 view .LVU19
+  24:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160->config->shadowRegister[address] = value;
+  82              		.loc 1 24 2 view .LVU20
+  83              		.loc 1 24 43 is_stmt 0 view .LVU21
+  84 003a 2268     		ldr	r2, [r4]
+  85              		.loc 1 24 33 view .LVU22
+  86 003c 06F07F06 		and	r6, r6, #127
+  87              	.LVL6:
+  20:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+  88              		.loc 1 20 6 view .LVU23
+  89 0040 45EA0925 		orr	r5, r5, r9, lsl #8
+  90              	.LVL7:
+  91              		.loc 1 24 43 view .LVU24
+  92 0044 02EB8601 		add	r1, r2, r6, lsl #2
+  20:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+  93              		.loc 1 20 6 view .LVU25
+  94 0048 45EA0843 		orr	r3, r5, r8, lsl #16
+  95 004c 43EA0763 		orr	r3, r3, r7, lsl #24
+  25:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160->registerAccess[address] |= TMC_ACCESS_DIRTY;
+  96              		.loc 1 25 35 view .LVU26
+  97 0050 3444     		add	r4, r4, r6
+  98              	.LVL8:
+  24:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160->config->shadowRegister[address] = value;
+  99              		.loc 1 24 43 view .LVU27
+ 100 0052 4B60     		str	r3, [r1, #4]
+ 101              		.loc 1 25 2 is_stmt 1 view .LVU28
+ 102              		.loc 1 25 35 is_stmt 0 view .LVU29
+ 103 0054 94F80432 		ldrb	r3, [r4, #516]	@ zero_extendqisi2
+ 104 0058 43F00803 		orr	r3, r3, #8
+ 105 005c 84F80432 		strb	r3, [r4, #516]
+  26:TMC-API/tmc/ic/TMC2160/TMC2160.c **** }
+ 106              		.loc 1 26 1 view .LVU30
+ 107 0060 03B0     		add	sp, sp, #12
+ 108              	.LCFI1:
+ 109              		.cfi_def_cfa_offset 28
+ 110              		@ sp needed
+ 111 0062 BDE8F083 		pop	{r4, r5, r6, r7, r8, r9, pc}
+ 112              		.loc 1 26 1 view .LVU31
+ 113              		.cfi_endproc
+ 114              	.LFE0:
+ 116              		.align	1
+ 117              		.global	tmc2160_writeInt
+ 118              		.syntax unified
+ 119              		.thumb
+ 120              		.thumb_func
+ 121              		.fpu softvfp
+ 123              	tmc2160_writeInt:
+ 124              	.LVL9:
+ 125              	.LFB1:
+  27:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+  28:TMC-API/tmc/ic/TMC2160/TMC2160.c **** void tmc2160_writeInt(TMC2160TypeDef *tmc2160, uint8_t address, int32_t value)
+  29:TMC-API/tmc/ic/TMC2160/TMC2160.c **** {
+ 126              		.loc 1 29 1 is_stmt 1 view -0
+ 127              		.cfi_startproc
+ 128              		@ args = 0, pretend = 0, frame = 0
+ 129              		@ frame_needed = 0, uses_anonymous_args = 0
+  30:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160_writeDatagram(tmc2160, address, BYTE(value, 3), BYTE(value, 2), BYTE(value, 1), BYTE(value
+ 130              		.loc 1 30 2 view .LVU33
+  29:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160_writeDatagram(tmc2160, address, BYTE(value, 3), BYTE(value, 2), BYTE(value, 1), BYTE(value
+ 131              		.loc 1 29 1 is_stmt 0 view .LVU34
+ 132 0066 07B5     		push	{r0, r1, r2, lr}
+ 133              	.LCFI2:
+ 134              		.cfi_def_cfa_offset 16
+ 135              		.cfi_offset 14, -4
+ 136              		.loc 1 30 2 view .LVU35
+ 137 0068 D3B2     		uxtb	r3, r2
+ 138 006a 0193     		str	r3, [sp, #4]
+ 139 006c C2F30723 		ubfx	r3, r2, #8, #8
+ 140 0070 0093     		str	r3, [sp]
+ 141 0072 C2F30743 		ubfx	r3, r2, #16, #8
+ 142 0076 120E     		lsrs	r2, r2, #24
+ 143              	.LVL10:
+ 144              		.loc 1 30 2 view .LVU36
+ 145 0078 FFF7FEFF 		bl	tmc2160_writeDatagram
+ 146              	.LVL11:
+  31:TMC-API/tmc/ic/TMC2160/TMC2160.c **** }
+ 147              		.loc 1 31 1 view .LVU37
+ 148 007c 03B0     		add	sp, sp, #12
+ 149              	.LCFI3:
+ 150              		.cfi_def_cfa_offset 4
+ 151              		@ sp needed
+ 152 007e 5DF804FB 		ldr	pc, [sp], #4
+ 153              		.cfi_endproc
+ 154              	.LFE1:
+ 156              		.align	1
+ 157              		.global	tmc2160_readInt
+ 158              		.syntax unified
+ 159              		.thumb
+ 160              		.thumb_func
+ 161              		.fpu softvfp
+ 163              	tmc2160_readInt:
+ 164              	.LVL12:
+ 165              	.LFB2:
+  32:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+  33:TMC-API/tmc/ic/TMC2160/TMC2160.c **** int32_t tmc2160_readInt(TMC2160TypeDef *tmc2160, uint8_t address)
+  34:TMC-API/tmc/ic/TMC2160/TMC2160.c **** {
+ 166              		.loc 1 34 1 is_stmt 1 view -0
+ 167              		.cfi_startproc
+ 168              		@ args = 0, pretend = 0, frame = 8
+ 169              		@ frame_needed = 0, uses_anonymous_args = 0
+  35:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	address = TMC_ADDRESS(address);
+ 170              		.loc 1 35 2 view .LVU39
+  34:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	address = TMC_ADDRESS(address);
+ 171              		.loc 1 34 1 is_stmt 0 view .LVU40
+ 172 0082 37B5     		push	{r0, r1, r2, r4, r5, lr}
+ 173              	.LCFI4:
+ 174              		.cfi_def_cfa_offset 24
+ 175              		.cfi_offset 4, -12
+ 176              		.cfi_offset 5, -8
+ 177              		.cfi_offset 14, -4
+ 178              		.loc 1 35 10 view .LVU41
+ 179 0084 01F07F04 		and	r4, r1, #127
+ 180              	.LVL13:
+  36:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+  37:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	// register not readable -> shadow register copy
+  38:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	if(!TMC_IS_READABLE(tmc2160->registerAccess[address]))
+ 181              		.loc 1 38 2 is_stmt 1 view .LVU42
+ 182              		.loc 1 38 6 is_stmt 0 view .LVU43
+ 183 0088 0219     		adds	r2, r0, r4
+ 184 008a 0368     		ldr	r3, [r0]
+ 185              		.loc 1 38 4 view .LVU44
+ 186 008c 92F80422 		ldrb	r2, [r2, #516]	@ zero_extendqisi2
+ 187 0090 D207     		lsls	r2, r2, #31
+  34:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	address = TMC_ADDRESS(address);
+ 188              		.loc 1 34 1 view .LVU45
+ 189 0092 0546     		mov	r5, r0
+ 190              		.loc 1 38 4 view .LVU46
+ 191 0094 04D4     		bmi	.L4
+  39:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		return tmc2160->config->shadowRegister[address];
+ 192              		.loc 1 39 3 is_stmt 1 view .LVU47
+ 193              		.loc 1 39 41 is_stmt 0 view .LVU48
+ 194 0096 03EB8404 		add	r4, r3, r4, lsl #2
+ 195              	.LVL14:
+ 196              		.loc 1 39 41 view .LVU49
+ 197 009a 6068     		ldr	r0, [r4, #4]
+ 198              	.LVL15:
+ 199              	.L3:
+  40:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+  41:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	uint8_t data[5];
+  42:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+  43:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	data[0] = address;
+  44:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160_readWriteArray(tmc2160->config->channel, &data[0], 5);
+  45:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+  46:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	data[0] = address;
+  47:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160_readWriteArray(tmc2160->config->channel, &data[0], 5);
+  48:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+  49:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	return (data[1] << 24) | (data[2] << 16) | (data[3] << 8) | data[4];
+  50:TMC-API/tmc/ic/TMC2160/TMC2160.c **** }
+ 200              		.loc 1 50 1 view .LVU50
+ 201 009c 03B0     		add	sp, sp, #12
+ 202              	.LCFI5:
+ 203              		.cfi_remember_state
+ 204              		.cfi_def_cfa_offset 12
+ 205              		@ sp needed
+ 206 009e 30BD     		pop	{r4, r5, pc}
+ 207              	.LVL16:
+ 208              	.L4:
+ 209              	.LCFI6:
+ 210              		.cfi_restore_state
+  41:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 211              		.loc 1 41 2 is_stmt 1 view .LVU51
+  43:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160_readWriteArray(tmc2160->config->channel, &data[0], 5);
+ 212              		.loc 1 43 2 view .LVU52
+  44:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 213              		.loc 1 44 2 is_stmt 0 view .LVU53
+ 214 00a0 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+ 215              	.LVL17:
+  43:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160_readWriteArray(tmc2160->config->channel, &data[0], 5);
+ 216              		.loc 1 43 10 view .LVU54
+ 217 00a4 8DF80040 		strb	r4, [sp]
+  44:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 218              		.loc 1 44 2 is_stmt 1 view .LVU55
+ 219 00a8 0522     		movs	r2, #5
+ 220 00aa 6946     		mov	r1, sp
+ 221 00ac FFF7FEFF 		bl	tmc2160_readWriteArray
+ 222              	.LVL18:
+  46:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160_readWriteArray(tmc2160->config->channel, &data[0], 5);
+ 223              		.loc 1 46 2 view .LVU56
+  47:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 224              		.loc 1 47 2 is_stmt 0 view .LVU57
+ 225 00b0 2B68     		ldr	r3, [r5]
+  46:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160_readWriteArray(tmc2160->config->channel, &data[0], 5);
+ 226              		.loc 1 46 10 view .LVU58
+ 227 00b2 8DF80040 		strb	r4, [sp]
+  47:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 228              		.loc 1 47 2 is_stmt 1 view .LVU59
+ 229 00b6 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+ 230 00ba 0522     		movs	r2, #5
+ 231 00bc 6946     		mov	r1, sp
+ 232 00be FFF7FEFF 		bl	tmc2160_readWriteArray
+ 233              	.LVL19:
+  49:TMC-API/tmc/ic/TMC2160/TMC2160.c **** }
+ 234              		.loc 1 49 2 view .LVU60
+ 235 00c2 DDF80100 		ldr	r0, [sp, #1]	@ unaligned
+ 236 00c6 00BA     		rev	r0, r0
+  49:TMC-API/tmc/ic/TMC2160/TMC2160.c **** }
+ 237              		.loc 1 49 60 is_stmt 0 view .LVU61
+ 238 00c8 E8E7     		b	.L3
+ 239              		.cfi_endproc
+ 240              	.LFE2:
+ 242              		.align	1
+ 243              		.global	tmc2160_init
+ 244              		.syntax unified
+ 245              		.thumb
+ 246              		.thumb_func
+ 247              		.fpu softvfp
+ 249              	tmc2160_init:
+ 250              	.LVL20:
+ 251              	.LFB3:
+  51:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+  52:TMC-API/tmc/ic/TMC2160/TMC2160.c **** void tmc2160_init(TMC2160TypeDef *tmc2160, uint8_t channel, ConfigurationTypeDef *config, const int
+  53:TMC-API/tmc/ic/TMC2160/TMC2160.c **** {
+ 252              		.loc 1 53 1 is_stmt 1 view -0
+ 253              		.cfi_startproc
+ 254              		@ args = 0, pretend = 0, frame = 0
+ 255              		@ frame_needed = 0, uses_anonymous_args = 0
+  54:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160->config = config;
+ 256              		.loc 1 54 2 view .LVU63
+  53:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160->config = config;
+ 257              		.loc 1 53 1 is_stmt 0 view .LVU64
+ 258 00ca 30B5     		push	{r4, r5, lr}
+ 259              	.LCFI7:
+ 260              		.cfi_def_cfa_offset 12
+ 261              		.cfi_offset 4, -12
+ 262              		.cfi_offset 5, -8
+ 263              		.cfi_offset 14, -4
+  55:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+  56:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160->config->callback     = NULL;
+ 264              		.loc 1 56 32 view .LVU65
+ 265 00cc 0024     		movs	r4, #0
+  54:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 266              		.loc 1 54 18 view .LVU66
+ 267 00ce 0260     		str	r2, [r0]
+ 268              		.loc 1 56 2 is_stmt 1 view .LVU67
+ 269              		.loc 1 56 32 is_stmt 0 view .LVU68
+ 270 00d0 C2F80C42 		str	r4, [r2, #524]
+  57:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160->config->channel      = channel;
+ 271              		.loc 1 57 2 is_stmt 1 view .LVU69
+  58:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160->config->configIndex  = 0;
+  59:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160->config->state        = CONFIG_READY;
+ 272              		.loc 1 59 32 is_stmt 0 view .LVU70
+ 273 00d4 1480     		strh	r4, [r2]	@ movhi
+ 274 00d6 0A4C     		ldr	r4, .L9
+  57:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160->config->channel      = channel;
+ 275              		.loc 1 57 32 view .LVU71
+ 276 00d8 82F81012 		strb	r1, [r2, #528]
+  58:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160->config->configIndex  = 0;
+ 277              		.loc 1 58 2 is_stmt 1 view .LVU72
+ 278              		.loc 1 59 2 view .LVU73
+  60:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+  61:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	int i;
+ 279              		.loc 1 61 2 view .LVU74
+  62:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	for(i = 0; i < TMC2160_REGISTER_COUNT; i++)
+ 280              		.loc 1 62 2 view .LVU75
+ 281              	.LVL21:
+ 282              		.loc 1 62 13 view .LVU76
+ 283 00dc 043B     		subs	r3, r3, #4
+ 284              	.LVL22:
+ 285              		.loc 1 62 13 is_stmt 0 view .LVU77
+ 286 00de 00F50172 		add	r2, r0, #516
+ 287              	.LVL23:
+ 288              		.loc 1 62 13 view .LVU78
+ 289 00e2 011D     		adds	r1, r0, #4
+ 290              	.LVL24:
+ 291              		.loc 1 62 13 view .LVU79
+ 292 00e4 00F52170 		add	r0, r0, #644
+ 293              	.LVL25:
+ 294              	.L7:
+  63:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	{
+  64:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		tmc2160->registerAccess[i]      = tmc2160_defaultRegisterAccess[i];
+ 295              		.loc 1 64 3 is_stmt 1 discriminator 3 view .LVU80
+ 296              		.loc 1 64 66 is_stmt 0 discriminator 3 view .LVU81
+ 297 00e8 14F8015B 		ldrb	r5, [r4], #1	@ zero_extendqisi2
+ 298              	.LVL26:
+ 299              		.loc 1 64 35 discriminator 3 view .LVU82
+ 300 00ec 02F8015B 		strb	r5, [r2], #1
+  65:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		tmc2160->registerResetState[i]  = registerResetState[i];
+ 301              		.loc 1 65 3 is_stmt 1 discriminator 3 view .LVU83
+ 302              		.loc 1 65 55 is_stmt 0 discriminator 3 view .LVU84
+ 303 00f0 53F8045F 		ldr	r5, [r3, #4]!
+ 304              		.loc 1 65 35 discriminator 3 view .LVU85
+ 305 00f4 41F8045B 		str	r5, [r1], #4
+  62:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	for(i = 0; i < TMC2160_REGISTER_COUNT; i++)
+ 306              		.loc 1 62 41 is_stmt 1 discriminator 3 view .LVU86
+ 307              	.LVL27:
+  62:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	for(i = 0; i < TMC2160_REGISTER_COUNT; i++)
+ 308              		.loc 1 62 13 discriminator 3 view .LVU87
+  62:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	for(i = 0; i < TMC2160_REGISTER_COUNT; i++)
+ 309              		.loc 1 62 2 is_stmt 0 discriminator 3 view .LVU88
+ 310 00f8 8242     		cmp	r2, r0
+ 311 00fa F5D1     		bne	.L7
+  66:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	}
+  67:TMC-API/tmc/ic/TMC2160/TMC2160.c **** }
+ 312              		.loc 1 67 1 view .LVU89
+ 313 00fc 30BD     		pop	{r4, r5, pc}
+ 314              	.LVL28:
+ 315              	.L10:
+ 316              		.loc 1 67 1 view .LVU90
+ 317 00fe 00BF     		.align	2
+ 318              	.L9:
+ 319 0100 00000000 		.word	.LANCHOR0
+ 320              		.cfi_endproc
+ 321              	.LFE3:
+ 323              		.align	1
+ 324              		.global	tmc2160_fillShadowRegisters
+ 325              		.syntax unified
+ 326              		.thumb
+ 327              		.thumb_func
+ 328              		.fpu softvfp
+ 330              	tmc2160_fillShadowRegisters:
+ 331              	.LVL29:
+ 332              	.LFB4:
+  68:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+  69:TMC-API/tmc/ic/TMC2160/TMC2160.c **** void tmc2160_fillShadowRegisters(TMC2160TypeDef *tmc2160)
+  70:TMC-API/tmc/ic/TMC2160/TMC2160.c **** {
+ 333              		.loc 1 70 1 is_stmt 1 view -0
+ 334              		.cfi_startproc
+ 335              		@ args = 0, pretend = 0, frame = 0
+ 336              		@ frame_needed = 0, uses_anonymous_args = 0
+  71:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	// Check if we have constants defined
+  72:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	if(ARRAY_SIZE(tmc2160_RegisterConstants) == 0)
+ 337              		.loc 1 72 2 view .LVU92
+  73:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		return;
+  74:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+  75:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	for(size_t i = 0, j = 0; i < TMC2160_REGISTER_COUNT; i++)
+ 338              		.loc 1 75 2 view .LVU93
+ 339              	.LBB2:
+ 340              		.loc 1 75 6 view .LVU94
+ 341              		.loc 1 75 27 view .LVU95
+ 342              	.LBE2:
+  70:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	// Check if we have constants defined
+ 343              		.loc 1 70 1 is_stmt 0 view .LVU96
+ 344 0104 F0B5     		push	{r4, r5, r6, r7, lr}
+ 345              	.LCFI8:
+ 346              		.cfi_def_cfa_offset 20
+ 347              		.cfi_offset 4, -20
+ 348              		.cfi_offset 5, -16
+ 349              		.cfi_offset 6, -12
+ 350              		.cfi_offset 7, -8
+ 351              		.cfi_offset 14, -4
+ 352 0106 104D     		ldr	r5, .L19
+ 353              	.LBB3:
+ 354              		.loc 1 75 20 view .LVU97
+ 355 0108 0022     		movs	r2, #0
+ 356 010a 00F50174 		add	r4, r0, #516
+ 357              		.loc 1 75 13 view .LVU98
+ 358 010e 1346     		mov	r3, r2
+  76:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	{
+  77:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		// We only need to worry about hardware preset, write-only registers
+  78:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		// that have not yet been written (no dirty bit) here.
+  79:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		if(tmc2160->registerAccess[i] != TMC_ACCESS_W_PRESET)
+  80:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			continue;
+  81:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+  82:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		// Search the constant list for the current address. With the constant
+  83:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		// list being sorted in ascended order, we can walk through the list
+  84:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		// until the entry with an address equal or greater than i
+  85:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		while(j < ARRAY_SIZE(tmc2160_RegisterConstants) && (tmc2160_RegisterConstants[j].address < i))
+  86:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			j++;
+  87:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+  88:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		// If we have an entry for our current address, write the constant
+  89:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		if(tmc2160_RegisterConstants[j].address == i)
+  90:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			tmc2160->config->shadowRegister[i] = tmc2160_RegisterConstants[j].value;
+ 359              		.loc 1 90 69 view .LVU99
+ 360 0110 A5F18006 		sub	r6, r5, #128
+ 361              	.LVL30:
+ 362              	.L16:
+  79:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			continue;
+ 363              		.loc 1 79 3 is_stmt 1 view .LVU100
+  79:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			continue;
+ 364              		.loc 1 79 29 is_stmt 0 view .LVU101
+ 365 0114 14F8011B 		ldrb	r1, [r4], #1	@ zero_extendqisi2
+  79:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			continue;
+ 366              		.loc 1 79 5 view .LVU102
+ 367 0118 4229     		cmp	r1, #66
+ 368 011a 0FD1     		bne	.L12
+ 369              	.L13:
+  85:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			j++;
+ 370              		.loc 1 85 8 is_stmt 1 view .LVU103
+ 371 011c 0C2A     		cmp	r2, #12
+ 372 011e 15F83210 		ldrb	r1, [r5, r2, lsl #3]	@ zero_extendqisi2
+ 373 0122 01D8     		bhi	.L14
+  85:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			j++;
+ 374              		.loc 1 85 51 is_stmt 0 discriminator 1 view .LVU104
+ 375 0124 9942     		cmp	r1, r3
+ 376 0126 0DD3     		bcc	.L15
+ 377              	.L14:
+ 378              	.LVL31:
+  89:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			tmc2160->config->shadowRegister[i] = tmc2160_RegisterConstants[j].value;
+ 379              		.loc 1 89 3 is_stmt 1 view .LVU105
+  89:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			tmc2160->config->shadowRegister[i] = tmc2160_RegisterConstants[j].value;
+ 380              		.loc 1 89 5 is_stmt 0 view .LVU106
+ 381 0128 9942     		cmp	r1, r3
+ 382 012a 07D1     		bne	.L12
+ 383              		.loc 1 90 4 is_stmt 1 view .LVU107
+ 384              		.loc 1 90 39 is_stmt 0 view .LVU108
+ 385 012c 0168     		ldr	r1, [r0]
+ 386              		.loc 1 90 69 view .LVU109
+ 387 012e 06EBC207 		add	r7, r6, r2, lsl #3
+ 388              		.loc 1 90 39 view .LVU110
+ 389 0132 01EB8301 		add	r1, r1, r3, lsl #2
+ 390 0136 D7F88470 		ldr	r7, [r7, #132]
+ 391 013a 4F60     		str	r7, [r1, #4]
+ 392              	.L12:
+ 393              	.LVL32:
+  75:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	{
+ 394              		.loc 1 75 55 is_stmt 1 discriminator 2 view .LVU111
+  75:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	{
+ 395              		.loc 1 75 56 is_stmt 0 discriminator 2 view .LVU112
+ 396 013c 0133     		adds	r3, r3, #1
+ 397              	.LVL33:
+  75:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	{
+ 398              		.loc 1 75 27 is_stmt 1 discriminator 2 view .LVU113
+  75:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	{
+ 399              		.loc 1 75 2 is_stmt 0 discriminator 2 view .LVU114
+ 400 013e 802B     		cmp	r3, #128
+ 401 0140 E8D1     		bne	.L16
+ 402              	.LBE3:
+  91:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	}
+  92:TMC-API/tmc/ic/TMC2160/TMC2160.c **** }
+ 403              		.loc 1 92 1 view .LVU115
+ 404 0142 F0BD     		pop	{r4, r5, r6, r7, pc}
+ 405              	.L15:
+ 406              	.LBB4:
+  86:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 407              		.loc 1 86 4 is_stmt 1 view .LVU116
+  86:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 408              		.loc 1 86 5 is_stmt 0 view .LVU117
+ 409 0144 0132     		adds	r2, r2, #1
+ 410              	.LVL34:
+  86:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 411              		.loc 1 86 5 view .LVU118
+ 412 0146 E9E7     		b	.L13
+ 413              	.L20:
+ 414              		.align	2
+ 415              	.L19:
+ 416 0148 80000000 		.word	.LANCHOR0+128
+ 417              	.LBE4:
+ 418              		.cfi_endproc
+ 419              	.LFE4:
+ 421              		.align	1
+ 422              		.global	tmc2160_reset
+ 423              		.syntax unified
+ 424              		.thumb
+ 425              		.thumb_func
+ 426              		.fpu softvfp
+ 428              	tmc2160_reset:
+ 429              	.LVL35:
+ 430              	.LFB5:
+  93:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+  94:TMC-API/tmc/ic/TMC2160/TMC2160.c **** uint8_t tmc2160_reset(TMC2160TypeDef *tmc2160)
+  95:TMC-API/tmc/ic/TMC2160/TMC2160.c **** {
+ 431              		.loc 1 95 1 is_stmt 1 view -0
+ 432              		.cfi_startproc
+ 433              		@ args = 0, pretend = 0, frame = 0
+ 434              		@ frame_needed = 0, uses_anonymous_args = 0
+ 435              		@ link register save eliminated.
+  96:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	if(tmc2160->config->state != CONFIG_READY)
+ 436              		.loc 1 96 2 view .LVU120
+ 437              		.loc 1 96 12 is_stmt 0 view .LVU121
+ 438 014c 0168     		ldr	r1, [r0]
+ 439              		.loc 1 96 4 view .LVU122
+ 440 014e 0B78     		ldrb	r3, [r1]	@ zero_extendqisi2
+ 441 0150 6BB9     		cbnz	r3, .L24
+ 442 0152 00F50173 		add	r3, r0, #516
+ 443 0156 00F52170 		add	r0, r0, #644
+ 444              	.LVL36:
+ 445              	.L23:
+  97:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		return false;
+  98:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+  99:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	int i;
+ 100:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 101:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	// Reset the dirty bits
+ 102:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	for(i = 0; i < TMC2160_REGISTER_COUNT; i++)
+ 103:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		tmc2160->registerAccess[i] &= ~TMC_ACCESS_DIRTY;
+ 446              		.loc 1 103 3 is_stmt 1 discriminator 3 view .LVU123
+ 447              		.loc 1 103 30 is_stmt 0 discriminator 3 view .LVU124
+ 448 015a 1A78     		ldrb	r2, [r3]	@ zero_extendqisi2
+ 449 015c 22F00802 		bic	r2, r2, #8
+ 450 0160 03F8012B 		strb	r2, [r3], #1
+ 451              	.LVL37:
+ 102:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		tmc2160->registerAccess[i] &= ~TMC_ACCESS_DIRTY;
+ 452              		.loc 1 102 41 is_stmt 1 discriminator 3 view .LVU125
+ 102:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		tmc2160->registerAccess[i] &= ~TMC_ACCESS_DIRTY;
+ 453              		.loc 1 102 13 discriminator 3 view .LVU126
+ 102:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		tmc2160->registerAccess[i] &= ~TMC_ACCESS_DIRTY;
+ 454              		.loc 1 102 2 is_stmt 0 discriminator 3 view .LVU127
+ 455 0164 8342     		cmp	r3, r0
+ 456 0166 F8D1     		bne	.L23
+ 104:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 105:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160->config->state        = CONFIG_RESET;
+ 457              		.loc 1 105 2 is_stmt 1 view .LVU128
+ 106:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160->config->configIndex  = 0;
+ 458              		.loc 1 106 2 view .LVU129
+ 105:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160->config->configIndex  = 0;
+ 459              		.loc 1 105 32 is_stmt 0 view .LVU130
+ 460 0168 0120     		movs	r0, #1
+ 461              	.LVL38:
+ 105:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160->config->configIndex  = 0;
+ 462              		.loc 1 105 32 view .LVU131
+ 463 016a 0880     		strh	r0, [r1]	@ movhi
+ 107:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 108:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	return true;
+ 464              		.loc 1 108 2 is_stmt 1 view .LVU132
+ 465              		.loc 1 108 9 is_stmt 0 view .LVU133
+ 466 016c 7047     		bx	lr
+ 467              	.LVL39:
+ 468              	.L24:
+  97:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 469              		.loc 1 97 10 view .LVU134
+ 470 016e 0020     		movs	r0, #0
+ 471              	.LVL40:
+ 109:TMC-API/tmc/ic/TMC2160/TMC2160.c **** }
+ 472              		.loc 1 109 1 view .LVU135
+ 473 0170 7047     		bx	lr
+ 474              		.cfi_endproc
+ 475              	.LFE5:
+ 477              		.align	1
+ 478              		.global	tmc2160_restore
+ 479              		.syntax unified
+ 480              		.thumb
+ 481              		.thumb_func
+ 482              		.fpu softvfp
+ 484              	tmc2160_restore:
+ 485              	.LVL41:
+ 486              	.LFB6:
+ 110:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 111:TMC-API/tmc/ic/TMC2160/TMC2160.c **** uint8_t tmc2160_restore(TMC2160TypeDef *tmc2160)
+ 112:TMC-API/tmc/ic/TMC2160/TMC2160.c **** {
+ 487              		.loc 1 112 1 is_stmt 1 view -0
+ 488              		.cfi_startproc
+ 489              		@ args = 0, pretend = 0, frame = 0
+ 490              		@ frame_needed = 0, uses_anonymous_args = 0
+ 491              		@ link register save eliminated.
+ 113:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	if(tmc2160->config->state != CONFIG_READY)
+ 492              		.loc 1 113 2 view .LVU137
+ 493              		.loc 1 113 12 is_stmt 0 view .LVU138
+ 494 0172 0368     		ldr	r3, [r0]
+ 495              		.loc 1 113 4 view .LVU139
+ 496 0174 1A78     		ldrb	r2, [r3]	@ zero_extendqisi2
+ 497 0176 1AB9     		cbnz	r2, .L28
+ 114:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		return false;
+ 115:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 116:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160->config->state        = CONFIG_RESTORE;
+ 498              		.loc 1 116 2 is_stmt 1 view .LVU140
+ 117:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160->config->configIndex  = 0;
+ 499              		.loc 1 117 2 view .LVU141
+ 116:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160->config->configIndex  = 0;
+ 500              		.loc 1 116 32 is_stmt 0 view .LVU142
+ 501 0178 0222     		movs	r2, #2
+ 502 017a 1A80     		strh	r2, [r3]	@ movhi
+ 118:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 119:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	return true;
+ 503              		.loc 1 119 2 is_stmt 1 view .LVU143
+ 504              		.loc 1 119 9 is_stmt 0 view .LVU144
+ 505 017c 0120     		movs	r0, #1
+ 506              	.LVL42:
+ 507              		.loc 1 119 9 view .LVU145
+ 508 017e 7047     		bx	lr
+ 509              	.LVL43:
+ 510              	.L28:
+ 114:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 511              		.loc 1 114 10 view .LVU146
+ 512 0180 0020     		movs	r0, #0
+ 513              	.LVL44:
+ 120:TMC-API/tmc/ic/TMC2160/TMC2160.c **** }
+ 514              		.loc 1 120 1 view .LVU147
+ 515 0182 7047     		bx	lr
+ 516              		.cfi_endproc
+ 517              	.LFE6:
+ 519              		.align	1
+ 520              		.global	tmc2160_setRegisterResetState
+ 521              		.syntax unified
+ 522              		.thumb
+ 523              		.thumb_func
+ 524              		.fpu softvfp
+ 526              	tmc2160_setRegisterResetState:
+ 527              	.LVL45:
+ 528              	.LFB7:
+ 121:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 122:TMC-API/tmc/ic/TMC2160/TMC2160.c **** void tmc2160_setRegisterResetState(TMC2160TypeDef *tmc2160, const int32_t *resetState)
+ 123:TMC-API/tmc/ic/TMC2160/TMC2160.c **** {
+ 529              		.loc 1 123 1 is_stmt 1 view -0
+ 530              		.cfi_startproc
+ 531              		@ args = 0, pretend = 0, frame = 0
+ 532              		@ frame_needed = 0, uses_anonymous_args = 0
+ 533              		@ link register save eliminated.
+ 124:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	uint32_t i;
+ 534              		.loc 1 124 2 view .LVU149
+ 125:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	for(i = 0; i < TMC2160_REGISTER_COUNT; i++)
+ 535              		.loc 1 125 2 view .LVU150
+ 536              		.loc 1 125 13 view .LVU151
+ 537 0184 0B1F     		subs	r3, r1, #4
+ 538 0186 0430     		adds	r0, r0, #4
+ 539              	.LVL46:
+ 540              		.loc 1 125 13 is_stmt 0 view .LVU152
+ 541 0188 01F5FE71 		add	r1, r1, #508
+ 542              	.LVL47:
+ 543              	.L30:
+ 126:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		tmc2160->registerResetState[i] = resetState[i];
+ 544              		.loc 1 126 3 is_stmt 1 discriminator 3 view .LVU153
+ 545              		.loc 1 126 46 is_stmt 0 discriminator 3 view .LVU154
+ 546 018c 53F8042F 		ldr	r2, [r3, #4]!
+ 547              		.loc 1 126 34 discriminator 3 view .LVU155
+ 548 0190 40F8042B 		str	r2, [r0], #4
+ 125:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	for(i = 0; i < TMC2160_REGISTER_COUNT; i++)
+ 549              		.loc 1 125 41 is_stmt 1 discriminator 3 view .LVU156
+ 125:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	for(i = 0; i < TMC2160_REGISTER_COUNT; i++)
+ 550              		.loc 1 125 13 discriminator 3 view .LVU157
+ 125:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	for(i = 0; i < TMC2160_REGISTER_COUNT; i++)
+ 551              		.loc 1 125 2 is_stmt 0 discriminator 3 view .LVU158
+ 552 0194 8B42     		cmp	r3, r1
+ 553 0196 F9D1     		bne	.L30
+ 127:TMC-API/tmc/ic/TMC2160/TMC2160.c **** }
+ 554              		.loc 1 127 1 view .LVU159
+ 555 0198 7047     		bx	lr
+ 556              		.cfi_endproc
+ 557              	.LFE7:
+ 559              		.align	1
+ 560              		.global	tmc2160_setCallback
+ 561              		.syntax unified
+ 562              		.thumb
+ 563              		.thumb_func
+ 564              		.fpu softvfp
+ 566              	tmc2160_setCallback:
+ 567              	.LVL48:
+ 568              	.LFB8:
+ 128:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 129:TMC-API/tmc/ic/TMC2160/TMC2160.c **** void tmc2160_setCallback(TMC2160TypeDef *tmc2160, tmc2160_callback callback)
+ 130:TMC-API/tmc/ic/TMC2160/TMC2160.c **** {
+ 569              		.loc 1 130 1 is_stmt 1 view -0
+ 570              		.cfi_startproc
+ 571              		@ args = 0, pretend = 0, frame = 0
+ 572              		@ frame_needed = 0, uses_anonymous_args = 0
+ 573              		@ link register save eliminated.
+ 131:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	tmc2160->config->callback = (tmc_callback_config) callback;
+ 574              		.loc 1 131 2 view .LVU161
+ 575              		.loc 1 131 28 is_stmt 0 view .LVU162
+ 576 019a 0368     		ldr	r3, [r0]
+ 577 019c C3F80C12 		str	r1, [r3, #524]
+ 132:TMC-API/tmc/ic/TMC2160/TMC2160.c **** }
+ 578              		.loc 1 132 1 view .LVU163
+ 579 01a0 7047     		bx	lr
+ 580              		.cfi_endproc
+ 581              	.LFE8:
+ 583              		.align	1
+ 584              		.global	tmc2160_periodicJob
+ 585              		.syntax unified
+ 586              		.thumb
+ 587              		.thumb_func
+ 588              		.fpu softvfp
+ 590              	tmc2160_periodicJob:
+ 591              	.LVL49:
+ 592              	.LFB10:
+ 133:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 134:TMC-API/tmc/ic/TMC2160/TMC2160.c **** static void writeConfiguration(TMC2160TypeDef *tmc2160)
+ 135:TMC-API/tmc/ic/TMC2160/TMC2160.c **** {
+ 136:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	uint8_t *ptr = &tmc2160->config->configIndex;
+ 137:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	const int32_t *settings;
+ 138:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 139:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	if(tmc2160->config->state == CONFIG_RESTORE)
+ 140:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	{
+ 141:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		settings = tmc2160->config->shadowRegister;
+ 142:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		// Find the next restorable register
+ 143:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		while((*ptr < TMC2160_REGISTER_COUNT) && !TMC_IS_RESTORABLE(tmc2160->registerAccess[*ptr]))
+ 144:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			(*ptr)++;
+ 145:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	}
+ 146:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	else
+ 147:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	{
+ 148:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		settings = tmc2160->registerResetState;
+ 149:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		// Find the next resettable register
+ 150:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		while((*ptr < TMC2160_REGISTER_COUNT) && !TMC_IS_RESETTABLE(tmc2160->registerAccess[*ptr]))
+ 151:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			(*ptr)++;
+ 152:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	}
+ 153:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 154:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	if(*ptr < TMC2160_REGISTER_COUNT)
+ 155:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	{
+ 156:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		tmc2160_writeInt(tmc2160, *ptr, settings[*ptr]);
+ 157:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		(*ptr)++;
+ 158:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	}
+ 159:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	else // Finished configuration
+ 160:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	{
+ 161:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		if(tmc2160->config->callback)
+ 162:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			((tmc2160_callback)tmc2160->config->callback)(tmc2160, tmc2160->config->state);
+ 163:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 164:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		tmc2160->config->state = CONFIG_READY;
+ 165:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	}
+ 166:TMC-API/tmc/ic/TMC2160/TMC2160.c **** }
+ 167:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 168:TMC-API/tmc/ic/TMC2160/TMC2160.c **** void tmc2160_periodicJob(TMC2160TypeDef *tmc2160, uint32_t tick)
+ 169:TMC-API/tmc/ic/TMC2160/TMC2160.c **** {
+ 593              		.loc 1 169 1 is_stmt 1 view -0
+ 594              		.cfi_startproc
+ 595              		@ args = 0, pretend = 0, frame = 0
+ 596              		@ frame_needed = 0, uses_anonymous_args = 0
+ 170:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	UNUSED(tick);
+ 597              		.loc 1 170 2 view .LVU165
+ 171:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 172:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	if(tmc2160->config->state != CONFIG_READY)
+ 598              		.loc 1 172 2 view .LVU166
+ 169:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	UNUSED(tick);
+ 599              		.loc 1 169 1 is_stmt 0 view .LVU167
+ 600 01a2 38B5     		push	{r3, r4, r5, lr}
+ 601              	.LCFI9:
+ 602              		.cfi_def_cfa_offset 16
+ 603              		.cfi_offset 3, -16
+ 604              		.cfi_offset 4, -12
+ 605              		.cfi_offset 5, -8
+ 606              		.cfi_offset 14, -4
+ 607              		.loc 1 172 12 view .LVU168
+ 608 01a4 0468     		ldr	r4, [r0]
+ 609              		.loc 1 172 20 view .LVU169
+ 610 01a6 2378     		ldrb	r3, [r4]	@ zero_extendqisi2
+ 169:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	UNUSED(tick);
+ 611              		.loc 1 169 1 view .LVU170
+ 612 01a8 0546     		mov	r5, r0
+ 613              		.loc 1 172 4 view .LVU171
+ 614 01aa EBB1     		cbz	r3, .L33
+ 173:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		writeConfiguration(tmc2160);
+ 615              		.loc 1 173 3 is_stmt 1 view .LVU172
+ 616              	.LVL50:
+ 617              	.LBB7:
+ 618              	.LBI7:
+ 134:TMC-API/tmc/ic/TMC2160/TMC2160.c **** {
+ 619              		.loc 1 134 13 view .LVU173
+ 620              	.LBB8:
+ 136:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	const int32_t *settings;
+ 621              		.loc 1 136 2 view .LVU174
+ 137:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 622              		.loc 1 137 2 view .LVU175
+ 139:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	{
+ 623              		.loc 1 139 2 view .LVU176
+ 139:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	{
+ 624              		.loc 1 139 4 is_stmt 0 view .LVU177
+ 625 01ac 022B     		cmp	r3, #2
+ 626 01ae 1FD1     		bne	.L35
+ 141:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		// Find the next restorable register
+ 627              		.loc 1 141 3 is_stmt 1 view .LVU178
+ 141:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		// Find the next restorable register
+ 628              		.loc 1 141 12 is_stmt 0 view .LVU179
+ 629 01b0 201D     		adds	r0, r4, #4
+ 630              	.LVL51:
+ 143:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			(*ptr)++;
+ 631              		.loc 1 143 3 is_stmt 1 view .LVU180
+ 632              	.L36:
+ 143:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			(*ptr)++;
+ 633              		.loc 1 143 8 view .LVU181
+ 634 01b2 94F90130 		ldrsb	r3, [r4, #1]
+ 143:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			(*ptr)++;
+ 635              		.loc 1 143 10 is_stmt 0 view .LVU182
+ 636 01b6 6278     		ldrb	r2, [r4, #1]	@ zero_extendqisi2
+ 143:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			(*ptr)++;
+ 637              		.loc 1 143 8 view .LVU183
+ 638 01b8 002B     		cmp	r3, #0
+ 639 01ba 08DB     		blt	.L37
+ 143:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			(*ptr)++;
+ 640              		.loc 1 143 45 view .LVU184
+ 641 01bc AB18     		adds	r3, r5, r2
+ 642 01be 93F80432 		ldrb	r3, [r3, #516]	@ zero_extendqisi2
+ 143:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			(*ptr)++;
+ 643              		.loc 1 143 41 view .LVU185
+ 644 01c2 9907     		lsls	r1, r3, #30
+ 645 01c4 11D5     		bpl	.L38
+ 143:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			(*ptr)++;
+ 646              		.loc 1 143 44 view .LVU186
+ 647 01c6 03F04803 		and	r3, r3, #72
+ 648 01ca 402B     		cmp	r3, #64
+ 649 01cc 0DD0     		beq	.L38
+ 650              	.L37:
+ 154:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	{
+ 651              		.loc 1 154 2 is_stmt 1 view .LVU187
+ 154:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	{
+ 652              		.loc 1 154 4 is_stmt 0 view .LVU188
+ 653 01ce 94F90130 		ldrsb	r3, [r4, #1]
+ 154:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	{
+ 654              		.loc 1 154 5 view .LVU189
+ 655 01d2 6178     		ldrb	r1, [r4, #1]	@ zero_extendqisi2
+ 154:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	{
+ 656              		.loc 1 154 4 view .LVU190
+ 657 01d4 002B     		cmp	r3, #0
+ 658 01d6 1BDB     		blt	.L41
+ 156:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		(*ptr)++;
+ 659              		.loc 1 156 3 is_stmt 1 view .LVU191
+ 660 01d8 50F82120 		ldr	r2, [r0, r1, lsl #2]
+ 661 01dc 2846     		mov	r0, r5
+ 662              	.LVL52:
+ 156:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		(*ptr)++;
+ 663              		.loc 1 156 3 is_stmt 0 view .LVU192
+ 664 01de FFF7FEFF 		bl	tmc2160_writeInt
+ 665              	.LVL53:
+ 157:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	}
+ 666              		.loc 1 157 3 is_stmt 1 view .LVU193
+ 157:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	}
+ 667              		.loc 1 157 9 is_stmt 0 view .LVU194
+ 668 01e2 6378     		ldrb	r3, [r4, #1]	@ zero_extendqisi2
+ 669 01e4 0133     		adds	r3, r3, #1
+ 670 01e6 6370     		strb	r3, [r4, #1]
+ 671              	.LVL54:
+ 672              	.L33:
+ 157:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	}
+ 673              		.loc 1 157 9 view .LVU195
+ 674              	.LBE8:
+ 675              	.LBE7:
+ 174:TMC-API/tmc/ic/TMC2160/TMC2160.c **** }
+ 676              		.loc 1 174 1 view .LVU196
+ 677 01e8 38BD     		pop	{r3, r4, r5, pc}
+ 678              	.LVL55:
+ 679              	.L38:
+ 680              	.LBB10:
+ 681              	.LBB9:
+ 144:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	}
+ 682              		.loc 1 144 4 is_stmt 1 view .LVU197
+ 144:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	}
+ 683              		.loc 1 144 10 is_stmt 0 view .LVU198
+ 684 01ea 0132     		adds	r2, r2, #1
+ 685 01ec 6270     		strb	r2, [r4, #1]
+ 686 01ee E0E7     		b	.L36
+ 687              	.LVL56:
+ 688              	.L35:
+ 148:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		// Find the next resettable register
+ 689              		.loc 1 148 3 is_stmt 1 view .LVU199
+ 148:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 		// Find the next resettable register
+ 690              		.loc 1 148 12 is_stmt 0 view .LVU200
+ 691 01f0 0430     		adds	r0, r0, #4
+ 692              	.LVL57:
+ 150:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			(*ptr)++;
+ 693              		.loc 1 150 3 is_stmt 1 view .LVU201
+ 694              	.L39:
+ 150:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			(*ptr)++;
+ 695              		.loc 1 150 8 view .LVU202
+ 696 01f2 94F90120 		ldrsb	r2, [r4, #1]
+ 150:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			(*ptr)++;
+ 697              		.loc 1 150 10 is_stmt 0 view .LVU203
+ 698 01f6 6378     		ldrb	r3, [r4, #1]	@ zero_extendqisi2
+ 150:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			(*ptr)++;
+ 699              		.loc 1 150 8 view .LVU204
+ 700 01f8 002A     		cmp	r2, #0
+ 701 01fa E8DB     		blt	.L37
+ 150:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			(*ptr)++;
+ 702              		.loc 1 150 45 view .LVU205
+ 703 01fc EA18     		adds	r2, r5, r3
+ 150:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			(*ptr)++;
+ 704              		.loc 1 150 41 view .LVU206
+ 705 01fe 92F80422 		ldrb	r2, [r2, #516]	@ zero_extendqisi2
+ 706 0202 02F04202 		and	r2, r2, #66
+ 707 0206 022A     		cmp	r2, #2
+ 708 0208 E1D0     		beq	.L37
+ 151:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	}
+ 709              		.loc 1 151 4 is_stmt 1 view .LVU207
+ 151:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	}
+ 710              		.loc 1 151 10 is_stmt 0 view .LVU208
+ 711 020a 0133     		adds	r3, r3, #1
+ 712 020c 6370     		strb	r3, [r4, #1]
+ 713 020e F0E7     		b	.L39
+ 714              	.LVL58:
+ 715              	.L41:
+ 161:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			((tmc2160_callback)tmc2160->config->callback)(tmc2160, tmc2160->config->state);
+ 716              		.loc 1 161 3 is_stmt 1 view .LVU209
+ 161:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			((tmc2160_callback)tmc2160->config->callback)(tmc2160, tmc2160->config->state);
+ 717              		.loc 1 161 13 is_stmt 0 view .LVU210
+ 718 0210 2A68     		ldr	r2, [r5]
+ 161:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			((tmc2160_callback)tmc2160->config->callback)(tmc2160, tmc2160->config->state);
+ 719              		.loc 1 161 21 view .LVU211
+ 720 0212 D2F80C32 		ldr	r3, [r2, #524]
+ 161:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 			((tmc2160_callback)tmc2160->config->callback)(tmc2160, tmc2160->config->state);
+ 721              		.loc 1 161 5 view .LVU212
+ 722 0216 13B1     		cbz	r3, .L42
+ 162:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 723              		.loc 1 162 4 is_stmt 1 view .LVU213
+ 162:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 724              		.loc 1 162 5 is_stmt 0 view .LVU214
+ 725 0218 1178     		ldrb	r1, [r2]	@ zero_extendqisi2
+ 726 021a 2846     		mov	r0, r5
+ 727              	.LVL59:
+ 162:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 
+ 728              		.loc 1 162 5 view .LVU215
+ 729 021c 9847     		blx	r3
+ 730              	.LVL60:
+ 731              	.L42:
+ 164:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	}
+ 732              		.loc 1 164 3 is_stmt 1 view .LVU216
+ 164:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	}
+ 733              		.loc 1 164 26 is_stmt 0 view .LVU217
+ 734 021e 2B68     		ldr	r3, [r5]
+ 735 0220 0022     		movs	r2, #0
+ 736 0222 1A70     		strb	r2, [r3]
+ 737              	.LVL61:
+ 164:TMC-API/tmc/ic/TMC2160/TMC2160.c **** 	}
+ 738              		.loc 1 164 26 view .LVU218
+ 739              	.LBE9:
+ 740              	.LBE10:
+ 741              		.loc 1 174 1 view .LVU219
+ 742 0224 E0E7     		b	.L33
+ 743              		.cfi_endproc
+ 744              	.LFE10:
+ 746              		.section	.rodata
+ 747              		.align	2
+ 748              		.set	.LANCHOR0,. + 0
+ 751              	tmc2160_defaultRegisterAccess:
+ 752 0000 03230102 		.ascii	"\003#\001\002#\002\002\001BBB\002\001\000\000\000\002"
+ 752      23020201 
+ 752      42424202 
+ 752      01000000 
+ 752      02
+ 753 0011 02010202 		.ascii	"\002\001\002\002\002\000\000\000\000\000\000\000\000"
+ 753      02000000 
+ 753      00000000 
+ 753      00
+ 754 001e 00000303 		.ascii	"\000\000\003\003\001\002\002\002\002\002\002\000\002"
+ 754      01020202 
+ 754      02020200 
+ 754      02
+ 755 002b 02020300 		.ascii	"\002\002\003\000\000\000\000\000\002\003#\001\000\003"
+ 755      00000000 
+ 755      02032301 
+ 755      0003
+ 756 0039 03022301 		.ascii	"\003\002#\001\002\000\000\000\000\000\000\000\000\000"
+ 756      02000000 
+ 756      00000000 
+ 756      0000
+ 757 0047 00000000 		.ascii	"\000\000\000\000\000\000\000\000\000\000\000\000\000"
+ 757      00000000 
+ 757      00000000 
+ 757      00
+ 758 0054 00000000 		.ascii	"\000\000\000\000\000\000\000\000\000\000\000\000BBB"
+ 758      00000000 
+ 758      00000000 
+ 758      424242
+ 759 0063 42424242 		.ascii	"BBBBBBB\001\001\003\002\002\001\002\001\001\001\000"
+ 759      42424201 
+ 759      01030202 
+ 759      01020101 
+ 759      0100
+ 760 0075 00000000 		.ascii	"\000\000\000\000\000\000\000\000\000\000\000"
+ 760      00000000 
+ 760      000000
+ 763              	tmc2160_RegisterConstants:
+ 764 0080 08       		.byte	8
+ 765 0081 000000   		.space	3
+ 766 0084 00000000 		.word	0
+ 767 0088 09       		.byte	9
+ 768 0089 000000   		.space	3
+ 769 008c 00000000 		.word	0
+ 770 0090 0A       		.byte	10
+ 771 0091 000000   		.space	3
+ 772 0094 00000000 		.word	0
+ 773 0098 60       		.byte	96
+ 774 0099 000000   		.space	3
+ 775 009c 54B5AAAA 		.word	-1431653036
+ 776 00a0 61       		.byte	97
+ 777 00a1 000000   		.space	3
+ 778 00a4 AA54954A 		.word	1251300522
+ 779 00a8 62       		.byte	98
+ 780 00a9 000000   		.space	3
+ 781 00ac 29294924 		.word	608774441
+ 782 00b0 63       		.byte	99
+ 783 00b1 000000   		.space	3
+ 784 00b4 22421010 		.word	269500962
+ 785 00b8 64       		.byte	100
+ 786 00b9 000000   		.space	3
+ 787 00bc FFFFFFFB 		.word	-67108865
+ 788 00c0 65       		.byte	101
+ 789 00c1 000000   		.space	3
+ 790 00c4 7D77BBB5 		.word	-1246005379
+ 791 00c8 66       		.byte	102
+ 792 00c9 000000   		.space	3
+ 793 00cc 56552949 		.word	1227445590
+ 794 00d0 67       		.byte	103
+ 795 00d1 000000   		.space	3
+ 796 00d4 22424000 		.word	4211234
+ 797 00d8 68       		.byte	104
+ 798 00d9 000000   		.space	3
+ 799 00dc 5680FFFF 		.word	-32682
+ 800 00e0 69       		.byte	105
+ 801 00e1 000000   		.space	3
+ 802 00e4 0000F700 		.word	16187392
+ 803              		.text
+ 804              	.Letext0:
+ 805              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 806              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 807              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 808              		.file 5 "TMC-API/tmc/helpers/Config.h"
+ 809              		.file 6 "TMC-API/tmc/helpers/RegisterAccess.h"
+ 810              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 811              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 812              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 813              		.file 10 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\in
+ 814              		.file 11 "TMC-API/tmc/ic/TMC2160/TMC2160.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 TMC2160.c
+C:\Users\Shubham\AppData\Local\Temp\cc6nypGN.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\cc6nypGN.s:23     .text:00000000 tmc2160_writeDatagram
+C:\Users\Shubham\AppData\Local\Temp\cc6nypGN.s:123    .text:00000066 tmc2160_writeInt
+C:\Users\Shubham\AppData\Local\Temp\cc6nypGN.s:163    .text:00000082 tmc2160_readInt
+C:\Users\Shubham\AppData\Local\Temp\cc6nypGN.s:249    .text:000000ca tmc2160_init
+C:\Users\Shubham\AppData\Local\Temp\cc6nypGN.s:319    .text:00000100 $d
+C:\Users\Shubham\AppData\Local\Temp\cc6nypGN.s:323    .text:00000104 $t
+C:\Users\Shubham\AppData\Local\Temp\cc6nypGN.s:330    .text:00000104 tmc2160_fillShadowRegisters
+C:\Users\Shubham\AppData\Local\Temp\cc6nypGN.s:416    .text:00000148 $d
+C:\Users\Shubham\AppData\Local\Temp\cc6nypGN.s:421    .text:0000014c $t
+C:\Users\Shubham\AppData\Local\Temp\cc6nypGN.s:428    .text:0000014c tmc2160_reset
+C:\Users\Shubham\AppData\Local\Temp\cc6nypGN.s:484    .text:00000172 tmc2160_restore
+C:\Users\Shubham\AppData\Local\Temp\cc6nypGN.s:526    .text:00000184 tmc2160_setRegisterResetState
+C:\Users\Shubham\AppData\Local\Temp\cc6nypGN.s:566    .text:0000019a tmc2160_setCallback
+C:\Users\Shubham\AppData\Local\Temp\cc6nypGN.s:590    .text:000001a2 tmc2160_periodicJob
+C:\Users\Shubham\AppData\Local\Temp\cc6nypGN.s:747    .rodata:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\cc6nypGN.s:751    .rodata:00000000 tmc2160_defaultRegisterAccess
+C:\Users\Shubham\AppData\Local\Temp\cc6nypGN.s:763    .rodata:00000080 tmc2160_RegisterConstants
+
+UNDEFINED SYMBOLS
+tmc2160_readWriteArray

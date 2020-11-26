@@ -1,0 +1,1990 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"TMCC160_eval.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.arch armv7e-m
+  17              		.syntax unified
+  18              		.thumb
+  19              		.thumb_func
+  20              		.fpu softvfp
+  22              	userFunction:
+  23              	.LVL0:
+  24              	.LFB16:
+  25              		.file 1 "boards/TMCC160_eval.c"
+   1:boards/TMCC160_eval.c **** #include "Board.h"
+   2:boards/TMCC160_eval.c **** #include "tmc/ic/TMCC160/TMCC160.h"
+   3:boards/TMCC160_eval.c **** 
+   4:boards/TMCC160_eval.c **** #define MOTORS 1 // number of motors for this board
+   5:boards/TMCC160_eval.c **** 
+   6:boards/TMCC160_eval.c **** IOPinTypeDef *PIN_DRV_ENN;
+   7:boards/TMCC160_eval.c **** ConfigurationTypeDef *C160_config;
+   8:boards/TMCC160_eval.c **** 
+   9:boards/TMCC160_eval.c **** // => SPI wrapper
+  10:boards/TMCC160_eval.c **** uint8_t tmcc160_spi_readwriteByte(uint8_t data, uint8_t lastTransfer)
+  11:boards/TMCC160_eval.c **** {
+  12:boards/TMCC160_eval.c **** 	return spi_ch1_readWriteByte(data, lastTransfer);
+  13:boards/TMCC160_eval.c **** }
+  14:boards/TMCC160_eval.c **** // <= SPI wrapper
+  15:boards/TMCC160_eval.c **** 
+  16:boards/TMCC160_eval.c **** void tmcc160_writeDatagram(uint8_t address, uint8_t x3, uint8_t x2, uint8_t x1, uint8_t x0)
+  17:boards/TMCC160_eval.c **** {
+  18:boards/TMCC160_eval.c **** 	tmcc160_spi_readwriteByte(address | 0x80, false);
+  19:boards/TMCC160_eval.c **** 	tmcc160_spi_readwriteByte(x3, false);
+  20:boards/TMCC160_eval.c **** 	tmcc160_spi_readwriteByte(x2, false);
+  21:boards/TMCC160_eval.c **** 	tmcc160_spi_readwriteByte(x1, false);
+  22:boards/TMCC160_eval.c **** 	tmcc160_spi_readwriteByte(x0, true);
+  23:boards/TMCC160_eval.c **** }
+  24:boards/TMCC160_eval.c **** 
+  25:boards/TMCC160_eval.c **** static uint32_t rotate(uint8_t motor, int32_t velocity)
+  26:boards/TMCC160_eval.c **** {
+  27:boards/TMCC160_eval.c **** 	if(motor >= MOTORS)
+  28:boards/TMCC160_eval.c **** 		return TMC_ERROR_MOTOR;
+  29:boards/TMCC160_eval.c **** 
+  30:boards/TMCC160_eval.c **** 	tmcc160_setTargetVelocity(velocity);
+  31:boards/TMCC160_eval.c **** 
+  32:boards/TMCC160_eval.c **** 	return TMC_ERROR_NONE;
+  33:boards/TMCC160_eval.c **** }
+  34:boards/TMCC160_eval.c **** 
+  35:boards/TMCC160_eval.c **** static uint32_t right(uint8_t motor, int32_t velocity)
+  36:boards/TMCC160_eval.c **** {
+  37:boards/TMCC160_eval.c **** 	return rotate(motor, velocity);
+  38:boards/TMCC160_eval.c **** }
+  39:boards/TMCC160_eval.c **** 
+  40:boards/TMCC160_eval.c **** static uint32_t left(uint8_t motor, int32_t velocity)
+  41:boards/TMCC160_eval.c **** {
+  42:boards/TMCC160_eval.c **** 	return rotate(motor, -velocity);
+  43:boards/TMCC160_eval.c **** }
+  44:boards/TMCC160_eval.c **** 
+  45:boards/TMCC160_eval.c **** static uint32_t stop(uint8_t motor)
+  46:boards/TMCC160_eval.c **** {
+  47:boards/TMCC160_eval.c **** 	return rotate(motor, 0);
+  48:boards/TMCC160_eval.c **** }
+  49:boards/TMCC160_eval.c **** 
+  50:boards/TMCC160_eval.c **** static uint32_t moveTo(uint8_t motor, int32_t position)
+  51:boards/TMCC160_eval.c **** {
+  52:boards/TMCC160_eval.c **** 	if(motor >= MOTORS)
+  53:boards/TMCC160_eval.c **** 		return TMC_ERROR_MOTOR;
+  54:boards/TMCC160_eval.c **** 
+  55:boards/TMCC160_eval.c **** 	tmcc160_setAbsolutTargetPosition(position);
+  56:boards/TMCC160_eval.c **** 
+  57:boards/TMCC160_eval.c **** 	return TMC_ERROR_NONE;
+  58:boards/TMCC160_eval.c **** }
+  59:boards/TMCC160_eval.c **** 
+  60:boards/TMCC160_eval.c **** static uint32_t moveBy(uint8_t motor, int32_t *ticks)
+  61:boards/TMCC160_eval.c **** {
+  62:boards/TMCC160_eval.c **** 	if(motor >= MOTORS)
+  63:boards/TMCC160_eval.c **** 		return TMC_ERROR_MOTOR;
+  64:boards/TMCC160_eval.c **** 
+  65:boards/TMCC160_eval.c **** 	tmcc160_setRelativeTargetPosition(*ticks);
+  66:boards/TMCC160_eval.c **** 
+  67:boards/TMCC160_eval.c **** 	return TMC_ERROR_NONE;
+  68:boards/TMCC160_eval.c **** }
+  69:boards/TMCC160_eval.c **** 
+  70:boards/TMCC160_eval.c **** static uint32_t handleParameter(uint8_t readWrite, uint8_t motor, uint8_t type, int32_t *value)
+  71:boards/TMCC160_eval.c **** {
+  72:boards/TMCC160_eval.c **** 	uint32_t errors = TMC_ERROR_NONE;
+  73:boards/TMCC160_eval.c **** 
+  74:boards/TMCC160_eval.c **** 	if(motor >= MOTORS)
+  75:boards/TMCC160_eval.c **** 		return TMC_ERROR_MOTOR;
+  76:boards/TMCC160_eval.c **** 
+  77:boards/TMCC160_eval.c **** 	switch(type)
+  78:boards/TMCC160_eval.c **** 	{
+  79:boards/TMCC160_eval.c **** 	case 0:  // target position
+  80:boards/TMCC160_eval.c **** 		if(readWrite == READ)
+  81:boards/TMCC160_eval.c **** 			*value = tmcc160_getTargetPosition();
+  82:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+  83:boards/TMCC160_eval.c **** 			tmcc160_setAbsolutTargetPosition(*value);
+  84:boards/TMCC160_eval.c **** 		break;
+  85:boards/TMCC160_eval.c **** 	case 1:  // actual position
+  86:boards/TMCC160_eval.c **** 		if(readWrite == READ)
+  87:boards/TMCC160_eval.c **** 			*value = tmcc160_getActualPosition();
+  88:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+  89:boards/TMCC160_eval.c **** 			tmcc160_setActualPosition(*value);
+  90:boards/TMCC160_eval.c **** 		break;
+  91:boards/TMCC160_eval.c **** 	case 2:  // target velocity
+  92:boards/TMCC160_eval.c **** 		if(readWrite == READ)
+  93:boards/TMCC160_eval.c **** 			*value = tmcc160_getTargetVelocity();
+  94:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+  95:boards/TMCC160_eval.c **** 			tmcc160_setTargetVelocity(*value);
+  96:boards/TMCC160_eval.c **** 		break;
+  97:boards/TMCC160_eval.c **** 	case 3:  // actual velocity
+  98:boards/TMCC160_eval.c **** 		if(readWrite == READ)
+  99:boards/TMCC160_eval.c **** 			*value = tmcc160_getActualVelocity();
+ 100:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 101:boards/TMCC160_eval.c **** 			errors |= TMC_ERROR_TYPE;
+ 102:boards/TMCC160_eval.c **** 		break;
+ 103:boards/TMCC160_eval.c **** 	case 13:  // actual ramp generator velocity
+ 104:boards/TMCC160_eval.c **** 		if(readWrite == READ)
+ 105:boards/TMCC160_eval.c **** 			*value = tmcc160_getActualRampVelocity();
+ 106:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 107:boards/TMCC160_eval.c **** 			errors |= TMC_ERROR_TYPE;
+ 108:boards/TMCC160_eval.c **** 		break;
+ 109:boards/TMCC160_eval.c **** 	case 150:  // actual motor current
+ 110:boards/TMCC160_eval.c **** 		if(readWrite == READ)
+ 111:boards/TMCC160_eval.c **** 			*value = tmcc160_getActualTorque_mA();
+ 112:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 113:boards/TMCC160_eval.c **** 			errors |= TMC_ERROR_TYPE;
+ 114:boards/TMCC160_eval.c **** 		break;
+ 115:boards/TMCC160_eval.c **** 	case 155:  // target motor current
+ 116:boards/TMCC160_eval.c **** 		if(readWrite == READ)
+ 117:boards/TMCC160_eval.c **** 			*value = tmcc160_getTargetTorque_mA();
+ 118:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 119:boards/TMCC160_eval.c **** 			tmcc160_setTargetTorque_mA(*value);
+ 120:boards/TMCC160_eval.c **** 		break;
+ 121:boards/TMCC160_eval.c **** 	default:  // handle all other types by TMCL tunnel
+ 122:boards/TMCC160_eval.c **** 		// --- write tmcl data ---
+ 123:boards/TMCC160_eval.c **** 		// write Byte 0..3
+ 124:boards/TMCC160_eval.c **** 		if(readWrite == READ)
+ 125:boards/TMCC160_eval.c **** 			tmcc160_writeDatagram(TMCL_REQUEST_BYTE_0123_REG_ADDR | 0x80, 6/*TMCL_GAP*/, type, motor, 0/*TMC
+ 126:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 127:boards/TMCC160_eval.c **** 			tmcc160_writeDatagram(TMCL_REQUEST_BYTE_0123_REG_ADDR | 0x80, 5/*TMCL_SAP*/, type, motor, 0/*TMC
+ 128:boards/TMCC160_eval.c **** 
+ 129:boards/TMCC160_eval.c **** 		tmcc160_default_spi_delay();
+ 130:boards/TMCC160_eval.c **** 
+ 131:boards/TMCC160_eval.c **** 		// write Byte 4..7
+ 132:boards/TMCC160_eval.c **** 		tmcc160_writeInt(TMCL_REQUEST_BYTE_4567_REG_ADDR | 0x80, *value);
+ 133:boards/TMCC160_eval.c **** 		tmcc160_default_spi_delay();
+ 134:boards/TMCC160_eval.c **** 
+ 135:boards/TMCC160_eval.c **** 		// --- read tmcl data ---
+ 136:boards/TMCC160_eval.c **** 
+ 137:boards/TMCC160_eval.c **** 		// read Byte 0..3
+ 138:boards/TMCC160_eval.c **** 		tmcc160_readInt(TMCL_REPLY_BYTE_0123_REG_ADDR);
+ 139:boards/TMCC160_eval.c **** 
+ 140:boards/TMCC160_eval.c **** 		tmcc160_default_spi_delay();
+ 141:boards/TMCC160_eval.c **** 
+ 142:boards/TMCC160_eval.c **** 		// read Byte 4..7
+ 143:boards/TMCC160_eval.c **** 		*value	= tmcc160_readInt(TMCL_REPLY_BYTE_4567_REG_ADDR);
+ 144:boards/TMCC160_eval.c **** 		tmcc160_default_spi_delay();
+ 145:boards/TMCC160_eval.c **** 
+ 146:boards/TMCC160_eval.c **** 		break;
+ 147:boards/TMCC160_eval.c **** 	}
+ 148:boards/TMCC160_eval.c **** 	return errors;
+ 149:boards/TMCC160_eval.c **** }
+ 150:boards/TMCC160_eval.c **** 
+ 151:boards/TMCC160_eval.c **** static uint32_t getMeasuredSpeed(uint8_t motor, int32_t *value)
+ 152:boards/TMCC160_eval.c **** {
+ 153:boards/TMCC160_eval.c **** 	if(motor >= MOTORS)
+ 154:boards/TMCC160_eval.c **** 		return TMC_ERROR_MOTOR;
+ 155:boards/TMCC160_eval.c **** 
+ 156:boards/TMCC160_eval.c **** 	*value = tmcc160_getActualVelocity();
+ 157:boards/TMCC160_eval.c **** 
+ 158:boards/TMCC160_eval.c **** 	return TMC_ERROR_NONE;
+ 159:boards/TMCC160_eval.c **** }
+ 160:boards/TMCC160_eval.c **** 
+ 161:boards/TMCC160_eval.c **** static void periodicJob(uint32_t actualSystick)
+ 162:boards/TMCC160_eval.c **** {
+ 163:boards/TMCC160_eval.c **** 	tmcc160_periodicJob(actualSystick);
+ 164:boards/TMCC160_eval.c **** }
+ 165:boards/TMCC160_eval.c **** 
+ 166:boards/TMCC160_eval.c **** static void writeRegister(uint8_t motor, uint8_t address, int32_t value)
+ 167:boards/TMCC160_eval.c **** {
+ 168:boards/TMCC160_eval.c **** 	UNUSED(motor);
+ 169:boards/TMCC160_eval.c **** 	tmcc160_writeInt(address, value);
+ 170:boards/TMCC160_eval.c **** }
+ 171:boards/TMCC160_eval.c **** 
+ 172:boards/TMCC160_eval.c **** static void readRegister(uint8_t motor, uint8_t address, int32_t *value)
+ 173:boards/TMCC160_eval.c **** {
+ 174:boards/TMCC160_eval.c **** 	UNUSED(motor);
+ 175:boards/TMCC160_eval.c **** 	*value = tmcc160_readInt(address);
+ 176:boards/TMCC160_eval.c **** }
+ 177:boards/TMCC160_eval.c **** 
+ 178:boards/TMCC160_eval.c **** static uint32_t SAP(uint8_t type, uint8_t motor, int32_t value)
+ 179:boards/TMCC160_eval.c **** {
+ 180:boards/TMCC160_eval.c **** 	return handleParameter(WRITE, motor, type, &value);
+ 181:boards/TMCC160_eval.c **** }
+ 182:boards/TMCC160_eval.c **** 
+ 183:boards/TMCC160_eval.c **** static uint32_t GAP(uint8_t type, uint8_t motor, int32_t *value)
+ 184:boards/TMCC160_eval.c **** {
+ 185:boards/TMCC160_eval.c **** 	return handleParameter(READ, motor, type, value);
+ 186:boards/TMCC160_eval.c **** }
+ 187:boards/TMCC160_eval.c **** 
+ 188:boards/TMCC160_eval.c **** static uint32_t userFunction(uint8_t type, uint8_t motor, int32_t *value)
+ 189:boards/TMCC160_eval.c **** {
+  26              		.loc 1 189 1 view -0
+  27              		.cfi_startproc
+  28              		@ args = 0, pretend = 0, frame = 0
+  29              		@ frame_needed = 0, uses_anonymous_args = 0
+  30              		@ link register save eliminated.
+ 190:boards/TMCC160_eval.c **** 	UNUSED(type);
+  31              		.loc 1 190 2 view .LVU1
+ 191:boards/TMCC160_eval.c **** 	UNUSED(motor);
+  32              		.loc 1 191 2 view .LVU2
+ 192:boards/TMCC160_eval.c **** 	UNUSED(value);
+  33              		.loc 1 192 2 view .LVU3
+ 193:boards/TMCC160_eval.c **** 	return 0;
+  34              		.loc 1 193 2 view .LVU4
+ 194:boards/TMCC160_eval.c **** }
+  35              		.loc 1 194 1 is_stmt 0 view .LVU5
+  36 0000 0020     		movs	r0, #0
+  37              	.LVL1:
+  38              		.loc 1 194 1 view .LVU6
+  39 0002 7047     		bx	lr
+  40              		.cfi_endproc
+  41              	.LFE16:
+  43              		.align	1
+  44              		.syntax unified
+  45              		.thumb
+  46              		.thumb_func
+  47              		.fpu softvfp
+  49              	reset:
+  50              	.LFB19:
+ 195:boards/TMCC160_eval.c **** 
+ 196:boards/TMCC160_eval.c **** static void enableDriver(DriverState state)
+ 197:boards/TMCC160_eval.c **** {
+ 198:boards/TMCC160_eval.c **** 	if(state== DRIVER_USE_GLOBAL_ENABLE)
+ 199:boards/TMCC160_eval.c **** 		state = Evalboards.driverEnable;
+ 200:boards/TMCC160_eval.c **** 
+ 201:boards/TMCC160_eval.c **** 	if(state ==  DRIVER_DISABLE)
+ 202:boards/TMCC160_eval.c **** 		HAL.IOs->config->setLow(PIN_DRV_ENN);
+ 203:boards/TMCC160_eval.c **** 	else if((state == DRIVER_ENABLE) && (Evalboards.driverEnable == DRIVER_ENABLE))
+ 204:boards/TMCC160_eval.c **** 		HAL.IOs->config->setHigh(PIN_DRV_ENN);
+ 205:boards/TMCC160_eval.c **** }
+ 206:boards/TMCC160_eval.c **** 
+ 207:boards/TMCC160_eval.c **** static void deInit(void)
+ 208:boards/TMCC160_eval.c **** {
+ 209:boards/TMCC160_eval.c **** 	enableDriver(DRIVER_DISABLE);
+ 210:boards/TMCC160_eval.c **** 	HAL.IOs->config->reset(PIN_DRV_ENN);
+ 211:boards/TMCC160_eval.c **** };
+ 212:boards/TMCC160_eval.c **** 
+ 213:boards/TMCC160_eval.c **** static uint8_t reset()
+ 214:boards/TMCC160_eval.c **** {
+  51              		.loc 1 214 1 is_stmt 1 view -0
+  52              		.cfi_startproc
+  53              		@ args = 0, pretend = 0, frame = 0
+  54              		@ frame_needed = 0, uses_anonymous_args = 0
+  55              		@ link register save eliminated.
+ 215:boards/TMCC160_eval.c **** 	return 1;
+  56              		.loc 1 215 2 view .LVU8
+ 216:boards/TMCC160_eval.c **** }
+  57              		.loc 1 216 1 is_stmt 0 view .LVU9
+  58 0004 0120     		movs	r0, #1
+  59 0006 7047     		bx	lr
+  60              		.cfi_endproc
+  61              	.LFE19:
+  63              		.align	1
+  64              		.syntax unified
+  65              		.thumb
+  66              		.thumb_func
+  67              		.fpu softvfp
+  69              	checkErrors:
+  70              	.LVL2:
+  71              	.LFB21:
+ 217:boards/TMCC160_eval.c **** 
+ 218:boards/TMCC160_eval.c **** static uint8_t restore()
+ 219:boards/TMCC160_eval.c **** {
+ 220:boards/TMCC160_eval.c **** 	return 1;
+ 221:boards/TMCC160_eval.c **** }
+ 222:boards/TMCC160_eval.c **** 
+ 223:boards/TMCC160_eval.c **** static void checkErrors(uint32_t tick)
+ 224:boards/TMCC160_eval.c **** {
+  72              		.loc 1 224 1 is_stmt 1 view -0
+  73              		.cfi_startproc
+  74              		@ args = 0, pretend = 0, frame = 0
+  75              		@ frame_needed = 0, uses_anonymous_args = 0
+  76              		@ link register save eliminated.
+ 225:boards/TMCC160_eval.c **** 	UNUSED(tick);
+  77              		.loc 1 225 2 view .LVU11
+ 226:boards/TMCC160_eval.c **** 	Evalboards.ch1.errors = 0;
+  78              		.loc 1 226 2 view .LVU12
+  79              		.loc 1 226 24 is_stmt 0 view .LVU13
+  80 0008 014B     		ldr	r3, .L4
+  81 000a 0022     		movs	r2, #0
+  82 000c 9A60     		str	r2, [r3, #8]
+ 227:boards/TMCC160_eval.c **** }
+  83              		.loc 1 227 1 view .LVU14
+  84 000e 7047     		bx	lr
+  85              	.L5:
+  86              		.align	2
+  87              	.L4:
+  88 0010 00000000 		.word	Evalboards
+  89              		.cfi_endproc
+  90              	.LFE21:
+  92              		.align	1
+  93              		.syntax unified
+  94              		.thumb
+  95              		.thumb_func
+  96              		.fpu softvfp
+  98              	periodicJob:
+  99              	.LVL3:
+ 100              	.LFB11:
+ 162:boards/TMCC160_eval.c **** 	tmcc160_periodicJob(actualSystick);
+ 101              		.loc 1 162 1 is_stmt 1 view -0
+ 102              		.cfi_startproc
+ 103              		@ args = 0, pretend = 0, frame = 0
+ 104              		@ frame_needed = 0, uses_anonymous_args = 0
+ 105              		@ link register save eliminated.
+ 163:boards/TMCC160_eval.c **** }
+ 106              		.loc 1 163 2 view .LVU16
+ 107 0014 FFF7FEBF 		b	tmcc160_periodicJob
+ 108              	.LVL4:
+ 163:boards/TMCC160_eval.c **** }
+ 109              		.loc 1 163 2 is_stmt 0 view .LVU17
+ 110              		.cfi_endproc
+ 111              	.LFE11:
+ 113              		.align	1
+ 114              		.syntax unified
+ 115              		.thumb
+ 116              		.thumb_func
+ 117              		.fpu softvfp
+ 119              	readRegister:
+ 120              	.LVL5:
+ 121              	.LFB13:
+ 173:boards/TMCC160_eval.c **** 	UNUSED(motor);
+ 122              		.loc 1 173 1 is_stmt 1 view -0
+ 123              		.cfi_startproc
+ 124              		@ args = 0, pretend = 0, frame = 0
+ 125              		@ frame_needed = 0, uses_anonymous_args = 0
+ 174:boards/TMCC160_eval.c **** 	*value = tmcc160_readInt(address);
+ 126              		.loc 1 174 2 view .LVU19
+ 175:boards/TMCC160_eval.c **** }
+ 127              		.loc 1 175 2 view .LVU20
+ 173:boards/TMCC160_eval.c **** 	UNUSED(motor);
+ 128              		.loc 1 173 1 is_stmt 0 view .LVU21
+ 129 0018 10B5     		push	{r4, lr}
+ 130              	.LCFI0:
+ 131              		.cfi_def_cfa_offset 8
+ 132              		.cfi_offset 4, -8
+ 133              		.cfi_offset 14, -4
+ 175:boards/TMCC160_eval.c **** }
+ 134              		.loc 1 175 11 view .LVU22
+ 135 001a 0846     		mov	r0, r1
+ 136              	.LVL6:
+ 173:boards/TMCC160_eval.c **** 	UNUSED(motor);
+ 137              		.loc 1 173 1 view .LVU23
+ 138 001c 1446     		mov	r4, r2
+ 175:boards/TMCC160_eval.c **** }
+ 139              		.loc 1 175 11 view .LVU24
+ 140 001e FFF7FEFF 		bl	tmcc160_readInt
+ 141              	.LVL7:
+ 175:boards/TMCC160_eval.c **** }
+ 142              		.loc 1 175 9 view .LVU25
+ 143 0022 2060     		str	r0, [r4]
+ 176:boards/TMCC160_eval.c **** 
+ 144              		.loc 1 176 1 view .LVU26
+ 145 0024 10BD     		pop	{r4, pc}
+ 176:boards/TMCC160_eval.c **** 
+ 146              		.loc 1 176 1 view .LVU27
+ 147              		.cfi_endproc
+ 148              	.LFE13:
+ 150              		.align	1
+ 151              		.syntax unified
+ 152              		.thumb
+ 153              		.thumb_func
+ 154              		.fpu softvfp
+ 156              	writeRegister:
+ 157              	.LVL8:
+ 158              	.LFB12:
+ 167:boards/TMCC160_eval.c **** 	UNUSED(motor);
+ 159              		.loc 1 167 1 is_stmt 1 view -0
+ 160              		.cfi_startproc
+ 161              		@ args = 0, pretend = 0, frame = 0
+ 162              		@ frame_needed = 0, uses_anonymous_args = 0
+ 163              		@ link register save eliminated.
+ 168:boards/TMCC160_eval.c **** 	tmcc160_writeInt(address, value);
+ 164              		.loc 1 168 2 view .LVU29
+ 169:boards/TMCC160_eval.c **** }
+ 165              		.loc 1 169 2 view .LVU30
+ 167:boards/TMCC160_eval.c **** 	UNUSED(motor);
+ 166              		.loc 1 167 1 is_stmt 0 view .LVU31
+ 167 0026 0846     		mov	r0, r1
+ 168              	.LVL9:
+ 169:boards/TMCC160_eval.c **** }
+ 169              		.loc 1 169 2 view .LVU32
+ 170 0028 1146     		mov	r1, r2
+ 171              	.LVL10:
+ 169:boards/TMCC160_eval.c **** }
+ 172              		.loc 1 169 2 view .LVU33
+ 173 002a FFF7FEBF 		b	tmcc160_writeInt
+ 174              	.LVL11:
+ 169:boards/TMCC160_eval.c **** }
+ 175              		.loc 1 169 2 view .LVU34
+ 176              		.cfi_endproc
+ 177              	.LFE12:
+ 179              		.align	1
+ 180              		.syntax unified
+ 181              		.thumb
+ 182              		.thumb_func
+ 183              		.fpu softvfp
+ 185              	moveBy:
+ 186              	.LVL12:
+ 187              	.LFB8:
+  61:boards/TMCC160_eval.c **** 	if(motor >= MOTORS)
+ 188              		.loc 1 61 1 is_stmt 1 view -0
+ 189              		.cfi_startproc
+ 190              		@ args = 0, pretend = 0, frame = 0
+ 191              		@ frame_needed = 0, uses_anonymous_args = 0
+  62:boards/TMCC160_eval.c **** 		return TMC_ERROR_MOTOR;
+ 192              		.loc 1 62 2 view .LVU36
+  61:boards/TMCC160_eval.c **** 	if(motor >= MOTORS)
+ 193              		.loc 1 61 1 is_stmt 0 view .LVU37
+ 194 002e 10B5     		push	{r4, lr}
+ 195              	.LCFI1:
+ 196              		.cfi_def_cfa_offset 8
+ 197              		.cfi_offset 4, -8
+ 198              		.cfi_offset 14, -4
+  62:boards/TMCC160_eval.c **** 		return TMC_ERROR_MOTOR;
+ 199              		.loc 1 62 4 view .LVU38
+ 200 0030 0446     		mov	r4, r0
+ 201 0032 20B9     		cbnz	r0, .L11
+  65:boards/TMCC160_eval.c **** 
+ 202              		.loc 1 65 2 is_stmt 1 view .LVU39
+ 203 0034 0868     		ldr	r0, [r1]
+ 204              	.LVL13:
+  65:boards/TMCC160_eval.c **** 
+ 205              		.loc 1 65 2 is_stmt 0 view .LVU40
+ 206 0036 FFF7FEFF 		bl	tmcc160_setRelativeTargetPosition
+ 207              	.LVL14:
+  67:boards/TMCC160_eval.c **** }
+ 208              		.loc 1 67 2 is_stmt 1 view .LVU41
+  67:boards/TMCC160_eval.c **** }
+ 209              		.loc 1 67 9 is_stmt 0 view .LVU42
+ 210 003a 2046     		mov	r0, r4
+ 211              	.L9:
+  68:boards/TMCC160_eval.c **** 
+ 212              		.loc 1 68 1 view .LVU43
+ 213 003c 10BD     		pop	{r4, pc}
+ 214              	.LVL15:
+ 215              	.L11:
+  63:boards/TMCC160_eval.c **** 
+ 216              		.loc 1 63 10 view .LVU44
+ 217 003e 0820     		movs	r0, #8
+ 218              	.LVL16:
+  63:boards/TMCC160_eval.c **** 
+ 219              		.loc 1 63 10 view .LVU45
+ 220 0040 FCE7     		b	.L9
+ 221              		.cfi_endproc
+ 222              	.LFE8:
+ 224              		.align	1
+ 225              		.syntax unified
+ 226              		.thumb
+ 227              		.thumb_func
+ 228              		.fpu softvfp
+ 230              	moveTo:
+ 231              	.LVL17:
+ 232              	.LFB7:
+  51:boards/TMCC160_eval.c **** 	if(motor >= MOTORS)
+ 233              		.loc 1 51 1 is_stmt 1 view -0
+ 234              		.cfi_startproc
+ 235              		@ args = 0, pretend = 0, frame = 0
+ 236              		@ frame_needed = 0, uses_anonymous_args = 0
+  52:boards/TMCC160_eval.c **** 		return TMC_ERROR_MOTOR;
+ 237              		.loc 1 52 2 view .LVU47
+  51:boards/TMCC160_eval.c **** 	if(motor >= MOTORS)
+ 238              		.loc 1 51 1 is_stmt 0 view .LVU48
+ 239 0042 10B5     		push	{r4, lr}
+ 240              	.LCFI2:
+ 241              		.cfi_def_cfa_offset 8
+ 242              		.cfi_offset 4, -8
+ 243              		.cfi_offset 14, -4
+  51:boards/TMCC160_eval.c **** 	if(motor >= MOTORS)
+ 244              		.loc 1 51 1 view .LVU49
+ 245 0044 0446     		mov	r4, r0
+ 246 0046 0846     		mov	r0, r1
+ 247              	.LVL18:
+  52:boards/TMCC160_eval.c **** 		return TMC_ERROR_MOTOR;
+ 248              		.loc 1 52 4 view .LVU50
+ 249 0048 1CB9     		cbnz	r4, .L14
+  55:boards/TMCC160_eval.c **** 
+ 250              		.loc 1 55 2 is_stmt 1 view .LVU51
+ 251 004a FFF7FEFF 		bl	tmcc160_setAbsolutTargetPosition
+ 252              	.LVL19:
+  57:boards/TMCC160_eval.c **** }
+ 253              		.loc 1 57 2 view .LVU52
+  57:boards/TMCC160_eval.c **** }
+ 254              		.loc 1 57 9 is_stmt 0 view .LVU53
+ 255 004e 2046     		mov	r0, r4
+ 256              	.L12:
+  58:boards/TMCC160_eval.c **** 
+ 257              		.loc 1 58 1 view .LVU54
+ 258 0050 10BD     		pop	{r4, pc}
+ 259              	.LVL20:
+ 260              	.L14:
+  53:boards/TMCC160_eval.c **** 
+ 261              		.loc 1 53 10 view .LVU55
+ 262 0052 0820     		movs	r0, #8
+ 263              	.LVL21:
+  53:boards/TMCC160_eval.c **** 
+ 264              		.loc 1 53 10 view .LVU56
+ 265 0054 FCE7     		b	.L12
+ 266              		.cfi_endproc
+ 267              	.LFE7:
+ 269              		.align	1
+ 270              		.syntax unified
+ 271              		.thumb
+ 272              		.thumb_func
+ 273              		.fpu softvfp
+ 275              	rotate:
+ 276              	.LVL22:
+ 277              	.LFB3:
+  26:boards/TMCC160_eval.c **** 	if(motor >= MOTORS)
+ 278              		.loc 1 26 1 is_stmt 1 view -0
+ 279              		.cfi_startproc
+ 280              		@ args = 0, pretend = 0, frame = 0
+ 281              		@ frame_needed = 0, uses_anonymous_args = 0
+  27:boards/TMCC160_eval.c **** 		return TMC_ERROR_MOTOR;
+ 282              		.loc 1 27 2 view .LVU58
+  26:boards/TMCC160_eval.c **** 	if(motor >= MOTORS)
+ 283              		.loc 1 26 1 is_stmt 0 view .LVU59
+ 284 0056 10B5     		push	{r4, lr}
+ 285              	.LCFI3:
+ 286              		.cfi_def_cfa_offset 8
+ 287              		.cfi_offset 4, -8
+ 288              		.cfi_offset 14, -4
+  26:boards/TMCC160_eval.c **** 	if(motor >= MOTORS)
+ 289              		.loc 1 26 1 view .LVU60
+ 290 0058 0446     		mov	r4, r0
+ 291 005a 0846     		mov	r0, r1
+ 292              	.LVL23:
+  27:boards/TMCC160_eval.c **** 		return TMC_ERROR_MOTOR;
+ 293              		.loc 1 27 4 view .LVU61
+ 294 005c 1CB9     		cbnz	r4, .L17
+  30:boards/TMCC160_eval.c **** 
+ 295              		.loc 1 30 2 is_stmt 1 view .LVU62
+ 296 005e FFF7FEFF 		bl	tmcc160_setTargetVelocity
+ 297              	.LVL24:
+  32:boards/TMCC160_eval.c **** }
+ 298              		.loc 1 32 2 view .LVU63
+  32:boards/TMCC160_eval.c **** }
+ 299              		.loc 1 32 9 is_stmt 0 view .LVU64
+ 300 0062 2046     		mov	r0, r4
+ 301              	.L15:
+  33:boards/TMCC160_eval.c **** 
+ 302              		.loc 1 33 1 view .LVU65
+ 303 0064 10BD     		pop	{r4, pc}
+ 304              	.LVL25:
+ 305              	.L17:
+  28:boards/TMCC160_eval.c **** 
+ 306              		.loc 1 28 10 view .LVU66
+ 307 0066 0820     		movs	r0, #8
+ 308              	.LVL26:
+  28:boards/TMCC160_eval.c **** 
+ 309              		.loc 1 28 10 view .LVU67
+ 310 0068 FCE7     		b	.L15
+ 311              		.cfi_endproc
+ 312              	.LFE3:
+ 314              		.align	1
+ 315              		.syntax unified
+ 316              		.thumb
+ 317              		.thumb_func
+ 318              		.fpu softvfp
+ 320              	stop:
+ 321              	.LVL27:
+ 322              	.LFB6:
+  46:boards/TMCC160_eval.c **** 	return rotate(motor, 0);
+ 323              		.loc 1 46 1 is_stmt 1 view -0
+ 324              		.cfi_startproc
+ 325              		@ args = 0, pretend = 0, frame = 0
+ 326              		@ frame_needed = 0, uses_anonymous_args = 0
+  47:boards/TMCC160_eval.c **** }
+ 327              		.loc 1 47 2 view .LVU69
+ 328              	.LBB8:
+ 329              	.LBI8:
+  25:boards/TMCC160_eval.c **** {
+ 330              		.loc 1 25 17 view .LVU70
+ 331              	.LBB9:
+  27:boards/TMCC160_eval.c **** 		return TMC_ERROR_MOTOR;
+ 332              		.loc 1 27 2 view .LVU71
+ 333              	.LBE9:
+ 334              	.LBE8:
+  46:boards/TMCC160_eval.c **** 	return rotate(motor, 0);
+ 335              		.loc 1 46 1 is_stmt 0 view .LVU72
+ 336 006a 10B5     		push	{r4, lr}
+ 337              	.LCFI4:
+ 338              		.cfi_def_cfa_offset 8
+ 339              		.cfi_offset 4, -8
+ 340              		.cfi_offset 14, -4
+ 341              	.LBB12:
+ 342              	.LBB10:
+  27:boards/TMCC160_eval.c **** 		return TMC_ERROR_MOTOR;
+ 343              		.loc 1 27 4 view .LVU73
+ 344 006c 0446     		mov	r4, r0
+ 345 006e 18B9     		cbnz	r0, .L20
+  30:boards/TMCC160_eval.c **** 
+ 346              		.loc 1 30 2 is_stmt 1 view .LVU74
+ 347 0070 FFF7FEFF 		bl	tmcc160_setTargetVelocity
+ 348              	.LVL28:
+  32:boards/TMCC160_eval.c **** }
+ 349              		.loc 1 32 2 view .LVU75
+  32:boards/TMCC160_eval.c **** }
+ 350              		.loc 1 32 9 is_stmt 0 view .LVU76
+ 351 0074 2046     		mov	r0, r4
+ 352              	.LVL29:
+ 353              	.L18:
+  32:boards/TMCC160_eval.c **** }
+ 354              		.loc 1 32 9 view .LVU77
+ 355              	.LBE10:
+ 356              	.LBE12:
+  48:boards/TMCC160_eval.c **** 
+ 357              		.loc 1 48 1 view .LVU78
+ 358 0076 10BD     		pop	{r4, pc}
+ 359              	.LVL30:
+ 360              	.L20:
+ 361              	.LBB13:
+ 362              	.LBB11:
+  28:boards/TMCC160_eval.c **** 
+ 363              		.loc 1 28 10 view .LVU79
+ 364 0078 0820     		movs	r0, #8
+ 365              	.LVL31:
+  28:boards/TMCC160_eval.c **** 
+ 366              		.loc 1 28 10 view .LVU80
+ 367              	.LBE11:
+ 368              	.LBE13:
+  47:boards/TMCC160_eval.c **** }
+ 369              		.loc 1 47 9 view .LVU81
+ 370 007a FCE7     		b	.L18
+ 371              		.cfi_endproc
+ 372              	.LFE6:
+ 374              		.align	1
+ 375              		.syntax unified
+ 376              		.thumb
+ 377              		.thumb_func
+ 378              		.fpu softvfp
+ 380              	left:
+ 381              	.LVL32:
+ 382              	.LFB5:
+  41:boards/TMCC160_eval.c **** 	return rotate(motor, -velocity);
+ 383              		.loc 1 41 1 is_stmt 1 view -0
+ 384              		.cfi_startproc
+ 385              		@ args = 0, pretend = 0, frame = 0
+ 386              		@ frame_needed = 0, uses_anonymous_args = 0
+  42:boards/TMCC160_eval.c **** }
+ 387              		.loc 1 42 2 view .LVU83
+ 388              	.LBB14:
+ 389              	.LBI14:
+  25:boards/TMCC160_eval.c **** {
+ 390              		.loc 1 25 17 view .LVU84
+ 391              	.LBB15:
+  27:boards/TMCC160_eval.c **** 		return TMC_ERROR_MOTOR;
+ 392              		.loc 1 27 2 view .LVU85
+ 393              	.LBE15:
+ 394              	.LBE14:
+  41:boards/TMCC160_eval.c **** 	return rotate(motor, -velocity);
+ 395              		.loc 1 41 1 is_stmt 0 view .LVU86
+ 396 007c 10B5     		push	{r4, lr}
+ 397              	.LCFI5:
+ 398              		.cfi_def_cfa_offset 8
+ 399              		.cfi_offset 4, -8
+ 400              		.cfi_offset 14, -4
+ 401              	.LBB18:
+ 402              	.LBB16:
+  27:boards/TMCC160_eval.c **** 		return TMC_ERROR_MOTOR;
+ 403              		.loc 1 27 4 view .LVU87
+ 404 007e 0446     		mov	r4, r0
+ 405 0080 20B9     		cbnz	r0, .L23
+  30:boards/TMCC160_eval.c **** 
+ 406              		.loc 1 30 2 is_stmt 1 view .LVU88
+ 407 0082 4842     		rsbs	r0, r1, #0
+ 408              	.LVL33:
+  30:boards/TMCC160_eval.c **** 
+ 409              		.loc 1 30 2 is_stmt 0 view .LVU89
+ 410 0084 FFF7FEFF 		bl	tmcc160_setTargetVelocity
+ 411              	.LVL34:
+  32:boards/TMCC160_eval.c **** }
+ 412              		.loc 1 32 2 is_stmt 1 view .LVU90
+  32:boards/TMCC160_eval.c **** }
+ 413              		.loc 1 32 9 is_stmt 0 view .LVU91
+ 414 0088 2046     		mov	r0, r4
+ 415              	.LVL35:
+ 416              	.L21:
+  32:boards/TMCC160_eval.c **** }
+ 417              		.loc 1 32 9 view .LVU92
+ 418              	.LBE16:
+ 419              	.LBE18:
+  43:boards/TMCC160_eval.c **** 
+ 420              		.loc 1 43 1 view .LVU93
+ 421 008a 10BD     		pop	{r4, pc}
+ 422              	.LVL36:
+ 423              	.L23:
+ 424              	.LBB19:
+ 425              	.LBB17:
+  28:boards/TMCC160_eval.c **** 
+ 426              		.loc 1 28 10 view .LVU94
+ 427 008c 0820     		movs	r0, #8
+ 428              	.LVL37:
+  28:boards/TMCC160_eval.c **** 
+ 429              		.loc 1 28 10 view .LVU95
+ 430              	.LBE17:
+ 431              	.LBE19:
+  42:boards/TMCC160_eval.c **** }
+ 432              		.loc 1 42 9 view .LVU96
+ 433 008e FCE7     		b	.L21
+ 434              		.cfi_endproc
+ 435              	.LFE5:
+ 437              		.align	1
+ 438              		.syntax unified
+ 439              		.thumb
+ 440              		.thumb_func
+ 441              		.fpu softvfp
+ 443              	getMeasuredSpeed:
+ 444              	.LVL38:
+ 445              	.LFB10:
+ 152:boards/TMCC160_eval.c **** 	if(motor >= MOTORS)
+ 446              		.loc 1 152 1 is_stmt 1 view -0
+ 447              		.cfi_startproc
+ 448              		@ args = 0, pretend = 0, frame = 0
+ 449              		@ frame_needed = 0, uses_anonymous_args = 0
+ 153:boards/TMCC160_eval.c **** 		return TMC_ERROR_MOTOR;
+ 450              		.loc 1 153 2 view .LVU98
+ 152:boards/TMCC160_eval.c **** 	if(motor >= MOTORS)
+ 451              		.loc 1 152 1 is_stmt 0 view .LVU99
+ 452 0090 38B5     		push	{r3, r4, r5, lr}
+ 453              	.LCFI6:
+ 454              		.cfi_def_cfa_offset 16
+ 455              		.cfi_offset 3, -16
+ 456              		.cfi_offset 4, -12
+ 457              		.cfi_offset 5, -8
+ 458              		.cfi_offset 14, -4
+ 152:boards/TMCC160_eval.c **** 	if(motor >= MOTORS)
+ 459              		.loc 1 152 1 view .LVU100
+ 460 0092 0D46     		mov	r5, r1
+ 153:boards/TMCC160_eval.c **** 		return TMC_ERROR_MOTOR;
+ 461              		.loc 1 153 4 view .LVU101
+ 462 0094 0446     		mov	r4, r0
+ 463 0096 20B9     		cbnz	r0, .L26
+ 156:boards/TMCC160_eval.c **** 
+ 464              		.loc 1 156 2 is_stmt 1 view .LVU102
+ 156:boards/TMCC160_eval.c **** 
+ 465              		.loc 1 156 11 is_stmt 0 view .LVU103
+ 466 0098 FFF7FEFF 		bl	tmcc160_getActualVelocity
+ 467              	.LVL39:
+ 156:boards/TMCC160_eval.c **** 
+ 468              		.loc 1 156 9 view .LVU104
+ 469 009c 2860     		str	r0, [r5]
+ 158:boards/TMCC160_eval.c **** }
+ 470              		.loc 1 158 2 is_stmt 1 view .LVU105
+ 158:boards/TMCC160_eval.c **** }
+ 471              		.loc 1 158 9 is_stmt 0 view .LVU106
+ 472 009e 2046     		mov	r0, r4
+ 473              	.L24:
+ 159:boards/TMCC160_eval.c **** 
+ 474              		.loc 1 159 1 view .LVU107
+ 475 00a0 38BD     		pop	{r3, r4, r5, pc}
+ 476              	.LVL40:
+ 477              	.L26:
+ 154:boards/TMCC160_eval.c **** 
+ 478              		.loc 1 154 10 view .LVU108
+ 479 00a2 0820     		movs	r0, #8
+ 480              	.LVL41:
+ 154:boards/TMCC160_eval.c **** 
+ 481              		.loc 1 154 10 view .LVU109
+ 482 00a4 FCE7     		b	.L24
+ 483              		.cfi_endproc
+ 484              	.LFE10:
+ 486              		.align	1
+ 487              		.syntax unified
+ 488              		.thumb
+ 489              		.thumb_func
+ 490              		.fpu softvfp
+ 492              	enableDriver:
+ 493              	.LVL42:
+ 494              	.LFB17:
+ 197:boards/TMCC160_eval.c **** 	if(state== DRIVER_USE_GLOBAL_ENABLE)
+ 495              		.loc 1 197 1 is_stmt 1 view -0
+ 496              		.cfi_startproc
+ 497              		@ args = 0, pretend = 0, frame = 0
+ 498              		@ frame_needed = 0, uses_anonymous_args = 0
+ 499              		@ link register save eliminated.
+ 198:boards/TMCC160_eval.c **** 		state = Evalboards.driverEnable;
+ 500              		.loc 1 198 2 view .LVU111
+ 198:boards/TMCC160_eval.c **** 		state = Evalboards.driverEnable;
+ 501              		.loc 1 198 4 is_stmt 0 view .LVU112
+ 502 00a6 0228     		cmp	r0, #2
+ 199:boards/TMCC160_eval.c **** 
+ 503              		.loc 1 199 3 is_stmt 1 view .LVU113
+ 199:boards/TMCC160_eval.c **** 
+ 504              		.loc 1 199 9 is_stmt 0 view .LVU114
+ 505 00a8 04BF     		itt	eq
+ 506 00aa 0C4B     		ldreq	r3, .L32
+ 507 00ac 93F8F000 		ldrbeq	r0, [r3, #240]	@ zero_extendqisi2
+ 508              	.LVL43:
+ 201:boards/TMCC160_eval.c **** 		HAL.IOs->config->setLow(PIN_DRV_ENN);
+ 509              		.loc 1 201 2 is_stmt 1 view .LVU115
+ 201:boards/TMCC160_eval.c **** 		HAL.IOs->config->setLow(PIN_DRV_ENN);
+ 510              		.loc 1 201 4 is_stmt 0 view .LVU116
+ 511 00b0 30B9     		cbnz	r0, .L29
+ 202:boards/TMCC160_eval.c **** 	else if((state == DRIVER_ENABLE) && (Evalboards.driverEnable == DRIVER_ENABLE))
+ 512              		.loc 1 202 3 is_stmt 1 view .LVU117
+ 202:boards/TMCC160_eval.c **** 	else if((state == DRIVER_ENABLE) && (Evalboards.driverEnable == DRIVER_ENABLE))
+ 513              		.loc 1 202 6 is_stmt 0 view .LVU118
+ 514 00b2 0B4B     		ldr	r3, .L32+4
+ 202:boards/TMCC160_eval.c **** 	else if((state == DRIVER_ENABLE) && (Evalboards.driverEnable == DRIVER_ENABLE))
+ 515              		.loc 1 202 10 view .LVU119
+ 516 00b4 DB68     		ldr	r3, [r3, #12]
+ 202:boards/TMCC160_eval.c **** 	else if((state == DRIVER_ENABLE) && (Evalboards.driverEnable == DRIVER_ENABLE))
+ 517              		.loc 1 202 18 view .LVU120
+ 518 00b6 1B68     		ldr	r3, [r3]
+ 202:boards/TMCC160_eval.c **** 	else if((state == DRIVER_ENABLE) && (Evalboards.driverEnable == DRIVER_ENABLE))
+ 519              		.loc 1 202 3 view .LVU121
+ 520 00b8 9B69     		ldr	r3, [r3, #24]
+ 521              	.L31:
+ 522              	.LBB22:
+ 523              	.LBB23:
+ 204:boards/TMCC160_eval.c **** }
+ 524              		.loc 1 204 3 view .LVU122
+ 525 00ba 0A4A     		ldr	r2, .L32+8
+ 526 00bc 1068     		ldr	r0, [r2]
+ 527 00be 1847     		bx	r3	@ indirect register sibling call
+ 528              	.LVL44:
+ 529              	.L29:
+ 204:boards/TMCC160_eval.c **** }
+ 530              		.loc 1 204 3 view .LVU123
+ 531              	.LBE23:
+ 532              	.LBE22:
+ 203:boards/TMCC160_eval.c **** 		HAL.IOs->config->setHigh(PIN_DRV_ENN);
+ 533              		.loc 1 203 7 is_stmt 1 view .LVU124
+ 203:boards/TMCC160_eval.c **** 		HAL.IOs->config->setHigh(PIN_DRV_ENN);
+ 534              		.loc 1 203 9 is_stmt 0 view .LVU125
+ 535 00c0 0128     		cmp	r0, #1
+ 536 00c2 09D1     		bne	.L27
+ 203:boards/TMCC160_eval.c **** 		HAL.IOs->config->setHigh(PIN_DRV_ENN);
+ 537              		.loc 1 203 49 discriminator 1 view .LVU126
+ 538 00c4 054B     		ldr	r3, .L32
+ 203:boards/TMCC160_eval.c **** 		HAL.IOs->config->setHigh(PIN_DRV_ENN);
+ 539              		.loc 1 203 35 discriminator 1 view .LVU127
+ 540 00c6 93F8F030 		ldrb	r3, [r3, #240]	@ zero_extendqisi2
+ 541 00ca 012B     		cmp	r3, #1
+ 542 00cc 04D1     		bne	.L27
+ 543              	.LBB25:
+ 544              	.LBI22:
+ 196:boards/TMCC160_eval.c **** {
+ 545              		.loc 1 196 13 is_stmt 1 view .LVU128
+ 546              	.LVL45:
+ 547              	.LBB24:
+ 204:boards/TMCC160_eval.c **** }
+ 548              		.loc 1 204 3 view .LVU129
+ 204:boards/TMCC160_eval.c **** }
+ 549              		.loc 1 204 6 is_stmt 0 view .LVU130
+ 550 00ce 044B     		ldr	r3, .L32+4
+ 204:boards/TMCC160_eval.c **** }
+ 551              		.loc 1 204 10 view .LVU131
+ 552 00d0 DB68     		ldr	r3, [r3, #12]
+ 204:boards/TMCC160_eval.c **** }
+ 553              		.loc 1 204 18 view .LVU132
+ 554 00d2 1B68     		ldr	r3, [r3]
+ 204:boards/TMCC160_eval.c **** }
+ 555              		.loc 1 204 3 view .LVU133
+ 556 00d4 5B69     		ldr	r3, [r3, #20]
+ 557 00d6 F0E7     		b	.L31
+ 558              	.LVL46:
+ 559              	.L27:
+ 204:boards/TMCC160_eval.c **** }
+ 560              		.loc 1 204 3 view .LVU134
+ 561              	.LBE24:
+ 562              	.LBE25:
+ 205:boards/TMCC160_eval.c **** 
+ 563              		.loc 1 205 1 view .LVU135
+ 564 00d8 7047     		bx	lr
+ 565              	.L33:
+ 566 00da 00BF     		.align	2
+ 567              	.L32:
+ 568 00dc 00000000 		.word	Evalboards
+ 569 00e0 00000000 		.word	HAL
+ 570 00e4 00000000 		.word	PIN_DRV_ENN
+ 571              		.cfi_endproc
+ 572              	.LFE17:
+ 574              		.align	1
+ 575              		.syntax unified
+ 576              		.thumb
+ 577              		.thumb_func
+ 578              		.fpu softvfp
+ 580              	deInit:
+ 581              	.LFB18:
+ 208:boards/TMCC160_eval.c **** 	enableDriver(DRIVER_DISABLE);
+ 582              		.loc 1 208 1 is_stmt 1 view -0
+ 583              		.cfi_startproc
+ 584              		@ args = 0, pretend = 0, frame = 0
+ 585              		@ frame_needed = 0, uses_anonymous_args = 0
+ 209:boards/TMCC160_eval.c **** 	HAL.IOs->config->reset(PIN_DRV_ENN);
+ 586              		.loc 1 209 2 view .LVU137
+ 208:boards/TMCC160_eval.c **** 	enableDriver(DRIVER_DISABLE);
+ 587              		.loc 1 208 1 is_stmt 0 view .LVU138
+ 588 00e8 10B5     		push	{r4, lr}
+ 589              	.LCFI7:
+ 590              		.cfi_def_cfa_offset 8
+ 591              		.cfi_offset 4, -8
+ 592              		.cfi_offset 14, -4
+ 209:boards/TMCC160_eval.c **** 	HAL.IOs->config->reset(PIN_DRV_ENN);
+ 593              		.loc 1 209 2 view .LVU139
+ 594 00ea 0020     		movs	r0, #0
+ 595 00ec FFF7DBFF 		bl	enableDriver
+ 596              	.LVL47:
+ 210:boards/TMCC160_eval.c **** };
+ 597              		.loc 1 210 2 is_stmt 1 view .LVU140
+ 210:boards/TMCC160_eval.c **** };
+ 598              		.loc 1 210 5 is_stmt 0 view .LVU141
+ 599 00f0 044B     		ldr	r3, .L35
+ 210:boards/TMCC160_eval.c **** };
+ 600              		.loc 1 210 2 view .LVU142
+ 601 00f2 054A     		ldr	r2, .L35+4
+ 210:boards/TMCC160_eval.c **** };
+ 602              		.loc 1 210 9 view .LVU143
+ 603 00f4 DB68     		ldr	r3, [r3, #12]
+ 210:boards/TMCC160_eval.c **** };
+ 604              		.loc 1 210 2 view .LVU144
+ 605 00f6 1068     		ldr	r0, [r2]
+ 210:boards/TMCC160_eval.c **** };
+ 606              		.loc 1 210 17 view .LVU145
+ 607 00f8 1B68     		ldr	r3, [r3]
+ 211:boards/TMCC160_eval.c **** 
+ 608              		.loc 1 211 1 view .LVU146
+ 609 00fa BDE81040 		pop	{r4, lr}
+ 610              	.LCFI8:
+ 611              		.cfi_restore 14
+ 612              		.cfi_restore 4
+ 613              		.cfi_def_cfa_offset 0
+ 210:boards/TMCC160_eval.c **** };
+ 614              		.loc 1 210 2 view .LVU147
+ 615 00fe 9B68     		ldr	r3, [r3, #8]
+ 616 0100 1847     		bx	r3	@ indirect register sibling call
+ 617              	.LVL48:
+ 618              	.L36:
+ 619 0102 00BF     		.align	2
+ 620              	.L35:
+ 621 0104 00000000 		.word	HAL
+ 622 0108 00000000 		.word	PIN_DRV_ENN
+ 623              		.cfi_endproc
+ 624              	.LFE18:
+ 626              		.align	1
+ 627              		.syntax unified
+ 628              		.thumb
+ 629              		.thumb_func
+ 630              		.fpu softvfp
+ 632              	restore:
+ 633              	.LFB27:
+ 634              		.cfi_startproc
+ 635              		@ args = 0, pretend = 0, frame = 0
+ 636              		@ frame_needed = 0, uses_anonymous_args = 0
+ 637              		@ link register save eliminated.
+ 638 010c 0120     		movs	r0, #1
+ 639 010e 7047     		bx	lr
+ 640              		.cfi_endproc
+ 641              	.LFE27:
+ 643              		.align	1
+ 644              		.syntax unified
+ 645              		.thumb
+ 646              		.thumb_func
+ 647              		.fpu softvfp
+ 649              	right:
+ 650              	.LFB25:
+ 651              		.cfi_startproc
+ 652              		@ args = 0, pretend = 0, frame = 0
+ 653              		@ frame_needed = 0, uses_anonymous_args = 0
+ 654 0110 10B5     		push	{r4, lr}
+ 655              	.LCFI9:
+ 656              		.cfi_def_cfa_offset 8
+ 657              		.cfi_offset 4, -8
+ 658              		.cfi_offset 14, -4
+ 659 0112 0446     		mov	r4, r0
+ 660 0114 0846     		mov	r0, r1
+ 661 0116 1CB9     		cbnz	r4, .L40
+ 662 0118 FFF7FEFF 		bl	tmcc160_setTargetVelocity
+ 663 011c 2046     		mov	r0, r4
+ 664              	.L38:
+ 665 011e 10BD     		pop	{r4, pc}
+ 666              	.L40:
+ 667 0120 0820     		movs	r0, #8
+ 668 0122 FCE7     		b	.L38
+ 669              		.cfi_endproc
+ 670              	.LFE25:
+ 672              		.align	1
+ 673              		.global	tmcc160_spi_readwriteByte
+ 674              		.syntax unified
+ 675              		.thumb
+ 676              		.thumb_func
+ 677              		.fpu softvfp
+ 679              	tmcc160_spi_readwriteByte:
+ 680              	.LVL49:
+ 681              	.LFB1:
+  11:boards/TMCC160_eval.c **** 	return spi_ch1_readWriteByte(data, lastTransfer);
+ 682              		.loc 1 11 1 is_stmt 1 view -0
+ 683              		.cfi_startproc
+ 684              		@ args = 0, pretend = 0, frame = 0
+ 685              		@ frame_needed = 0, uses_anonymous_args = 0
+ 686              		@ link register save eliminated.
+  12:boards/TMCC160_eval.c **** }
+ 687              		.loc 1 12 2 view .LVU149
+  12:boards/TMCC160_eval.c **** }
+ 688              		.loc 1 12 9 is_stmt 0 view .LVU150
+ 689 0124 FFF7FEBF 		b	spi_ch1_readWriteByte
+ 690              	.LVL50:
+  12:boards/TMCC160_eval.c **** }
+ 691              		.loc 1 12 9 view .LVU151
+ 692              		.cfi_endproc
+ 693              	.LFE1:
+ 695              		.align	1
+ 696              		.global	tmcc160_writeDatagram
+ 697              		.syntax unified
+ 698              		.thumb
+ 699              		.thumb_func
+ 700              		.fpu softvfp
+ 702              	tmcc160_writeDatagram:
+ 703              	.LVL51:
+ 704              	.LFB2:
+  17:boards/TMCC160_eval.c **** 	tmcc160_spi_readwriteByte(address | 0x80, false);
+ 705              		.loc 1 17 1 is_stmt 1 view -0
+ 706              		.cfi_startproc
+ 707              		@ args = 4, pretend = 0, frame = 0
+ 708              		@ frame_needed = 0, uses_anonymous_args = 0
+  18:boards/TMCC160_eval.c **** 	tmcc160_spi_readwriteByte(x3, false);
+ 709              		.loc 1 18 2 view .LVU153
+  17:boards/TMCC160_eval.c **** 	tmcc160_spi_readwriteByte(address | 0x80, false);
+ 710              		.loc 1 17 1 is_stmt 0 view .LVU154
+ 711 0128 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 712              	.LCFI10:
+ 713              		.cfi_def_cfa_offset 24
+ 714              		.cfi_offset 3, -24
+ 715              		.cfi_offset 4, -20
+ 716              		.cfi_offset 5, -16
+ 717              		.cfi_offset 6, -12
+ 718              		.cfi_offset 7, -8
+ 719              		.cfi_offset 14, -4
+  18:boards/TMCC160_eval.c **** 	tmcc160_spi_readwriteByte(x3, false);
+ 720              		.loc 1 18 2 view .LVU155
+ 721 012a 40F08000 		orr	r0, r0, #128
+ 722              	.LVL52:
+  17:boards/TMCC160_eval.c **** 	tmcc160_spi_readwriteByte(address | 0x80, false);
+ 723              		.loc 1 17 1 view .LVU156
+ 724 012e 0E46     		mov	r6, r1
+  18:boards/TMCC160_eval.c **** 	tmcc160_spi_readwriteByte(x3, false);
+ 725              		.loc 1 18 2 view .LVU157
+ 726 0130 0021     		movs	r1, #0
+ 727              	.LVL53:
+  17:boards/TMCC160_eval.c **** 	tmcc160_spi_readwriteByte(address | 0x80, false);
+ 728              		.loc 1 17 1 view .LVU158
+ 729 0132 1546     		mov	r5, r2
+ 730 0134 1C46     		mov	r4, r3
+ 731 0136 9DF81870 		ldrb	r7, [sp, #24]	@ zero_extendqisi2
+  18:boards/TMCC160_eval.c **** 	tmcc160_spi_readwriteByte(x3, false);
+ 732              		.loc 1 18 2 view .LVU159
+ 733 013a FFF7FEFF 		bl	tmcc160_spi_readwriteByte
+ 734              	.LVL54:
+  19:boards/TMCC160_eval.c **** 	tmcc160_spi_readwriteByte(x2, false);
+ 735              		.loc 1 19 2 is_stmt 1 view .LVU160
+ 736 013e 0021     		movs	r1, #0
+ 737 0140 3046     		mov	r0, r6
+ 738 0142 FFF7FEFF 		bl	tmcc160_spi_readwriteByte
+ 739              	.LVL55:
+  20:boards/TMCC160_eval.c **** 	tmcc160_spi_readwriteByte(x1, false);
+ 740              		.loc 1 20 2 view .LVU161
+ 741 0146 0021     		movs	r1, #0
+ 742 0148 2846     		mov	r0, r5
+ 743 014a FFF7FEFF 		bl	tmcc160_spi_readwriteByte
+ 744              	.LVL56:
+  21:boards/TMCC160_eval.c **** 	tmcc160_spi_readwriteByte(x0, true);
+ 745              		.loc 1 21 2 view .LVU162
+ 746 014e 0021     		movs	r1, #0
+ 747 0150 2046     		mov	r0, r4
+ 748 0152 FFF7FEFF 		bl	tmcc160_spi_readwriteByte
+ 749              	.LVL57:
+  22:boards/TMCC160_eval.c **** }
+ 750              		.loc 1 22 2 view .LVU163
+ 751 0156 3846     		mov	r0, r7
+ 752 0158 0121     		movs	r1, #1
+  23:boards/TMCC160_eval.c **** 
+ 753              		.loc 1 23 1 is_stmt 0 view .LVU164
+ 754 015a BDE8F840 		pop	{r3, r4, r5, r6, r7, lr}
+ 755              	.LCFI11:
+ 756              		.cfi_restore 14
+ 757              		.cfi_restore 7
+ 758              		.cfi_restore 6
+ 759              		.cfi_restore 5
+ 760              		.cfi_restore 4
+ 761              		.cfi_restore 3
+ 762              		.cfi_def_cfa_offset 0
+ 763              	.LVL58:
+  22:boards/TMCC160_eval.c **** }
+ 764              		.loc 1 22 2 view .LVU165
+ 765 015e FFF7FEBF 		b	tmcc160_spi_readwriteByte
+ 766              	.LVL59:
+ 767              		.cfi_endproc
+ 768              	.LFE2:
+ 770              		.align	1
+ 771              		.syntax unified
+ 772              		.thumb
+ 773              		.thumb_func
+ 774              		.fpu softvfp
+ 776              	GAP:
+ 777              	.LVL60:
+ 778              	.LFB15:
+ 184:boards/TMCC160_eval.c **** 	return handleParameter(READ, motor, type, value);
+ 779              		.loc 1 184 1 is_stmt 1 view -0
+ 780              		.cfi_startproc
+ 781              		@ args = 0, pretend = 0, frame = 0
+ 782              		@ frame_needed = 0, uses_anonymous_args = 0
+ 185:boards/TMCC160_eval.c **** }
+ 783              		.loc 1 185 2 view .LVU167
+ 184:boards/TMCC160_eval.c **** 	return handleParameter(READ, motor, type, value);
+ 784              		.loc 1 184 1 is_stmt 0 view .LVU168
+ 785 0162 73B5     		push	{r0, r1, r4, r5, r6, lr}
+ 786              	.LCFI12:
+ 787              		.cfi_def_cfa_offset 24
+ 788              		.cfi_offset 4, -16
+ 789              		.cfi_offset 5, -12
+ 790              		.cfi_offset 6, -8
+ 791              		.cfi_offset 14, -4
+ 184:boards/TMCC160_eval.c **** 	return handleParameter(READ, motor, type, value);
+ 792              		.loc 1 184 1 view .LVU169
+ 793 0164 0646     		mov	r6, r0
+ 794 0166 1546     		mov	r5, r2
+ 795              	.LVL61:
+ 796              	.LBB28:
+ 797              	.LBI28:
+  70:boards/TMCC160_eval.c **** {
+ 798              		.loc 1 70 17 is_stmt 1 view .LVU170
+ 799              	.LBB29:
+  72:boards/TMCC160_eval.c **** 
+ 800              		.loc 1 72 2 view .LVU171
+  74:boards/TMCC160_eval.c **** 		return TMC_ERROR_MOTOR;
+ 801              		.loc 1 74 2 view .LVU172
+  74:boards/TMCC160_eval.c **** 		return TMC_ERROR_MOTOR;
+ 802              		.loc 1 74 4 is_stmt 0 view .LVU173
+ 803 0168 0C46     		mov	r4, r1
+ 804 016a 0029     		cmp	r1, #0
+ 805 016c 46D1     		bne	.L55
+  77:boards/TMCC160_eval.c **** 	{
+ 806              		.loc 1 77 2 is_stmt 1 view .LVU174
+ 807 016e 0D28     		cmp	r0, #13
+ 808 0170 0AD8     		bhi	.L45
+ 809 0172 0D28     		cmp	r0, #13
+ 810 0174 0CD8     		bhi	.L46
+ 811 0176 DFE800F0 		tbb	[pc, r0]
+ 812              	.L48:
+ 813 017a 27       		.byte	(.L52-.L48)/2
+ 814 017b 2E       		.byte	(.L51-.L48)/2
+ 815 017c 31       		.byte	(.L50-.L48)/2
+ 816 017d 34       		.byte	(.L49-.L48)/2
+ 817 017e 0B       		.byte	(.L46-.L48)/2
+ 818 017f 0B       		.byte	(.L46-.L48)/2
+ 819 0180 0B       		.byte	(.L46-.L48)/2
+ 820 0181 0B       		.byte	(.L46-.L48)/2
+ 821 0182 0B       		.byte	(.L46-.L48)/2
+ 822 0183 0B       		.byte	(.L46-.L48)/2
+ 823 0184 0B       		.byte	(.L46-.L48)/2
+ 824 0185 0B       		.byte	(.L46-.L48)/2
+ 825 0186 0B       		.byte	(.L46-.L48)/2
+ 826 0187 37       		.byte	(.L47-.L48)/2
+ 827              		.p2align 1
+ 828              	.L45:
+ 829 0188 9628     		cmp	r0, #150
+ 830 018a 30D0     		beq	.L53
+ 831 018c 9B28     		cmp	r0, #155
+ 832 018e 32D0     		beq	.L54
+ 833              	.L46:
+ 124:boards/TMCC160_eval.c **** 			tmcc160_writeDatagram(TMCL_REQUEST_BYTE_0123_REG_ADDR | 0x80, 6/*TMCL_GAP*/, type, motor, 0/*TMC
+ 834              		.loc 1 124 3 view .LVU175
+ 125:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 835              		.loc 1 125 4 view .LVU176
+ 836 0190 0024     		movs	r4, #0
+ 837 0192 2346     		mov	r3, r4
+ 838 0194 3246     		mov	r2, r6
+ 839              	.LVL62:
+ 125:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 840              		.loc 1 125 4 is_stmt 0 view .LVU177
+ 841 0196 0621     		movs	r1, #6
+ 842              	.LVL63:
+ 125:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 843              		.loc 1 125 4 view .LVU178
+ 844 0198 FC20     		movs	r0, #252
+ 845              	.LVL64:
+ 125:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 846              		.loc 1 125 4 view .LVU179
+ 847 019a 0094     		str	r4, [sp]
+ 848 019c FFF7FEFF 		bl	tmcc160_writeDatagram
+ 849              	.LVL65:
+ 129:boards/TMCC160_eval.c **** 
+ 850              		.loc 1 129 3 is_stmt 1 view .LVU180
+ 851 01a0 FFF7FEFF 		bl	tmcc160_default_spi_delay
+ 852              	.LVL66:
+ 132:boards/TMCC160_eval.c **** 		tmcc160_default_spi_delay();
+ 853              		.loc 1 132 3 view .LVU181
+ 854 01a4 2968     		ldr	r1, [r5]
+ 855 01a6 FD20     		movs	r0, #253
+ 856 01a8 FFF7FEFF 		bl	tmcc160_writeInt
+ 857              	.LVL67:
+ 133:boards/TMCC160_eval.c **** 
+ 858              		.loc 1 133 3 view .LVU182
+ 859 01ac FFF7FEFF 		bl	tmcc160_default_spi_delay
+ 860              	.LVL68:
+ 138:boards/TMCC160_eval.c **** 
+ 861              		.loc 1 138 3 view .LVU183
+ 862 01b0 7E20     		movs	r0, #126
+ 863 01b2 FFF7FEFF 		bl	tmcc160_readInt
+ 864              	.LVL69:
+ 140:boards/TMCC160_eval.c **** 
+ 865              		.loc 1 140 3 view .LVU184
+ 866 01b6 FFF7FEFF 		bl	tmcc160_default_spi_delay
+ 867              	.LVL70:
+ 143:boards/TMCC160_eval.c **** 		tmcc160_default_spi_delay();
+ 868              		.loc 1 143 3 view .LVU185
+ 143:boards/TMCC160_eval.c **** 		tmcc160_default_spi_delay();
+ 869              		.loc 1 143 12 is_stmt 0 view .LVU186
+ 870 01ba 7F20     		movs	r0, #127
+ 871 01bc FFF7FEFF 		bl	tmcc160_readInt
+ 872              	.LVL71:
+ 143:boards/TMCC160_eval.c **** 		tmcc160_default_spi_delay();
+ 873              		.loc 1 143 10 view .LVU187
+ 874 01c0 2860     		str	r0, [r5]
+ 144:boards/TMCC160_eval.c **** 
+ 875              		.loc 1 144 3 is_stmt 1 view .LVU188
+ 876 01c2 FFF7FEFF 		bl	tmcc160_default_spi_delay
+ 877              	.LVL72:
+ 146:boards/TMCC160_eval.c **** 	}
+ 878              		.loc 1 146 3 view .LVU189
+ 879 01c6 03E0     		b	.L43
+ 880              	.LVL73:
+ 881              	.L52:
+  80:boards/TMCC160_eval.c **** 			*value = tmcc160_getTargetPosition();
+ 882              		.loc 1 80 3 view .LVU190
+  81:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 883              		.loc 1 81 4 view .LVU191
+  81:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 884              		.loc 1 81 13 is_stmt 0 view .LVU192
+ 885 01c8 FFF7FEFF 		bl	tmcc160_getTargetPosition
+ 886              	.LVL74:
+ 887              	.L56:
+  87:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 888              		.loc 1 87 11 view .LVU193
+ 889 01cc 2860     		str	r0, [r5]
+  72:boards/TMCC160_eval.c **** 
+ 890              		.loc 1 72 11 view .LVU194
+ 891 01ce 0024     		movs	r4, #0
+ 892              	.LVL75:
+ 893              	.L43:
+  72:boards/TMCC160_eval.c **** 
+ 894              		.loc 1 72 11 view .LVU195
+ 895              	.LBE29:
+ 896              	.LBE28:
+ 186:boards/TMCC160_eval.c **** 
+ 897              		.loc 1 186 1 view .LVU196
+ 898 01d0 2046     		mov	r0, r4
+ 899 01d2 02B0     		add	sp, sp, #8
+ 900              	.LCFI13:
+ 901              		.cfi_remember_state
+ 902              		.cfi_def_cfa_offset 16
+ 903              		@ sp needed
+ 904 01d4 70BD     		pop	{r4, r5, r6, pc}
+ 905              	.LVL76:
+ 906              	.L51:
+ 907              	.LCFI14:
+ 908              		.cfi_restore_state
+ 909              	.LBB31:
+ 910              	.LBB30:
+  86:boards/TMCC160_eval.c **** 			*value = tmcc160_getActualPosition();
+ 911              		.loc 1 86 3 is_stmt 1 view .LVU197
+  87:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 912              		.loc 1 87 4 view .LVU198
+  87:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 913              		.loc 1 87 13 is_stmt 0 view .LVU199
+ 914 01d6 FFF7FEFF 		bl	tmcc160_getActualPosition
+ 915              	.LVL77:
+  87:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 916              		.loc 1 87 13 view .LVU200
+ 917 01da F7E7     		b	.L56
+ 918              	.LVL78:
+ 919              	.L50:
+  92:boards/TMCC160_eval.c **** 			*value = tmcc160_getTargetVelocity();
+ 920              		.loc 1 92 3 is_stmt 1 view .LVU201
+  93:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 921              		.loc 1 93 4 view .LVU202
+  93:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 922              		.loc 1 93 13 is_stmt 0 view .LVU203
+ 923 01dc FFF7FEFF 		bl	tmcc160_getTargetVelocity
+ 924              	.LVL79:
+  93:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 925              		.loc 1 93 13 view .LVU204
+ 926 01e0 F4E7     		b	.L56
+ 927              	.LVL80:
+ 928              	.L49:
+  98:boards/TMCC160_eval.c **** 			*value = tmcc160_getActualVelocity();
+ 929              		.loc 1 98 3 is_stmt 1 view .LVU205
+  99:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 930              		.loc 1 99 4 view .LVU206
+  99:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 931              		.loc 1 99 13 is_stmt 0 view .LVU207
+ 932 01e2 FFF7FEFF 		bl	tmcc160_getActualVelocity
+ 933              	.LVL81:
+  99:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 934              		.loc 1 99 13 view .LVU208
+ 935 01e6 F1E7     		b	.L56
+ 936              	.LVL82:
+ 937              	.L47:
+ 104:boards/TMCC160_eval.c **** 			*value = tmcc160_getActualRampVelocity();
+ 938              		.loc 1 104 3 is_stmt 1 view .LVU209
+ 105:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 939              		.loc 1 105 4 view .LVU210
+ 105:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 940              		.loc 1 105 13 is_stmt 0 view .LVU211
+ 941 01e8 FFF7FEFF 		bl	tmcc160_getActualRampVelocity
+ 942              	.LVL83:
+ 105:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 943              		.loc 1 105 13 view .LVU212
+ 944 01ec EEE7     		b	.L56
+ 945              	.LVL84:
+ 946              	.L53:
+ 110:boards/TMCC160_eval.c **** 			*value = tmcc160_getActualTorque_mA();
+ 947              		.loc 1 110 3 is_stmt 1 view .LVU213
+ 111:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 948              		.loc 1 111 4 view .LVU214
+ 111:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 949              		.loc 1 111 13 is_stmt 0 view .LVU215
+ 950 01ee FFF7FEFF 		bl	tmcc160_getActualTorque_mA
+ 951              	.LVL85:
+ 952              	.L57:
+ 117:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 953              		.loc 1 117 11 view .LVU216
+ 954 01f2 2860     		str	r0, [r5]
+ 955 01f4 ECE7     		b	.L43
+ 956              	.LVL86:
+ 957              	.L54:
+ 116:boards/TMCC160_eval.c **** 			*value = tmcc160_getTargetTorque_mA();
+ 958              		.loc 1 116 3 is_stmt 1 view .LVU217
+ 117:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 959              		.loc 1 117 4 view .LVU218
+ 117:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 960              		.loc 1 117 13 is_stmt 0 view .LVU219
+ 961 01f6 FFF7FEFF 		bl	tmcc160_getTargetTorque_mA
+ 962              	.LVL87:
+ 117:boards/TMCC160_eval.c **** 		else if(readWrite == WRITE)
+ 963              		.loc 1 117 13 view .LVU220
+ 964 01fa FAE7     		b	.L57
+ 965              	.LVL88:
+ 966              	.L55:
+  75:boards/TMCC160_eval.c **** 
+ 967              		.loc 1 75 10 view .LVU221
+ 968 01fc 0824     		movs	r4, #8
+ 969              	.LVL89:
+  75:boards/TMCC160_eval.c **** 
+ 970              		.loc 1 75 10 view .LVU222
+ 971              	.LBE30:
+ 972              	.LBE31:
+ 185:boards/TMCC160_eval.c **** }
+ 973              		.loc 1 185 9 view .LVU223
+ 974 01fe E7E7     		b	.L43
+ 975              		.cfi_endproc
+ 976              	.LFE15:
+ 978              		.align	1
+ 979              		.syntax unified
+ 980              		.thumb
+ 981              		.thumb_func
+ 982              		.fpu softvfp
+ 984              	SAP:
+ 985              	.LVL90:
+ 986              	.LFB14:
+ 179:boards/TMCC160_eval.c **** 	return handleParameter(WRITE, motor, type, &value);
+ 987              		.loc 1 179 1 is_stmt 1 view -0
+ 988              		.cfi_startproc
+ 989              		@ args = 0, pretend = 0, frame = 0
+ 990              		@ frame_needed = 0, uses_anonymous_args = 0
+ 180:boards/TMCC160_eval.c **** }
+ 991              		.loc 1 180 2 view .LVU225
+ 992              	.LBB34:
+ 993              	.LBI34:
+  70:boards/TMCC160_eval.c **** {
+ 994              		.loc 1 70 17 view .LVU226
+ 995              	.LBB35:
+  72:boards/TMCC160_eval.c **** 
+ 996              		.loc 1 72 2 view .LVU227
+  74:boards/TMCC160_eval.c **** 		return TMC_ERROR_MOTOR;
+ 997              		.loc 1 74 2 view .LVU228
+ 998              	.LBE35:
+ 999              	.LBE34:
+ 179:boards/TMCC160_eval.c **** 	return handleParameter(WRITE, motor, type, &value);
+ 1000              		.loc 1 179 1 is_stmt 0 view .LVU229
+ 1001 0200 37B5     		push	{r0, r1, r2, r4, r5, lr}
+ 1002              	.LCFI15:
+ 1003              		.cfi_def_cfa_offset 24
+ 1004              		.cfi_offset 4, -12
+ 1005              		.cfi_offset 5, -8
+ 1006              		.cfi_offset 14, -4
+ 179:boards/TMCC160_eval.c **** 	return handleParameter(WRITE, motor, type, &value);
+ 1007              		.loc 1 179 1 view .LVU230
+ 1008 0202 1546     		mov	r5, r2
+ 1009              	.LBB38:
+ 1010              	.LBB36:
+  74:boards/TMCC160_eval.c **** 		return TMC_ERROR_MOTOR;
+ 1011              		.loc 1 74 4 view .LVU231
+ 1012 0204 0029     		cmp	r1, #0
+ 1013 0206 3DD1     		bne	.L67
+  77:boards/TMCC160_eval.c **** 	{
+ 1014              		.loc 1 77 2 is_stmt 1 view .LVU232
+ 1015 0208 0D28     		cmp	r0, #13
+ 1016 020a 0AD8     		bhi	.L60
+ 1017 020c 0D28     		cmp	r0, #13
+ 1018 020e 0CD8     		bhi	.L61
+ 1019 0210 DFE800F0 		tbb	[pc, r0]
+ 1020              	.L62:
+ 1021 0214 26       		.byte	(.L65-.L62)/2
+ 1022 0215 2C       		.byte	(.L64-.L62)/2
+ 1023 0216 30       		.byte	(.L63-.L62)/2
+ 1024 0217 3A       		.byte	(.L69-.L62)/2
+ 1025 0218 0B       		.byte	(.L61-.L62)/2
+ 1026 0219 0B       		.byte	(.L61-.L62)/2
+ 1027 021a 0B       		.byte	(.L61-.L62)/2
+ 1028 021b 0B       		.byte	(.L61-.L62)/2
+ 1029 021c 0B       		.byte	(.L61-.L62)/2
+ 1030 021d 0B       		.byte	(.L61-.L62)/2
+ 1031 021e 0B       		.byte	(.L61-.L62)/2
+ 1032 021f 0B       		.byte	(.L61-.L62)/2
+ 1033 0220 0B       		.byte	(.L61-.L62)/2
+ 1034 0221 3A       		.byte	(.L69-.L62)/2
+ 1035              		.p2align 1
+ 1036              	.L60:
+ 1037 0222 9628     		cmp	r0, #150
+ 1038 0224 30D0     		beq	.L69
+ 1039 0226 9B28     		cmp	r0, #155
+ 1040 0228 28D0     		beq	.L66
+ 1041              	.L61:
+ 124:boards/TMCC160_eval.c **** 			tmcc160_writeDatagram(TMCL_REQUEST_BYTE_0123_REG_ADDR | 0x80, 6/*TMCL_GAP*/, type, motor, 0/*TMC
+ 1042              		.loc 1 124 3 view .LVU233
+ 126:boards/TMCC160_eval.c **** 			tmcc160_writeDatagram(TMCL_REQUEST_BYTE_0123_REG_ADDR | 0x80, 5/*TMCL_SAP*/, type, motor, 0/*TMC
+ 1043              		.loc 1 126 8 view .LVU234
+ 127:boards/TMCC160_eval.c **** 
+ 1044              		.loc 1 127 4 view .LVU235
+ 1045 022a 0024     		movs	r4, #0
+ 1046 022c 0246     		mov	r2, r0
+ 1047              	.LVL91:
+ 127:boards/TMCC160_eval.c **** 
+ 1048              		.loc 1 127 4 is_stmt 0 view .LVU236
+ 1049 022e 2346     		mov	r3, r4
+ 1050 0230 0521     		movs	r1, #5
+ 1051              	.LVL92:
+ 127:boards/TMCC160_eval.c **** 
+ 1052              		.loc 1 127 4 view .LVU237
+ 1053 0232 FC20     		movs	r0, #252
+ 1054              	.LVL93:
+ 127:boards/TMCC160_eval.c **** 
+ 1055              		.loc 1 127 4 view .LVU238
+ 1056 0234 0094     		str	r4, [sp]
+ 1057 0236 FFF7FEFF 		bl	tmcc160_writeDatagram
+ 1058              	.LVL94:
+ 129:boards/TMCC160_eval.c **** 
+ 1059              		.loc 1 129 3 is_stmt 1 view .LVU239
+ 1060 023a FFF7FEFF 		bl	tmcc160_default_spi_delay
+ 1061              	.LVL95:
+ 132:boards/TMCC160_eval.c **** 		tmcc160_default_spi_delay();
+ 1062              		.loc 1 132 3 view .LVU240
+ 1063 023e 2946     		mov	r1, r5
+ 1064 0240 FD20     		movs	r0, #253
+ 1065 0242 FFF7FEFF 		bl	tmcc160_writeInt
+ 1066              	.LVL96:
+ 133:boards/TMCC160_eval.c **** 
+ 1067              		.loc 1 133 3 view .LVU241
+ 1068 0246 FFF7FEFF 		bl	tmcc160_default_spi_delay
+ 1069              	.LVL97:
+ 138:boards/TMCC160_eval.c **** 
+ 1070              		.loc 1 138 3 view .LVU242
+ 1071 024a 7E20     		movs	r0, #126
+ 1072 024c FFF7FEFF 		bl	tmcc160_readInt
+ 1073              	.LVL98:
+ 140:boards/TMCC160_eval.c **** 
+ 1074              		.loc 1 140 3 view .LVU243
+ 1075 0250 FFF7FEFF 		bl	tmcc160_default_spi_delay
+ 1076              	.LVL99:
+ 143:boards/TMCC160_eval.c **** 		tmcc160_default_spi_delay();
+ 1077              		.loc 1 143 3 view .LVU244
+ 143:boards/TMCC160_eval.c **** 		tmcc160_default_spi_delay();
+ 1078              		.loc 1 143 12 is_stmt 0 view .LVU245
+ 1079 0254 7F20     		movs	r0, #127
+ 1080 0256 FFF7FEFF 		bl	tmcc160_readInt
+ 1081              	.LVL100:
+ 144:boards/TMCC160_eval.c **** 
+ 1082              		.loc 1 144 3 is_stmt 1 view .LVU246
+ 1083 025a FFF7FEFF 		bl	tmcc160_default_spi_delay
+ 1084              	.LVL101:
+ 146:boards/TMCC160_eval.c **** 	}
+ 1085              		.loc 1 146 3 view .LVU247
+ 1086 025e 02E0     		b	.L70
+ 1087              	.LVL102:
+ 1088              	.L65:
+  80:boards/TMCC160_eval.c **** 			*value = tmcc160_getTargetPosition();
+ 1089              		.loc 1 80 3 view .LVU248
+  82:boards/TMCC160_eval.c **** 			tmcc160_setAbsolutTargetPosition(*value);
+ 1090              		.loc 1 82 8 view .LVU249
+  83:boards/TMCC160_eval.c **** 		break;
+ 1091              		.loc 1 83 4 view .LVU250
+ 1092 0260 1046     		mov	r0, r2
+ 1093              	.LVL103:
+  83:boards/TMCC160_eval.c **** 		break;
+ 1094              		.loc 1 83 4 is_stmt 0 view .LVU251
+ 1095 0262 FFF7FEFF 		bl	tmcc160_setAbsolutTargetPosition
+ 1096              	.LVL104:
+ 1097              	.L70:
+  72:boards/TMCC160_eval.c **** 
+ 1098              		.loc 1 72 11 view .LVU252
+ 1099 0266 0020     		movs	r0, #0
+ 1100              	.LVL105:
+ 1101              	.L58:
+  72:boards/TMCC160_eval.c **** 
+ 1102              		.loc 1 72 11 view .LVU253
+ 1103              	.LBE36:
+ 1104              	.LBE38:
+ 181:boards/TMCC160_eval.c **** 
+ 1105              		.loc 1 181 1 view .LVU254
+ 1106 0268 03B0     		add	sp, sp, #12
+ 1107              	.LCFI16:
+ 1108              		.cfi_remember_state
+ 1109              		.cfi_def_cfa_offset 12
+ 1110              		@ sp needed
+ 1111 026a 30BD     		pop	{r4, r5, pc}
+ 1112              	.LVL106:
+ 1113              	.L64:
+ 1114              	.LCFI17:
+ 1115              		.cfi_restore_state
+ 1116              	.LBB39:
+ 1117              	.LBB37:
+  86:boards/TMCC160_eval.c **** 			*value = tmcc160_getActualPosition();
+ 1118              		.loc 1 86 3 is_stmt 1 view .LVU255
+  88:boards/TMCC160_eval.c **** 			tmcc160_setActualPosition(*value);
+ 1119              		.loc 1 88 8 view .LVU256
+  89:boards/TMCC160_eval.c **** 		break;
+ 1120              		.loc 1 89 4 view .LVU257
+ 1121 026c 1046     		mov	r0, r2
+ 1122              	.LVL107:
+  89:boards/TMCC160_eval.c **** 		break;
+ 1123              		.loc 1 89 4 is_stmt 0 view .LVU258
+ 1124 026e FFF7FEFF 		bl	tmcc160_setActualPosition
+ 1125              	.LVL108:
+  89:boards/TMCC160_eval.c **** 		break;
+ 1126              		.loc 1 89 4 view .LVU259
+ 1127 0272 F8E7     		b	.L70
+ 1128              	.LVL109:
+ 1129              	.L63:
+  92:boards/TMCC160_eval.c **** 			*value = tmcc160_getTargetVelocity();
+ 1130              		.loc 1 92 3 is_stmt 1 view .LVU260
+  94:boards/TMCC160_eval.c **** 			tmcc160_setTargetVelocity(*value);
+ 1131              		.loc 1 94 8 view .LVU261
+  95:boards/TMCC160_eval.c **** 		break;
+ 1132              		.loc 1 95 4 view .LVU262
+ 1133 0274 1046     		mov	r0, r2
+ 1134              	.LVL110:
+  95:boards/TMCC160_eval.c **** 		break;
+ 1135              		.loc 1 95 4 is_stmt 0 view .LVU263
+ 1136 0276 FFF7FEFF 		bl	tmcc160_setTargetVelocity
+ 1137              	.LVL111:
+  95:boards/TMCC160_eval.c **** 		break;
+ 1138              		.loc 1 95 4 view .LVU264
+ 1139 027a F4E7     		b	.L70
+ 1140              	.LVL112:
+ 1141              	.L66:
+ 116:boards/TMCC160_eval.c **** 			*value = tmcc160_getTargetTorque_mA();
+ 1142              		.loc 1 116 3 is_stmt 1 view .LVU265
+ 118:boards/TMCC160_eval.c **** 			tmcc160_setTargetTorque_mA(*value);
+ 1143              		.loc 1 118 8 view .LVU266
+ 119:boards/TMCC160_eval.c **** 		break;
+ 1144              		.loc 1 119 4 view .LVU267
+ 1145 027c 1046     		mov	r0, r2
+ 1146              	.LVL113:
+ 119:boards/TMCC160_eval.c **** 		break;
+ 1147              		.loc 1 119 4 is_stmt 0 view .LVU268
+ 1148 027e FFF7FEFF 		bl	tmcc160_setTargetTorque_mA
+ 1149              	.LVL114:
+ 119:boards/TMCC160_eval.c **** 		break;
+ 1150              		.loc 1 119 4 view .LVU269
+ 1151 0282 F0E7     		b	.L70
+ 1152              	.LVL115:
+ 1153              	.L67:
+  75:boards/TMCC160_eval.c **** 
+ 1154              		.loc 1 75 10 view .LVU270
+ 1155 0284 0820     		movs	r0, #8
+ 1156              	.LVL116:
+  75:boards/TMCC160_eval.c **** 
+ 1157              		.loc 1 75 10 view .LVU271
+ 1158 0286 EFE7     		b	.L58
+ 1159              	.LVL117:
+ 1160              	.L69:
+  77:boards/TMCC160_eval.c **** 	{
+ 1161              		.loc 1 77 2 view .LVU272
+ 1162 0288 0420     		movs	r0, #4
+ 1163              	.LVL118:
+  77:boards/TMCC160_eval.c **** 	{
+ 1164              		.loc 1 77 2 view .LVU273
+ 1165              	.LBE37:
+ 1166              	.LBE39:
+ 180:boards/TMCC160_eval.c **** }
+ 1167              		.loc 1 180 9 view .LVU274
+ 1168 028a EDE7     		b	.L58
+ 1169              		.cfi_endproc
+ 1170              	.LFE14:
+ 1172              		.align	1
+ 1173              		.global	TMCC160_init
+ 1174              		.syntax unified
+ 1175              		.thumb
+ 1176              		.thumb_func
+ 1177              		.fpu softvfp
+ 1179              	TMCC160_init:
+ 1180              	.LFB22:
+ 228:boards/TMCC160_eval.c **** 
+ 229:boards/TMCC160_eval.c **** void TMCC160_init(void)
+ 230:boards/TMCC160_eval.c **** {
+ 1181              		.loc 1 230 1 is_stmt 1 view -0
+ 1182              		.cfi_startproc
+ 1183              		@ args = 0, pretend = 0, frame = 0
+ 1184              		@ frame_needed = 0, uses_anonymous_args = 0
+ 231:boards/TMCC160_eval.c **** 	// configure ENABLE-PIN for TMCC160
+ 232:boards/TMCC160_eval.c **** 	PIN_DRV_ENN	= &HAL.IOs->pins->DIO0;
+ 1185              		.loc 1 232 2 view .LVU276
+ 230:boards/TMCC160_eval.c **** 	// configure ENABLE-PIN for TMCC160
+ 1186              		.loc 1 230 1 is_stmt 0 view .LVU277
+ 1187 028c 38B5     		push	{r3, r4, r5, lr}
+ 1188              	.LCFI18:
+ 1189              		.cfi_def_cfa_offset 16
+ 1190              		.cfi_offset 3, -16
+ 1191              		.cfi_offset 4, -12
+ 1192              		.cfi_offset 5, -8
+ 1193              		.cfi_offset 14, -4
+ 1194              		.loc 1 232 20 view .LVU278
+ 1195 028e 2B4B     		ldr	r3, .L72
+ 1196              		.loc 1 232 14 view .LVU279
+ 1197 0290 2B4D     		ldr	r5, .L72+4
+ 1198              		.loc 1 232 20 view .LVU280
+ 1199 0292 DC68     		ldr	r4, [r3, #12]
+ 1200              		.loc 1 232 16 view .LVU281
+ 1201 0294 6068     		ldr	r0, [r4, #4]
+ 233:boards/TMCC160_eval.c **** 	HAL.IOs->config->toOutput(PIN_DRV_ENN);
+ 1202              		.loc 1 233 17 view .LVU282
+ 1203 0296 2368     		ldr	r3, [r4]
+ 232:boards/TMCC160_eval.c **** 	HAL.IOs->config->toOutput(PIN_DRV_ENN);
+ 1204              		.loc 1 232 16 view .LVU283
+ 1205 0298 6830     		adds	r0, r0, #104
+ 232:boards/TMCC160_eval.c **** 	HAL.IOs->config->toOutput(PIN_DRV_ENN);
+ 1206              		.loc 1 232 14 view .LVU284
+ 1207 029a 2860     		str	r0, [r5]
+ 1208              		.loc 1 233 2 is_stmt 1 view .LVU285
+ 1209 029c DB68     		ldr	r3, [r3, #12]
+ 1210 029e 9847     		blx	r3
+ 1211              	.LVL119:
+ 234:boards/TMCC160_eval.c **** 	HAL.IOs->config->setHigh(PIN_DRV_ENN);
+ 1212              		.loc 1 234 2 view .LVU286
+ 1213              		.loc 1 234 17 is_stmt 0 view .LVU287
+ 1214 02a0 2368     		ldr	r3, [r4]
+ 1215              		.loc 1 234 2 view .LVU288
+ 1216 02a2 2868     		ldr	r0, [r5]
+ 1217 02a4 5B69     		ldr	r3, [r3, #20]
+ 1218 02a6 9847     		blx	r3
+ 1219              	.LVL120:
+ 235:boards/TMCC160_eval.c **** 
+ 236:boards/TMCC160_eval.c **** 	C160_config	= Evalboards.ch2.config;
+ 1220              		.loc 1 236 2 is_stmt 1 view .LVU289
+ 1221              		.loc 1 236 30 is_stmt 0 view .LVU290
+ 1222 02a8 264B     		ldr	r3, .L72+8
+ 1223              		.loc 1 236 14 view .LVU291
+ 1224 02aa 2749     		ldr	r1, .L72+12
+ 1225              		.loc 1 236 30 view .LVU292
+ 1226 02ac D3F89020 		ldr	r2, [r3, #144]
+ 1227              		.loc 1 236 14 view .LVU293
+ 1228 02b0 0A60     		str	r2, [r1]
+ 237:boards/TMCC160_eval.c **** 
+ 238:boards/TMCC160_eval.c **** 	// connect evalboard functions
+ 239:boards/TMCC160_eval.c **** 	Evalboards.ch2.config->reset        = reset;
+ 1229              		.loc 1 239 2 is_stmt 1 view .LVU294
+ 1230              		.loc 1 239 38 is_stmt 0 view .LVU295
+ 1231 02b2 2649     		ldr	r1, .L72+16
+ 1232 02b4 C2F80412 		str	r1, [r2, #516]
+ 240:boards/TMCC160_eval.c **** 	Evalboards.ch2.config->restore      = restore;
+ 1233              		.loc 1 240 2 is_stmt 1 view .LVU296
+ 241:boards/TMCC160_eval.c **** 	Evalboards.ch2.config->state        = CONFIG_RESET;
+ 1234              		.loc 1 241 38 is_stmt 0 view .LVU297
+ 1235 02b8 0124     		movs	r4, #1
+ 240:boards/TMCC160_eval.c **** 	Evalboards.ch2.config->restore      = restore;
+ 1236              		.loc 1 240 38 view .LVU298
+ 1237 02ba 2549     		ldr	r1, .L72+20
+ 1238              		.loc 1 241 38 view .LVU299
+ 1239 02bc 1480     		strh	r4, [r2]	@ movhi
+ 240:boards/TMCC160_eval.c **** 	Evalboards.ch2.config->restore      = restore;
+ 1240              		.loc 1 240 38 view .LVU300
+ 1241 02be C2F80812 		str	r1, [r2, #520]
+ 1242              		.loc 1 241 2 is_stmt 1 view .LVU301
+ 242:boards/TMCC160_eval.c **** 	Evalboards.ch2.config->configIndex  = 0;
+ 1243              		.loc 1 242 2 view .LVU302
+ 243:boards/TMCC160_eval.c **** 
+ 244:boards/TMCC160_eval.c **** 	Evalboards.ch2.rotate               = rotate;
+ 1244              		.loc 1 244 2 view .LVU303
+ 1245              		.loc 1 244 38 is_stmt 0 view .LVU304
+ 1246 02c2 244A     		ldr	r2, .L72+24
+ 1247 02c4 C3F89C20 		str	r2, [r3, #156]
+ 245:boards/TMCC160_eval.c **** 	Evalboards.ch2.right                = right;
+ 1248              		.loc 1 245 2 is_stmt 1 view .LVU305
+ 1249              		.loc 1 245 38 is_stmt 0 view .LVU306
+ 1250 02c8 234A     		ldr	r2, .L72+28
+ 1251 02ca C3F89820 		str	r2, [r3, #152]
+ 246:boards/TMCC160_eval.c **** 	Evalboards.ch2.left                 = left;
+ 1252              		.loc 1 246 2 is_stmt 1 view .LVU307
+ 1253              		.loc 1 246 38 is_stmt 0 view .LVU308
+ 1254 02ce 234A     		ldr	r2, .L72+32
+ 1255 02d0 C3F89420 		str	r2, [r3, #148]
+ 247:boards/TMCC160_eval.c **** 	Evalboards.ch2.stop                 = stop;
+ 1256              		.loc 1 247 2 is_stmt 1 view .LVU309
+ 1257              		.loc 1 247 38 is_stmt 0 view .LVU310
+ 1258 02d4 224A     		ldr	r2, .L72+36
+ 1259 02d6 C3F8A020 		str	r2, [r3, #160]
+ 248:boards/TMCC160_eval.c **** 	Evalboards.ch2.getMeasuredSpeed     = getMeasuredSpeed;
+ 1260              		.loc 1 248 2 is_stmt 1 view .LVU311
+ 1261              		.loc 1 248 38 is_stmt 0 view .LVU312
+ 1262 02da 224A     		ldr	r2, .L72+40
+ 1263 02dc C3F8C820 		str	r2, [r3, #200]
+ 249:boards/TMCC160_eval.c **** 	Evalboards.ch2.GAP                  = GAP;
+ 1264              		.loc 1 249 2 is_stmt 1 view .LVU313
+ 1265              		.loc 1 249 38 is_stmt 0 view .LVU314
+ 1266 02e0 214A     		ldr	r2, .L72+44
+ 1267 02e2 C3F8B420 		str	r2, [r3, #180]
+ 250:boards/TMCC160_eval.c **** 	Evalboards.ch2.SAP                  = SAP;
+ 1268              		.loc 1 250 2 is_stmt 1 view .LVU315
+ 1269              		.loc 1 250 38 is_stmt 0 view .LVU316
+ 1270 02e6 214A     		ldr	r2, .L72+48
+ 1271 02e8 C3F8B020 		str	r2, [r3, #176]
+ 251:boards/TMCC160_eval.c **** 	Evalboards.ch2.moveTo               = moveTo;
+ 1272              		.loc 1 251 2 is_stmt 1 view .LVU317
+ 1273              		.loc 1 251 38 is_stmt 0 view .LVU318
+ 1274 02ec 204A     		ldr	r2, .L72+52
+ 1275 02ee C3F8A420 		str	r2, [r3, #164]
+ 252:boards/TMCC160_eval.c **** 	Evalboards.ch2.moveBy               = moveBy;
+ 1276              		.loc 1 252 2 is_stmt 1 view .LVU319
+ 1277              		.loc 1 252 38 is_stmt 0 view .LVU320
+ 1278 02f2 204A     		ldr	r2, .L72+56
+ 1279 02f4 C3F8A820 		str	r2, [r3, #168]
+ 253:boards/TMCC160_eval.c **** 	Evalboards.ch2.writeRegister        = writeRegister;
+ 1280              		.loc 1 253 2 is_stmt 1 view .LVU321
+ 1281              		.loc 1 253 38 is_stmt 0 view .LVU322
+ 1282 02f8 1F4A     		ldr	r2, .L72+60
+ 1283 02fa C3F8C420 		str	r2, [r3, #196]
+ 254:boards/TMCC160_eval.c **** 	Evalboards.ch2.readRegister         = readRegister;
+ 1284              		.loc 1 254 2 is_stmt 1 view .LVU323
+ 1285              		.loc 1 254 38 is_stmt 0 view .LVU324
+ 1286 02fe 1F4A     		ldr	r2, .L72+64
+ 1287 0300 C3F8C020 		str	r2, [r3, #192]
+ 255:boards/TMCC160_eval.c **** 	Evalboards.ch2.periodicJob          = periodicJob;
+ 1288              		.loc 1 255 2 is_stmt 1 view .LVU325
+ 1289              		.loc 1 255 38 is_stmt 0 view .LVU326
+ 1290 0304 1E4A     		ldr	r2, .L72+68
+ 1291 0306 C3F8D020 		str	r2, [r3, #208]
+ 256:boards/TMCC160_eval.c **** 	Evalboards.ch2.userFunction         = userFunction;
+ 1292              		.loc 1 256 2 is_stmt 1 view .LVU327
+ 1293              		.loc 1 256 38 is_stmt 0 view .LVU328
+ 1294 030a 1E4A     		ldr	r2, .L72+72
+ 1295 030c C3F8CC20 		str	r2, [r3, #204]
+ 257:boards/TMCC160_eval.c **** 	Evalboards.ch2.enableDriver         = enableDriver;
+ 1296              		.loc 1 257 2 is_stmt 1 view .LVU329
+ 1297              		.loc 1 257 38 is_stmt 0 view .LVU330
+ 1298 0310 1D4A     		ldr	r2, .L72+76
+ 1299 0312 C3F8DC20 		str	r2, [r3, #220]
+ 258:boards/TMCC160_eval.c **** 	Evalboards.ch2.checkErrors          = checkErrors;
+ 1300              		.loc 1 258 2 is_stmt 1 view .LVU331
+ 1301              		.loc 1 258 38 is_stmt 0 view .LVU332
+ 1302 0316 1D4A     		ldr	r2, .L72+80
+ 1303 0318 C3F8D820 		str	r2, [r3, #216]
+ 259:boards/TMCC160_eval.c **** 	Evalboards.ch2.numberOfMotors       = MOTORS;
+ 1304              		.loc 1 259 2 is_stmt 1 view .LVU333
+ 260:boards/TMCC160_eval.c **** 	Evalboards.ch2.deInit               = deInit;
+ 1305              		.loc 1 260 38 is_stmt 0 view .LVU334
+ 1306 031c 1C4A     		ldr	r2, .L72+84
+ 1307 031e C3F8D420 		str	r2, [r3, #212]
+ 261:boards/TMCC160_eval.c **** 	Evalboards.ch2.VMMin                = 50;   // VM[V/10] min
+ 262:boards/TMCC160_eval.c **** 	Evalboards.ch2.VMMax                = 280;  // VM[V/10] max +10%
+ 1308              		.loc 1 262 38 view .LVU335
+ 1309 0322 3221     		movs	r1, #50
+ 1310 0324 4FF48C72 		mov	r2, #280
+ 1311 0328 C3E92121 		strd	r2, r1, [r3, #132]
+ 259:boards/TMCC160_eval.c **** 	Evalboards.ch2.deInit               = deInit;
+ 1312              		.loc 1 259 38 view .LVU336
+ 1313 032c 83F88C40 		strb	r4, [r3, #140]
+ 260:boards/TMCC160_eval.c **** 	Evalboards.ch2.deInit               = deInit;
+ 1314              		.loc 1 260 2 is_stmt 1 view .LVU337
+ 261:boards/TMCC160_eval.c **** 	Evalboards.ch2.VMMin                = 50;   // VM[V/10] min
+ 1315              		.loc 1 261 2 view .LVU338
+ 263:boards/TMCC160_eval.c **** 
+ 264:boards/TMCC160_eval.c **** 	// init used API functions
+ 265:boards/TMCC160_eval.c **** 	tmcc160_init();
+ 1316              		.loc 1 265 2 view .LVU339
+ 1317 0330 FFF7FEFF 		bl	tmcc160_init
+ 1318              	.LVL121:
+ 266:boards/TMCC160_eval.c **** 
+ 267:boards/TMCC160_eval.c **** 	// enable the driver
+ 268:boards/TMCC160_eval.c **** 	enableDriver(DRIVER_ENABLE);
+ 1319              		.loc 1 268 2 view .LVU340
+ 1320 0334 2046     		mov	r0, r4
+ 269:boards/TMCC160_eval.c **** };
+ 1321              		.loc 1 269 1 is_stmt 0 view .LVU341
+ 1322 0336 BDE83840 		pop	{r3, r4, r5, lr}
+ 1323              	.LCFI19:
+ 1324              		.cfi_restore 14
+ 1325              		.cfi_restore 5
+ 1326              		.cfi_restore 4
+ 1327              		.cfi_restore 3
+ 1328              		.cfi_def_cfa_offset 0
+ 268:boards/TMCC160_eval.c **** };
+ 1329              		.loc 1 268 2 view .LVU342
+ 1330 033a B4E6     		b	enableDriver
+ 1331              	.LVL122:
+ 1332              	.L73:
+ 1333              		.align	2
+ 1334              	.L72:
+ 1335 033c 00000000 		.word	HAL
+ 1336 0340 00000000 		.word	PIN_DRV_ENN
+ 1337 0344 00000000 		.word	Evalboards
+ 1338 0348 00000000 		.word	C160_config
+ 1339 034c 00000000 		.word	reset
+ 1340 0350 00000000 		.word	restore
+ 1341 0354 00000000 		.word	rotate
+ 1342 0358 00000000 		.word	right
+ 1343 035c 00000000 		.word	left
+ 1344 0360 00000000 		.word	stop
+ 1345 0364 00000000 		.word	getMeasuredSpeed
+ 1346 0368 00000000 		.word	GAP
+ 1347 036c 00000000 		.word	SAP
+ 1348 0370 00000000 		.word	moveTo
+ 1349 0374 00000000 		.word	moveBy
+ 1350 0378 00000000 		.word	writeRegister
+ 1351 037c 00000000 		.word	readRegister
+ 1352 0380 00000000 		.word	periodicJob
+ 1353 0384 00000000 		.word	userFunction
+ 1354 0388 00000000 		.word	enableDriver
+ 1355 038c 00000000 		.word	checkErrors
+ 1356 0390 00000000 		.word	deInit
+ 1357              		.cfi_endproc
+ 1358              	.LFE22:
+ 1360              		.comm	C160_config,4,4
+ 1361              		.comm	PIN_DRV_ENN,4,4
+ 1362              		.comm	TMCMotionController,532,4
+ 1363              		.comm	TMCDriver,532,4
+ 1364              		.comm	Evalboards,244,4
+ 1365              		.comm	VitalSignsMonitor,20,4
+ 1366              		.comm	hwid,1,1
+ 1367              		.comm	HAL,48,4
+ 1368              		.comm	UART,40,4
+ 1369              		.comm	Timer,16,4
+ 1370              		.comm	WLAN,36,4
+ 1371              		.comm	RS232,36,4
+ 1372              		.comm	LEDs,28,4
+ 1373              		.comm	USB,36,4
+ 1374              		.comm	uart0_interrupt,1,1
+ 1375              		.comm	ADCs,32,4
+ 1376              		.comm	SPI,44,4
+ 1377              		.comm	IOMap,2088,4
+ 1378              		.comm	IOs,52,4
+ 1379              		.comm	Cpu,8,4
+ 1380              		.bss
+ 1381              		.align	1
+ 1384              	ADCValue:
+ 1385 0000 00000000 		.space	12
+ 1385      00000000 
+ 1385      00000000 
+ 1386              		.text
+ 1387              	.Letext0:
+ 1388              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 1389              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1390              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1391              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 1392              		.file 6 "TMC-API/tmc/helpers/Config.h"
+ 1393              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1394              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1395              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1396              		.file 10 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\in
+ 1397              		.file 11 "TMC-API/tmc/helpers/API_Header.h"
+ 1398              		.file 12 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 1399              		.file 13 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 1400              		.file 14 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 1401              		.file 15 "./hal/IOs.h"
+ 1402              		.file 16 "./hal/IOMap.h"
+ 1403              		.file 17 "./hal/SPI.h"
+ 1404              		.file 18 "./hal/ADCs.h"
+ 1405              		.file 19 "./hal/RXTX.h"
+ 1406              		.file 20 "./hal/USB.h"
+ 1407              		.file 21 "./hal/LEDs.h"
+ 1408              		.file 22 "./hal/RS232.h"
+ 1409              		.file 23 "./hal/WLAN.h"
+ 1410              		.file 24 "./hal/Timer.h"
+ 1411              		.file 25 "./hal/UART.h"
+ 1412              		.file 26 "./hal/HAL.h"
+ 1413              		.file 27 "./tmc/VitalSignsMonitor.h"
+ 1414              		.file 28 "boards/Board.h"
+ 1415              		.file 29 "boards/TMCDriver.h"
+ 1416              		.file 30 "boards/TMCMotionController.h"
+ 1417              		.file 31 "TMC-API/tmc/ic/TMCC160/TMCC160.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 TMCC160_eval.c
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:22     .text:00000000 userFunction
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:49     .text:00000004 reset
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:69     .text:00000008 checkErrors
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:88     .text:00000010 $d
+                            *COM*:000000f4 Evalboards
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:92     .text:00000014 $t
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:98     .text:00000014 periodicJob
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:119    .text:00000018 readRegister
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:156    .text:00000026 writeRegister
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:185    .text:0000002e moveBy
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:230    .text:00000042 moveTo
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:275    .text:00000056 rotate
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:320    .text:0000006a stop
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:380    .text:0000007c left
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:443    .text:00000090 getMeasuredSpeed
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:492    .text:000000a6 enableDriver
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:568    .text:000000dc $d
+                            *COM*:00000030 HAL
+                            *COM*:00000004 PIN_DRV_ENN
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:574    .text:000000e8 $t
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:580    .text:000000e8 deInit
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:621    .text:00000104 $d
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:626    .text:0000010c $t
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:632    .text:0000010c restore
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:649    .text:00000110 right
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:679    .text:00000124 tmcc160_spi_readwriteByte
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:702    .text:00000128 tmcc160_writeDatagram
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:776    .text:00000162 GAP
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:813    .text:0000017a $d
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:827    .text:00000188 $t
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:984    .text:00000200 SAP
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:1021   .text:00000214 $d
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:1035   .text:00000222 $t
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:1179   .text:0000028c TMCC160_init
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:1335   .text:0000033c $d
+                            *COM*:00000004 C160_config
+                            *COM*:00000214 TMCMotionController
+                            *COM*:00000214 TMCDriver
+                            *COM*:00000014 VitalSignsMonitor
+                            *COM*:00000001 hwid
+                            *COM*:00000028 UART
+                            *COM*:00000010 Timer
+                            *COM*:00000024 WLAN
+                            *COM*:00000024 RS232
+                            *COM*:0000001c LEDs
+                            *COM*:00000024 USB
+                            *COM*:00000001 uart0_interrupt
+                            *COM*:00000020 ADCs
+                            *COM*:0000002c SPI
+                            *COM*:00000828 IOMap
+                            *COM*:00000034 IOs
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:1381   .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccT63BEg.s:1384   .bss:00000000 ADCValue
+
+UNDEFINED SYMBOLS
+tmcc160_periodicJob
+tmcc160_readInt
+tmcc160_writeInt
+tmcc160_setRelativeTargetPosition
+tmcc160_setAbsolutTargetPosition
+tmcc160_setTargetVelocity
+tmcc160_getActualVelocity
+spi_ch1_readWriteByte
+tmcc160_default_spi_delay
+tmcc160_getTargetPosition
+tmcc160_getActualPosition
+tmcc160_getTargetVelocity
+tmcc160_getActualRampVelocity
+tmcc160_getActualTorque_mA
+tmcc160_getTargetTorque_mA
+tmcc160_setActualPosition
+tmcc160_setTargetTorque_mA
+tmcc160_init

@@ -1,0 +1,387 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"Ramp.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.global	tmc_ramp_init
+  17              		.arch armv7e-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	tmc_ramp_init:
+  24              	.LVL0:
+  25              	.LFB0:
+  26              		.file 1 "TMC-API/tmc/ramp/Ramp.c"
+   1:TMC-API/tmc/ramp/Ramp.c **** /*
+   2:TMC-API/tmc/ramp/Ramp.c ****  * Ramp.c
+   3:TMC-API/tmc/ramp/Ramp.c ****  *
+   4:TMC-API/tmc/ramp/Ramp.c ****  *  Created on: 09.11.2018
+   5:TMC-API/tmc/ramp/Ramp.c ****  *      Author: LK
+   6:TMC-API/tmc/ramp/Ramp.c ****  */
+   7:TMC-API/tmc/ramp/Ramp.c **** 
+   8:TMC-API/tmc/ramp/Ramp.c **** #include "Ramp.h"
+   9:TMC-API/tmc/ramp/Ramp.c **** 
+  10:TMC-API/tmc/ramp/Ramp.c **** void tmc_ramp_init(void *ramp, TMC_RampType type)
+  11:TMC-API/tmc/ramp/Ramp.c **** {
+  27              		.loc 1 11 1 view -0
+  28              		.cfi_startproc
+  29              		@ args = 0, pretend = 0, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  31              		@ link register save eliminated.
+  12:TMC-API/tmc/ramp/Ramp.c **** 	switch(type) {
+  32              		.loc 1 12 2 view .LVU1
+  13:TMC-API/tmc/ramp/Ramp.c **** 	case TMC_RAMP_TYPE_LINEAR:
+  14:TMC-API/tmc/ramp/Ramp.c **** 	default:
+  15:TMC-API/tmc/ramp/Ramp.c **** 		tmc_ramp_linear_init((TMC_LinearRamp *)ramp);
+  33              		.loc 1 15 3 view .LVU2
+  34 0000 FFF7FEBF 		b	tmc_ramp_linear_init
+  35              	.LVL1:
+  36              		.loc 1 15 3 is_stmt 0 view .LVU3
+  37              		.cfi_endproc
+  38              	.LFE0:
+  40              		.align	1
+  41              		.global	tmc_ramp_compute
+  42              		.syntax unified
+  43              		.thumb
+  44              		.thumb_func
+  45              		.fpu softvfp
+  47              	tmc_ramp_compute:
+  48              	.LVL2:
+  49              	.LFB1:
+  16:TMC-API/tmc/ramp/Ramp.c **** 		break;
+  17:TMC-API/tmc/ramp/Ramp.c **** 	}
+  18:TMC-API/tmc/ramp/Ramp.c **** }
+  19:TMC-API/tmc/ramp/Ramp.c **** 
+  20:TMC-API/tmc/ramp/Ramp.c **** int32_t tmc_ramp_compute(void *ramp, TMC_RampType type, uint32_t delta)
+  21:TMC-API/tmc/ramp/Ramp.c **** {
+  50              		.loc 1 21 1 is_stmt 1 view -0
+  51              		.cfi_startproc
+  52              		@ args = 0, pretend = 0, frame = 0
+  53              		@ frame_needed = 0, uses_anonymous_args = 0
+  22:TMC-API/tmc/ramp/Ramp.c **** 	uint32_t i;
+  54              		.loc 1 22 2 view .LVU5
+  23:TMC-API/tmc/ramp/Ramp.c **** 	int32_t dxSum = 0;
+  55              		.loc 1 23 2 view .LVU6
+  24:TMC-API/tmc/ramp/Ramp.c **** 
+  25:TMC-API/tmc/ramp/Ramp.c **** 	switch(type) {
+  56              		.loc 1 25 2 view .LVU7
+  26:TMC-API/tmc/ramp/Ramp.c **** 	case TMC_RAMP_TYPE_LINEAR:
+  27:TMC-API/tmc/ramp/Ramp.c **** 	default:
+  28:TMC-API/tmc/ramp/Ramp.c **** 		for (i = 0; i < delta; i++)
+  57              		.loc 1 28 3 view .LVU8
+  21:TMC-API/tmc/ramp/Ramp.c **** 	uint32_t i;
+  58              		.loc 1 21 1 is_stmt 0 view .LVU9
+  59 0004 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+  60              	.LCFI0:
+  61              		.cfi_def_cfa_offset 24
+  62              		.cfi_offset 3, -24
+  63              		.cfi_offset 4, -20
+  64              		.cfi_offset 5, -16
+  65              		.cfi_offset 6, -12
+  66              		.cfi_offset 7, -8
+  67              		.cfi_offset 14, -4
+  23:TMC-API/tmc/ramp/Ramp.c **** 
+  68              		.loc 1 23 10 view .LVU10
+  69 0006 0024     		movs	r4, #0
+  21:TMC-API/tmc/ramp/Ramp.c **** 	uint32_t i;
+  70              		.loc 1 21 1 view .LVU11
+  71 0008 0746     		mov	r7, r0
+  72 000a 1546     		mov	r5, r2
+  73              		.loc 1 28 10 view .LVU12
+  74 000c 2646     		mov	r6, r4
+  75              	.LVL3:
+  76              	.L3:
+  77              		.loc 1 28 15 is_stmt 1 discriminator 1 view .LVU13
+  78              		.loc 1 28 3 is_stmt 0 discriminator 1 view .LVU14
+  79 000e AE42     		cmp	r6, r5
+  80 0010 01D1     		bne	.L4
+  29:TMC-API/tmc/ramp/Ramp.c **** 		{
+  30:TMC-API/tmc/ramp/Ramp.c **** 			dxSum += tmc_ramp_linear_compute((TMC_LinearRamp *)ramp);
+  31:TMC-API/tmc/ramp/Ramp.c **** 		}
+  32:TMC-API/tmc/ramp/Ramp.c **** 		break;
+  81              		.loc 1 32 3 is_stmt 1 view .LVU15
+  33:TMC-API/tmc/ramp/Ramp.c **** 	}
+  34:TMC-API/tmc/ramp/Ramp.c **** 
+  35:TMC-API/tmc/ramp/Ramp.c **** 	return dxSum;
+  82              		.loc 1 35 2 view .LVU16
+  36:TMC-API/tmc/ramp/Ramp.c **** }
+  83              		.loc 1 36 1 is_stmt 0 view .LVU17
+  84 0012 2046     		mov	r0, r4
+  85 0014 F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+  86              	.LVL4:
+  87              	.L4:
+  30:TMC-API/tmc/ramp/Ramp.c **** 		}
+  88              		.loc 1 30 4 is_stmt 1 discriminator 3 view .LVU18
+  30:TMC-API/tmc/ramp/Ramp.c **** 		}
+  89              		.loc 1 30 13 is_stmt 0 discriminator 3 view .LVU19
+  90 0016 3846     		mov	r0, r7
+  91 0018 FFF7FEFF 		bl	tmc_ramp_linear_compute
+  92              	.LVL5:
+  28:TMC-API/tmc/ramp/Ramp.c **** 		{
+  93              		.loc 1 28 27 discriminator 3 view .LVU20
+  94 001c 0136     		adds	r6, r6, #1
+  95              	.LVL6:
+  30:TMC-API/tmc/ramp/Ramp.c **** 		}
+  96              		.loc 1 30 10 discriminator 3 view .LVU21
+  97 001e 0444     		add	r4, r4, r0
+  98              	.LVL7:
+  28:TMC-API/tmc/ramp/Ramp.c **** 		{
+  99              		.loc 1 28 26 is_stmt 1 discriminator 3 view .LVU22
+  28:TMC-API/tmc/ramp/Ramp.c **** 		{
+ 100              		.loc 1 28 26 is_stmt 0 discriminator 3 view .LVU23
+ 101 0020 F5E7     		b	.L3
+ 102              		.cfi_endproc
+ 103              	.LFE1:
+ 105              		.align	1
+ 106              		.global	tmc_ramp_get_rampVelocity
+ 107              		.syntax unified
+ 108              		.thumb
+ 109              		.thumb_func
+ 110              		.fpu softvfp
+ 112              	tmc_ramp_get_rampVelocity:
+ 113              	.LVL8:
+ 114              	.LFB2:
+  37:TMC-API/tmc/ramp/Ramp.c **** 
+  38:TMC-API/tmc/ramp/Ramp.c **** int32_t tmc_ramp_get_rampVelocity(void *ramp, TMC_RampType type)
+  39:TMC-API/tmc/ramp/Ramp.c **** {
+ 115              		.loc 1 39 1 is_stmt 1 view -0
+ 116              		.cfi_startproc
+ 117              		@ args = 0, pretend = 0, frame = 0
+ 118              		@ frame_needed = 0, uses_anonymous_args = 0
+ 119              		@ link register save eliminated.
+  40:TMC-API/tmc/ramp/Ramp.c **** 	int32_t v = 0;
+ 120              		.loc 1 40 2 view .LVU25
+  41:TMC-API/tmc/ramp/Ramp.c **** 	switch(type) {
+ 121              		.loc 1 41 2 view .LVU26
+ 122 0022 09B9     		cbnz	r1, .L6
+  42:TMC-API/tmc/ramp/Ramp.c **** 	case TMC_RAMP_TYPE_LINEAR:
+  43:TMC-API/tmc/ramp/Ramp.c **** 		v = tmc_ramp_linear_get_rampVelocity((TMC_LinearRamp *)ramp);
+ 123              		.loc 1 43 3 view .LVU27
+ 124              		.loc 1 43 7 is_stmt 0 view .LVU28
+ 125 0024 FFF7FEBF 		b	tmc_ramp_linear_get_rampVelocity
+ 126              	.LVL9:
+ 127              	.L6:
+  44:TMC-API/tmc/ramp/Ramp.c **** 		break;
+  45:TMC-API/tmc/ramp/Ramp.c **** 	}
+  46:TMC-API/tmc/ramp/Ramp.c **** 	return v;
+ 128              		.loc 1 46 2 is_stmt 1 view .LVU29
+  47:TMC-API/tmc/ramp/Ramp.c **** }
+ 129              		.loc 1 47 1 is_stmt 0 view .LVU30
+ 130 0028 0020     		movs	r0, #0
+ 131              	.LVL10:
+ 132              		.loc 1 47 1 view .LVU31
+ 133 002a 7047     		bx	lr
+ 134              		.cfi_endproc
+ 135              	.LFE2:
+ 137              		.align	1
+ 138              		.global	tmc_ramp_get_rampPosition
+ 139              		.syntax unified
+ 140              		.thumb
+ 141              		.thumb_func
+ 142              		.fpu softvfp
+ 144              	tmc_ramp_get_rampPosition:
+ 145              	.LVL11:
+ 146              	.LFB3:
+  48:TMC-API/tmc/ramp/Ramp.c **** 
+  49:TMC-API/tmc/ramp/Ramp.c **** int32_t tmc_ramp_get_rampPosition(void *ramp, TMC_RampType type)
+  50:TMC-API/tmc/ramp/Ramp.c **** {
+ 147              		.loc 1 50 1 is_stmt 1 view -0
+ 148              		.cfi_startproc
+ 149              		@ args = 0, pretend = 0, frame = 0
+ 150              		@ frame_needed = 0, uses_anonymous_args = 0
+ 151              		@ link register save eliminated.
+  51:TMC-API/tmc/ramp/Ramp.c **** 	int32_t x = 0;
+ 152              		.loc 1 51 2 view .LVU33
+  52:TMC-API/tmc/ramp/Ramp.c **** 	switch(type) {
+ 153              		.loc 1 52 2 view .LVU34
+ 154 002c 09B9     		cbnz	r1, .L8
+  53:TMC-API/tmc/ramp/Ramp.c **** 	case TMC_RAMP_TYPE_LINEAR:
+  54:TMC-API/tmc/ramp/Ramp.c **** 		x = tmc_ramp_linear_get_rampPosition((TMC_LinearRamp *)ramp);
+ 155              		.loc 1 54 3 view .LVU35
+ 156              		.loc 1 54 7 is_stmt 0 view .LVU36
+ 157 002e FFF7FEBF 		b	tmc_ramp_linear_get_rampPosition
+ 158              	.LVL12:
+ 159              	.L8:
+  55:TMC-API/tmc/ramp/Ramp.c **** 		break;
+  56:TMC-API/tmc/ramp/Ramp.c **** 	}
+  57:TMC-API/tmc/ramp/Ramp.c **** 	return x;
+ 160              		.loc 1 57 2 is_stmt 1 view .LVU37
+  58:TMC-API/tmc/ramp/Ramp.c **** }
+ 161              		.loc 1 58 1 is_stmt 0 view .LVU38
+ 162 0032 0020     		movs	r0, #0
+ 163              	.LVL13:
+ 164              		.loc 1 58 1 view .LVU39
+ 165 0034 7047     		bx	lr
+ 166              		.cfi_endproc
+ 167              	.LFE3:
+ 169              		.align	1
+ 170              		.global	tmc_ramp_get_enabled
+ 171              		.syntax unified
+ 172              		.thumb
+ 173              		.thumb_func
+ 174              		.fpu softvfp
+ 176              	tmc_ramp_get_enabled:
+ 177              	.LVL14:
+ 178              	.LFB4:
+  59:TMC-API/tmc/ramp/Ramp.c **** 
+  60:TMC-API/tmc/ramp/Ramp.c **** bool tmc_ramp_get_enabled(void *ramp, TMC_RampType type)
+  61:TMC-API/tmc/ramp/Ramp.c **** {
+ 179              		.loc 1 61 1 is_stmt 1 view -0
+ 180              		.cfi_startproc
+ 181              		@ args = 0, pretend = 0, frame = 0
+ 182              		@ frame_needed = 0, uses_anonymous_args = 0
+ 183              		@ link register save eliminated.
+  62:TMC-API/tmc/ramp/Ramp.c **** 	bool enabled = false;
+ 184              		.loc 1 62 2 view .LVU41
+  63:TMC-API/tmc/ramp/Ramp.c **** 	switch(type) {
+ 185              		.loc 1 63 2 view .LVU42
+ 186 0036 09B9     		cbnz	r1, .L10
+  64:TMC-API/tmc/ramp/Ramp.c **** 	case TMC_RAMP_TYPE_LINEAR:
+  65:TMC-API/tmc/ramp/Ramp.c **** 		enabled = tmc_ramp_linear_get_enabled((TMC_LinearRamp *)ramp);
+ 187              		.loc 1 65 3 view .LVU43
+ 188              		.loc 1 65 13 is_stmt 0 view .LVU44
+ 189 0038 FFF7FEBF 		b	tmc_ramp_linear_get_enabled
+ 190              	.LVL15:
+ 191              	.L10:
+  66:TMC-API/tmc/ramp/Ramp.c **** 		break;
+  67:TMC-API/tmc/ramp/Ramp.c **** 	}
+  68:TMC-API/tmc/ramp/Ramp.c **** 	return enabled;
+ 192              		.loc 1 68 2 is_stmt 1 view .LVU45
+  69:TMC-API/tmc/ramp/Ramp.c **** }
+ 193              		.loc 1 69 1 is_stmt 0 view .LVU46
+ 194 003c 0020     		movs	r0, #0
+ 195              	.LVL16:
+ 196              		.loc 1 69 1 view .LVU47
+ 197 003e 7047     		bx	lr
+ 198              		.cfi_endproc
+ 199              	.LFE4:
+ 201              		.align	1
+ 202              		.global	tmc_ramp_set_enabled
+ 203              		.syntax unified
+ 204              		.thumb
+ 205              		.thumb_func
+ 206              		.fpu softvfp
+ 208              	tmc_ramp_set_enabled:
+ 209              	.LVL17:
+ 210              	.LFB5:
+  70:TMC-API/tmc/ramp/Ramp.c **** 
+  71:TMC-API/tmc/ramp/Ramp.c **** void tmc_ramp_set_enabled(void *ramp, TMC_RampType type, bool enabled)
+  72:TMC-API/tmc/ramp/Ramp.c **** {
+ 211              		.loc 1 72 1 is_stmt 1 view -0
+ 212              		.cfi_startproc
+ 213              		@ args = 0, pretend = 0, frame = 0
+ 214              		@ frame_needed = 0, uses_anonymous_args = 0
+ 215              		@ link register save eliminated.
+  73:TMC-API/tmc/ramp/Ramp.c **** 	switch(type) {
+ 216              		.loc 1 73 2 view .LVU49
+  74:TMC-API/tmc/ramp/Ramp.c **** 	case TMC_RAMP_TYPE_LINEAR:
+  75:TMC-API/tmc/ramp/Ramp.c **** 	default:
+  76:TMC-API/tmc/ramp/Ramp.c **** 		tmc_ramp_linear_set_enabled((TMC_LinearRamp *)ramp, enabled);
+ 217              		.loc 1 76 3 view .LVU50
+ 218 0040 1146     		mov	r1, r2
+ 219              	.LVL18:
+ 220              		.loc 1 76 3 is_stmt 0 view .LVU51
+ 221 0042 FFF7FEBF 		b	tmc_ramp_linear_set_enabled
+ 222              	.LVL19:
+ 223              		.loc 1 76 3 view .LVU52
+ 224              		.cfi_endproc
+ 225              	.LFE5:
+ 227              		.align	1
+ 228              		.global	tmc_ramp_toggle_enabled
+ 229              		.syntax unified
+ 230              		.thumb
+ 231              		.thumb_func
+ 232              		.fpu softvfp
+ 234              	tmc_ramp_toggle_enabled:
+ 235              	.LVL20:
+ 236              	.LFB6:
+  77:TMC-API/tmc/ramp/Ramp.c **** 		break;
+  78:TMC-API/tmc/ramp/Ramp.c **** 	}
+  79:TMC-API/tmc/ramp/Ramp.c **** }
+  80:TMC-API/tmc/ramp/Ramp.c **** 
+  81:TMC-API/tmc/ramp/Ramp.c **** void tmc_ramp_toggle_enabled(void *ramp, TMC_RampType type)
+  82:TMC-API/tmc/ramp/Ramp.c **** {
+ 237              		.loc 1 82 1 is_stmt 1 view -0
+ 238              		.cfi_startproc
+ 239              		@ args = 0, pretend = 0, frame = 0
+ 240              		@ frame_needed = 0, uses_anonymous_args = 0
+  83:TMC-API/tmc/ramp/Ramp.c **** 	switch(type) {
+ 241              		.loc 1 83 2 view .LVU54
+  84:TMC-API/tmc/ramp/Ramp.c **** 	case TMC_RAMP_TYPE_LINEAR:
+  85:TMC-API/tmc/ramp/Ramp.c **** 	default:
+  86:TMC-API/tmc/ramp/Ramp.c **** 		tmc_ramp_linear_set_enabled((TMC_LinearRamp *)ramp, !tmc_ramp_get_enabled(ramp, type));
+ 242              		.loc 1 86 3 view .LVU55
+  82:TMC-API/tmc/ramp/Ramp.c **** 	switch(type) {
+ 243              		.loc 1 82 1 is_stmt 0 view .LVU56
+ 244 0046 10B5     		push	{r4, lr}
+ 245              	.LCFI1:
+ 246              		.cfi_def_cfa_offset 8
+ 247              		.cfi_offset 4, -8
+ 248              		.cfi_offset 14, -4
+  82:TMC-API/tmc/ramp/Ramp.c **** 	switch(type) {
+ 249              		.loc 1 82 1 view .LVU57
+ 250 0048 0446     		mov	r4, r0
+ 251              		.loc 1 86 56 view .LVU58
+ 252 004a FFF7FEFF 		bl	tmc_ramp_get_enabled
+ 253              	.LVL21:
+ 254              		.loc 1 86 3 view .LVU59
+ 255 004e 80F00101 		eor	r1, r0, #1
+ 256 0052 C9B2     		uxtb	r1, r1
+ 257 0054 2046     		mov	r0, r4
+  87:TMC-API/tmc/ramp/Ramp.c **** 		break;
+  88:TMC-API/tmc/ramp/Ramp.c **** 	}
+  89:TMC-API/tmc/ramp/Ramp.c **** }
+ 258              		.loc 1 89 1 view .LVU60
+ 259 0056 BDE81040 		pop	{r4, lr}
+ 260              	.LCFI2:
+ 261              		.cfi_restore 14
+ 262              		.cfi_restore 4
+ 263              		.cfi_def_cfa_offset 0
+ 264              	.LVL22:
+  86:TMC-API/tmc/ramp/Ramp.c **** 		break;
+ 265              		.loc 1 86 3 view .LVU61
+ 266 005a FFF7FEBF 		b	tmc_ramp_linear_set_enabled
+ 267              	.LVL23:
+  86:TMC-API/tmc/ramp/Ramp.c **** 		break;
+ 268              		.loc 1 86 3 view .LVU62
+ 269              		.cfi_endproc
+ 270              	.LFE6:
+ 272              	.Letext0:
+ 273              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 274              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 275              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 276              		.file 5 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 277              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 278              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 279              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 280              		.file 9 "TMC-API/tmc/ramp/LinearRamp1.h"
+ 281              		.file 10 "TMC-API/tmc/ramp/Ramp.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 Ramp.c
+C:\Users\Shubham\AppData\Local\Temp\ccH7vzxf.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccH7vzxf.s:23     .text:00000000 tmc_ramp_init
+C:\Users\Shubham\AppData\Local\Temp\ccH7vzxf.s:47     .text:00000004 tmc_ramp_compute
+C:\Users\Shubham\AppData\Local\Temp\ccH7vzxf.s:112    .text:00000022 tmc_ramp_get_rampVelocity
+C:\Users\Shubham\AppData\Local\Temp\ccH7vzxf.s:144    .text:0000002c tmc_ramp_get_rampPosition
+C:\Users\Shubham\AppData\Local\Temp\ccH7vzxf.s:176    .text:00000036 tmc_ramp_get_enabled
+C:\Users\Shubham\AppData\Local\Temp\ccH7vzxf.s:208    .text:00000040 tmc_ramp_set_enabled
+C:\Users\Shubham\AppData\Local\Temp\ccH7vzxf.s:234    .text:00000046 tmc_ramp_toggle_enabled
+
+UNDEFINED SYMBOLS
+tmc_ramp_linear_init
+tmc_ramp_linear_compute
+tmc_ramp_linear_get_rampVelocity
+tmc_ramp_linear_get_rampPosition
+tmc_ramp_linear_get_enabled
+tmc_ramp_linear_set_enabled

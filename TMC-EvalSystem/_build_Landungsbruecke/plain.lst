@@ -1,0 +1,51 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"plain.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.section	.text.startup,"ax",%progbits
+  16              		.align	1
+  17              		.global	main
+  18              		.arch armv7e-m
+  19              		.syntax unified
+  20              		.thumb
+  21              		.thumb_func
+  22              		.fpu softvfp
+  24              	main:
+  25              	.LFB0:
+  26              		.file 1 "plain.c"
+   1:plain.c       **** int main(){
+  27              		.loc 1 1 11 view -0
+  28              		.cfi_startproc
+  29              		@ Volatile: function does not return.
+  30              		@ args = 0, pretend = 0, frame = 0
+  31              		@ frame_needed = 0, uses_anonymous_args = 0
+  32              		@ link register save eliminated.
+  33              	.L2:
+   2:plain.c       **** 	while(1){
+  34              		.loc 1 2 2 discriminator 1 view .LVU1
+   3:plain.c       **** 	
+   4:plain.c       **** 	}
+  35              		.loc 1 4 2 discriminator 1 view .LVU2
+   2:plain.c       **** 	while(1){
+  36              		.loc 1 2 7 discriminator 1 view .LVU3
+  37 0000 FEE7     		b	.L2
+  38              		.cfi_endproc
+  39              	.LFE0:
+  41              		.text
+  42              	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 plain.c
+C:\Users\Shubham\AppData\Local\Temp\ccm8LWUC.s:16     .text.startup:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccm8LWUC.s:24     .text.startup:00000000 main
+
+NO UNDEFINED SYMBOLS

@@ -1,0 +1,425 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"LEDs.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.arch armv7e-m
+  17              		.syntax unified
+  18              		.thumb
+  19              		.thumb_func
+  20              		.fpu softvfp
+  22              	init:
+  23              	.LFB0:
+  24              		.file 1 "hal/Landungsbruecke/tmc/LEDs.c"
+   1:hal/Landungsbruecke/tmc/LEDs.c **** #include "hal/HAL.h"
+   2:hal/Landungsbruecke/tmc/LEDs.c **** #include "hal/LEDs.h"
+   3:hal/Landungsbruecke/tmc/LEDs.c **** 
+   4:hal/Landungsbruecke/tmc/LEDs.c **** static void init();
+   5:hal/Landungsbruecke/tmc/LEDs.c **** static void onStat();
+   6:hal/Landungsbruecke/tmc/LEDs.c **** static void onError();
+   7:hal/Landungsbruecke/tmc/LEDs.c **** static void offStat();
+   8:hal/Landungsbruecke/tmc/LEDs.c **** static void offError();
+   9:hal/Landungsbruecke/tmc/LEDs.c **** static void toggleStat();
+  10:hal/Landungsbruecke/tmc/LEDs.c **** static void toggleError();
+  11:hal/Landungsbruecke/tmc/LEDs.c **** 
+  12:hal/Landungsbruecke/tmc/LEDs.c **** LEDsTypeDef LEDs =
+  13:hal/Landungsbruecke/tmc/LEDs.c **** {
+  14:hal/Landungsbruecke/tmc/LEDs.c **** 	.init  = init,
+  15:hal/Landungsbruecke/tmc/LEDs.c **** 	.stat  =
+  16:hal/Landungsbruecke/tmc/LEDs.c **** 	{
+  17:hal/Landungsbruecke/tmc/LEDs.c **** 		.on      = onStat,
+  18:hal/Landungsbruecke/tmc/LEDs.c **** 		.off     = offStat,
+  19:hal/Landungsbruecke/tmc/LEDs.c **** 		.toggle  = toggleStat,
+  20:hal/Landungsbruecke/tmc/LEDs.c **** 	},
+  21:hal/Landungsbruecke/tmc/LEDs.c **** 	.error	=
+  22:hal/Landungsbruecke/tmc/LEDs.c **** 	{
+  23:hal/Landungsbruecke/tmc/LEDs.c **** 		.on      = onError,
+  24:hal/Landungsbruecke/tmc/LEDs.c **** 		.off     = offError,
+  25:hal/Landungsbruecke/tmc/LEDs.c **** 		.toggle  = toggleError,
+  26:hal/Landungsbruecke/tmc/LEDs.c **** 	},
+  27:hal/Landungsbruecke/tmc/LEDs.c **** };
+  28:hal/Landungsbruecke/tmc/LEDs.c **** 
+  29:hal/Landungsbruecke/tmc/LEDs.c **** static void init()
+  30:hal/Landungsbruecke/tmc/LEDs.c **** {
+  25              		.loc 1 30 1 view -0
+  26              		.cfi_startproc
+  27              		@ args = 0, pretend = 0, frame = 0
+  28              		@ frame_needed = 0, uses_anonymous_args = 0
+  31:hal/Landungsbruecke/tmc/LEDs.c **** 	HAL.IOs->pins->LED_ERROR.configuration.GPIO_Mode   = GPIO_Mode_OUT;
+  29              		.loc 1 31 2 view .LVU1
+  30              		.loc 1 31 5 is_stmt 0 view .LVU2
+  31 0000 124B     		ldr	r3, .L2
+  30:hal/Landungsbruecke/tmc/LEDs.c **** 	HAL.IOs->pins->LED_ERROR.configuration.GPIO_Mode   = GPIO_Mode_OUT;
+  32              		.loc 1 30 1 view .LVU3
+  33 0002 10B5     		push	{r4, lr}
+  34              	.LCFI0:
+  35              		.cfi_def_cfa_offset 8
+  36              		.cfi_offset 4, -8
+  37              		.cfi_offset 14, -4
+  38              		.loc 1 31 5 view .LVU4
+  39 0004 DC68     		ldr	r4, [r3, #12]
+  40              		.loc 1 31 9 view .LVU5
+  41 0006 6068     		ldr	r0, [r4, #4]
+  42              		.loc 1 31 53 view .LVU6
+  43 0008 0922     		movs	r2, #9
+  32:hal/Landungsbruecke/tmc/LEDs.c **** 	HAL.IOs->pins->LED_ERROR.configuration.GPIO_OType  = GPIO_OType_PP;
+  44              		.loc 1 32 53 view .LVU7
+  45 000a 0023     		movs	r3, #0
+  31:hal/Landungsbruecke/tmc/LEDs.c **** 	HAL.IOs->pins->LED_ERROR.configuration.GPIO_Mode   = GPIO_Mode_OUT;
+  46              		.loc 1 31 53 view .LVU8
+  47 000c 80F87D25 		strb	r2, [r0, #1405]
+  48              		.loc 1 32 2 is_stmt 1 view .LVU9
+  33:hal/Landungsbruecke/tmc/LEDs.c **** 	HAL.IOs->pins->LED_STAT.configuration.GPIO_Mode    = GPIO_Mode_OUT;
+  49              		.loc 1 33 53 is_stmt 0 view .LVU10
+  50 0010 80F85D25 		strb	r2, [r0, #1373]
+  32:hal/Landungsbruecke/tmc/LEDs.c **** 	HAL.IOs->pins->LED_ERROR.configuration.GPIO_OType  = GPIO_OType_PP;
+  51              		.loc 1 32 53 view .LVU11
+  52 0014 80F87F35 		strb	r3, [r0, #1407]
+  53              		.loc 1 33 2 is_stmt 1 view .LVU12
+  34:hal/Landungsbruecke/tmc/LEDs.c **** 	HAL.IOs->pins->LED_STAT.configuration.GPIO_OType   = GPIO_OType_PP;
+  54              		.loc 1 34 2 view .LVU13
+  55              		.loc 1 34 53 is_stmt 0 view .LVU14
+  56 0018 80F85F35 		strb	r3, [r0, #1375]
+  35:hal/Landungsbruecke/tmc/LEDs.c **** 
+  36:hal/Landungsbruecke/tmc/LEDs.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->LED_ERROR);
+  57              		.loc 1 36 2 is_stmt 1 view .LVU15
+  58              		.loc 1 36 17 is_stmt 0 view .LVU16
+  59 001c 2368     		ldr	r3, [r4]
+  60              		.loc 1 36 2 view .LVU17
+  61 001e 00F5AD60 		add	r0, r0, #1384
+  62 0022 1B68     		ldr	r3, [r3]
+  63 0024 9847     		blx	r3
+  64              	.LVL0:
+  37:hal/Landungsbruecke/tmc/LEDs.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->LED_STAT);
+  65              		.loc 1 37 2 is_stmt 1 view .LVU18
+  66              		.loc 1 37 17 is_stmt 0 view .LVU19
+  67 0026 D4E90030 		ldrd	r3, r0, [r4]
+  68              		.loc 1 37 2 view .LVU20
+  69 002a 1B68     		ldr	r3, [r3]
+  70 002c 00F5A960 		add	r0, r0, #1352
+  71 0030 9847     		blx	r3
+  72              	.LVL1:
+  38:hal/Landungsbruecke/tmc/LEDs.c **** 
+  39:hal/Landungsbruecke/tmc/LEDs.c **** 	LED_OFF();
+  73              		.loc 1 39 2 is_stmt 1 view .LVU21
+  74 0032 6368     		ldr	r3, [r4, #4]
+  75 0034 D3F85025 		ldr	r2, [r3, #1360]
+  76 0038 D3F85815 		ldr	r1, [r3, #1368]
+  77 003c 1160     		str	r1, [r2]
+  40:hal/Landungsbruecke/tmc/LEDs.c **** 	LED_ERROR_OFF();
+  78              		.loc 1 40 2 view .LVU22
+  79 003e D3F87025 		ldr	r2, [r3, #1392]
+  80 0042 D3F87835 		ldr	r3, [r3, #1400]
+  81 0046 1360     		str	r3, [r2]
+  41:hal/Landungsbruecke/tmc/LEDs.c **** }
+  82              		.loc 1 41 1 is_stmt 0 view .LVU23
+  83 0048 10BD     		pop	{r4, pc}
+  84              	.L3:
+  85 004a 00BF     		.align	2
+  86              	.L2:
+  87 004c 00000000 		.word	HAL
+  88              		.cfi_endproc
+  89              	.LFE0:
+  91              		.align	1
+  92              		.syntax unified
+  93              		.thumb
+  94              		.thumb_func
+  95              		.fpu softvfp
+  97              	onStat:
+  98              	.LFB1:
+  42:hal/Landungsbruecke/tmc/LEDs.c **** 
+  43:hal/Landungsbruecke/tmc/LEDs.c **** static void onStat()
+  44:hal/Landungsbruecke/tmc/LEDs.c **** {
+  99              		.loc 1 44 1 is_stmt 1 view -0
+ 100              		.cfi_startproc
+ 101              		@ args = 0, pretend = 0, frame = 0
+ 102              		@ frame_needed = 0, uses_anonymous_args = 0
+ 103              		@ link register save eliminated.
+  45:hal/Landungsbruecke/tmc/LEDs.c **** 	LED_ON();
+ 104              		.loc 1 45 2 view .LVU25
+ 105 0050 044B     		ldr	r3, .L5
+ 106 0052 DB68     		ldr	r3, [r3, #12]
+ 107 0054 5B68     		ldr	r3, [r3, #4]
+ 108 0056 D3F85425 		ldr	r2, [r3, #1364]
+ 109 005a D3F85835 		ldr	r3, [r3, #1368]
+ 110 005e 1360     		str	r3, [r2]
+  46:hal/Landungsbruecke/tmc/LEDs.c **** }
+ 111              		.loc 1 46 1 is_stmt 0 view .LVU26
+ 112 0060 7047     		bx	lr
+ 113              	.L6:
+ 114 0062 00BF     		.align	2
+ 115              	.L5:
+ 116 0064 00000000 		.word	HAL
+ 117              		.cfi_endproc
+ 118              	.LFE1:
+ 120              		.align	1
+ 121              		.syntax unified
+ 122              		.thumb
+ 123              		.thumb_func
+ 124              		.fpu softvfp
+ 126              	onError:
+ 127              	.LFB2:
+  47:hal/Landungsbruecke/tmc/LEDs.c **** 
+  48:hal/Landungsbruecke/tmc/LEDs.c **** static void onError()
+  49:hal/Landungsbruecke/tmc/LEDs.c **** {
+ 128              		.loc 1 49 1 is_stmt 1 view -0
+ 129              		.cfi_startproc
+ 130              		@ args = 0, pretend = 0, frame = 0
+ 131              		@ frame_needed = 0, uses_anonymous_args = 0
+ 132              		@ link register save eliminated.
+  50:hal/Landungsbruecke/tmc/LEDs.c **** 	LED_ERROR_ON();
+ 133              		.loc 1 50 2 view .LVU28
+ 134 0068 044B     		ldr	r3, .L8
+ 135 006a DB68     		ldr	r3, [r3, #12]
+ 136 006c 5B68     		ldr	r3, [r3, #4]
+ 137 006e D3F87425 		ldr	r2, [r3, #1396]
+ 138 0072 D3F87835 		ldr	r3, [r3, #1400]
+ 139 0076 1360     		str	r3, [r2]
+  51:hal/Landungsbruecke/tmc/LEDs.c **** }
+ 140              		.loc 1 51 1 is_stmt 0 view .LVU29
+ 141 0078 7047     		bx	lr
+ 142              	.L9:
+ 143 007a 00BF     		.align	2
+ 144              	.L8:
+ 145 007c 00000000 		.word	HAL
+ 146              		.cfi_endproc
+ 147              	.LFE2:
+ 149              		.align	1
+ 150              		.syntax unified
+ 151              		.thumb
+ 152              		.thumb_func
+ 153              		.fpu softvfp
+ 155              	offStat:
+ 156              	.LFB3:
+  52:hal/Landungsbruecke/tmc/LEDs.c **** 
+  53:hal/Landungsbruecke/tmc/LEDs.c **** static void offStat()
+  54:hal/Landungsbruecke/tmc/LEDs.c **** {
+ 157              		.loc 1 54 1 is_stmt 1 view -0
+ 158              		.cfi_startproc
+ 159              		@ args = 0, pretend = 0, frame = 0
+ 160              		@ frame_needed = 0, uses_anonymous_args = 0
+ 161              		@ link register save eliminated.
+  55:hal/Landungsbruecke/tmc/LEDs.c **** 	LED_OFF();
+ 162              		.loc 1 55 2 view .LVU31
+ 163 0080 044B     		ldr	r3, .L11
+ 164 0082 DB68     		ldr	r3, [r3, #12]
+ 165 0084 5B68     		ldr	r3, [r3, #4]
+ 166 0086 D3F85025 		ldr	r2, [r3, #1360]
+ 167 008a D3F85835 		ldr	r3, [r3, #1368]
+ 168 008e 1360     		str	r3, [r2]
+  56:hal/Landungsbruecke/tmc/LEDs.c **** }
+ 169              		.loc 1 56 1 is_stmt 0 view .LVU32
+ 170 0090 7047     		bx	lr
+ 171              	.L12:
+ 172 0092 00BF     		.align	2
+ 173              	.L11:
+ 174 0094 00000000 		.word	HAL
+ 175              		.cfi_endproc
+ 176              	.LFE3:
+ 178              		.align	1
+ 179              		.syntax unified
+ 180              		.thumb
+ 181              		.thumb_func
+ 182              		.fpu softvfp
+ 184              	offError:
+ 185              	.LFB4:
+  57:hal/Landungsbruecke/tmc/LEDs.c **** 
+  58:hal/Landungsbruecke/tmc/LEDs.c **** static void offError()
+  59:hal/Landungsbruecke/tmc/LEDs.c **** {
+ 186              		.loc 1 59 1 is_stmt 1 view -0
+ 187              		.cfi_startproc
+ 188              		@ args = 0, pretend = 0, frame = 0
+ 189              		@ frame_needed = 0, uses_anonymous_args = 0
+ 190              		@ link register save eliminated.
+  60:hal/Landungsbruecke/tmc/LEDs.c **** 	LED_ERROR_OFF();
+ 191              		.loc 1 60 2 view .LVU34
+ 192 0098 044B     		ldr	r3, .L14
+ 193 009a DB68     		ldr	r3, [r3, #12]
+ 194 009c 5B68     		ldr	r3, [r3, #4]
+ 195 009e D3F87025 		ldr	r2, [r3, #1392]
+ 196 00a2 D3F87835 		ldr	r3, [r3, #1400]
+ 197 00a6 1360     		str	r3, [r2]
+  61:hal/Landungsbruecke/tmc/LEDs.c **** }
+ 198              		.loc 1 61 1 is_stmt 0 view .LVU35
+ 199 00a8 7047     		bx	lr
+ 200              	.L15:
+ 201 00aa 00BF     		.align	2
+ 202              	.L14:
+ 203 00ac 00000000 		.word	HAL
+ 204              		.cfi_endproc
+ 205              	.LFE4:
+ 207              		.align	1
+ 208              		.syntax unified
+ 209              		.thumb
+ 210              		.thumb_func
+ 211              		.fpu softvfp
+ 213              	toggleStat:
+ 214              	.LFB5:
+  62:hal/Landungsbruecke/tmc/LEDs.c **** 
+  63:hal/Landungsbruecke/tmc/LEDs.c **** static void toggleStat()
+  64:hal/Landungsbruecke/tmc/LEDs.c **** {
+ 215              		.loc 1 64 1 is_stmt 1 view -0
+ 216              		.cfi_startproc
+ 217              		@ args = 0, pretend = 0, frame = 0
+ 218              		@ frame_needed = 0, uses_anonymous_args = 0
+ 219              		@ link register save eliminated.
+  65:hal/Landungsbruecke/tmc/LEDs.c **** 	LED_TOGGLE();
+ 220              		.loc 1 65 2 view .LVU37
+ 221 00b0 054B     		ldr	r3, .L17
+ 222 00b2 DB68     		ldr	r3, [r3, #12]
+ 223 00b4 5968     		ldr	r1, [r3, #4]
+ 224 00b6 D1F84C25 		ldr	r2, [r1, #1356]
+ 225 00ba D1F85815 		ldr	r1, [r1, #1368]
+ 226 00be D368     		ldr	r3, [r2, #12]
+ 227 00c0 4B40     		eors	r3, r3, r1
+ 228 00c2 D360     		str	r3, [r2, #12]
+  66:hal/Landungsbruecke/tmc/LEDs.c **** }
+ 229              		.loc 1 66 1 is_stmt 0 view .LVU38
+ 230 00c4 7047     		bx	lr
+ 231              	.L18:
+ 232 00c6 00BF     		.align	2
+ 233              	.L17:
+ 234 00c8 00000000 		.word	HAL
+ 235              		.cfi_endproc
+ 236              	.LFE5:
+ 238              		.align	1
+ 239              		.syntax unified
+ 240              		.thumb
+ 241              		.thumb_func
+ 242              		.fpu softvfp
+ 244              	toggleError:
+ 245              	.LFB6:
+  67:hal/Landungsbruecke/tmc/LEDs.c **** 
+  68:hal/Landungsbruecke/tmc/LEDs.c **** static void toggleError()
+  69:hal/Landungsbruecke/tmc/LEDs.c **** {
+ 246              		.loc 1 69 1 is_stmt 1 view -0
+ 247              		.cfi_startproc
+ 248              		@ args = 0, pretend = 0, frame = 0
+ 249              		@ frame_needed = 0, uses_anonymous_args = 0
+ 250              		@ link register save eliminated.
+  70:hal/Landungsbruecke/tmc/LEDs.c **** 	LED_ERROR_TOGGLE();
+ 251              		.loc 1 70 2 view .LVU40
+ 252 00cc 054B     		ldr	r3, .L20
+ 253 00ce DB68     		ldr	r3, [r3, #12]
+ 254 00d0 5968     		ldr	r1, [r3, #4]
+ 255 00d2 D1F86C25 		ldr	r2, [r1, #1388]
+ 256 00d6 D1F87815 		ldr	r1, [r1, #1400]
+ 257 00da D368     		ldr	r3, [r2, #12]
+ 258 00dc 4B40     		eors	r3, r3, r1
+ 259 00de D360     		str	r3, [r2, #12]
+  71:hal/Landungsbruecke/tmc/LEDs.c **** }
+ 260              		.loc 1 71 1 is_stmt 0 view .LVU41
+ 261 00e0 7047     		bx	lr
+ 262              	.L21:
+ 263 00e2 00BF     		.align	2
+ 264              	.L20:
+ 265 00e4 00000000 		.word	HAL
+ 266              		.cfi_endproc
+ 267              	.LFE6:
+ 269              		.comm	hwid,1,1
+ 270              		.comm	HAL,48,4
+ 271              		.comm	UART,40,4
+ 272              		.comm	Timer,16,4
+ 273              		.comm	WLAN,36,4
+ 274              		.comm	RS232,36,4
+ 275              		.global	LEDs
+ 276              		.comm	USB,36,4
+ 277              		.comm	uart0_interrupt,1,1
+ 278              		.comm	ADCs,32,4
+ 279              		.comm	SPI,44,4
+ 280              		.comm	IOMap,2088,4
+ 281              		.comm	IOs,52,4
+ 282              		.comm	Cpu,8,4
+ 283              		.data
+ 284              		.align	2
+ 287              	LEDs:
+ 288 0000 00000000 		.word	init
+ 289 0004 00000000 		.word	onStat
+ 290 0008 00000000 		.word	offStat
+ 291 000c 00000000 		.word	toggleStat
+ 292 0010 00000000 		.word	onError
+ 293 0014 00000000 		.word	offError
+ 294 0018 00000000 		.word	toggleError
+ 295              		.bss
+ 296              		.align	1
+ 299              	ADCValue:
+ 300 0000 00000000 		.space	12
+ 300      00000000 
+ 300      00000000 
+ 301              		.text
+ 302              	.Letext0:
+ 303              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 304              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 305              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 306              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 307              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 308              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 309              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 310              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 311              		.file 10 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 312              		.file 11 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 313              		.file 12 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 314              		.file 13 "./hal/IOs.h"
+ 315              		.file 14 "./hal/IOMap.h"
+ 316              		.file 15 "./hal/SPI.h"
+ 317              		.file 16 "./hal/ADCs.h"
+ 318              		.file 17 "./hal/RXTX.h"
+ 319              		.file 18 "./hal/USB.h"
+ 320              		.file 19 "./hal/LEDs.h"
+ 321              		.file 20 "./hal/RS232.h"
+ 322              		.file 21 "./hal/WLAN.h"
+ 323              		.file 22 "./hal/Timer.h"
+ 324              		.file 23 "./hal/UART.h"
+ 325              		.file 24 "./hal/HAL.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 LEDs.c
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:22     .text:00000000 init
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:87     .text:0000004c $d
+                            *COM*:00000030 HAL
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:91     .text:00000050 $t
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:97     .text:00000050 onStat
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:116    .text:00000064 $d
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:120    .text:00000068 $t
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:126    .text:00000068 onError
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:145    .text:0000007c $d
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:149    .text:00000080 $t
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:155    .text:00000080 offStat
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:174    .text:00000094 $d
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:178    .text:00000098 $t
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:184    .text:00000098 offError
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:203    .text:000000ac $d
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:207    .text:000000b0 $t
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:213    .text:000000b0 toggleStat
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:234    .text:000000c8 $d
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:238    .text:000000cc $t
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:244    .text:000000cc toggleError
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:265    .text:000000e4 $d
+                            *COM*:00000001 hwid
+                            *COM*:00000028 UART
+                            *COM*:00000010 Timer
+                            *COM*:00000024 WLAN
+                            *COM*:00000024 RS232
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:287    .data:00000000 LEDs
+                            *COM*:00000024 USB
+                            *COM*:00000001 uart0_interrupt
+                            *COM*:00000020 ADCs
+                            *COM*:0000002c SPI
+                            *COM*:00000828 IOMap
+                            *COM*:00000034 IOs
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:284    .data:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:296    .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccSPeWwl.s:299    .bss:00000000 ADCValue
+
+NO UNDEFINED SYMBOLS

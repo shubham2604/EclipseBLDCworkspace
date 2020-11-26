@@ -1,0 +1,768 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"TMC5160.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.global	tmc5160_initConfig
+  17              		.arch armv7e-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	tmc5160_initConfig:
+  24              	.LVL0:
+  25              	.LFB0:
+  26              		.file 1 "TMC-API/tmc/ic/TMC5160/TMC5160.c"
+   1:TMC-API/tmc/ic/TMC5160/TMC5160.c **** /*
+   2:TMC-API/tmc/ic/TMC5160/TMC5160.c ****  * TMC5160.c
+   3:TMC-API/tmc/ic/TMC5160/TMC5160.c ****  *
+   4:TMC-API/tmc/ic/TMC5160/TMC5160.c ****  *  Created on: 04.07.2017
+   5:TMC-API/tmc/ic/TMC5160/TMC5160.c ****  *      Author: LK based on ED based on BS
+   6:TMC-API/tmc/ic/TMC5160/TMC5160.c ****  */
+   7:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+   8:TMC-API/tmc/ic/TMC5160/TMC5160.c **** #include "TMC5160.h"
+   9:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+  10:TMC-API/tmc/ic/TMC5160/TMC5160.c **** // todo ADD API 3: Some Registers have default hardware configuration from OTP, we shouldnt overwri
+  11:TMC-API/tmc/ic/TMC5160/TMC5160.c **** // Default Register Values
+  12:TMC-API/tmc/ic/TMC5160/TMC5160.c **** #define R00 0x00000008  // GCONF
+  13:TMC-API/tmc/ic/TMC5160/TMC5160.c **** #define R09 0x00010606  // SHORT_CONF
+  14:TMC-API/tmc/ic/TMC5160/TMC5160.c **** #define R0A 0x00080400  // DRV_CONF
+  15:TMC-API/tmc/ic/TMC5160/TMC5160.c **** #define R10 0x00070A03  // IHOLD_IRUN
+  16:TMC-API/tmc/ic/TMC5160/TMC5160.c **** #define R11 0x0000000A  // TPOWERDOWN
+  17:TMC-API/tmc/ic/TMC5160/TMC5160.c **** #define R2B 0x00000001  // VSTOP
+  18:TMC-API/tmc/ic/TMC5160/TMC5160.c **** #define R3A 0x00010000  // ENC_CONST
+  19:TMC-API/tmc/ic/TMC5160/TMC5160.c **** #define R60 0xAAAAB554  // MSLUT[0]
+  20:TMC-API/tmc/ic/TMC5160/TMC5160.c **** #define R61 0x4A9554AA  // MSLUT[1]
+  21:TMC-API/tmc/ic/TMC5160/TMC5160.c **** #define R62 0x24492929  // MSLUT[2]
+  22:TMC-API/tmc/ic/TMC5160/TMC5160.c **** #define R63 0x10104222  // MSLUT[3]
+  23:TMC-API/tmc/ic/TMC5160/TMC5160.c **** #define R64 0xFBFFFFFF  // MSLUT[4]
+  24:TMC-API/tmc/ic/TMC5160/TMC5160.c **** #define R65 0xB5BB777D  // MSLUT[5]
+  25:TMC-API/tmc/ic/TMC5160/TMC5160.c **** #define R66 0x49295556  // MSLUT[6]
+  26:TMC-API/tmc/ic/TMC5160/TMC5160.c **** #define R67 0x00404222  // MSLUT[7]
+  27:TMC-API/tmc/ic/TMC5160/TMC5160.c **** #define R68 0xFFFF8056  // MSLUTSEL
+  28:TMC-API/tmc/ic/TMC5160/TMC5160.c **** #define R69 0x00F70000  // MSLUTSTART
+  29:TMC-API/tmc/ic/TMC5160/TMC5160.c **** #define R6C 0x00410153  // CHOPCONF
+  30:TMC-API/tmc/ic/TMC5160/TMC5160.c **** #define R70 0xC40C001E  // PWMCONF
+  31:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+  32:TMC-API/tmc/ic/TMC5160/TMC5160.c **** /* Register access permissions:
+  33:TMC-API/tmc/ic/TMC5160/TMC5160.c ****  * 0: none (reserved)
+  34:TMC-API/tmc/ic/TMC5160/TMC5160.c ****  * 1: read
+  35:TMC-API/tmc/ic/TMC5160/TMC5160.c ****  * 2: write
+  36:TMC-API/tmc/ic/TMC5160/TMC5160.c ****  * 3: read/write
+  37:TMC-API/tmc/ic/TMC5160/TMC5160.c ****  * 7: read^write (seperate functions/values)
+  38:TMC-API/tmc/ic/TMC5160/TMC5160.c ****  */
+  39:TMC-API/tmc/ic/TMC5160/TMC5160.c **** const uint8_t tmc5160_defaultRegisterAccess[TMC5160_REGISTER_COUNT] =
+  40:TMC-API/tmc/ic/TMC5160/TMC5160.c **** {
+  41:TMC-API/tmc/ic/TMC5160/TMC5160.c **** //	0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+  42:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	3, 7, 1, 2, 7, 2, 2, 1, 1, 2, 2, 2, 1, 0, 0, 0, // 0x00 - 0x0F
+  43:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	2, 2, 1, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x10 - 0x1F
+  44:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	3, 3, 1, 2, 2, 2, 2, 2, 2, 0, 2, 2, 2, 3, 0, 0, // 0x20 - 0x2F
+  45:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	0, 0, 0, 2, 3, 7, 1, 0, 3, 3, 2, 7, 1, 2, 0, 0, // 0x30 - 0x3F
+  46:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x40 - 0x4F
+  47:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x50 - 0x5F
+  48:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 3, 2, 2, 1, // 0x60 - 0x6F
+  49:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	2, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  // 0x70 - 0x7F
+  50:TMC-API/tmc/ic/TMC5160/TMC5160.c **** };
+  51:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+  52:TMC-API/tmc/ic/TMC5160/TMC5160.c **** const int32_t tmc5160_defaultRegisterResetState[TMC5160_REGISTER_COUNT] =
+  53:TMC-API/tmc/ic/TMC5160/TMC5160.c **** {
+  54:TMC-API/tmc/ic/TMC5160/TMC5160.c **** //	0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
+  55:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	R00, 0,   0,   0,   0,   0,   0,   0,   0,   R09, R0A, 0,   0,   0,   0,   0, // 0x00 - 0x0F
+  56:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	R10, R11, 0,   0,   0,   0,   0,   0,   0,   0,   0,   R2B, 0,   0,   0,   0, // 0x10 - 0x1F
+  57:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, // 0x20 - 0x2F
+  58:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   R3A, 0,   0,   0,   0,   0, // 0x30 - 0x3F
+  59:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, // 0x40 - 0x4F
+  60:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, // 0x50 - 0x5F
+  61:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	R60, R61, R62, R63, R64, R65, R66, R67, R68, R69, 0,   0,   R6C, 0,   0,   0, // 0x60 - 0x6F
+  62:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	R70, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0  // 0x70 - 0x7F
+  63:TMC-API/tmc/ic/TMC5160/TMC5160.c **** };
+  64:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+  65:TMC-API/tmc/ic/TMC5160/TMC5160.c **** // => SPI wrapper
+  66:TMC-API/tmc/ic/TMC5160/TMC5160.c **** extern void tmc5160_writeDatagram(uint8_t motor, uint8_t address, uint8_t x1, uint8_t x2, uint8_t x
+  67:TMC-API/tmc/ic/TMC5160/TMC5160.c **** extern void tmc5160_writeInt(uint8_t motor, uint8_t address, int value);
+  68:TMC-API/tmc/ic/TMC5160/TMC5160.c **** extern int tmc5160_readInt(uint8_t motor, uint8_t address);
+  69:TMC-API/tmc/ic/TMC5160/TMC5160.c **** // <= SPI wrapper
+  70:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+  71:TMC-API/tmc/ic/TMC5160/TMC5160.c **** void tmc5160_initConfig(TMC5160TypeDef *tmc5160)
+  72:TMC-API/tmc/ic/TMC5160/TMC5160.c **** {
+  27              		.loc 1 72 1 view -0
+  28              		.cfi_startproc
+  29              		@ args = 0, pretend = 0, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  73:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	tmc5160->velocity  = 0;
+  31              		.loc 1 73 2 view .LVU1
+  32 0000 0C4A     		ldr	r2, .L4
+  33              		.loc 1 73 21 is_stmt 0 view .LVU2
+  34 0002 0023     		movs	r3, #0
+  72:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	tmc5160->velocity  = 0;
+  35              		.loc 1 72 1 view .LVU3
+  36 0004 30B5     		push	{r4, r5, lr}
+  37              	.LCFI0:
+  38              		.cfi_def_cfa_offset 12
+  39              		.cfi_offset 4, -12
+  40              		.cfi_offset 5, -8
+  41              		.cfi_offset 14, -4
+  42 0006 00F10C01 		add	r1, r0, #12
+  74:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	tmc5160->oldTick   = 0;
+  75:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	tmc5160->oldX      = 0;
+  43              		.loc 1 75 21 view .LVU4
+  44 000a C0E90133 		strd	r3, r3, [r0, #4]
+  73:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	tmc5160->oldTick   = 0;
+  45              		.loc 1 73 21 view .LVU5
+  46 000e 0360     		str	r3, [r0]
+  74:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	tmc5160->oldTick   = 0;
+  47              		.loc 1 74 2 is_stmt 1 view .LVU6
+  76:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+  77:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	int i;
+  48              		.loc 1 77 2 view .LVU7
+  78:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	for(i = 0; i < TMC5160_REGISTER_COUNT; i++)
+  49              		.loc 1 78 2 view .LVU8
+  50              	.LVL1:
+  51              		.loc 1 78 13 view .LVU9
+  52 0010 02F18004 		add	r4, r2, #128
+  53 0014 00F50373 		add	r3, r0, #524
+  54 0018 00F52370 		add	r0, r0, #652
+  55              	.LVL2:
+  56              	.L2:
+  79:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	{
+  80:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 		tmc5160->registerAccess[i]      = tmc5160_defaultRegisterAccess[i];
+  57              		.loc 1 80 3 discriminator 3 view .LVU10
+  58              		.loc 1 80 66 is_stmt 0 discriminator 3 view .LVU11
+  59 001c 12F8015B 		ldrb	r5, [r2], #1	@ zero_extendqisi2
+  60              	.LVL3:
+  61              		.loc 1 80 35 discriminator 3 view .LVU12
+  62 0020 03F8015B 		strb	r5, [r3], #1
+  81:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 		tmc5160->registerResetState[i]  = tmc5160_defaultRegisterResetState[i];
+  63              		.loc 1 81 3 is_stmt 1 discriminator 3 view .LVU13
+  64              		.loc 1 81 70 is_stmt 0 discriminator 3 view .LVU14
+  65 0024 54F8045B 		ldr	r5, [r4], #4
+  66              		.loc 1 81 35 discriminator 3 view .LVU15
+  67 0028 41F8045B 		str	r5, [r1], #4
+  78:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	for(i = 0; i < TMC5160_REGISTER_COUNT; i++)
+  68              		.loc 1 78 41 is_stmt 1 discriminator 3 view .LVU16
+  69              	.LVL4:
+  78:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	for(i = 0; i < TMC5160_REGISTER_COUNT; i++)
+  70              		.loc 1 78 13 discriminator 3 view .LVU17
+  78:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	for(i = 0; i < TMC5160_REGISTER_COUNT; i++)
+  71              		.loc 1 78 2 is_stmt 0 discriminator 3 view .LVU18
+  72 002c 8342     		cmp	r3, r0
+  73 002e F5D1     		bne	.L2
+  82:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	}
+  83:TMC-API/tmc/ic/TMC5160/TMC5160.c **** }
+  74              		.loc 1 83 1 view .LVU19
+  75 0030 30BD     		pop	{r4, r5, pc}
+  76              	.L5:
+  77 0032 00BF     		.align	2
+  78              	.L4:
+  79 0034 00000000 		.word	.LANCHOR0
+  80              		.cfi_endproc
+  81              	.LFE0:
+  83              		.align	1
+  84              		.global	tmc5160_writeConfiguration
+  85              		.syntax unified
+  86              		.thumb
+  87              		.thumb_func
+  88              		.fpu softvfp
+  90              	tmc5160_writeConfiguration:
+  91              	.LVL5:
+  92              	.LFB1:
+  84:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+  85:TMC-API/tmc/ic/TMC5160/TMC5160.c **** void tmc5160_writeConfiguration(uint8_t motor, TMC5160TypeDef *tmc5160, ConfigurationTypeDef *TMC51
+  86:TMC-API/tmc/ic/TMC5160/TMC5160.c **** {
+  93              		.loc 1 86 1 is_stmt 1 view -0
+  94              		.cfi_startproc
+  95              		@ args = 0, pretend = 0, frame = 0
+  96              		@ frame_needed = 0, uses_anonymous_args = 0
+  87:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	uint8_t *ptr = &TMC5160_config->configIndex;
+  97              		.loc 1 87 2 view .LVU21
+  88:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	const int32_t *settings = (TMC5160_config->state == CONFIG_RESTORE) ? TMC5160_config->shadowRegist
+  98              		.loc 1 88 2 view .LVU22
+  86:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	uint8_t *ptr = &TMC5160_config->configIndex;
+  99              		.loc 1 86 1 is_stmt 0 view .LVU23
+ 100 0038 38B5     		push	{r3, r4, r5, lr}
+ 101              	.LCFI1:
+ 102              		.cfi_def_cfa_offset 16
+ 103              		.cfi_offset 3, -16
+ 104              		.cfi_offset 4, -12
+ 105              		.cfi_offset 5, -8
+ 106              		.cfi_offset 14, -4
+ 107              		.loc 1 88 17 view .LVU24
+ 108 003a 1378     		ldrb	r3, [r2]	@ zero_extendqisi2
+ 109 003c 022B     		cmp	r3, #2
+  86:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	uint8_t *ptr = &TMC5160_config->configIndex;
+ 110              		.loc 1 86 1 view .LVU25
+ 111 003e 1446     		mov	r4, r2
+ 112 0040 0D46     		mov	r5, r1
+ 113              		.loc 1 88 17 view .LVU26
+ 114 0042 0CBF     		ite	eq
+ 115 0044 0432     		addeq	r2, r2, #4
+ 116              	.LVL6:
+ 117              		.loc 1 88 17 view .LVU27
+ 118 0046 01F10C02 		addne	r2, r1, #12
+ 119              	.LVL7:
+  89:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+  90:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	while((*ptr < TMC5160_REGISTER_COUNT) && !TMC_IS_WRITABLE(tmc5160->registerAccess[*ptr]))
+ 120              		.loc 1 90 2 is_stmt 1 view .LVU28
+ 121              	.L9:
+ 122              		.loc 1 90 7 view .LVU29
+ 123 004a 94F90130 		ldrsb	r3, [r4, #1]
+ 124              		.loc 1 90 9 is_stmt 0 view .LVU30
+ 125 004e 6178     		ldrb	r1, [r4, #1]	@ zero_extendqisi2
+ 126              		.loc 1 90 7 view .LVU31
+ 127 0050 002B     		cmp	r3, #0
+ 128 0052 0FDB     		blt	.L10
+ 129              		.loc 1 90 44 discriminator 1 view .LVU32
+ 130 0054 6B18     		adds	r3, r5, r1
+ 131              		.loc 1 90 40 discriminator 1 view .LVU33
+ 132 0056 93F80C32 		ldrb	r3, [r3, #524]	@ zero_extendqisi2
+ 133 005a 9B07     		lsls	r3, r3, #30
+ 134 005c 07D5     		bpl	.L11
+  91:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 		(*ptr)++;
+  92:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+  93:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	if(*ptr < TMC5160_REGISTER_COUNT)
+ 135              		.loc 1 93 2 is_stmt 1 view .LVU34
+  94:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	{
+  95:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 		tmc5160_writeInt(motor, *ptr, settings[*ptr]);
+ 136              		.loc 1 95 3 view .LVU35
+ 137 005e 52F82120 		ldr	r2, [r2, r1, lsl #2]
+ 138              	.LVL8:
+ 139              		.loc 1 95 3 is_stmt 0 view .LVU36
+ 140 0062 FFF7FEFF 		bl	tmc5160_writeInt
+ 141              	.LVL9:
+  96:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 		(*ptr)++;
+ 142              		.loc 1 96 3 is_stmt 1 view .LVU37
+ 143              		.loc 1 96 9 is_stmt 0 view .LVU38
+ 144 0066 6378     		ldrb	r3, [r4, #1]	@ zero_extendqisi2
+ 145 0068 0133     		adds	r3, r3, #1
+ 146 006a 6370     		strb	r3, [r4, #1]
+ 147              	.L6:
+  97:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	}
+  98:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	else
+  99:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	{
+ 100:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 		TMC5160_config->state = CONFIG_READY;
+ 101:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	}
+ 102:TMC-API/tmc/ic/TMC5160/TMC5160.c **** }
+ 148              		.loc 1 102 1 view .LVU39
+ 149 006c 38BD     		pop	{r3, r4, r5, pc}
+ 150              	.LVL10:
+ 151              	.L11:
+  91:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+ 152              		.loc 1 91 3 is_stmt 1 view .LVU40
+  91:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+ 153              		.loc 1 91 9 is_stmt 0 view .LVU41
+ 154 006e 4B1C     		adds	r3, r1, #1
+ 155 0070 6370     		strb	r3, [r4, #1]
+ 156 0072 EAE7     		b	.L9
+ 157              	.L10:
+  93:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	{
+ 158              		.loc 1 93 2 is_stmt 1 view .LVU42
+ 100:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	}
+ 159              		.loc 1 100 3 view .LVU43
+ 100:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	}
+ 160              		.loc 1 100 25 is_stmt 0 view .LVU44
+ 161 0074 0023     		movs	r3, #0
+ 162 0076 2370     		strb	r3, [r4]
+ 163 0078 F8E7     		b	.L6
+ 164              		.cfi_endproc
+ 165              	.LFE1:
+ 167              		.global	__aeabi_i2f
+ 168              		.global	__aeabi_ui2f
+ 169              		.global	__aeabi_fdiv
+ 170              		.global	__aeabi_fmul
+ 171              		.global	__aeabi_f2iz
+ 172              		.align	1
+ 173              		.global	tmc5160_periodicJob
+ 174              		.syntax unified
+ 175              		.thumb
+ 176              		.thumb_func
+ 177              		.fpu softvfp
+ 179              	tmc5160_periodicJob:
+ 180              	.LVL11:
+ 181              	.LFB2:
+ 103:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+ 104:TMC-API/tmc/ic/TMC5160/TMC5160.c **** void tmc5160_periodicJob(uint8_t motor, uint32_t tick, TMC5160TypeDef *tmc5160, ConfigurationTypeDe
+ 105:TMC-API/tmc/ic/TMC5160/TMC5160.c **** {
+ 182              		.loc 1 105 1 is_stmt 1 view -0
+ 183              		.cfi_startproc
+ 184              		@ args = 0, pretend = 0, frame = 0
+ 185              		@ frame_needed = 0, uses_anonymous_args = 0
+ 106:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	if(TMC5160_config->state != CONFIG_READY)
+ 186              		.loc 1 106 2 view .LVU46
+ 105:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	if(TMC5160_config->state != CONFIG_READY)
+ 187              		.loc 1 105 1 is_stmt 0 view .LVU47
+ 188 007a 2DE9F041 		push	{r4, r5, r6, r7, r8, lr}
+ 189              	.LCFI2:
+ 190              		.cfi_def_cfa_offset 24
+ 191              		.cfi_offset 4, -24
+ 192              		.cfi_offset 5, -20
+ 193              		.cfi_offset 6, -16
+ 194              		.cfi_offset 7, -12
+ 195              		.cfi_offset 8, -8
+ 196              		.cfi_offset 14, -4
+ 105:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	if(TMC5160_config->state != CONFIG_READY)
+ 197              		.loc 1 105 1 view .LVU48
+ 198 007e 1E46     		mov	r6, r3
+ 199              		.loc 1 106 4 view .LVU49
+ 200 0080 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 201              	.LVL12:
+ 105:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	if(TMC5160_config->state != CONFIG_READY)
+ 202              		.loc 1 105 1 view .LVU50
+ 203 0082 0F46     		mov	r7, r1
+ 204 0084 1446     		mov	r4, r2
+ 205              		.loc 1 106 4 view .LVU51
+ 206 0086 2BB1     		cbz	r3, .L15
+ 107:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	{
+ 108:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 		tmc5160_writeConfiguration(motor, tmc5160, TMC5160_config);
+ 207              		.loc 1 108 3 is_stmt 1 view .LVU52
+ 208 0088 3246     		mov	r2, r6
+ 209              	.LVL13:
+ 210              		.loc 1 108 3 is_stmt 0 view .LVU53
+ 211 008a 2146     		mov	r1, r4
+ 212              	.LVL14:
+ 109:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 		return;
+ 110:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	}
+ 111:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+ 112:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	int XActual;
+ 113:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	uint32_t tickDiff;
+ 114:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+ 115:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	if((tickDiff = tick-tmc5160->oldTick) >= 5) // measured speed dx/dt
+ 116:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	{
+ 117:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 		XActual = tmc5160_readInt(motor, TMC5160_XACTUAL);
+ 118:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 		TMC5160_config->shadowRegister[TMC5160_XACTUAL] = XActual;
+ 119:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 		tmc5160->velocity = (int) ((float) ((XActual-tmc5160->oldX) / (float) tickDiff) * (float) 1048.57
+ 120:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+ 121:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 		tmc5160->oldX     = XActual;
+ 122:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 		tmc5160->oldTick  = tick;
+ 123:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	}
+ 124:TMC-API/tmc/ic/TMC5160/TMC5160.c **** }
+ 213              		.loc 1 124 1 view .LVU54
+ 214 008c BDE8F041 		pop	{r4, r5, r6, r7, r8, lr}
+ 215              	.LCFI3:
+ 216              		.cfi_remember_state
+ 217              		.cfi_restore 14
+ 218              		.cfi_restore 8
+ 219              		.cfi_restore 7
+ 220              		.cfi_restore 6
+ 221              		.cfi_restore 5
+ 222              		.cfi_restore 4
+ 223              		.cfi_def_cfa_offset 0
+ 224              	.LVL15:
+ 108:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 		return;
+ 225              		.loc 1 108 3 view .LVU55
+ 226 0090 FFF7FEBF 		b	tmc5160_writeConfiguration
+ 227              	.LVL16:
+ 228              	.L15:
+ 229              	.LCFI4:
+ 230              		.cfi_restore_state
+ 112:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	uint32_t tickDiff;
+ 231              		.loc 1 112 2 is_stmt 1 view .LVU56
+ 113:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+ 232              		.loc 1 113 2 view .LVU57
+ 115:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	{
+ 233              		.loc 1 115 2 view .LVU58
+ 115:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	{
+ 234              		.loc 1 115 15 is_stmt 0 view .LVU59
+ 235 0094 9368     		ldr	r3, [r2, #8]
+ 236 0096 A1EB0308 		sub	r8, r1, r3
+ 237              	.LVL17:
+ 115:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	{
+ 238              		.loc 1 115 4 view .LVU60
+ 239 009a B8F1040F 		cmp	r8, #4
+ 240 009e 19D9     		bls	.L14
+ 117:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 		TMC5160_config->shadowRegister[TMC5160_XACTUAL] = XActual;
+ 241              		.loc 1 117 3 is_stmt 1 view .LVU61
+ 117:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 		TMC5160_config->shadowRegister[TMC5160_XACTUAL] = XActual;
+ 242              		.loc 1 117 13 is_stmt 0 view .LVU62
+ 243 00a0 2121     		movs	r1, #33
+ 244              	.LVL18:
+ 117:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 		TMC5160_config->shadowRegister[TMC5160_XACTUAL] = XActual;
+ 245              		.loc 1 117 13 view .LVU63
+ 246 00a2 FFF7FEFF 		bl	tmc5160_readInt
+ 247              	.LVL19:
+ 117:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 		TMC5160_config->shadowRegister[TMC5160_XACTUAL] = XActual;
+ 248              		.loc 1 117 13 view .LVU64
+ 249 00a6 0546     		mov	r5, r0
+ 250              	.LVL20:
+ 118:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 		tmc5160->velocity = (int) ((float) ((XActual-tmc5160->oldX) / (float) tickDiff) * (float) 1048.57
+ 251              		.loc 1 118 3 is_stmt 1 view .LVU65
+ 118:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 		tmc5160->velocity = (int) ((float) ((XActual-tmc5160->oldX) / (float) tickDiff) * (float) 1048.57
+ 252              		.loc 1 118 51 is_stmt 0 view .LVU66
+ 253 00a8 C6F88800 		str	r0, [r6, #136]
+ 119:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+ 254              		.loc 1 119 3 is_stmt 1 view .LVU67
+ 119:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+ 255              		.loc 1 119 47 is_stmt 0 view .LVU68
+ 256 00ac 6068     		ldr	r0, [r4, #4]
+ 257              	.LVL21:
+ 119:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+ 258              		.loc 1 119 30 view .LVU69
+ 259 00ae 281A     		subs	r0, r5, r0
+ 260 00b0 FFF7FEFF 		bl	__aeabi_i2f
+ 261              	.LVL22:
+ 262 00b4 0646     		mov	r6, r0
+ 263              	.LVL23:
+ 119:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+ 264              		.loc 1 119 65 view .LVU70
+ 265 00b6 4046     		mov	r0, r8
+ 266 00b8 FFF7FEFF 		bl	__aeabi_ui2f
+ 267              	.LVL24:
+ 268 00bc 0146     		mov	r1, r0
+ 119:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+ 269              		.loc 1 119 30 view .LVU71
+ 270 00be 3046     		mov	r0, r6
+ 271 00c0 FFF7FEFF 		bl	__aeabi_fdiv
+ 272              	.LVL25:
+ 119:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+ 273              		.loc 1 119 83 view .LVU72
+ 274 00c4 0449     		ldr	r1, .L17
+ 275 00c6 FFF7FEFF 		bl	__aeabi_fmul
+ 276              	.LVL26:
+ 119:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+ 277              		.loc 1 119 23 view .LVU73
+ 278 00ca FFF7FEFF 		bl	__aeabi_f2iz
+ 279              	.LVL27:
+ 121:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 		tmc5160->oldTick  = tick;
+ 280              		.loc 1 121 21 view .LVU74
+ 281 00ce C4E90005 		strd	r0, r5, [r4]
+ 122:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	}
+ 282              		.loc 1 122 3 is_stmt 1 view .LVU75
+ 122:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	}
+ 283              		.loc 1 122 21 is_stmt 0 view .LVU76
+ 284 00d2 A760     		str	r7, [r4, #8]
+ 285              	.LVL28:
+ 286              	.L14:
+ 287              		.loc 1 124 1 view .LVU77
+ 288 00d4 BDE8F081 		pop	{r4, r5, r6, r7, r8, pc}
+ 289              	.LVL29:
+ 290              	.L18:
+ 291              		.loc 1 124 1 view .LVU78
+ 292              		.align	2
+ 293              	.L17:
+ 294 00d8 6F128344 		.word	1149440623
+ 295              		.cfi_endproc
+ 296              	.LFE2:
+ 298              		.align	1
+ 299              		.global	tmc5160_reset
+ 300              		.syntax unified
+ 301              		.thumb
+ 302              		.thumb_func
+ 303              		.fpu softvfp
+ 305              	tmc5160_reset:
+ 306              	.LVL30:
+ 307              	.LFB3:
+ 125:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+ 126:TMC-API/tmc/ic/TMC5160/TMC5160.c **** uint8_t tmc5160_reset(ConfigurationTypeDef *TMC5160_config)
+ 127:TMC-API/tmc/ic/TMC5160/TMC5160.c **** {
+ 308              		.loc 1 127 1 is_stmt 1 view -0
+ 309              		.cfi_startproc
+ 310              		@ args = 0, pretend = 0, frame = 0
+ 311              		@ frame_needed = 0, uses_anonymous_args = 0
+ 312              		@ link register save eliminated.
+ 128:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	if(TMC5160_config->state != CONFIG_READY)
+ 313              		.loc 1 128 2 view .LVU80
+ 314              		.loc 1 128 4 is_stmt 0 view .LVU81
+ 315 00dc 0278     		ldrb	r2, [r0]	@ zero_extendqisi2
+ 127:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	if(TMC5160_config->state != CONFIG_READY)
+ 316              		.loc 1 127 1 view .LVU82
+ 317 00de 0346     		mov	r3, r0
+ 318              		.loc 1 128 4 view .LVU83
+ 319 00e0 12B9     		cbnz	r2, .L21
+ 129:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 		return 0;
+ 130:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+ 131:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	TMC5160_config->state        = CONFIG_RESET;
+ 320              		.loc 1 131 2 is_stmt 1 view .LVU84
+ 132:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	TMC5160_config->configIndex  = 0;
+ 321              		.loc 1 132 2 view .LVU85
+ 131:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	TMC5160_config->configIndex  = 0;
+ 322              		.loc 1 131 31 is_stmt 0 view .LVU86
+ 323 00e2 0120     		movs	r0, #1
+ 324              	.LVL31:
+ 131:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	TMC5160_config->configIndex  = 0;
+ 325              		.loc 1 131 31 view .LVU87
+ 326 00e4 1880     		strh	r0, [r3]	@ movhi
+ 133:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+ 134:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	return 1;
+ 327              		.loc 1 134 2 is_stmt 1 view .LVU88
+ 328              		.loc 1 134 9 is_stmt 0 view .LVU89
+ 329 00e6 7047     		bx	lr
+ 330              	.LVL32:
+ 331              	.L21:
+ 129:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+ 332              		.loc 1 129 10 view .LVU90
+ 333 00e8 0020     		movs	r0, #0
+ 334              	.LVL33:
+ 135:TMC-API/tmc/ic/TMC5160/TMC5160.c **** }
+ 335              		.loc 1 135 1 view .LVU91
+ 336 00ea 7047     		bx	lr
+ 337              		.cfi_endproc
+ 338              	.LFE3:
+ 340              		.align	1
+ 341              		.global	tmc5160_restore
+ 342              		.syntax unified
+ 343              		.thumb
+ 344              		.thumb_func
+ 345              		.fpu softvfp
+ 347              	tmc5160_restore:
+ 348              	.LVL34:
+ 349              	.LFB4:
+ 136:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+ 137:TMC-API/tmc/ic/TMC5160/TMC5160.c **** uint8_t tmc5160_restore(ConfigurationTypeDef *TMC5160_config)
+ 138:TMC-API/tmc/ic/TMC5160/TMC5160.c **** {
+ 350              		.loc 1 138 1 is_stmt 1 view -0
+ 351              		.cfi_startproc
+ 352              		@ args = 0, pretend = 0, frame = 0
+ 353              		@ frame_needed = 0, uses_anonymous_args = 0
+ 354              		@ link register save eliminated.
+ 139:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	if(TMC5160_config->state != CONFIG_READY)
+ 355              		.loc 1 139 2 view .LVU93
+ 356              		.loc 1 139 4 is_stmt 0 view .LVU94
+ 357 00ec 0378     		ldrb	r3, [r0]	@ zero_extendqisi2
+ 358 00ee 1BB9     		cbnz	r3, .L24
+ 140:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 		return 0;
+ 141:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+ 142:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	TMC5160_config->state        = CONFIG_RESTORE;
+ 359              		.loc 1 142 2 is_stmt 1 view .LVU95
+ 143:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	TMC5160_config->configIndex  = 0;
+ 360              		.loc 1 143 2 view .LVU96
+ 142:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	TMC5160_config->configIndex  = 0;
+ 361              		.loc 1 142 31 is_stmt 0 view .LVU97
+ 362 00f0 0223     		movs	r3, #2
+ 363 00f2 0380     		strh	r3, [r0]	@ movhi
+ 144:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+ 145:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 	return 1;
+ 364              		.loc 1 145 2 is_stmt 1 view .LVU98
+ 365              		.loc 1 145 9 is_stmt 0 view .LVU99
+ 366 00f4 0120     		movs	r0, #1
+ 367              	.LVL35:
+ 368              		.loc 1 145 9 view .LVU100
+ 369 00f6 7047     		bx	lr
+ 370              	.LVL36:
+ 371              	.L24:
+ 140:TMC-API/tmc/ic/TMC5160/TMC5160.c **** 
+ 372              		.loc 1 140 10 view .LVU101
+ 373 00f8 0020     		movs	r0, #0
+ 374              	.LVL37:
+ 146:TMC-API/tmc/ic/TMC5160/TMC5160.c **** }
+ 375              		.loc 1 146 1 view .LVU102
+ 376 00fa 7047     		bx	lr
+ 377              		.cfi_endproc
+ 378              	.LFE4:
+ 380              		.global	tmc5160_defaultRegisterResetState
+ 381              		.global	tmc5160_defaultRegisterAccess
+ 382              		.section	.rodata
+ 383              		.align	2
+ 384              		.set	.LANCHOR0,. + 0
+ 387              	tmc5160_defaultRegisterAccess:
+ 388 0000 03070102 		.ascii	"\003\007\001\002\007\002\002\001\001\002\002\002\001"
+ 388      07020201 
+ 388      01020202 
+ 388      01
+ 389 000d 00000002 		.ascii	"\000\000\000\002\002\001\002\002\002\000\000\000\000"
+ 389      02010202 
+ 389      02000000 
+ 389      00
+ 390 001a 00000000 		.ascii	"\000\000\000\000\000\000\003\003\001\002\002\002\002"
+ 390      00000303 
+ 390      01020202 
+ 390      02
+ 391 0027 02020002 		.ascii	"\002\002\000\002\002\002\003\000\000\000\000\000\002"
+ 391      02020300 
+ 391      00000000 
+ 391      02
+ 392 0034 03070100 		.ascii	"\003\007\001\000\003\003\002\007\001\002\000\000\000"
+ 392      03030207 
+ 392      01020000 
+ 392      00
+ 393 0041 00000000 		.ascii	"\000\000\000\000\000\000\000\000\000\000\000\000\000"
+ 393      00000000 
+ 393      00000000 
+ 393      00
+ 394 004e 00000000 		.ascii	"\000\000\000\000\000\000\000\000\000\000\000\000\000"
+ 394      00000000 
+ 394      00000000 
+ 394      00
+ 395 005b 00000000 		.ascii	"\000\000\000\000\000\002\002\002\002\002\002\002\002"
+ 395      00020202 
+ 395      02020202 
+ 395      02
+ 396 0068 02020101 		.ascii	"\002\002\001\001\003\002\002\001\002\001\001\001\000"
+ 396      03020201 
+ 396      02010101 
+ 396      00
+ 397 0075 00000000 		.ascii	"\000\000\000\000\000\000\000\000\000\000\000"
+ 397      00000000 
+ 397      000000
+ 400              	tmc5160_defaultRegisterResetState:
+ 401 0080 08000000 		.word	8
+ 402 0084 00000000 		.word	0
+ 403 0088 00000000 		.word	0
+ 404 008c 00000000 		.word	0
+ 405 0090 00000000 		.word	0
+ 406 0094 00000000 		.word	0
+ 407 0098 00000000 		.word	0
+ 408 009c 00000000 		.word	0
+ 409 00a0 00000000 		.word	0
+ 410 00a4 06060100 		.word	67078
+ 411 00a8 00040800 		.word	525312
+ 412 00ac 00000000 		.word	0
+ 413 00b0 00000000 		.word	0
+ 414 00b4 00000000 		.word	0
+ 415 00b8 00000000 		.word	0
+ 416 00bc 00000000 		.word	0
+ 417 00c0 030A0700 		.word	461315
+ 418 00c4 0A000000 		.word	10
+ 419 00c8 00000000 		.word	0
+ 420 00cc 00000000 		.word	0
+ 421 00d0 00000000 		.word	0
+ 422 00d4 00000000 		.word	0
+ 423 00d8 00000000 		.word	0
+ 424 00dc 00000000 		.word	0
+ 425 00e0 00000000 		.word	0
+ 426 00e4 00000000 		.word	0
+ 427 00e8 00000000 		.word	0
+ 428 00ec 01000000 		.word	1
+ 429 00f0 00000000 		.word	0
+ 430 00f4 00000000 		.word	0
+ 431 00f8 00000000 		.word	0
+ 432 00fc 00000000 		.word	0
+ 433 0100 00000000 		.word	0
+ 434 0104 00000000 		.word	0
+ 435 0108 00000000 		.word	0
+ 436 010c 00000000 		.word	0
+ 437 0110 00000000 		.word	0
+ 438 0114 00000000 		.word	0
+ 439 0118 00000000 		.word	0
+ 440 011c 00000000 		.word	0
+ 441 0120 00000000 		.word	0
+ 442 0124 00000000 		.word	0
+ 443 0128 00000000 		.word	0
+ 444 012c 00000000 		.word	0
+ 445 0130 00000000 		.word	0
+ 446 0134 00000000 		.word	0
+ 447 0138 00000000 		.word	0
+ 448 013c 00000000 		.word	0
+ 449 0140 00000000 		.word	0
+ 450 0144 00000000 		.word	0
+ 451 0148 00000000 		.word	0
+ 452 014c 00000000 		.word	0
+ 453 0150 00000000 		.word	0
+ 454 0154 00000000 		.word	0
+ 455 0158 00000000 		.word	0
+ 456 015c 00000000 		.word	0
+ 457 0160 00000000 		.word	0
+ 458 0164 00000000 		.word	0
+ 459 0168 00000100 		.word	65536
+ 460 016c 00000000 		.word	0
+ 461 0170 00000000 		.word	0
+ 462 0174 00000000 		.word	0
+ 463 0178 00000000 		.word	0
+ 464 017c 00000000 		.word	0
+ 465 0180 00000000 		.word	0
+ 466 0184 00000000 		.word	0
+ 467 0188 00000000 		.word	0
+ 468 018c 00000000 		.word	0
+ 469 0190 00000000 		.word	0
+ 470 0194 00000000 		.word	0
+ 471 0198 00000000 		.word	0
+ 472 019c 00000000 		.word	0
+ 473 01a0 00000000 		.word	0
+ 474 01a4 00000000 		.word	0
+ 475 01a8 00000000 		.word	0
+ 476 01ac 00000000 		.word	0
+ 477 01b0 00000000 		.word	0
+ 478 01b4 00000000 		.word	0
+ 479 01b8 00000000 		.word	0
+ 480 01bc 00000000 		.word	0
+ 481 01c0 00000000 		.word	0
+ 482 01c4 00000000 		.word	0
+ 483 01c8 00000000 		.word	0
+ 484 01cc 00000000 		.word	0
+ 485 01d0 00000000 		.word	0
+ 486 01d4 00000000 		.word	0
+ 487 01d8 00000000 		.word	0
+ 488 01dc 00000000 		.word	0
+ 489 01e0 00000000 		.word	0
+ 490 01e4 00000000 		.word	0
+ 491 01e8 00000000 		.word	0
+ 492 01ec 00000000 		.word	0
+ 493 01f0 00000000 		.word	0
+ 494 01f4 00000000 		.word	0
+ 495 01f8 00000000 		.word	0
+ 496 01fc 00000000 		.word	0
+ 497 0200 54B5AAAA 		.word	-1431653036
+ 498 0204 AA54954A 		.word	1251300522
+ 499 0208 29294924 		.word	608774441
+ 500 020c 22421010 		.word	269500962
+ 501 0210 FFFFFFFB 		.word	-67108865
+ 502 0214 7D77BBB5 		.word	-1246005379
+ 503 0218 56552949 		.word	1227445590
+ 504 021c 22424000 		.word	4211234
+ 505 0220 5680FFFF 		.word	-32682
+ 506 0224 0000F700 		.word	16187392
+ 507 0228 00000000 		.word	0
+ 508 022c 00000000 		.word	0
+ 509 0230 53014100 		.word	4260179
+ 510 0234 00000000 		.word	0
+ 511 0238 00000000 		.word	0
+ 512 023c 00000000 		.word	0
+ 513 0240 1E000CC4 		.word	-1005846498
+ 514 0244 00000000 		.word	0
+ 515 0248 00000000 		.word	0
+ 516 024c 00000000 		.word	0
+ 517 0250 00000000 		.word	0
+ 518 0254 00000000 		.word	0
+ 519 0258 00000000 		.word	0
+ 520 025c 00000000 		.word	0
+ 521 0260 00000000 		.word	0
+ 522 0264 00000000 		.word	0
+ 523 0268 00000000 		.word	0
+ 524 026c 00000000 		.word	0
+ 525 0270 00000000 		.word	0
+ 526 0274 00000000 		.word	0
+ 527 0278 00000000 		.word	0
+ 528 027c 00000000 		.word	0
+ 529              		.text
+ 530              	.Letext0:
+ 531              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 532              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 533              		.file 4 "TMC-API/tmc/helpers/Config.h"
+ 534              		.file 5 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 535              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 536              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 537              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 538              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 539              		.file 10 "TMC-API/tmc/ic/TMC5160/TMC5160.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 TMC5160.c
+C:\Users\Shubham\AppData\Local\Temp\ccAk0EUg.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccAk0EUg.s:23     .text:00000000 tmc5160_initConfig
+C:\Users\Shubham\AppData\Local\Temp\ccAk0EUg.s:79     .text:00000034 $d
+C:\Users\Shubham\AppData\Local\Temp\ccAk0EUg.s:83     .text:00000038 $t
+C:\Users\Shubham\AppData\Local\Temp\ccAk0EUg.s:90     .text:00000038 tmc5160_writeConfiguration
+C:\Users\Shubham\AppData\Local\Temp\ccAk0EUg.s:179    .text:0000007a tmc5160_periodicJob
+C:\Users\Shubham\AppData\Local\Temp\ccAk0EUg.s:294    .text:000000d8 $d
+C:\Users\Shubham\AppData\Local\Temp\ccAk0EUg.s:298    .text:000000dc $t
+C:\Users\Shubham\AppData\Local\Temp\ccAk0EUg.s:305    .text:000000dc tmc5160_reset
+C:\Users\Shubham\AppData\Local\Temp\ccAk0EUg.s:347    .text:000000ec tmc5160_restore
+C:\Users\Shubham\AppData\Local\Temp\ccAk0EUg.s:400    .rodata:00000080 tmc5160_defaultRegisterResetState
+C:\Users\Shubham\AppData\Local\Temp\ccAk0EUg.s:387    .rodata:00000000 tmc5160_defaultRegisterAccess
+C:\Users\Shubham\AppData\Local\Temp\ccAk0EUg.s:383    .rodata:00000000 $d
+
+UNDEFINED SYMBOLS
+tmc5160_writeInt
+__aeabi_i2f
+__aeabi_ui2f
+__aeabi_fdiv
+__aeabi_fmul
+__aeabi_f2iz
+tmc5160_readInt

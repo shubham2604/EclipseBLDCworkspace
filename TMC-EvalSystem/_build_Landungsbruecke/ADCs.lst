@@ -1,0 +1,1030 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"ADCs.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.arch armv7e-m
+  17              		.syntax unified
+  18              		.thumb
+  19              		.thumb_func
+  20              		.fpu softvfp
+  22              	init:
+  23              	.LFB0:
+  24              		.file 1 "hal/Landungsbruecke/tmc/ADCs.c"
+   1:hal/Landungsbruecke/tmc/ADCs.c **** #include "hal/HAL.h"
+   2:hal/Landungsbruecke/tmc/ADCs.c **** #include "hal/ADCs.h"
+   3:hal/Landungsbruecke/tmc/ADCs.c **** 
+   4:hal/Landungsbruecke/tmc/ADCs.c **** /* analog channel selection values (ADCx_SC1n Register, DIFF & ADCH fields) */
+   5:hal/Landungsbruecke/tmc/ADCs.c **** 
+   6:hal/Landungsbruecke/tmc/ADCs.c **** //             ADCH  // DIFF = 0                   | DIFF = 1
+   7:hal/Landungsbruecke/tmc/ADCs.c **** #define DAD0   0x00  // DADP0                      | DAD0
+   8:hal/Landungsbruecke/tmc/ADCs.c **** #define DAD1   0x01  // DADP1                      | DAD1
+   9:hal/Landungsbruecke/tmc/ADCs.c **** #define DAD2   0x02  // DADP2                      | DAD2
+  10:hal/Landungsbruecke/tmc/ADCs.c **** #define DAD3   0x03  // DADP3                      | DAD3
+  11:hal/Landungsbruecke/tmc/ADCs.c **** #define AD04   0x04  // AD4                        | Reserved
+  12:hal/Landungsbruecke/tmc/ADCs.c **** #define AD05   0x05  // AD5                        | Reserved
+  13:hal/Landungsbruecke/tmc/ADCs.c **** #define AD06   0x06  // AD6                        | Reserved
+  14:hal/Landungsbruecke/tmc/ADCs.c **** #define AD07   0x07  // AD7                        | Reserved
+  15:hal/Landungsbruecke/tmc/ADCs.c **** #define AD08   0x08  // AD8                        | Reserved
+  16:hal/Landungsbruecke/tmc/ADCs.c **** #define AD09   0x09  // AD9                        | Reserved
+  17:hal/Landungsbruecke/tmc/ADCs.c **** #define AD10   0x0A  // AD10                       | Reserved
+  18:hal/Landungsbruecke/tmc/ADCs.c **** #define AD11   0x0B  // AD11                       | Reserved
+  19:hal/Landungsbruecke/tmc/ADCs.c **** #define AD12   0x0C  // AD12                       | Reserved
+  20:hal/Landungsbruecke/tmc/ADCs.c **** #define AD13   0x0D  // AD13                       | Reserved
+  21:hal/Landungsbruecke/tmc/ADCs.c **** #define AD14   0x0E  // AD14                       | Reserved
+  22:hal/Landungsbruecke/tmc/ADCs.c **** #define AD15   0x0F  // AD15                       | Reserved
+  23:hal/Landungsbruecke/tmc/ADCs.c **** #define AD16   0x10  // AD16                       | Reserved
+  24:hal/Landungsbruecke/tmc/ADCs.c **** #define AD17   0x11  // AD17                       | Reserved
+  25:hal/Landungsbruecke/tmc/ADCs.c **** #define AD18   0x12  // AD18                       | Reserved
+  26:hal/Landungsbruecke/tmc/ADCs.c **** #define AD19   0x13  // AD19                       | Reserved
+  27:hal/Landungsbruecke/tmc/ADCs.c **** #define AD20   0x14  // AD20                       | Reserved
+  28:hal/Landungsbruecke/tmc/ADCs.c **** #define AD21   0x15  // AD21                       | Reserved
+  29:hal/Landungsbruecke/tmc/ADCs.c **** #define AD22   0x16  // AD22                       | Reserved
+  30:hal/Landungsbruecke/tmc/ADCs.c **** #define AD23   0x17  // AD23                       | Reserved
+  31:hal/Landungsbruecke/tmc/ADCs.c **** #define AD24   0x18  // Reserved                   | Reserved
+  32:hal/Landungsbruecke/tmc/ADCs.c **** #define AD25   0x19  // Reserved                   | Reserved
+  33:hal/Landungsbruecke/tmc/ADCs.c **** #define AD26   0x1A  // Temp Sensor (single ended) | Temp Sensor (differential)
+  34:hal/Landungsbruecke/tmc/ADCs.c **** #define AD27   0x1B  // Bandgap     (single ended) | Bandgap     (differential)
+  35:hal/Landungsbruecke/tmc/ADCs.c **** #define AD28   0x1C  // Reserved                   | Reserved
+  36:hal/Landungsbruecke/tmc/ADCs.c **** #define AD29   0x1D  // VRefSH                     | -VRefSH     (differential)
+  37:hal/Landungsbruecke/tmc/ADCs.c **** #define AD30   0x1E  // VRefSL                     | -VRefSL     (differential)
+  38:hal/Landungsbruecke/tmc/ADCs.c **** #define AD31   0x1F  // Module disabled            | Module diabled
+  39:hal/Landungsbruecke/tmc/ADCs.c **** 
+  40:hal/Landungsbruecke/tmc/ADCs.c **** static void init(void);
+  41:hal/Landungsbruecke/tmc/ADCs.c **** static void deInit(void);
+  42:hal/Landungsbruecke/tmc/ADCs.c **** 
+  43:hal/Landungsbruecke/tmc/ADCs.c **** /* ADCs are scanned using two DMA channels. Upon ADC read complete, the first DMA channel (Channel 
+  44:hal/Landungsbruecke/tmc/ADCs.c ****  * will write the result of the ADC measurement to the result array. Upon DMA completion the first 
+  45:hal/Landungsbruecke/tmc/ADCs.c ****  * second DMA channel (Channel 0 for ADC 0, Channel 2 for ADC 1) to write a new MUX value into the 
+  46:hal/Landungsbruecke/tmc/ADCs.c ****  * This repeats, creating an infinite loop reading out 3 Samples per ADC.
+  47:hal/Landungsbruecke/tmc/ADCs.c ****  *
+  48:hal/Landungsbruecke/tmc/ADCs.c ****  * This loop gets initialised by an initial DMA request for the second Channel to write the first M
+  49:hal/Landungsbruecke/tmc/ADCs.c ****  */
+  50:hal/Landungsbruecke/tmc/ADCs.c **** 
+  51:hal/Landungsbruecke/tmc/ADCs.c **** /* Result buffer indices:
+  52:hal/Landungsbruecke/tmc/ADCs.c ****  *          Input Signal, ADC Channel, Pin
+  53:hal/Landungsbruecke/tmc/ADCs.c ****  * ADC0[0]: ADC0_DP1,     DAD1,        14
+  54:hal/Landungsbruecke/tmc/ADCs.c ****  * ADC0[1]: ADC0_SE12,    AD12,        55
+  55:hal/Landungsbruecke/tmc/ADCs.c ****  * ADC0[2]: ADC0_SE13,    AD13,        56
+  56:hal/Landungsbruecke/tmc/ADCs.c ****  * ADC1[0]: ADC1_DP0,     DAD0,        20
+  57:hal/Landungsbruecke/tmc/ADCs.c ****  * ADC1[1]: ADC1_DP1,     DAD1,        16
+  58:hal/Landungsbruecke/tmc/ADCs.c ****  * ADC1[2]: ADC1_DP3,     DAD3,        18
+  59:hal/Landungsbruecke/tmc/ADCs.c ****  */
+  60:hal/Landungsbruecke/tmc/ADCs.c **** 
+  61:hal/Landungsbruecke/tmc/ADCs.c **** // ADC Result buffers
+  62:hal/Landungsbruecke/tmc/ADCs.c **** volatile uint16_t adc0_result[3] = { 0 };
+  63:hal/Landungsbruecke/tmc/ADCs.c **** volatile uint16_t adc1_result[3] = { 0 };
+  64:hal/Landungsbruecke/tmc/ADCs.c **** // ADC Multiplexer selection
+  65:hal/Landungsbruecke/tmc/ADCs.c **** const uint8_t  adc0_mux[3] = { DAD1, AD12, AD13 };
+  66:hal/Landungsbruecke/tmc/ADCs.c **** const uint8_t  adc1_mux[3] = { DAD0, DAD1, DAD3 };
+  67:hal/Landungsbruecke/tmc/ADCs.c **** 
+  68:hal/Landungsbruecke/tmc/ADCs.c **** ADCTypeDef ADCs =
+  69:hal/Landungsbruecke/tmc/ADCs.c **** {
+  70:hal/Landungsbruecke/tmc/ADCs.c **** 	.AIN0    = &adc1_result[1],
+  71:hal/Landungsbruecke/tmc/ADCs.c **** 	.AIN1    = &adc1_result[2],
+  72:hal/Landungsbruecke/tmc/ADCs.c **** 	.AIN2    = &adc1_result[0],
+  73:hal/Landungsbruecke/tmc/ADCs.c **** 	.DIO4    = &adc0_result[1],
+  74:hal/Landungsbruecke/tmc/ADCs.c **** 	.DIO5    = &adc0_result[2],
+  75:hal/Landungsbruecke/tmc/ADCs.c **** 	.VM      = &adc0_result[0],
+  76:hal/Landungsbruecke/tmc/ADCs.c **** 	.init    = init,
+  77:hal/Landungsbruecke/tmc/ADCs.c **** 	.deInit  = deInit
+  78:hal/Landungsbruecke/tmc/ADCs.c **** };
+  79:hal/Landungsbruecke/tmc/ADCs.c **** 
+  80:hal/Landungsbruecke/tmc/ADCs.c **** static void init(void)
+  81:hal/Landungsbruecke/tmc/ADCs.c **** {
+  25              		.loc 1 81 1 view -0
+  26              		.cfi_startproc
+  27              		@ args = 0, pretend = 0, frame = 0
+  28              		@ frame_needed = 0, uses_anonymous_args = 0
+  82:hal/Landungsbruecke/tmc/ADCs.c **** 	// === ADC initialization ===
+  83:hal/Landungsbruecke/tmc/ADCs.c **** 	// enable clock for ADC0 & ADC1
+  84:hal/Landungsbruecke/tmc/ADCs.c **** 	SIM_SCGC6 |= SIM_SCGC6_ADC0_MASK;
+  29              		.loc 1 84 2 view .LVU1
+  81:hal/Landungsbruecke/tmc/ADCs.c **** 	// === ADC initialization ===
+  30              		.loc 1 81 1 is_stmt 0 view .LVU2
+  31 0000 2DE9F84F 		push	{r3, r4, r5, r6, r7, r8, r9, r10, fp, lr}
+  32              	.LCFI0:
+  33              		.cfi_def_cfa_offset 40
+  34              		.cfi_offset 3, -40
+  35              		.cfi_offset 4, -36
+  36              		.cfi_offset 5, -32
+  37              		.cfi_offset 6, -28
+  38              		.cfi_offset 7, -24
+  39              		.cfi_offset 8, -20
+  40              		.cfi_offset 9, -16
+  41              		.cfi_offset 10, -12
+  42              		.cfi_offset 11, -8
+  43              		.cfi_offset 14, -4
+  44              		.loc 1 84 12 view .LVU3
+  45 0004 41F23C01 		movw	r1, #4156
+  46 0008 944B     		ldr	r3, .L6
+  47 000a 5A58     		ldr	r2, [r3, r1]
+  48 000c 42F00062 		orr	r2, r2, #134217728
+  49 0010 5A50     		str	r2, [r3, r1]
+  85:hal/Landungsbruecke/tmc/ADCs.c **** 	SIM_SCGC3 |= SIM_SCGC3_ADC1_MASK;
+  50              		.loc 1 85 2 is_stmt 1 view .LVU4
+  51              		.loc 1 85 12 is_stmt 0 view .LVU5
+  52 0012 41F23001 		movw	r1, #4144
+  53 0016 5A58     		ldr	r2, [r3, r1]
+  54 0018 42F00062 		orr	r2, r2, #134217728
+  55 001c 5A50     		str	r2, [r3, r1]
+  86:hal/Landungsbruecke/tmc/ADCs.c **** 
+  87:hal/Landungsbruecke/tmc/ADCs.c **** 	HAL.IOs->pins->DIO4.configuration.GPIO_Mode = GPIO_Mode_IN;
+  56              		.loc 1 87 2 is_stmt 1 view .LVU6
+  57              		.loc 1 87 5 is_stmt 0 view .LVU7
+  58 001e 904B     		ldr	r3, .L6+4
+  59 0020 DC68     		ldr	r4, [r3, #12]
+  60              		.loc 1 87 9 view .LVU8
+  61 0022 6068     		ldr	r0, [r4, #4]
+  62              		.loc 1 87 46 view .LVU9
+  63 0024 0823     		movs	r3, #8
+  64 0026 80F8FD30 		strb	r3, [r0, #253]
+  88:hal/Landungsbruecke/tmc/ADCs.c **** 	HAL.IOs->pins->DIO5.configuration.GPIO_Mode = GPIO_Mode_IN;
+  65              		.loc 1 88 2 is_stmt 1 view .LVU10
+  66              		.loc 1 88 46 is_stmt 0 view .LVU11
+  67 002a 80F81D31 		strb	r3, [r0, #285]
+  89:hal/Landungsbruecke/tmc/ADCs.c **** 
+  90:hal/Landungsbruecke/tmc/ADCs.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->DIO4);
+  68              		.loc 1 90 2 is_stmt 1 view .LVU12
+  69              		.loc 1 90 17 is_stmt 0 view .LVU13
+  70 002e 2368     		ldr	r3, [r4]
+  71              		.loc 1 90 2 view .LVU14
+  72 0030 E830     		adds	r0, r0, #232
+  73 0032 1B68     		ldr	r3, [r3]
+  74 0034 9847     		blx	r3
+  75              	.LVL0:
+  91:hal/Landungsbruecke/tmc/ADCs.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->DIO5);
+  76              		.loc 1 91 2 is_stmt 1 view .LVU15
+  77              		.loc 1 91 17 is_stmt 0 view .LVU16
+  78 0036 D4E90030 		ldrd	r3, r0, [r4]
+  79              		.loc 1 91 2 view .LVU17
+  80 003a 1B68     		ldr	r3, [r3]
+  81 003c 00F58470 		add	r0, r0, #264
+  82 0040 9847     		blx	r3
+  83              	.LVL1:
+  92:hal/Landungsbruecke/tmc/ADCs.c **** 
+  93:hal/Landungsbruecke/tmc/ADCs.c **** 	// CFG1: set ADC clocks
+  94:hal/Landungsbruecke/tmc/ADCs.c **** 	ADC0_CFG1 = ADC_CFG1_MODE(0x03) | ADC_CFG1_ADICLK(1);
+  84              		.loc 1 94 2 is_stmt 1 view .LVU18
+  85              		.loc 1 94 12 is_stmt 0 view .LVU19
+  86 0042 884B     		ldr	r3, .L6+8
+  95:hal/Landungsbruecke/tmc/ADCs.c **** 	ADC1_CFG1 = ADC_CFG1_MODE(0x03) | ADC_CFG1_ADICLK(1);
+  87              		.loc 1 95 12 view .LVU20
+  88 0044 884A     		ldr	r2, .L6+12
+  94:hal/Landungsbruecke/tmc/ADCs.c **** 	ADC1_CFG1 = ADC_CFG1_MODE(0x03) | ADC_CFG1_ADICLK(1);
+  89              		.loc 1 94 12 view .LVU21
+  90 0046 0D21     		movs	r1, #13
+  91 0048 9960     		str	r1, [r3, #8]
+  92              		.loc 1 95 2 is_stmt 1 view .LVU22
+  93              		.loc 1 95 12 is_stmt 0 view .LVU23
+  94 004a 9160     		str	r1, [r2, #8]
+  96:hal/Landungsbruecke/tmc/ADCs.c **** 
+  97:hal/Landungsbruecke/tmc/ADCs.c **** 	// CFG2: configuration for high speed conversions and selects the long sample time duration
+  98:hal/Landungsbruecke/tmc/ADCs.c **** 	ADC0_CFG2 = ADC_CFG2_ADLSTS(0);  // use default longest sample time
+  95              		.loc 1 98 2 is_stmt 1 view .LVU24
+  96              		.loc 1 98 12 is_stmt 0 view .LVU25
+  97 004c 0021     		movs	r1, #0
+  98 004e D960     		str	r1, [r3, #12]
+  99:hal/Landungsbruecke/tmc/ADCs.c **** 	ADC1_CFG2 = ADC_CFG2_ADLSTS(0);  // use default longest sample time
+  99              		.loc 1 99 2 is_stmt 1 view .LVU26
+ 100              		.loc 1 99 12 is_stmt 0 view .LVU27
+ 101 0050 D160     		str	r1, [r2, #12]
+ 100:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 101:hal/Landungsbruecke/tmc/ADCs.c **** 	// SC2: conversion
+ 102:hal/Landungsbruecke/tmc/ADCs.c **** 	ADC0_SC2 = ADC_SC2_DMAEN_MASK;  // enable DMA
+ 102              		.loc 1 102 2 is_stmt 1 view .LVU28
+ 103              		.loc 1 102 11 is_stmt 0 view .LVU29
+ 104 0052 0421     		movs	r1, #4
+ 105 0054 1962     		str	r1, [r3, #32]
+ 103:hal/Landungsbruecke/tmc/ADCs.c **** 	ADC1_SC2 = ADC_SC2_DMAEN_MASK;  // enable DMA;
+ 106              		.loc 1 103 2 is_stmt 1 view .LVU30
+ 107              		.loc 1 103 11 is_stmt 0 view .LVU31
+ 108 0056 1162     		str	r1, [r2, #32]
+ 104:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 105:hal/Landungsbruecke/tmc/ADCs.c **** 	// average over 4 samples, single measurement (trigger from having DMA write the MUX value to SC1A
+ 106:hal/Landungsbruecke/tmc/ADCs.c **** 	ADC0_SC3 = 	ADC_SC3_AVGE_MASK | ADC_SC3_AVGS(0);
+ 109              		.loc 1 106 2 is_stmt 1 view .LVU32
+ 110              		.loc 1 106 11 is_stmt 0 view .LVU33
+ 111 0058 5962     		str	r1, [r3, #36]
+ 107:hal/Landungsbruecke/tmc/ADCs.c **** 	ADC1_SC3 = 	ADC_SC3_AVGE_MASK | ADC_SC3_AVGS(0);
+ 112              		.loc 1 107 2 is_stmt 1 view .LVU34
+ 113              		.loc 1 107 11 is_stmt 0 view .LVU35
+ 114 005a 5162     		str	r1, [r2, #36]
+ 108:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 109:hal/Landungsbruecke/tmc/ADCs.c **** 	ADC0_SC3 |= ADC_SC3_CAL_MASK;
+ 115              		.loc 1 109 2 is_stmt 1 view .LVU36
+ 116              		.loc 1 109 11 is_stmt 0 view .LVU37
+ 117 005c 5A6A     		ldr	r2, [r3, #36]
+ 118 005e 42F08002 		orr	r2, r2, #128
+ 119 0062 5A62     		str	r2, [r3, #36]
+ 110:hal/Landungsbruecke/tmc/ADCs.c **** 	while(ADC0_SC3 & ADC_SC3_CAL_MASK);
+ 120              		.loc 1 110 2 is_stmt 1 view .LVU38
+ 121              	.L2:
+ 122              		.loc 1 110 36 discriminator 1 view .LVU39
+ 123              		.loc 1 110 7 discriminator 1 view .LVU40
+ 124              		.loc 1 110 8 is_stmt 0 discriminator 1 view .LVU41
+ 125 0064 5A6A     		ldr	r2, [r3, #36]
+ 126              		.loc 1 110 7 discriminator 1 view .LVU42
+ 127 0066 1206     		lsls	r2, r2, #24
+ 128 0068 FCD4     		bmi	.L2
+ 111:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 112:hal/Landungsbruecke/tmc/ADCs.c **** 	uint16_t cal = 0;
+ 129              		.loc 1 112 2 is_stmt 1 view .LVU43
+ 130              	.LVL2:
+ 113:hal/Landungsbruecke/tmc/ADCs.c **** 	cal += ADC0_CLP0;
+ 131              		.loc 1 113 2 view .LVU44
+ 132              		.loc 1 113 9 is_stmt 0 view .LVU45
+ 133 006a DA6C     		ldr	r2, [r3, #76]
+ 134              	.LVL3:
+ 114:hal/Landungsbruecke/tmc/ADCs.c **** 	cal += ADC0_CLP1;
+ 135              		.loc 1 114 2 is_stmt 1 view .LVU46
+ 136              		.loc 1 114 9 is_stmt 0 view .LVU47
+ 137 006c 996C     		ldr	r1, [r3, #72]
+ 138              		.loc 1 114 6 view .LVU48
+ 139 006e 0A44     		add	r2, r2, r1
+ 140              	.LVL4:
+ 115:hal/Landungsbruecke/tmc/ADCs.c **** 	cal += ADC0_CLP2;
+ 141              		.loc 1 115 2 is_stmt 1 view .LVU49
+ 142              		.loc 1 115 9 is_stmt 0 view .LVU50
+ 143 0070 596C     		ldr	r1, [r3, #68]
+ 144              		.loc 1 115 6 view .LVU51
+ 145 0072 11FA82F2 		uxtah	r2, r1, r2
+ 146              	.LVL5:
+ 116:hal/Landungsbruecke/tmc/ADCs.c **** 	cal += ADC0_CLP3;
+ 147              		.loc 1 116 2 is_stmt 1 view .LVU52
+ 148              		.loc 1 116 9 is_stmt 0 view .LVU53
+ 149 0076 196C     		ldr	r1, [r3, #64]
+ 150              		.loc 1 116 6 view .LVU54
+ 151 0078 11FA82F2 		uxtah	r2, r1, r2
+ 152              	.LVL6:
+ 117:hal/Landungsbruecke/tmc/ADCs.c **** 	cal += ADC0_CLP4;
+ 153              		.loc 1 117 2 is_stmt 1 view .LVU55
+ 154              		.loc 1 117 9 is_stmt 0 view .LVU56
+ 155 007c D96B     		ldr	r1, [r3, #60]
+ 156              		.loc 1 117 6 view .LVU57
+ 157 007e 11FA82F2 		uxtah	r2, r1, r2
+ 158              	.LVL7:
+ 118:hal/Landungsbruecke/tmc/ADCs.c **** 	cal += ADC0_CLPS;
+ 159              		.loc 1 118 2 is_stmt 1 view .LVU58
+ 160              		.loc 1 118 9 is_stmt 0 view .LVU59
+ 161 0082 996B     		ldr	r1, [r3, #56]
+ 162              		.loc 1 118 6 view .LVU60
+ 163 0084 11FA82F2 		uxtah	r2, r1, r2
+ 164              	.LVL8:
+ 119:hal/Landungsbruecke/tmc/ADCs.c **** 	cal >>= 1;
+ 165              		.loc 1 119 2 is_stmt 1 view .LVU61
+ 166              		.loc 1 119 6 is_stmt 0 view .LVU62
+ 167 0088 C2F34E02 		ubfx	r2, r2, #1, #15
+ 168              	.LVL9:
+ 120:hal/Landungsbruecke/tmc/ADCs.c **** 	cal |= 1<<15;
+ 169              		.loc 1 120 2 is_stmt 1 view .LVU63
+ 121:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 122:hal/Landungsbruecke/tmc/ADCs.c **** 	ADC0_PG = cal;
+ 170              		.loc 1 122 2 view .LVU64
+ 123:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 124:hal/Landungsbruecke/tmc/ADCs.c **** 	ADC1_SC3 |= ADC_SC3_CAL_MASK;
+ 171              		.loc 1 124 11 is_stmt 0 view .LVU65
+ 172 008c 7649     		ldr	r1, .L6+12
+ 122:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 173              		.loc 1 122 10 view .LVU66
+ 174 008e 42F40042 		orr	r2, r2, #32768
+ 175              	.LVL10:
+ 122:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 176              		.loc 1 122 10 view .LVU67
+ 177 0092 DA62     		str	r2, [r3, #44]
+ 178              		.loc 1 124 2 is_stmt 1 view .LVU68
+ 179              		.loc 1 124 11 is_stmt 0 view .LVU69
+ 180 0094 4B6A     		ldr	r3, [r1, #36]
+ 181 0096 43F08003 		orr	r3, r3, #128
+ 182 009a 4B62     		str	r3, [r1, #36]
+ 125:hal/Landungsbruecke/tmc/ADCs.c **** 	while(ADC1_SC3 & ADC_SC3_CAL_MASK);
+ 183              		.loc 1 125 2 is_stmt 1 view .LVU70
+ 184              	.L3:
+ 185              		.loc 1 125 36 discriminator 1 view .LVU71
+ 186              		.loc 1 125 7 discriminator 1 view .LVU72
+ 187              		.loc 1 125 8 is_stmt 0 discriminator 1 view .LVU73
+ 188 009c 4A6A     		ldr	r2, [r1, #36]
+ 189              		.loc 1 125 7 discriminator 1 view .LVU74
+ 190 009e 12F08002 		ands	r2, r2, #128
+ 191 00a2 FBD1     		bne	.L3
+ 126:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 127:hal/Landungsbruecke/tmc/ADCs.c **** 	cal = 0;
+ 192              		.loc 1 127 2 is_stmt 1 view .LVU75
+ 193              	.LVL11:
+ 128:hal/Landungsbruecke/tmc/ADCs.c **** 	cal += ADC1_CLP0;
+ 194              		.loc 1 128 2 view .LVU76
+ 195              		.loc 1 128 9 is_stmt 0 view .LVU77
+ 196 00a4 CB6C     		ldr	r3, [r1, #76]
+ 197              	.LVL12:
+ 129:hal/Landungsbruecke/tmc/ADCs.c **** 	cal += ADC1_CLP1;
+ 198              		.loc 1 129 2 is_stmt 1 view .LVU78
+ 199              		.loc 1 129 9 is_stmt 0 view .LVU79
+ 200 00a6 886C     		ldr	r0, [r1, #72]
+ 130:hal/Landungsbruecke/tmc/ADCs.c **** 	cal += ADC1_CLP2;
+ 131:hal/Landungsbruecke/tmc/ADCs.c **** 	cal += ADC1_CLP3;
+ 132:hal/Landungsbruecke/tmc/ADCs.c **** 	cal += ADC1_CLP4;
+ 133:hal/Landungsbruecke/tmc/ADCs.c **** 	cal += ADC1_CLPS;
+ 134:hal/Landungsbruecke/tmc/ADCs.c **** 	cal >>= 1;
+ 135:hal/Landungsbruecke/tmc/ADCs.c **** 	cal |= 1<<15;
+ 136:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 137:hal/Landungsbruecke/tmc/ADCs.c **** 	ADC1_PG = cal;
+ 138:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 139:hal/Landungsbruecke/tmc/ADCs.c **** 	// === DMA initialization ===
+ 140:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 141:hal/Landungsbruecke/tmc/ADCs.c **** 	// enable clock for DMA
+ 142:hal/Landungsbruecke/tmc/ADCs.c **** 	SIM_SCGC7 |= SIM_SCGC7_DMA_MASK;
+ 201              		.loc 1 142 12 view .LVU80
+ 202 00a8 704C     		ldr	r4, .L6+16
+ 143:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 144:hal/Landungsbruecke/tmc/ADCs.c **** 	// enable clock for DMA mux
+ 145:hal/Landungsbruecke/tmc/ADCs.c **** 	SIM_SCGC6 |= SIM_SCGC6_DMAMUX_MASK;
+ 146:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 147:hal/Landungsbruecke/tmc/ADCs.c **** 	// === setup DMA channels for ADC0 ===
+ 148:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 149:hal/Landungsbruecke/tmc/ADCs.c **** 	// DMA channel 0, use for write ADC mux channel, from SRAM to ADC
+ 150:hal/Landungsbruecke/tmc/ADCs.c **** 	DMAMUX_CHCFG0           = DMAMUX_CHCFG_ENBL_MASK | DMAMUX_CHCFG_SOURCE(0x36);                 // D
+ 203              		.loc 1 150 26 view .LVU81
+ 204 00aa 714F     		ldr	r7, .L6+20
+ 151:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_SADDR          = (uint32_t) &adc0_mux[0];                                              //
+ 205              		.loc 1 151 28 view .LVU82
+ 206 00ac DFF8DCC1 		ldr	ip, .L6+48
+ 152:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_SOFF           = 0x01;                                                               // S
+ 153:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_SLAST          = (uint32_t) -3;                                                        //
+ 154:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_DADDR          = (uint32_t) &ADC0_SC1A;                                                //
+ 207              		.loc 1 154 26 view .LVU83
+ 208 00b0 6C4D     		ldr	r5, .L6+8
+ 155:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_DOFF           = 0x00;                                                               // D
+ 156:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_DLASTSGA       = 0x00;                                                               // D
+ 157:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_NBYTES_MLNO    = 0x01;                                                               // N
+ 158:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_BITER_ELINKNO  = 0x03;                                                               // D
+ 159:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_CITER_ELINKNO  = 0x03;                                                               // D
+ 160:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_ATTR           = DMA_ATTR_SSIZE(0) | DMA_ATTR_DSIZE(0);                              // S
+ 161:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_CSR            = DMA_CSR_START_MASK;                                                 // R
+ 162:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 163:hal/Landungsbruecke/tmc/ADCs.c **** 	// DMA channel 1, use for read ADC result data, from ADC to SRAM
+ 164:hal/Landungsbruecke/tmc/ADCs.c **** 	DMAMUX_CHCFG1           = DMAMUX_CHCFG_ENBL_MASK | DMAMUX_CHCFG_SOURCE(0x28);                 // D
+ 165:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_SADDR          = (uint32_t) &ADC0_RA;                                                  //
+ 209              		.loc 1 165 26 view .LVU84
+ 210 00b2 704E     		ldr	r6, .L6+24
+ 129:hal/Landungsbruecke/tmc/ADCs.c **** 	cal += ADC1_CLP2;
+ 211              		.loc 1 129 6 view .LVU85
+ 212 00b4 0344     		add	r3, r3, r0
+ 213              	.LVL13:
+ 130:hal/Landungsbruecke/tmc/ADCs.c **** 	cal += ADC1_CLP3;
+ 214              		.loc 1 130 2 is_stmt 1 view .LVU86
+ 130:hal/Landungsbruecke/tmc/ADCs.c **** 	cal += ADC1_CLP3;
+ 215              		.loc 1 130 9 is_stmt 0 view .LVU87
+ 216 00b6 486C     		ldr	r0, [r1, #68]
+ 130:hal/Landungsbruecke/tmc/ADCs.c **** 	cal += ADC1_CLP3;
+ 217              		.loc 1 130 6 view .LVU88
+ 218 00b8 10FA83F3 		uxtah	r3, r0, r3
+ 219              	.LVL14:
+ 131:hal/Landungsbruecke/tmc/ADCs.c **** 	cal += ADC1_CLP4;
+ 220              		.loc 1 131 2 is_stmt 1 view .LVU89
+ 131:hal/Landungsbruecke/tmc/ADCs.c **** 	cal += ADC1_CLP4;
+ 221              		.loc 1 131 9 is_stmt 0 view .LVU90
+ 222 00bc 086C     		ldr	r0, [r1, #64]
+ 131:hal/Landungsbruecke/tmc/ADCs.c **** 	cal += ADC1_CLP4;
+ 223              		.loc 1 131 6 view .LVU91
+ 224 00be 10FA83F3 		uxtah	r3, r0, r3
+ 225              	.LVL15:
+ 132:hal/Landungsbruecke/tmc/ADCs.c **** 	cal += ADC1_CLPS;
+ 226              		.loc 1 132 2 is_stmt 1 view .LVU92
+ 132:hal/Landungsbruecke/tmc/ADCs.c **** 	cal += ADC1_CLPS;
+ 227              		.loc 1 132 9 is_stmt 0 view .LVU93
+ 228 00c2 C86B     		ldr	r0, [r1, #60]
+ 132:hal/Landungsbruecke/tmc/ADCs.c **** 	cal += ADC1_CLPS;
+ 229              		.loc 1 132 6 view .LVU94
+ 230 00c4 10FA83F3 		uxtah	r3, r0, r3
+ 231              	.LVL16:
+ 133:hal/Landungsbruecke/tmc/ADCs.c **** 	cal >>= 1;
+ 232              		.loc 1 133 2 is_stmt 1 view .LVU95
+ 133:hal/Landungsbruecke/tmc/ADCs.c **** 	cal >>= 1;
+ 233              		.loc 1 133 9 is_stmt 0 view .LVU96
+ 234 00c8 886B     		ldr	r0, [r1, #56]
+ 133:hal/Landungsbruecke/tmc/ADCs.c **** 	cal >>= 1;
+ 235              		.loc 1 133 6 view .LVU97
+ 236 00ca 10FA83F3 		uxtah	r3, r0, r3
+ 237              	.LVL17:
+ 134:hal/Landungsbruecke/tmc/ADCs.c **** 	cal |= 1<<15;
+ 238              		.loc 1 134 2 is_stmt 1 view .LVU98
+ 134:hal/Landungsbruecke/tmc/ADCs.c **** 	cal |= 1<<15;
+ 239              		.loc 1 134 6 is_stmt 0 view .LVU99
+ 240 00ce C3F34E03 		ubfx	r3, r3, #1, #15
+ 241              	.LVL18:
+ 135:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 242              		.loc 1 135 2 is_stmt 1 view .LVU100
+ 137:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 243              		.loc 1 137 2 view .LVU101
+ 137:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 244              		.loc 1 137 10 is_stmt 0 view .LVU102
+ 245 00d2 43F40043 		orr	r3, r3, #32768
+ 246              	.LVL19:
+ 137:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 247              		.loc 1 137 10 view .LVU103
+ 248 00d6 CB62     		str	r3, [r1, #44]
+ 142:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 249              		.loc 1 142 2 is_stmt 1 view .LVU104
+ 142:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 250              		.loc 1 142 12 is_stmt 0 view .LVU105
+ 251 00d8 2368     		ldr	r3, [r4]
+ 252 00da 6048     		ldr	r0, .L6
+ 145:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 253              		.loc 1 145 12 view .LVU106
+ 254 00dc 41F23C0E 		movw	lr, #4156
+ 142:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 255              		.loc 1 142 12 view .LVU107
+ 256 00e0 43F00203 		orr	r3, r3, #2
+ 257 00e4 2360     		str	r3, [r4]
+ 145:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 258              		.loc 1 145 2 is_stmt 1 view .LVU108
+ 145:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 259              		.loc 1 145 12 is_stmt 0 view .LVU109
+ 260 00e6 50F80E30 		ldr	r3, [r0, lr]
+ 261 00ea 43F00203 		orr	r3, r3, #2
+ 262 00ee 40F80E30 		str	r3, [r0, lr]
+ 150:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_SADDR          = (uint32_t) &adc0_mux[0];                                              //
+ 263              		.loc 1 150 2 is_stmt 1 view .LVU110
+ 150:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_SADDR          = (uint32_t) &adc0_mux[0];                                              //
+ 264              		.loc 1 150 26 is_stmt 0 view .LVU111
+ 265 00f2 B623     		movs	r3, #182
+ 151:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_SOFF           = 0x01;                                                               // S
+ 266              		.loc 1 151 26 view .LVU112
+ 267 00f4 A0F57830 		sub	r0, r0, #253952
+ 150:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_SADDR          = (uint32_t) &adc0_mux[0];                                              //
+ 268              		.loc 1 150 26 view .LVU113
+ 269 00f8 3B70     		strb	r3, [r7]
+ 151:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_SOFF           = 0x01;                                                               // S
+ 270              		.loc 1 151 2 is_stmt 1 view .LVU114
+ 152:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_SLAST          = (uint32_t) -3;                                                        //
+ 271              		.loc 1 152 26 is_stmt 0 view .LVU115
+ 272 00fa 41F20404 		movw	r4, #4100
+ 151:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_SOFF           = 0x01;                                                               // S
+ 273              		.loc 1 151 26 view .LVU116
+ 274 00fe 5E4B     		ldr	r3, .L6+28
+ 275 0100 C0F800C0 		str	ip, [r0]
+ 152:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_SLAST          = (uint32_t) -3;                                                        //
+ 276              		.loc 1 152 2 is_stmt 1 view .LVU117
+ 152:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_SLAST          = (uint32_t) -3;                                                        //
+ 277              		.loc 1 152 26 is_stmt 0 view .LVU118
+ 278 0104 0120     		movs	r0, #1
+ 279 0106 1853     		strh	r0, [r3, r4]	@ movhi
+ 153:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_DADDR          = (uint32_t) &ADC0_SC1A;                                                //
+ 280              		.loc 1 153 2 is_stmt 1 view .LVU119
+ 153:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_DADDR          = (uint32_t) &ADC0_SC1A;                                                //
+ 281              		.loc 1 153 26 is_stmt 0 view .LVU120
+ 282 0108 41F20C04 		movw	r4, #4108
+ 283 010c 6FF0020A 		mvn	r10, #2
+ 284 0110 43F804A0 		str	r10, [r3, r4]
+ 154:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_DOFF           = 0x00;                                                               // D
+ 285              		.loc 1 154 2 is_stmt 1 view .LVU121
+ 154:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_DOFF           = 0x00;                                                               // D
+ 286              		.loc 1 154 26 is_stmt 0 view .LVU122
+ 287 0114 41F21004 		movw	r4, #4112
+ 166:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_SOFF           = 0x00;                                                               // S
+ 167:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_SLAST          = 0x00;                                                               // S
+ 168:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_DADDR          = (uint32_t) &adc0_result[0];                                           //
+ 169:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_DOFF           = 0x02;                                                               // D
+ 288              		.loc 1 169 26 view .LVU123
+ 289 0118 41F23408 		movw	r8, #4148
+ 154:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_DOFF           = 0x00;                                                               // D
+ 290              		.loc 1 154 26 view .LVU124
+ 291 011c 1D51     		str	r5, [r3, r4]
+ 155:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_DLASTSGA       = 0x00;                                                               // D
+ 292              		.loc 1 155 2 is_stmt 1 view .LVU125
+ 155:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_DLASTSGA       = 0x00;                                                               // D
+ 293              		.loc 1 155 26 is_stmt 0 view .LVU126
+ 294 011e 41F21404 		movw	r4, #4116
+ 158:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_CITER_ELINKNO  = 0x03;                                                               // D
+ 295              		.loc 1 158 26 view .LVU127
+ 296 0122 41F21E05 		movw	r5, #4126
+ 155:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_DLASTSGA       = 0x00;                                                               // D
+ 297              		.loc 1 155 26 view .LVU128
+ 298 0126 1A53     		strh	r2, [r3, r4]	@ movhi
+ 156:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_NBYTES_MLNO    = 0x01;                                                               // N
+ 299              		.loc 1 156 2 is_stmt 1 view .LVU129
+ 156:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_NBYTES_MLNO    = 0x01;                                                               // N
+ 300              		.loc 1 156 26 is_stmt 0 view .LVU130
+ 301 0128 41F21804 		movw	r4, #4120
+ 170:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_DLASTSGA       = (uint32_t) -6;                                                        //
+ 302              		.loc 1 170 26 view .LVU131
+ 303 012c 6FF00509 		mvn	r9, #5
+ 156:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_NBYTES_MLNO    = 0x01;                                                               // N
+ 304              		.loc 1 156 26 view .LVU132
+ 305 0130 1A51     		str	r2, [r3, r4]
+ 157:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_BITER_ELINKNO  = 0x03;                                                               // D
+ 306              		.loc 1 157 2 is_stmt 1 view .LVU133
+ 157:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_BITER_ELINKNO  = 0x03;                                                               // D
+ 307              		.loc 1 157 26 is_stmt 0 view .LVU134
+ 308 0132 41F20804 		movw	r4, #4104
+ 171:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_NBYTES_MLNO    = 0x02;                                                               // N
+ 172:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_BITER_ELINKYES = (DMA_BITER_ELINKYES_ELINK_MASK|DMA_BITER_ELINKYES_LINKCH(0)|0x03);  // E
+ 309              		.loc 1 172 26 view .LVU135
+ 310 0136 41F23E0B 		movw	fp, #4158
+ 157:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_BITER_ELINKNO  = 0x03;                                                               // D
+ 311              		.loc 1 157 26 view .LVU136
+ 312 013a 1851     		str	r0, [r3, r4]
+ 158:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_CITER_ELINKNO  = 0x03;                                                               // D
+ 313              		.loc 1 158 2 is_stmt 1 view .LVU137
+ 158:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_CITER_ELINKNO  = 0x03;                                                               // D
+ 314              		.loc 1 158 26 is_stmt 0 view .LVU138
+ 315 013c 0324     		movs	r4, #3
+ 316 013e 5C53     		strh	r4, [r3, r5]	@ movhi
+ 159:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_ATTR           = DMA_ATTR_SSIZE(0) | DMA_ATTR_DSIZE(0);                              // S
+ 317              		.loc 1 159 2 is_stmt 1 view .LVU139
+ 159:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_ATTR           = DMA_ATTR_SSIZE(0) | DMA_ATTR_DSIZE(0);                              // S
+ 318              		.loc 1 159 26 is_stmt 0 view .LVU140
+ 319 0140 41F21605 		movw	r5, #4118
+ 173:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_CITER_ELINKYES = (DMA_CITER_ELINKYES_ELINK_MASK|DMA_BITER_ELINKYES_LINKCH(0)|0x03);  // E
+ 174:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_ATTR           = DMA_ATTR_SSIZE(1) | DMA_ATTR_DSIZE(1);                              // S
+ 175:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_CSR            = (DMA_CSR_MAJORLINKCH(0) | DMA_CSR_MAJORELINK_MASK);                 // M
+ 176:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 177:hal/Landungsbruecke/tmc/ADCs.c **** 	// Start the DMA Channel 1
+ 178:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_SERQ = 1;
+ 179:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 180:hal/Landungsbruecke/tmc/ADCs.c **** 	// === setup DMA channels for ADC1 ===
+ 181:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 182:hal/Landungsbruecke/tmc/ADCs.c **** 	// DMA channel 2, use for write ADC mux channel, from SRAM to ADC
+ 183:hal/Landungsbruecke/tmc/ADCs.c **** 	DMAMUX_CHCFG2           = DMAMUX_CHCFG_ENBL_MASK | DMAMUX_CHCFG_SOURCE(0x38);                   //
+ 184:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_SADDR          = (uint32_t) &adc1_mux[0];                                                
+ 320              		.loc 1 184 28 view .LVU141
+ 321 0144 A444     		add	ip, ip, r4
+ 159:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_ATTR           = DMA_ATTR_SSIZE(0) | DMA_ATTR_DSIZE(0);                              // S
+ 322              		.loc 1 159 26 view .LVU142
+ 323 0146 5C53     		strh	r4, [r3, r5]	@ movhi
+ 160:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_CSR            = DMA_CSR_START_MASK;                                                 // R
+ 324              		.loc 1 160 2 is_stmt 1 view .LVU143
+ 160:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD0_CSR            = DMA_CSR_START_MASK;                                                 // R
+ 325              		.loc 1 160 26 is_stmt 0 view .LVU144
+ 326 0148 41F20605 		movw	r5, #4102
+ 327 014c 5A53     		strh	r2, [r3, r5]	@ movhi
+ 161:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 328              		.loc 1 161 2 is_stmt 1 view .LVU145
+ 161:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 329              		.loc 1 161 26 is_stmt 0 view .LVU146
+ 330 014e 41F21C05 		movw	r5, #4124
+ 331 0152 5853     		strh	r0, [r3, r5]	@ movhi
+ 164:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_SADDR          = (uint32_t) &ADC0_RA;                                                  //
+ 332              		.loc 1 164 2 is_stmt 1 view .LVU147
+ 164:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_SADDR          = (uint32_t) &ADC0_RA;                                                  //
+ 333              		.loc 1 164 26 is_stmt 0 view .LVU148
+ 334 0154 A825     		movs	r5, #168
+ 335 0156 7D70     		strb	r5, [r7, #1]
+ 165:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_SOFF           = 0x00;                                                               // S
+ 336              		.loc 1 165 2 is_stmt 1 view .LVU149
+ 165:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_SOFF           = 0x00;                                                               // S
+ 337              		.loc 1 165 26 is_stmt 0 view .LVU150
+ 338 0158 484D     		ldr	r5, .L6+32
+ 339 015a 2E60     		str	r6, [r5]
+ 166:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_SLAST          = 0x00;                                                               // S
+ 340              		.loc 1 166 2 is_stmt 1 view .LVU151
+ 166:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_SLAST          = 0x00;                                                               // S
+ 341              		.loc 1 166 26 is_stmt 0 view .LVU152
+ 342 015c 41F22405 		movw	r5, #4132
+ 168:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_DOFF           = 0x02;                                                               // D
+ 343              		.loc 1 168 28 view .LVU153
+ 344 0160 474E     		ldr	r6, .L6+36
+ 166:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_SLAST          = 0x00;                                                               // S
+ 345              		.loc 1 166 26 view .LVU154
+ 346 0162 5A53     		strh	r2, [r3, r5]	@ movhi
+ 167:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_DADDR          = (uint32_t) &adc0_result[0];                                           //
+ 347              		.loc 1 167 2 is_stmt 1 view .LVU155
+ 167:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_DADDR          = (uint32_t) &adc0_result[0];                                           //
+ 348              		.loc 1 167 26 is_stmt 0 view .LVU156
+ 349 0164 41F22C05 		movw	r5, #4140
+ 350 0168 5A51     		str	r2, [r3, r5]
+ 168:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_DOFF           = 0x02;                                                               // D
+ 351              		.loc 1 168 2 is_stmt 1 view .LVU157
+ 168:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_DOFF           = 0x02;                                                               // D
+ 352              		.loc 1 168 26 is_stmt 0 view .LVU158
+ 353 016a 41F23005 		movw	r5, #4144
+ 354 016e 5E51     		str	r6, [r3, r5]
+ 169:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_DLASTSGA       = (uint32_t) -6;                                                        //
+ 355              		.loc 1 169 2 is_stmt 1 view .LVU159
+ 169:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_DLASTSGA       = (uint32_t) -6;                                                        //
+ 356              		.loc 1 169 26 is_stmt 0 view .LVU160
+ 357 0170 0225     		movs	r5, #2
+ 358 0172 23F80850 		strh	r5, [r3, r8]	@ movhi
+ 170:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_NBYTES_MLNO    = 0x02;                                                               // N
+ 359              		.loc 1 170 2 is_stmt 1 view .LVU161
+ 170:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_NBYTES_MLNO    = 0x02;                                                               // N
+ 360              		.loc 1 170 26 is_stmt 0 view .LVU162
+ 361 0176 41F23808 		movw	r8, #4152
+ 185:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_SOFF           = 0x01;                                                                 //
+ 186:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_SLAST          = (uint32_t) -3;                                                          
+ 187:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_DADDR          = (uint32_t) &ADC1_SC1A;                                                  
+ 188:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_DOFF           = 0x00;                                                                 //
+ 189:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_DLASTSGA       = 0x00;                                                                 //
+ 190:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_NBYTES_MLNO    = 0x01;                                                                 //
+ 191:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_BITER_ELINKNO  = 0x03;                                                                 //
+ 192:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_CITER_ELINKNO  = 0x03;                                                                 //
+ 193:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_ATTR           = DMA_ATTR_SSIZE(0) | DMA_ATTR_DSIZE(0);                                //
+ 194:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_CSR            = DMA_CSR_START_MASK;                                                   //
+ 195:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 196:hal/Landungsbruecke/tmc/ADCs.c **** 	// DMA channel 3, use for read ADC result data, from ADC to SRAM
+ 197:hal/Landungsbruecke/tmc/ADCs.c **** 	DMAMUX_CHCFG3           = DMAMUX_CHCFG_ENBL_MASK | DMAMUX_CHCFG_SOURCE(0x29);                   //
+ 198:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_SADDR          = (uint32_t) &ADC1_RA;                                                    
+ 199:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_SOFF           = 0x00;                                                                 //
+ 200:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_SLAST          = 0x00;                                                                 //
+ 201:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_DADDR          = (uint32_t) &adc1_result[0];                                             
+ 362              		.loc 1 201 28 view .LVU163
+ 363 017a 0636     		adds	r6, r6, #6
+ 170:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_NBYTES_MLNO    = 0x02;                                                               // N
+ 364              		.loc 1 170 26 view .LVU164
+ 365 017c 43F80890 		str	r9, [r3, r8]
+ 171:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_BITER_ELINKYES = (DMA_BITER_ELINKYES_ELINK_MASK|DMA_BITER_ELINKYES_LINKCH(0)|0x03);  // E
+ 366              		.loc 1 171 2 is_stmt 1 view .LVU165
+ 171:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_BITER_ELINKYES = (DMA_BITER_ELINKYES_ELINK_MASK|DMA_BITER_ELINKYES_LINKCH(0)|0x03);  // E
+ 367              		.loc 1 171 26 is_stmt 0 view .LVU166
+ 368 0180 41F22808 		movw	r8, #4136
+ 369 0184 43F80850 		str	r5, [r3, r8]
+ 172:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_CITER_ELINKYES = (DMA_CITER_ELINKYES_ELINK_MASK|DMA_BITER_ELINKYES_LINKCH(0)|0x03);  // E
+ 370              		.loc 1 172 2 is_stmt 1 view .LVU167
+ 172:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_CITER_ELINKYES = (DMA_CITER_ELINKYES_ELINK_MASK|DMA_BITER_ELINKYES_LINKCH(0)|0x03);  // E
+ 371              		.loc 1 172 26 is_stmt 0 view .LVU168
+ 372 0188 48F20308 		movw	r8, #32771
+ 373 018c 23F80B80 		strh	r8, [r3, fp]	@ movhi
+ 173:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_ATTR           = DMA_ATTR_SSIZE(1) | DMA_ATTR_DSIZE(1);                              // S
+ 374              		.loc 1 173 2 is_stmt 1 view .LVU169
+ 173:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_ATTR           = DMA_ATTR_SSIZE(1) | DMA_ATTR_DSIZE(1);                              // S
+ 375              		.loc 1 173 26 is_stmt 0 view .LVU170
+ 376 0190 41F2360B 		movw	fp, #4150
+ 377 0194 23F80B80 		strh	r8, [r3, fp]	@ movhi
+ 174:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_CSR            = (DMA_CSR_MAJORLINKCH(0) | DMA_CSR_MAJORELINK_MASK);                 // M
+ 378              		.loc 1 174 2 is_stmt 1 view .LVU171
+ 174:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD1_CSR            = (DMA_CSR_MAJORLINKCH(0) | DMA_CSR_MAJORELINK_MASK);                 // M
+ 379              		.loc 1 174 26 is_stmt 0 view .LVU172
+ 380 0198 41F2260B 		movw	fp, #4134
+ 381 019c 40F20118 		movw	r8, #257
+ 382 01a0 23F80B80 		strh	r8, [r3, fp]	@ movhi
+ 175:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 383              		.loc 1 175 2 is_stmt 1 view .LVU173
+ 175:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 384              		.loc 1 175 26 is_stmt 0 view .LVU174
+ 385 01a4 4FF0200B 		mov	fp, #32
+ 386 01a8 23F80EB0 		strh	fp, [r3, lr]	@ movhi
+ 178:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 387              		.loc 1 178 2 is_stmt 1 view .LVU175
+ 183:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_SADDR          = (uint32_t) &adc1_mux[0];                                                
+ 388              		.loc 1 183 26 is_stmt 0 view .LVU176
+ 389 01ac 4FF0B80E 		mov	lr, #184
+ 178:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 390              		.loc 1 178 11 view .LVU177
+ 391 01b0 D876     		strb	r0, [r3, #27]
+ 183:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_SADDR          = (uint32_t) &adc1_mux[0];                                                
+ 392              		.loc 1 183 2 is_stmt 1 view .LVU178
+ 183:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_SADDR          = (uint32_t) &adc1_mux[0];                                                
+ 393              		.loc 1 183 26 is_stmt 0 view .LVU179
+ 394 01b2 87F802E0 		strb	lr, [r7, #2]
+ 184:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_SOFF           = 0x01;                                                                 //
+ 395              		.loc 1 184 2 is_stmt 1 view .LVU180
+ 184:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_SOFF           = 0x01;                                                                 //
+ 396              		.loc 1 184 26 is_stmt 0 view .LVU181
+ 397 01b6 DFF8D8E0 		ldr	lr, .L6+52
+ 398 01ba CEF800C0 		str	ip, [lr]
+ 185:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_SLAST          = (uint32_t) -3;                                                          
+ 399              		.loc 1 185 2 is_stmt 1 view .LVU182
+ 185:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_SLAST          = (uint32_t) -3;                                                          
+ 400              		.loc 1 185 26 is_stmt 0 view .LVU183
+ 401 01be 41F2440C 		movw	ip, #4164
+ 402 01c2 23F80C00 		strh	r0, [r3, ip]	@ movhi
+ 186:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_DADDR          = (uint32_t) &ADC1_SC1A;                                                  
+ 403              		.loc 1 186 2 is_stmt 1 view .LVU184
+ 186:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_DADDR          = (uint32_t) &ADC1_SC1A;                                                  
+ 404              		.loc 1 186 26 is_stmt 0 view .LVU185
+ 405 01c6 41F24C0C 		movw	ip, #4172
+ 406 01ca 43F80CA0 		str	r10, [r3, ip]
+ 187:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_DOFF           = 0x00;                                                                 //
+ 407              		.loc 1 187 2 is_stmt 1 view .LVU186
+ 187:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_DOFF           = 0x00;                                                                 //
+ 408              		.loc 1 187 26 is_stmt 0 view .LVU187
+ 409 01ce 41F2500C 		movw	ip, #4176
+ 410 01d2 43F80C10 		str	r1, [r3, ip]
+ 188:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_DLASTSGA       = 0x00;                                                                 //
+ 411              		.loc 1 188 2 is_stmt 1 view .LVU188
+ 188:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_DLASTSGA       = 0x00;                                                                 //
+ 412              		.loc 1 188 26 is_stmt 0 view .LVU189
+ 413 01d6 41F25401 		movw	r1, #4180
+ 414 01da 5A52     		strh	r2, [r3, r1]	@ movhi
+ 189:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_NBYTES_MLNO    = 0x01;                                                                 //
+ 415              		.loc 1 189 2 is_stmt 1 view .LVU190
+ 189:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_NBYTES_MLNO    = 0x01;                                                                 //
+ 416              		.loc 1 189 26 is_stmt 0 view .LVU191
+ 417 01dc 41F25801 		movw	r1, #4184
+ 418 01e0 5A50     		str	r2, [r3, r1]
+ 190:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_BITER_ELINKNO  = 0x03;                                                                 //
+ 419              		.loc 1 190 2 is_stmt 1 view .LVU192
+ 190:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_BITER_ELINKNO  = 0x03;                                                                 //
+ 420              		.loc 1 190 26 is_stmt 0 view .LVU193
+ 421 01e2 41F24801 		movw	r1, #4168
+ 422 01e6 5850     		str	r0, [r3, r1]
+ 191:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_CITER_ELINKNO  = 0x03;                                                                 //
+ 423              		.loc 1 191 2 is_stmt 1 view .LVU194
+ 191:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_CITER_ELINKNO  = 0x03;                                                                 //
+ 424              		.loc 1 191 26 is_stmt 0 view .LVU195
+ 425 01e8 41F25E01 		movw	r1, #4190
+ 426 01ec 5C52     		strh	r4, [r3, r1]	@ movhi
+ 192:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_ATTR           = DMA_ATTR_SSIZE(0) | DMA_ATTR_DSIZE(0);                                //
+ 427              		.loc 1 192 2 is_stmt 1 view .LVU196
+ 192:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_ATTR           = DMA_ATTR_SSIZE(0) | DMA_ATTR_DSIZE(0);                                //
+ 428              		.loc 1 192 26 is_stmt 0 view .LVU197
+ 429 01ee 41F25601 		movw	r1, #4182
+ 430 01f2 5C52     		strh	r4, [r3, r1]	@ movhi
+ 193:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_CSR            = DMA_CSR_START_MASK;                                                   //
+ 431              		.loc 1 193 2 is_stmt 1 view .LVU198
+ 193:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD2_CSR            = DMA_CSR_START_MASK;                                                   //
+ 432              		.loc 1 193 26 is_stmt 0 view .LVU199
+ 433 01f4 41F24601 		movw	r1, #4166
+ 434 01f8 5A52     		strh	r2, [r3, r1]	@ movhi
+ 194:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 435              		.loc 1 194 2 is_stmt 1 view .LVU200
+ 194:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 436              		.loc 1 194 26 is_stmt 0 view .LVU201
+ 437 01fa 41F25C01 		movw	r1, #4188
+ 438 01fe 5852     		strh	r0, [r3, r1]	@ movhi
+ 197:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_SADDR          = (uint32_t) &ADC1_RA;                                                    
+ 439              		.loc 1 197 2 is_stmt 1 view .LVU202
+ 197:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_SADDR          = (uint32_t) &ADC1_RA;                                                    
+ 440              		.loc 1 197 26 is_stmt 0 view .LVU203
+ 441 0200 A921     		movs	r1, #169
+ 442 0202 F970     		strb	r1, [r7, #3]
+ 198:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_SOFF           = 0x00;                                                                 //
+ 443              		.loc 1 198 2 is_stmt 1 view .LVU204
+ 198:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_SOFF           = 0x00;                                                                 //
+ 444              		.loc 1 198 26 is_stmt 0 view .LVU205
+ 445 0204 1F49     		ldr	r1, .L6+40
+ 446 0206 2048     		ldr	r0, .L6+44
+ 447 0208 0860     		str	r0, [r1]
+ 199:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_SLAST          = 0x00;                                                                 //
+ 448              		.loc 1 199 2 is_stmt 1 view .LVU206
+ 199:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_SLAST          = 0x00;                                                                 //
+ 449              		.loc 1 199 26 is_stmt 0 view .LVU207
+ 450 020a 41F26401 		movw	r1, #4196
+ 451 020e 5A52     		strh	r2, [r3, r1]	@ movhi
+ 200:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_DADDR          = (uint32_t) &adc1_result[0];                                             
+ 452              		.loc 1 200 2 is_stmt 1 view .LVU208
+ 200:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_DADDR          = (uint32_t) &adc1_result[0];                                             
+ 453              		.loc 1 200 26 is_stmt 0 view .LVU209
+ 454 0210 41F26C01 		movw	r1, #4204
+ 455 0214 5A50     		str	r2, [r3, r1]
+ 456              		.loc 1 201 2 is_stmt 1 view .LVU210
+ 457              		.loc 1 201 26 is_stmt 0 view .LVU211
+ 458 0216 41F27002 		movw	r2, #4208
+ 202:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_DOFF           = 0x02;                                                                 //
+ 203:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_DLASTSGA       = (uint32_t) -6;                                                          
+ 204:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_NBYTES_MLNO    = 0x02;                                                                 //
+ 205:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_BITER_ELINKYES = DMA_BITER_ELINKYES_ELINK_MASK | DMA_BITER_ELINKYES_LINKCH(2) | 0x03;  //
+ 459              		.loc 1 205 26 view .LVU212
+ 460 021a 41F27E01 		movw	r1, #4222
+ 201:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_DOFF           = 0x02;                                                                 //
+ 461              		.loc 1 201 26 view .LVU213
+ 462 021e 9E50     		str	r6, [r3, r2]
+ 202:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_DOFF           = 0x02;                                                                 //
+ 463              		.loc 1 202 2 is_stmt 1 view .LVU214
+ 202:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_DOFF           = 0x02;                                                                 //
+ 464              		.loc 1 202 26 is_stmt 0 view .LVU215
+ 465 0220 41F27402 		movw	r2, #4212
+ 466 0224 9D52     		strh	r5, [r3, r2]	@ movhi
+ 203:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_NBYTES_MLNO    = 0x02;                                                                 //
+ 467              		.loc 1 203 2 is_stmt 1 view .LVU216
+ 203:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_NBYTES_MLNO    = 0x02;                                                                 //
+ 468              		.loc 1 203 26 is_stmt 0 view .LVU217
+ 469 0226 41F27802 		movw	r2, #4216
+ 470 022a 43F80290 		str	r9, [r3, r2]
+ 204:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_BITER_ELINKYES = DMA_BITER_ELINKYES_ELINK_MASK | DMA_BITER_ELINKYES_LINKCH(2) | 0x03;  //
+ 471              		.loc 1 204 2 is_stmt 1 view .LVU218
+ 204:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_BITER_ELINKYES = DMA_BITER_ELINKYES_ELINK_MASK | DMA_BITER_ELINKYES_LINKCH(2) | 0x03;  //
+ 472              		.loc 1 204 26 is_stmt 0 view .LVU219
+ 473 022e 41F26802 		movw	r2, #4200
+ 474 0232 9D50     		str	r5, [r3, r2]
+ 475              		.loc 1 205 2 is_stmt 1 view .LVU220
+ 476              		.loc 1 205 26 is_stmt 0 view .LVU221
+ 477 0234 48F20342 		movw	r2, #33795
+ 478 0238 5A52     		strh	r2, [r3, r1]	@ movhi
+ 206:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_CITER_ELINKYES = DMA_CITER_ELINKYES_ELINK_MASK | DMA_CITER_ELINKYES_LINKCH(2) | 0x03;  //
+ 479              		.loc 1 206 2 is_stmt 1 view .LVU222
+ 480              		.loc 1 206 26 is_stmt 0 view .LVU223
+ 481 023a 41F27601 		movw	r1, #4214
+ 482 023e 5A52     		strh	r2, [r3, r1]	@ movhi
+ 207:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_ATTR           = DMA_ATTR_SSIZE(1) | DMA_ATTR_DSIZE(1);                                //
+ 483              		.loc 1 207 2 is_stmt 1 view .LVU224
+ 484              		.loc 1 207 26 is_stmt 0 view .LVU225
+ 485 0240 41F26602 		movw	r2, #4198
+ 208:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_CSR            = DMA_CSR_MAJORLINKCH(2) | DMA_CSR_MAJORELINK_MASK;                     //
+ 486              		.loc 1 208 26 view .LVU226
+ 487 0244 4FF40871 		mov	r1, #544
+ 207:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_TCD3_ATTR           = DMA_ATTR_SSIZE(1) | DMA_ATTR_DSIZE(1);                                //
+ 488              		.loc 1 207 26 view .LVU227
+ 489 0248 23F80280 		strh	r8, [r3, r2]	@ movhi
+ 490              		.loc 1 208 2 is_stmt 1 view .LVU228
+ 491              		.loc 1 208 26 is_stmt 0 view .LVU229
+ 492 024c 41F27C02 		movw	r2, #4220
+ 493 0250 9952     		strh	r1, [r3, r2]	@ movhi
+ 209:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 210:hal/Landungsbruecke/tmc/ADCs.c **** 	// Start the DMA Channel 3
+ 211:hal/Landungsbruecke/tmc/ADCs.c **** 	DMA_SERQ = 3;
+ 494              		.loc 1 211 2 is_stmt 1 view .LVU230
+ 495              		.loc 1 211 11 is_stmt 0 view .LVU231
+ 496 0252 DC76     		strb	r4, [r3, #27]
+ 212:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 213:hal/Landungsbruecke/tmc/ADCs.c **** 	EnableInterrupts;
+ 497              		.loc 1 213 2 is_stmt 1 view .LVU232
+ 498              		.syntax unified
+ 499              	@ 213 "hal/Landungsbruecke/tmc/ADCs.c" 1
+ 500 0254 62B6     		 CPSIE i
+ 501              	@ 0 "" 2
+ 214:hal/Landungsbruecke/tmc/ADCs.c **** }
+ 502              		.loc 1 214 1 is_stmt 0 view .LVU233
+ 503              		.thumb
+ 504              		.syntax unified
+ 505 0256 BDE8F88F 		pop	{r3, r4, r5, r6, r7, r8, r9, r10, fp, pc}
+ 506              	.L7:
+ 507 025a 00BF     		.align	2
+ 508              	.L6:
+ 509 025c 00700440 		.word	1074032640
+ 510 0260 00000000 		.word	HAL
+ 511 0264 00B00340 		.word	1073983488
+ 512 0268 00B00B40 		.word	1074507776
+ 513 026c 40800440 		.word	1074036800
+ 514 0270 00100240 		.word	1073876992
+ 515 0274 10B00340 		.word	1073983504
+ 516 0278 00800040 		.word	1073774592
+ 517 027c 20900040 		.word	1073778720
+ 518 0280 00000000 		.word	.LANCHOR1
+ 519 0284 60900040 		.word	1073778784
+ 520 0288 10B00B40 		.word	1074507792
+ 521 028c 00000000 		.word	.LANCHOR0
+ 522 0290 40900040 		.word	1073778752
+ 523              		.cfi_endproc
+ 524              	.LFE0:
+ 526              		.align	1
+ 527              		.syntax unified
+ 528              		.thumb
+ 529              		.thumb_func
+ 530              		.fpu softvfp
+ 532              	deInit:
+ 533              	.LFB1:
+ 215:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 216:hal/Landungsbruecke/tmc/ADCs.c **** static void deInit()
+ 217:hal/Landungsbruecke/tmc/ADCs.c **** {
+ 534              		.loc 1 217 1 is_stmt 1 view -0
+ 535              		.cfi_startproc
+ 536              		@ args = 0, pretend = 0, frame = 0
+ 537              		@ frame_needed = 0, uses_anonymous_args = 0
+ 538              		@ link register save eliminated.
+ 218:hal/Landungsbruecke/tmc/ADCs.c **** 	// disable clock for DMA
+ 219:hal/Landungsbruecke/tmc/ADCs.c **** 	SIM_SCGC7 &= ~(SIM_SCGC7_DMA_MASK);
+ 539              		.loc 1 219 2 view .LVU235
+ 540              		.loc 1 219 12 is_stmt 0 view .LVU236
+ 541 0294 0B4B     		ldr	r3, .L9
+ 542 0296 03F58251 		add	r1, r3, #4160
+ 543 029a 0A68     		ldr	r2, [r1]
+ 544 029c 22F00202 		bic	r2, r2, #2
+ 545 02a0 0A60     		str	r2, [r1]
+ 220:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 221:hal/Landungsbruecke/tmc/ADCs.c **** 	// disable clock for DMA mux
+ 222:hal/Landungsbruecke/tmc/ADCs.c **** 	SIM_SCGC6 &= ~(SIM_SCGC6_DMAMUX_MASK);
+ 546              		.loc 1 222 2 is_stmt 1 view .LVU237
+ 547              		.loc 1 222 12 is_stmt 0 view .LVU238
+ 548 02a2 41F23C02 		movw	r2, #4156
+ 549 02a6 9958     		ldr	r1, [r3, r2]
+ 550 02a8 21F00201 		bic	r1, r1, #2
+ 551 02ac 9950     		str	r1, [r3, r2]
+ 223:hal/Landungsbruecke/tmc/ADCs.c **** 
+ 224:hal/Landungsbruecke/tmc/ADCs.c **** 	// disable clock for ADC0/ADC1
+ 225:hal/Landungsbruecke/tmc/ADCs.c **** 	SIM_SCGC6 &= ~(SIM_SCGC6_ADC0_MASK);
+ 552              		.loc 1 225 2 is_stmt 1 view .LVU239
+ 553              		.loc 1 225 12 is_stmt 0 view .LVU240
+ 554 02ae 9958     		ldr	r1, [r3, r2]
+ 555 02b0 21F00061 		bic	r1, r1, #134217728
+ 556 02b4 9950     		str	r1, [r3, r2]
+ 226:hal/Landungsbruecke/tmc/ADCs.c **** 	SIM_SCGC3 &= ~(SIM_SCGC3_ADC1_MASK);
+ 557              		.loc 1 226 2 is_stmt 1 view .LVU241
+ 558              		.loc 1 226 12 is_stmt 0 view .LVU242
+ 559 02b6 41F23001 		movw	r1, #4144
+ 560 02ba 5A58     		ldr	r2, [r3, r1]
+ 561 02bc 22F00062 		bic	r2, r2, #134217728
+ 562 02c0 5A50     		str	r2, [r3, r1]
+ 227:hal/Landungsbruecke/tmc/ADCs.c **** }
+ 563              		.loc 1 227 1 view .LVU243
+ 564 02c2 7047     		bx	lr
+ 565              	.L10:
+ 566              		.align	2
+ 567              	.L9:
+ 568 02c4 00700440 		.word	1074032640
+ 569              		.cfi_endproc
+ 570              	.LFE1:
+ 572              		.global	adc1_mux
+ 573              		.global	adc0_mux
+ 574              		.global	adc1_result
+ 575              		.global	adc0_result
+ 576              		.comm	hwid,1,1
+ 577              		.comm	HAL,48,4
+ 578              		.comm	UART,40,4
+ 579              		.comm	Timer,16,4
+ 580              		.comm	WLAN,36,4
+ 581              		.comm	RS232,36,4
+ 582              		.comm	LEDs,28,4
+ 583              		.comm	USB,36,4
+ 584              		.comm	uart0_interrupt,1,1
+ 585              		.global	ADCs
+ 586              		.comm	SPI,44,4
+ 587              		.comm	IOMap,2088,4
+ 588              		.comm	IOs,52,4
+ 589              		.comm	Cpu,8,4
+ 590              		.section	.rodata
+ 591              		.set	.LANCHOR0,. + 0
+ 594              	adc0_mux:
+ 595 0000 010C0D   		.ascii	"\001\014\015"
+ 598              	adc1_mux:
+ 599 0003 000103   		.ascii	"\000\001\003"
+ 600              		.data
+ 601              		.align	2
+ 604              	ADCs:
+ 605 0000 02000000 		.word	adc1_result+2
+ 606 0004 04000000 		.word	adc1_result+4
+ 607 0008 00000000 		.word	adc1_result
+ 608 000c 02000000 		.word	adc0_result+2
+ 609 0010 04000000 		.word	adc0_result+4
+ 610 0014 00000000 		.word	adc0_result
+ 611 0018 00000000 		.word	init
+ 612 001c 00000000 		.word	deInit
+ 613              		.bss
+ 614              		.align	1
+ 615              		.set	.LANCHOR1,. + 0
+ 618              	adc0_result:
+ 619 0000 00000000 		.space	6
+ 619      0000
+ 622              	adc1_result:
+ 623 0006 00000000 		.space	6
+ 623      0000
+ 626              	ADCValue:
+ 627 000c 00000000 		.space	12
+ 627      00000000 
+ 627      00000000 
+ 628              		.text
+ 629              	.Letext0:
+ 630              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 631              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 632              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 633              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 634              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 635              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 636              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 637              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 638              		.file 10 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 639              		.file 11 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 640              		.file 12 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 641              		.file 13 "./hal/IOs.h"
+ 642              		.file 14 "./hal/IOMap.h"
+ 643              		.file 15 "./hal/SPI.h"
+ 644              		.file 16 "./hal/ADCs.h"
+ 645              		.file 17 "./hal/RXTX.h"
+ 646              		.file 18 "./hal/USB.h"
+ 647              		.file 19 "./hal/LEDs.h"
+ 648              		.file 20 "./hal/RS232.h"
+ 649              		.file 21 "./hal/WLAN.h"
+ 650              		.file 22 "./hal/Timer.h"
+ 651              		.file 23 "./hal/UART.h"
+ 652              		.file 24 "./hal/HAL.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 ADCs.c
+C:\Users\Shubham\AppData\Local\Temp\ccLat8cc.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccLat8cc.s:22     .text:00000000 init
+C:\Users\Shubham\AppData\Local\Temp\ccLat8cc.s:509    .text:0000025c $d
+                            *COM*:00000030 HAL
+C:\Users\Shubham\AppData\Local\Temp\ccLat8cc.s:526    .text:00000294 $t
+C:\Users\Shubham\AppData\Local\Temp\ccLat8cc.s:532    .text:00000294 deInit
+C:\Users\Shubham\AppData\Local\Temp\ccLat8cc.s:568    .text:000002c4 $d
+C:\Users\Shubham\AppData\Local\Temp\ccLat8cc.s:598    .rodata:00000003 adc1_mux
+C:\Users\Shubham\AppData\Local\Temp\ccLat8cc.s:594    .rodata:00000000 adc0_mux
+C:\Users\Shubham\AppData\Local\Temp\ccLat8cc.s:622    .bss:00000006 adc1_result
+C:\Users\Shubham\AppData\Local\Temp\ccLat8cc.s:618    .bss:00000000 adc0_result
+                            *COM*:00000001 hwid
+                            *COM*:00000028 UART
+                            *COM*:00000010 Timer
+                            *COM*:00000024 WLAN
+                            *COM*:00000024 RS232
+                            *COM*:0000001c LEDs
+                            *COM*:00000024 USB
+                            *COM*:00000001 uart0_interrupt
+C:\Users\Shubham\AppData\Local\Temp\ccLat8cc.s:604    .data:00000000 ADCs
+                            *COM*:0000002c SPI
+                            *COM*:00000828 IOMap
+                            *COM*:00000034 IOs
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\ccLat8cc.s:601    .data:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccLat8cc.s:614    .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccLat8cc.s:626    .bss:0000000c ADCValue
+
+NO UNDEFINED SYMBOLS

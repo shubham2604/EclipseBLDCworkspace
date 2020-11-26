@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Move &apos;version.txt&apos; to &apos;TMC&apos;" description="Move &apos;version.txt&apos; to &apos;TMC&apos;" destination="/TMC" element1="/TMC-EvalSystem/version.txt" flags="7" id="org.eclipse.ltk.core.refactoring.move.resources" resources="1" stamp="1600813773914" updateReferences="true"/>
+</session>

@@ -1,0 +1,1357 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"BoardAssignment.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.global	Board_assign
+  17              		.arch armv7e-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	Board_assign:
+  24              	.LVL0:
+  25              	.LFB1:
+  26              		.file 1 "tmc/BoardAssignment.c"
+   1:tmc/BoardAssignment.c **** #include "hal/derivative.h"
+   2:tmc/BoardAssignment.c **** #include "hal/HAL.h"
+   3:tmc/BoardAssignment.c **** 
+   4:tmc/BoardAssignment.c **** #include "TMCL.h"
+   5:tmc/BoardAssignment.c **** #include "IdDetection.h"
+   6:tmc/BoardAssignment.c **** #include "EEPROM.h"
+   7:tmc/BoardAssignment.c **** #include "BoardAssignment.h"
+   8:tmc/BoardAssignment.c **** 
+   9:tmc/BoardAssignment.c **** static uint8_t assignCh1(uint8_t id, uint8_t justCheck);
+  10:tmc/BoardAssignment.c **** static uint8_t assignCh2(uint8_t id, uint8_t justCheck);
+  11:tmc/BoardAssignment.c **** static void hookDriverSPI(IdAssignmentTypeDef *ids);
+  12:tmc/BoardAssignment.c **** static void unassign(IdAssignmentTypeDef *ids);
+  13:tmc/BoardAssignment.c **** 
+  14:tmc/BoardAssignment.c **** int32_t Board_assign(IdAssignmentTypeDef *ids)
+  15:tmc/BoardAssignment.c **** {
+  27              		.loc 1 15 1 view -0
+  28              		.cfi_startproc
+  29              		@ args = 0, pretend = 0, frame = 8
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  16:tmc/BoardAssignment.c **** 	int32_t out = 0;
+  31              		.loc 1 16 2 view .LVU1
+  17:tmc/BoardAssignment.c **** 
+  18:tmc/BoardAssignment.c **** 	// Test mode // todo REM 2: still needed? (LH)
+  19:tmc/BoardAssignment.c **** 	if((ids->ch1.id == 0xFF) || (ids->ch2.id == 0xFF))
+  32              		.loc 1 19 2 view .LVU2
+  15:tmc/BoardAssignment.c **** 	int32_t out = 0;
+  33              		.loc 1 15 1 is_stmt 0 view .LVU3
+  34 0000 F7B5     		push	{r0, r1, r2, r4, r5, r6, r7, lr}
+  35              	.LCFI0:
+  36              		.cfi_def_cfa_offset 32
+  37              		.cfi_offset 4, -20
+  38              		.cfi_offset 5, -16
+  39              		.cfi_offset 6, -12
+  40              		.cfi_offset 7, -8
+  41              		.cfi_offset 14, -4
+  15:tmc/BoardAssignment.c **** 	int32_t out = 0;
+  42              		.loc 1 15 1 view .LVU4
+  43 0002 0446     		mov	r4, r0
+  44              		.loc 1 19 14 view .LVU5
+  45 0004 4078     		ldrb	r0, [r0, #1]	@ zero_extendqisi2
+  46              	.LVL1:
+  47              		.loc 1 19 14 view .LVU6
+  48 0006 637D     		ldrb	r3, [r4, #21]	@ zero_extendqisi2
+  49 0008 5E4D     		ldr	r5, .L49
+  50              		.loc 1 19 4 view .LVU7
+  51 000a FF28     		cmp	r0, #255
+  52 000c 01D0     		beq	.L2
+  53              		.loc 1 19 27 discriminator 1 view .LVU8
+  54 000e FF2B     		cmp	r3, #255
+  55 0010 0FD1     		bne	.L3
+  56              	.L2:
+  20:tmc/BoardAssignment.c **** 	{
+  21:tmc/BoardAssignment.c **** 		if((Evalboards.ch1.id != 0) || (Evalboards.ch2.id != 0) || (ids->ch1.id != ids->ch2.id))
+  57              		.loc 1 21 3 is_stmt 1 view .LVU9
+  58              		.loc 1 21 31 is_stmt 0 view .LVU10
+  59 0012 2979     		ldrb	r1, [r5, #4]	@ zero_extendqisi2
+  60 0014 95F87C20 		ldrb	r2, [r5, #124]	@ zero_extendqisi2
+  61 0018 0A43     		orrs	r2, r1, r2
+  62 001a 01D1     		bne	.L4
+  63              		.loc 1 21 59 discriminator 2 view .LVU11
+  64 001c 9842     		cmp	r0, r3
+  65 001e 08D0     		beq	.L3
+  66              	.L4:
+  22:tmc/BoardAssignment.c **** 		{
+  23:tmc/BoardAssignment.c **** 			ids->ch1.state = ID_STATE_NOT_IN_FW;
+  67              		.loc 1 23 4 is_stmt 1 view .LVU12
+  68              		.loc 1 23 19 is_stmt 0 view .LVU13
+  69 0020 0622     		movs	r2, #6
+  24:tmc/BoardAssignment.c **** 			ids->ch2.state = ID_STATE_NOT_IN_FW;
+  25:tmc/BoardAssignment.c **** 			out |= ids->ch2.state  << 24;
+  26:tmc/BoardAssignment.c **** 			out |= ids->ch2.id     << 16;
+  27:tmc/BoardAssignment.c **** 			out |= ids->ch1.state  << 8;
+  28:tmc/BoardAssignment.c **** 			out |= ids->ch1.id     << 0;
+  70              		.loc 1 28 8 view .LVU14
+  71 0022 40EA0340 		orr	r0, r0, r3, lsl #16
+  23:tmc/BoardAssignment.c **** 			ids->ch2.state = ID_STATE_NOT_IN_FW;
+  72              		.loc 1 23 19 view .LVU15
+  73 0026 2270     		strb	r2, [r4]
+  24:tmc/BoardAssignment.c **** 			ids->ch2.state = ID_STATE_NOT_IN_FW;
+  74              		.loc 1 24 4 is_stmt 1 view .LVU16
+  24:tmc/BoardAssignment.c **** 			ids->ch2.state = ID_STATE_NOT_IN_FW;
+  75              		.loc 1 24 19 is_stmt 0 view .LVU17
+  76 0028 2275     		strb	r2, [r4, #20]
+  25:tmc/BoardAssignment.c **** 			out |= ids->ch2.id     << 16;
+  77              		.loc 1 25 4 is_stmt 1 view .LVU18
+  78              	.LVL2:
+  26:tmc/BoardAssignment.c **** 			out |= ids->ch1.state  << 8;
+  79              		.loc 1 26 4 view .LVU19
+  27:tmc/BoardAssignment.c **** 			out |= ids->ch1.id     << 0;
+  80              		.loc 1 27 4 view .LVU20
+  81              		.loc 1 28 4 view .LVU21
+  82              		.loc 1 28 8 is_stmt 0 view .LVU22
+  83 002a 40F00620 		orr	r0, r0, #100664832
+  84              	.LVL3:
+  29:tmc/BoardAssignment.c **** 			return out;
+  85              		.loc 1 29 4 is_stmt 1 view .LVU23
+  86              	.L1:
+  30:tmc/BoardAssignment.c **** 		}
+  31:tmc/BoardAssignment.c **** 	}
+  32:tmc/BoardAssignment.c **** 
+  33:tmc/BoardAssignment.c **** 	// Assign motion controller
+  34:tmc/BoardAssignment.c **** 	if((Evalboards.ch1.id == ids->ch1.id) && (ids->ch1.id != 0))
+  35:tmc/BoardAssignment.c **** 	{	// todo CHECK 2: Evalboards.ch_.id only gets written at the end of this function - so the only w
+  36:tmc/BoardAssignment.c **** 		//               Therefor, the else case always runs before, which means any information returned
+  37:tmc/BoardAssignment.c **** 		//               given by the previous call of this function. This entire ID detection procedure 
+  38:tmc/BoardAssignment.c **** 		ids->ch1.state = assignCh1(ids->ch1.id, true);
+  39:tmc/BoardAssignment.c **** 	}
+  40:tmc/BoardAssignment.c **** 	else
+  41:tmc/BoardAssignment.c **** 	{
+  42:tmc/BoardAssignment.c **** 		Evalboards.ch1.deInit(); // todo REM 2: Hot-Unplugging is not maintained currently, should probab
+  43:tmc/BoardAssignment.c **** 		if(ids->ch1.state == ID_STATE_DONE)
+  44:tmc/BoardAssignment.c **** 			ids->ch1.state = assignCh1(ids->ch1.id, false);
+  45:tmc/BoardAssignment.c **** 		Evalboards.ch1.config->reset();
+  46:tmc/BoardAssignment.c **** 	}
+  47:tmc/BoardAssignment.c **** 
+  48:tmc/BoardAssignment.c **** 	// Assign driver
+  49:tmc/BoardAssignment.c **** 	if((Evalboards.ch2.id == ids->ch2.id) && (ids->ch2.id != 0))
+  50:tmc/BoardAssignment.c **** 	{
+  51:tmc/BoardAssignment.c **** 		ids->ch2.state = assignCh2(ids->ch2.id, true);
+  52:tmc/BoardAssignment.c **** 	}
+  53:tmc/BoardAssignment.c **** 	else
+  54:tmc/BoardAssignment.c **** 	{
+  55:tmc/BoardAssignment.c **** 		Evalboards.ch2.deInit(); // todo REM 2: Hot-Unplugging is not maintained currently, should probab
+  56:tmc/BoardAssignment.c **** 		if(ids->ch2.state == ID_STATE_DONE)
+  57:tmc/BoardAssignment.c **** 			ids->ch2.state = assignCh2(ids->ch2.id, false);
+  58:tmc/BoardAssignment.c **** 		Evalboards.ch2.config->reset();
+  59:tmc/BoardAssignment.c **** 	}
+  60:tmc/BoardAssignment.c **** 
+  61:tmc/BoardAssignment.c **** 	// Reroute SPI 2 (that the driver uses) to run through the motion controller if required
+  62:tmc/BoardAssignment.c **** 	// This allows the chaining of a motion controller and a driver.
+  63:tmc/BoardAssignment.c **** 	// Note that the motion controller has to invoke reset() or restore() of the driver
+  64:tmc/BoardAssignment.c **** 	// in order to have settings sent through the hooked SPI.
+  65:tmc/BoardAssignment.c **** 	// This is currently done on completed motion controller reset/restore
+  66:tmc/BoardAssignment.c **** 	hookDriverSPI(ids);
+  67:tmc/BoardAssignment.c **** 
+  68:tmc/BoardAssignment.c **** 	Evalboards.ch1.id = ids->ch1.id;
+  69:tmc/BoardAssignment.c **** 	Evalboards.ch2.id = ids->ch2.id;
+  70:tmc/BoardAssignment.c **** 
+  71:tmc/BoardAssignment.c **** 	out |= (ids->ch2.state  << 24) & 0xFF;
+  72:tmc/BoardAssignment.c **** 	out |= (ids->ch2.id     << 16) & 0xFF;
+  73:tmc/BoardAssignment.c **** 	out |= (ids->ch1.state  << 8)  & 0xFF;
+  74:tmc/BoardAssignment.c **** 	out |= (ids->ch1.id     << 0)  & 0xFF;
+  75:tmc/BoardAssignment.c **** 
+  76:tmc/BoardAssignment.c **** 	return out;
+  77:tmc/BoardAssignment.c **** }
+  87              		.loc 1 77 1 is_stmt 0 view .LVU24
+  88 002e 03B0     		add	sp, sp, #12
+  89              	.LCFI1:
+  90              		.cfi_remember_state
+  91              		.cfi_def_cfa_offset 20
+  92              		@ sp needed
+  93 0030 F0BD     		pop	{r4, r5, r6, r7, pc}
+  94              	.LVL4:
+  95              	.L3:
+  96              	.LCFI2:
+  97              		.cfi_restore_state
+  34:tmc/BoardAssignment.c **** 	{	// todo CHECK 2: Evalboards.ch_.id only gets written at the end of this function - so the only w
+  98              		.loc 1 34 2 is_stmt 1 view .LVU25
+  34:tmc/BoardAssignment.c **** 	{	// todo CHECK 2: Evalboards.ch_.id only gets written at the end of this function - so the only w
+  99              		.loc 1 34 4 is_stmt 0 view .LVU26
+ 100 0032 2B79     		ldrb	r3, [r5, #4]	@ zero_extendqisi2
+ 101 0034 8342     		cmp	r3, r0
+ 102 0036 43D1     		bne	.L6
+  34:tmc/BoardAssignment.c **** 	{	// todo CHECK 2: Evalboards.ch_.id only gets written at the end of this function - so the only w
+ 103              		.loc 1 34 40 discriminator 1 view .LVU27
+ 104 0038 0028     		cmp	r0, #0
+ 105 003a 41D0     		beq	.L6
+ 106              	.LBB19:
+ 107              	.LBB20:
+ 108              	.LBB21:
+  78:tmc/BoardAssignment.c **** 
+  79:tmc/BoardAssignment.c **** int32_t Board_supported(IdAssignmentTypeDef *ids)
+  80:tmc/BoardAssignment.c **** {
+  81:tmc/BoardAssignment.c **** 	int32_t out = 0;
+  82:tmc/BoardAssignment.c **** 
+  83:tmc/BoardAssignment.c **** 	ids->ch1.state = assignCh1(ids->ch1.id, true);
+  84:tmc/BoardAssignment.c **** 	ids->ch2.state = assignCh2(ids->ch2.id, true);
+  85:tmc/BoardAssignment.c **** 
+  86:tmc/BoardAssignment.c **** 	out |= ids->ch2.state  << 24;
+  87:tmc/BoardAssignment.c **** 	out |= ids->ch2.id     << 16;
+  88:tmc/BoardAssignment.c **** 	out |= ids->ch1.state  << 8;
+  89:tmc/BoardAssignment.c **** 	out |= ids->ch1.id     << 0;
+  90:tmc/BoardAssignment.c **** 
+  91:tmc/BoardAssignment.c **** 	return out;
+  92:tmc/BoardAssignment.c **** }
+  93:tmc/BoardAssignment.c **** 
+  94:tmc/BoardAssignment.c **** static uint8_t assignCh1(uint8_t id, uint8_t justCheck)
+  95:tmc/BoardAssignment.c **** {
+  96:tmc/BoardAssignment.c **** 	uint8_t ok = ID_STATE_NOT_IN_FW;
+  97:tmc/BoardAssignment.c **** 	if(!justCheck)
+  98:tmc/BoardAssignment.c **** 		tmcmotioncontroller_init();
+  99:tmc/BoardAssignment.c **** 
+ 100:tmc/BoardAssignment.c **** 	for(size_t i = 0, sz = ARRAY_SIZE(init_ch1); i < sz; i++)
+ 101:tmc/BoardAssignment.c **** 	{
+ 102:tmc/BoardAssignment.c **** 		if(init_ch1[i].id == id)
+ 109              		.loc 1 102 17 view .LVU28
+ 110 003c 524A     		ldr	r2, .L49+4
+ 100:tmc/BoardAssignment.c **** 	{
+ 111              		.loc 1 100 13 view .LVU29
+ 112 003e 0023     		movs	r3, #0
+ 113              		.loc 1 102 5 view .LVU30
+ 114 0040 80B2     		uxth	r0, r0
+ 115              	.L8:
+ 116              	.LVL5:
+ 117              		.loc 1 102 3 is_stmt 1 view .LVU31
+ 118              		.loc 1 102 5 is_stmt 0 view .LVU32
+ 119 0042 32F83310 		ldrh	r1, [r2, r3, lsl #3]
+ 120 0046 8142     		cmp	r1, r0
+ 121 0048 38D0     		beq	.L29
+ 100:tmc/BoardAssignment.c **** 	{
+ 122              		.loc 1 100 55 is_stmt 1 view .LVU33
+ 100:tmc/BoardAssignment.c **** 	{
+ 123              		.loc 1 100 56 is_stmt 0 view .LVU34
+ 124 004a 0133     		adds	r3, r3, #1
+ 125              	.LVL6:
+ 100:tmc/BoardAssignment.c **** 	{
+ 126              		.loc 1 100 47 is_stmt 1 view .LVU35
+ 100:tmc/BoardAssignment.c **** 	{
+ 127              		.loc 1 100 2 is_stmt 0 view .LVU36
+ 128 004c 102B     		cmp	r3, #16
+ 129 004e F8D1     		bne	.L8
+ 130              	.LBE21:
+  96:tmc/BoardAssignment.c **** 	if(!justCheck)
+ 131              		.loc 1 96 10 view .LVU37
+ 132 0050 0623     		movs	r3, #6
+ 133              	.LVL7:
+ 134              	.L7:
+ 103:tmc/BoardAssignment.c **** 		{
+ 104:tmc/BoardAssignment.c **** 			if(!justCheck)
+ 105:tmc/BoardAssignment.c **** 				init_ch1[i].init();
+ 106:tmc/BoardAssignment.c **** 			ok = ID_STATE_DONE;
+ 107:tmc/BoardAssignment.c **** 			break;
+ 108:tmc/BoardAssignment.c **** 		}
+ 109:tmc/BoardAssignment.c **** 	}
+ 110:tmc/BoardAssignment.c **** 
+ 111:tmc/BoardAssignment.c **** 	return ok;
+ 135              		.loc 1 111 2 is_stmt 1 view .LVU38
+ 136              		.loc 1 111 2 is_stmt 0 view .LVU39
+ 137              	.LBE20:
+ 138              	.LBE19:
+  38:tmc/BoardAssignment.c **** 	}
+ 139              		.loc 1 38 18 view .LVU40
+ 140 0052 2370     		strb	r3, [r4]
+ 141              	.L9:
+  49:tmc/BoardAssignment.c **** 	{
+ 142              		.loc 1 49 2 is_stmt 1 view .LVU41
+  49:tmc/BoardAssignment.c **** 	{
+ 143              		.loc 1 49 35 is_stmt 0 view .LVU42
+ 144 0054 627D     		ldrb	r2, [r4, #21]	@ zero_extendqisi2
+  49:tmc/BoardAssignment.c **** 	{
+ 145              		.loc 1 49 4 view .LVU43
+ 146 0056 95F87C30 		ldrb	r3, [r5, #124]	@ zero_extendqisi2
+ 147 005a 9342     		cmp	r3, r2
+ 148 005c 50D1     		bne	.L14
+  49:tmc/BoardAssignment.c **** 	{
+ 149              		.loc 1 49 40 discriminator 1 view .LVU44
+ 150 005e 002B     		cmp	r3, #0
+ 151 0060 4ED0     		beq	.L14
+ 152              	.LBB24:
+ 153              	.LBB25:
+ 154              	.LBB26:
+ 112:tmc/BoardAssignment.c **** }
+ 113:tmc/BoardAssignment.c **** 
+ 114:tmc/BoardAssignment.c **** static uint8_t assignCh2(uint8_t id, uint8_t justCheck)
+ 115:tmc/BoardAssignment.c **** {
+ 116:tmc/BoardAssignment.c **** 	uint8_t ok = ID_STATE_NOT_IN_FW;
+ 117:tmc/BoardAssignment.c **** 
+ 118:tmc/BoardAssignment.c **** //	if(!justCheck)
+ 119:tmc/BoardAssignment.c **** //		tmcdriver_init();
+ 120:tmc/BoardAssignment.c **** 
+ 121:tmc/BoardAssignment.c **** #if defined(Startrampe)
+ 122:tmc/BoardAssignment.c **** 	if(id == ID_TMC2208 && EEPROM.ch2.hw == 0x0103)
+ 123:tmc/BoardAssignment.c **** 		return ok;
+ 124:tmc/BoardAssignment.c **** #endif
+ 125:tmc/BoardAssignment.c **** 
+ 126:tmc/BoardAssignment.c **** 	for(size_t i = 0, sz = ARRAY_SIZE(init_ch2); i < sz; i++)
+ 127:tmc/BoardAssignment.c **** 	{
+ 128:tmc/BoardAssignment.c **** 		if(init_ch2[i].id == id)
+ 155              		.loc 1 128 17 view .LVU45
+ 156 0062 4A49     		ldr	r1, .L49+8
+ 126:tmc/BoardAssignment.c **** 	{
+ 157              		.loc 1 126 13 view .LVU46
+ 158 0064 0022     		movs	r2, #0
+ 159              		.loc 1 128 5 view .LVU47
+ 160 0066 9BB2     		uxth	r3, r3
+ 161              	.L16:
+ 162              	.LVL8:
+ 163              		.loc 1 128 3 is_stmt 1 view .LVU48
+ 164              		.loc 1 128 5 is_stmt 0 view .LVU49
+ 165 0068 31F83200 		ldrh	r0, [r1, r2, lsl #3]
+ 166 006c 9842     		cmp	r0, r3
+ 167 006e 45D0     		beq	.L30
+ 126:tmc/BoardAssignment.c **** 	{
+ 168              		.loc 1 126 55 is_stmt 1 view .LVU50
+ 126:tmc/BoardAssignment.c **** 	{
+ 169              		.loc 1 126 56 is_stmt 0 view .LVU51
+ 170 0070 0132     		adds	r2, r2, #1
+ 171              	.LVL9:
+ 126:tmc/BoardAssignment.c **** 	{
+ 172              		.loc 1 126 47 is_stmt 1 view .LVU52
+ 126:tmc/BoardAssignment.c **** 	{
+ 173              		.loc 1 126 2 is_stmt 0 view .LVU53
+ 174 0072 0D2A     		cmp	r2, #13
+ 175 0074 F8D1     		bne	.L16
+ 176              	.LBE26:
+ 116:tmc/BoardAssignment.c **** 
+ 177              		.loc 1 116 10 view .LVU54
+ 178 0076 0623     		movs	r3, #6
+ 179              	.L15:
+ 180              	.LVL10:
+ 129:tmc/BoardAssignment.c **** 		{
+ 130:tmc/BoardAssignment.c **** 			if(!justCheck)
+ 131:tmc/BoardAssignment.c **** 				init_ch2[i].init();
+ 132:tmc/BoardAssignment.c **** 			ok = ID_STATE_DONE;
+ 133:tmc/BoardAssignment.c **** 			break;
+ 134:tmc/BoardAssignment.c **** 		}
+ 135:tmc/BoardAssignment.c **** 	}
+ 136:tmc/BoardAssignment.c **** 
+ 137:tmc/BoardAssignment.c **** 	return ok;
+ 181              		.loc 1 137 2 is_stmt 1 view .LVU55
+ 182              		.loc 1 137 2 is_stmt 0 view .LVU56
+ 183              	.LBE25:
+ 184              	.LBE24:
+  51:tmc/BoardAssignment.c **** 	}
+ 185              		.loc 1 51 18 view .LVU57
+ 186 0078 2375     		strb	r3, [r4, #20]
+ 187              	.L17:
+  66:tmc/BoardAssignment.c **** 
+ 188              		.loc 1 66 2 is_stmt 1 view .LVU58
+ 189              	.LVL11:
+ 190              	.LBB29:
+ 191              	.LBI29:
+ 138:tmc/BoardAssignment.c **** }
+ 139:tmc/BoardAssignment.c **** 
+ 140:tmc/BoardAssignment.c **** // Reroute the driver's SPI to run through the motion controller if required
+ 141:tmc/BoardAssignment.c **** // This also handles special case logic for the motion controller + driver chain (different pins et
+ 142:tmc/BoardAssignment.c **** static void hookDriverSPI(IdAssignmentTypeDef *ids)
+ 192              		.loc 1 142 13 view .LVU59
+ 193              	.LBB30:
+ 143:tmc/BoardAssignment.c **** {
+ 144:tmc/BoardAssignment.c **** 	if((ids->ch1.id == ID_TMC4361) || (ids->ch1.id == ID_TMC4361A) || (ids->ch1.id == ID_TMC4331))
+ 194              		.loc 1 144 2 view .LVU60
+ 195              		.loc 1 144 14 is_stmt 0 view .LVU61
+ 196 007a 6378     		ldrb	r3, [r4, #1]	@ zero_extendqisi2
+ 197              		.loc 1 144 4 view .LVU62
+ 198 007c 042B     		cmp	r3, #4
+ 199 007e 02D0     		beq	.L22
+ 200              		.loc 1 144 65 view .LVU63
+ 201 0080 0A3B     		subs	r3, r3, #10
+ 202 0082 012B     		cmp	r3, #1
+ 203 0084 0DD8     		bhi	.L23
+ 204              	.L22:
+ 145:tmc/BoardAssignment.c **** 	{
+ 146:tmc/BoardAssignment.c **** 		// Redirect ch2 SPI to the SPI cover function of the TMC43XX Board
+ 147:tmc/BoardAssignment.c **** 		HAL.SPI->ch2.readWrite = Evalboards.ch1.cover;
+ 205              		.loc 1 147 3 is_stmt 1 view .LVU64
+ 206              		.loc 1 147 6 is_stmt 0 view .LVU65
+ 207 0086 424B     		ldr	r3, .L49+12
+ 208              		.loc 1 147 26 view .LVU66
+ 209 0088 AA6E     		ldr	r2, [r5, #104]
+ 210 008a 1B69     		ldr	r3, [r3, #16]
+ 211 008c DA61     		str	r2, [r3, #28]
+ 148:tmc/BoardAssignment.c **** 
+ 149:tmc/BoardAssignment.c **** 		if(ids->ch2.id == ID_TMC2660)
+ 212              		.loc 1 149 3 is_stmt 1 view .LVU67
+ 213              		.loc 1 149 5 is_stmt 0 view .LVU68
+ 214 008e 637D     		ldrb	r3, [r4, #21]	@ zero_extendqisi2
+ 215 0090 012B     		cmp	r3, #1
+ 216 0092 06D1     		bne	.L23
+ 217              	.LBB31:
+ 150:tmc/BoardAssignment.c **** 		{
+ 151:tmc/BoardAssignment.c **** 			// TMC2660: Disable the continuous mode via userFunction
+ 152:tmc/BoardAssignment.c **** 			int32_t value = 1;
+ 218              		.loc 1 152 4 is_stmt 1 view .LVU69
+ 153:tmc/BoardAssignment.c **** 			Evalboards.ch2.userFunction(0, 0, &value);
+ 219              		.loc 1 153 4 is_stmt 0 view .LVU70
+ 220 0094 0021     		movs	r1, #0
+ 152:tmc/BoardAssignment.c **** 			Evalboards.ch2.userFunction(0, 0, &value);
+ 221              		.loc 1 152 12 view .LVU71
+ 222 0096 0193     		str	r3, [sp, #4]
+ 223              		.loc 1 153 4 is_stmt 1 view .LVU72
+ 224 0098 01AA     		add	r2, sp, #4
+ 225 009a D5F8CC30 		ldr	r3, [r5, #204]
+ 226 009e 0846     		mov	r0, r1
+ 227 00a0 9847     		blx	r3
+ 228              	.LVL12:
+ 229              	.L23:
+ 230              		.loc 1 153 4 is_stmt 0 view .LVU73
+ 231              	.LBE31:
+ 154:tmc/BoardAssignment.c **** 		}
+ 155:tmc/BoardAssignment.c **** 	}
+ 156:tmc/BoardAssignment.c **** 
+ 157:tmc/BoardAssignment.c **** 
+ 158:tmc/BoardAssignment.c **** 	if(ids->ch1.id == ID_TMC4330)
+ 232              		.loc 1 158 2 is_stmt 1 view .LVU74
+ 233              		.loc 1 158 4 is_stmt 0 view .LVU75
+ 234 00a2 6378     		ldrb	r3, [r4, #1]	@ zero_extendqisi2
+ 235 00a4 0F2B     		cmp	r3, #15
+ 236 00a6 55D1     		bne	.L25
+ 237 00a8 637D     		ldrb	r3, [r4, #21]	@ zero_extendqisi2
+ 159:tmc/BoardAssignment.c **** 	{
+ 160:tmc/BoardAssignment.c **** 		if(ids->ch2.id == ID_TMC2100)
+ 238              		.loc 1 160 3 is_stmt 1 view .LVU76
+ 239              		.loc 1 160 5 is_stmt 0 view .LVU77
+ 240 00aa 042B     		cmp	r3, #4
+ 241 00ac 48D1     		bne	.L26
+ 161:tmc/BoardAssignment.c **** 		{
+ 162:tmc/BoardAssignment.c **** 			Evalboards.ch2.userFunction(1, 0, NULL);
+ 242              		.loc 1 162 4 is_stmt 1 view .LVU78
+ 243 00ae 0022     		movs	r2, #0
+ 244 00b0 D5F8CC30 		ldr	r3, [r5, #204]
+ 245 00b4 1146     		mov	r1, r2
+ 246 00b6 0120     		movs	r0, #1
+ 247              	.L47:
+ 163:tmc/BoardAssignment.c **** 		}
+ 164:tmc/BoardAssignment.c **** 		else if(ids->ch2.id == ID_TMC2130)
+ 165:tmc/BoardAssignment.c **** 		{
+ 166:tmc/BoardAssignment.c **** 			Evalboards.ch2.userFunction(5, 0, NULL);
+ 167:tmc/BoardAssignment.c **** 		}
+ 168:tmc/BoardAssignment.c **** 		else if(ids->ch2.id == ID_TMC2160)
+ 169:tmc/BoardAssignment.c **** 		{
+ 170:tmc/BoardAssignment.c **** 			Evalboards.ch2.userFunction(5, 0, NULL);
+ 248              		.loc 1 170 4 is_stmt 0 view .LVU79
+ 249 00b8 9847     		blx	r3
+ 250              	.LVL13:
+ 251 00ba 4BE0     		b	.L25
+ 252              	.LVL14:
+ 253              	.L29:
+ 254              		.loc 1 170 4 view .LVU80
+ 255              	.LBE30:
+ 256              	.LBE29:
+ 257              	.LBB33:
+ 258              	.LBB23:
+ 259              	.LBB22:
+ 106:tmc/BoardAssignment.c **** 			break;
+ 260              		.loc 1 106 7 view .LVU81
+ 261 00bc 0223     		movs	r3, #2
+ 262              	.LVL15:
+ 106:tmc/BoardAssignment.c **** 			break;
+ 263              		.loc 1 106 7 view .LVU82
+ 264 00be C8E7     		b	.L7
+ 265              	.L6:
+ 106:tmc/BoardAssignment.c **** 			break;
+ 266              		.loc 1 106 7 view .LVU83
+ 267              	.LBE22:
+ 268              	.LBE23:
+ 269              	.LBE33:
+  42:tmc/BoardAssignment.c **** 		if(ids->ch1.state == ID_STATE_DONE)
+ 270              		.loc 1 42 3 is_stmt 1 view .LVU84
+ 271 00c0 EB6D     		ldr	r3, [r5, #92]
+ 272 00c2 9847     		blx	r3
+ 273              	.LVL16:
+  43:tmc/BoardAssignment.c **** 			ids->ch1.state = assignCh1(ids->ch1.id, false);
+ 274              		.loc 1 43 3 view .LVU85
+  43:tmc/BoardAssignment.c **** 			ids->ch1.state = assignCh1(ids->ch1.id, false);
+ 275              		.loc 1 43 14 is_stmt 0 view .LVU86
+ 276 00c4 2678     		ldrb	r6, [r4]	@ zero_extendqisi2
+  43:tmc/BoardAssignment.c **** 			ids->ch1.state = assignCh1(ids->ch1.id, false);
+ 277              		.loc 1 43 5 view .LVU87
+ 278 00c6 022E     		cmp	r6, #2
+ 279 00c8 0ED1     		bne	.L10
+  44:tmc/BoardAssignment.c **** 		Evalboards.ch1.config->reset();
+ 280              		.loc 1 44 4 is_stmt 1 view .LVU88
+  44:tmc/BoardAssignment.c **** 		Evalboards.ch1.config->reset();
+ 281              		.loc 1 44 21 is_stmt 0 view .LVU89
+ 282 00ca 6778     		ldrb	r7, [r4, #1]	@ zero_extendqisi2
+ 283              	.LVL17:
+ 284              	.LBB34:
+ 285              	.LBI34:
+  94:tmc/BoardAssignment.c **** {
+ 286              		.loc 1 94 16 is_stmt 1 view .LVU90
+ 287              	.LBB35:
+  96:tmc/BoardAssignment.c **** 	if(!justCheck)
+ 288              		.loc 1 96 2 view .LVU91
+  97:tmc/BoardAssignment.c **** 		tmcmotioncontroller_init();
+ 289              		.loc 1 97 2 view .LVU92
+  98:tmc/BoardAssignment.c **** 
+ 290              		.loc 1 98 3 view .LVU93
+ 291 00cc FFF7FEFF 		bl	tmcmotioncontroller_init
+ 292              	.LVL18:
+ 293              	.LBB36:
+ 100:tmc/BoardAssignment.c **** 	{
+ 294              		.loc 1 100 47 view .LVU94
+ 102:tmc/BoardAssignment.c **** 		{
+ 295              		.loc 1 102 17 is_stmt 0 view .LVU95
+ 296 00d0 2D4A     		ldr	r2, .L49+4
+ 100:tmc/BoardAssignment.c **** 	{
+ 297              		.loc 1 100 13 view .LVU96
+ 298 00d2 0023     		movs	r3, #0
+ 102:tmc/BoardAssignment.c **** 		{
+ 299              		.loc 1 102 5 view .LVU97
+ 300 00d4 BFB2     		uxth	r7, r7
+ 301              	.LVL19:
+ 302              	.L13:
+ 102:tmc/BoardAssignment.c **** 		{
+ 303              		.loc 1 102 3 is_stmt 1 view .LVU98
+ 102:tmc/BoardAssignment.c **** 		{
+ 304              		.loc 1 102 5 is_stmt 0 view .LVU99
+ 305 00d6 32F83310 		ldrh	r1, [r2, r3, lsl #3]
+ 306 00da B942     		cmp	r1, r7
+ 307 00dc 09D1     		bne	.L11
+ 104:tmc/BoardAssignment.c **** 				init_ch1[i].init();
+ 308              		.loc 1 104 4 is_stmt 1 view .LVU100
+ 105:tmc/BoardAssignment.c **** 			ok = ID_STATE_DONE;
+ 309              		.loc 1 105 5 view .LVU101
+ 105:tmc/BoardAssignment.c **** 			ok = ID_STATE_DONE;
+ 310              		.loc 1 105 16 is_stmt 0 view .LVU102
+ 311 00de 02EBC303 		add	r3, r2, r3, lsl #3
+ 312              	.LVL20:
+ 105:tmc/BoardAssignment.c **** 			ok = ID_STATE_DONE;
+ 313              		.loc 1 105 5 view .LVU103
+ 314 00e2 5B68     		ldr	r3, [r3, #4]
+ 315 00e4 9847     		blx	r3
+ 316              	.LVL21:
+ 317              	.L12:
+ 105:tmc/BoardAssignment.c **** 			ok = ID_STATE_DONE;
+ 318              		.loc 1 105 5 view .LVU104
+ 319              	.LBE36:
+ 111:tmc/BoardAssignment.c **** }
+ 320              		.loc 1 111 2 is_stmt 1 view .LVU105
+ 111:tmc/BoardAssignment.c **** }
+ 321              		.loc 1 111 2 is_stmt 0 view .LVU106
+ 322              	.LBE35:
+ 323              	.LBE34:
+  44:tmc/BoardAssignment.c **** 		Evalboards.ch1.config->reset();
+ 324              		.loc 1 44 19 view .LVU107
+ 325 00e6 2670     		strb	r6, [r4]
+ 326              	.L10:
+  45:tmc/BoardAssignment.c **** 	}
+ 327              		.loc 1 45 3 is_stmt 1 view .LVU108
+  45:tmc/BoardAssignment.c **** 	}
+ 328              		.loc 1 45 24 is_stmt 0 view .LVU109
+ 329 00e8 AB69     		ldr	r3, [r5, #24]
+  45:tmc/BoardAssignment.c **** 	}
+ 330              		.loc 1 45 3 view .LVU110
+ 331 00ea D3F80432 		ldr	r3, [r3, #516]
+ 332 00ee 9847     		blx	r3
+ 333              	.LVL22:
+ 334 00f0 B0E7     		b	.L9
+ 335              	.LVL23:
+ 336              	.L11:
+ 337              	.LBB39:
+ 338              	.LBB38:
+ 339              	.LBB37:
+ 100:tmc/BoardAssignment.c **** 	{
+ 340              		.loc 1 100 55 is_stmt 1 view .LVU111
+ 100:tmc/BoardAssignment.c **** 	{
+ 341              		.loc 1 100 56 is_stmt 0 view .LVU112
+ 342 00f2 0133     		adds	r3, r3, #1
+ 343              	.LVL24:
+ 100:tmc/BoardAssignment.c **** 	{
+ 344              		.loc 1 100 47 is_stmt 1 view .LVU113
+ 100:tmc/BoardAssignment.c **** 	{
+ 345              		.loc 1 100 2 is_stmt 0 view .LVU114
+ 346 00f4 102B     		cmp	r3, #16
+ 347 00f6 EED1     		bne	.L13
+ 348              	.LBE37:
+  96:tmc/BoardAssignment.c **** 	if(!justCheck)
+ 349              		.loc 1 96 10 view .LVU115
+ 350 00f8 0626     		movs	r6, #6
+ 351 00fa F4E7     		b	.L12
+ 352              	.LVL25:
+ 353              	.L30:
+  96:tmc/BoardAssignment.c **** 	if(!justCheck)
+ 354              		.loc 1 96 10 view .LVU116
+ 355              	.LBE38:
+ 356              	.LBE39:
+ 357              	.LBB40:
+ 358              	.LBB28:
+ 359              	.LBB27:
+ 132:tmc/BoardAssignment.c **** 			break;
+ 360              		.loc 1 132 7 view .LVU117
+ 361 00fc 0223     		movs	r3, #2
+ 362 00fe BBE7     		b	.L15
+ 363              	.LVL26:
+ 364              	.L14:
+ 132:tmc/BoardAssignment.c **** 			break;
+ 365              		.loc 1 132 7 view .LVU118
+ 366              	.LBE27:
+ 367              	.LBE28:
+ 368              	.LBE40:
+  55:tmc/BoardAssignment.c **** 		if(ids->ch2.state == ID_STATE_DONE)
+ 369              		.loc 1 55 3 is_stmt 1 view .LVU119
+ 370 0100 D5F8D430 		ldr	r3, [r5, #212]
+ 371 0104 9847     		blx	r3
+ 372              	.LVL27:
+  56:tmc/BoardAssignment.c **** 			ids->ch2.state = assignCh2(ids->ch2.id, false);
+ 373              		.loc 1 56 3 view .LVU120
+  56:tmc/BoardAssignment.c **** 			ids->ch2.state = assignCh2(ids->ch2.id, false);
+ 374              		.loc 1 56 14 is_stmt 0 view .LVU121
+ 375 0106 267D     		ldrb	r6, [r4, #20]	@ zero_extendqisi2
+  56:tmc/BoardAssignment.c **** 			ids->ch2.state = assignCh2(ids->ch2.id, false);
+ 376              		.loc 1 56 5 view .LVU122
+ 377 0108 022E     		cmp	r6, #2
+ 378 010a 0ED1     		bne	.L18
+  57:tmc/BoardAssignment.c **** 		Evalboards.ch2.config->reset();
+ 379              		.loc 1 57 4 is_stmt 1 view .LVU123
+ 380              	.LVL28:
+ 381              	.LBB41:
+ 382              	.LBI41:
+ 114:tmc/BoardAssignment.c **** {
+ 383              		.loc 1 114 16 view .LVU124
+ 384              	.LBB42:
+ 116:tmc/BoardAssignment.c **** 
+ 385              		.loc 1 116 2 view .LVU125
+ 126:tmc/BoardAssignment.c **** 	{
+ 386              		.loc 1 126 2 view .LVU126
+ 387              	.LBB43:
+ 126:tmc/BoardAssignment.c **** 	{
+ 388              		.loc 1 126 6 view .LVU127
+ 126:tmc/BoardAssignment.c **** 	{
+ 389              		.loc 1 126 47 view .LVU128
+ 128:tmc/BoardAssignment.c **** 		{
+ 390              		.loc 1 128 17 is_stmt 0 view .LVU129
+ 391 010c 1E4A     		ldr	r2, .L49+4
+ 128:tmc/BoardAssignment.c **** 		{
+ 392              		.loc 1 128 5 view .LVU130
+ 393 010e 607D     		ldrb	r0, [r4, #21]	@ zero_extendqisi2
+ 126:tmc/BoardAssignment.c **** 	{
+ 394              		.loc 1 126 13 view .LVU131
+ 395 0110 0023     		movs	r3, #0
+ 128:tmc/BoardAssignment.c **** 		{
+ 396              		.loc 1 128 17 view .LVU132
+ 397 0112 02F18001 		add	r1, r2, #128
+ 398              	.LVL29:
+ 399              	.L21:
+ 128:tmc/BoardAssignment.c **** 		{
+ 400              		.loc 1 128 3 is_stmt 1 view .LVU133
+ 128:tmc/BoardAssignment.c **** 		{
+ 401              		.loc 1 128 5 is_stmt 0 view .LVU134
+ 402 0116 31F83370 		ldrh	r7, [r1, r3, lsl #3]
+ 403 011a 8742     		cmp	r7, r0
+ 404 011c 0BD1     		bne	.L19
+ 130:tmc/BoardAssignment.c **** 				init_ch2[i].init();
+ 405              		.loc 1 130 4 is_stmt 1 view .LVU135
+ 131:tmc/BoardAssignment.c **** 			ok = ID_STATE_DONE;
+ 406              		.loc 1 131 5 view .LVU136
+ 131:tmc/BoardAssignment.c **** 			ok = ID_STATE_DONE;
+ 407              		.loc 1 131 16 is_stmt 0 view .LVU137
+ 408 011e 02EBC303 		add	r3, r2, r3, lsl #3
+ 409              	.LVL30:
+ 131:tmc/BoardAssignment.c **** 			ok = ID_STATE_DONE;
+ 410              		.loc 1 131 5 view .LVU138
+ 411 0122 D3F88430 		ldr	r3, [r3, #132]
+ 412 0126 9847     		blx	r3
+ 413              	.LVL31:
+ 414              	.L20:
+ 131:tmc/BoardAssignment.c **** 			ok = ID_STATE_DONE;
+ 415              		.loc 1 131 5 view .LVU139
+ 416              	.LBE43:
+ 137:tmc/BoardAssignment.c **** }
+ 417              		.loc 1 137 2 is_stmt 1 view .LVU140
+ 137:tmc/BoardAssignment.c **** }
+ 418              		.loc 1 137 2 is_stmt 0 view .LVU141
+ 419              	.LBE42:
+ 420              	.LBE41:
+  57:tmc/BoardAssignment.c **** 		Evalboards.ch2.config->reset();
+ 421              		.loc 1 57 19 view .LVU142
+ 422 0128 2675     		strb	r6, [r4, #20]
+ 423              	.LVL32:
+ 424              	.L18:
+  58:tmc/BoardAssignment.c **** 	}
+ 425              		.loc 1 58 3 is_stmt 1 view .LVU143
+  58:tmc/BoardAssignment.c **** 	}
+ 426              		.loc 1 58 24 is_stmt 0 view .LVU144
+ 427 012a D5F89030 		ldr	r3, [r5, #144]
+  58:tmc/BoardAssignment.c **** 	}
+ 428              		.loc 1 58 3 view .LVU145
+ 429 012e D3F80432 		ldr	r3, [r3, #516]
+ 430 0132 9847     		blx	r3
+ 431              	.LVL33:
+ 432 0134 A1E7     		b	.L17
+ 433              	.LVL34:
+ 434              	.L19:
+ 435              	.LBB46:
+ 436              	.LBB45:
+ 437              	.LBB44:
+ 126:tmc/BoardAssignment.c **** 	{
+ 438              		.loc 1 126 55 is_stmt 1 view .LVU146
+ 126:tmc/BoardAssignment.c **** 	{
+ 439              		.loc 1 126 56 is_stmt 0 view .LVU147
+ 440 0136 0133     		adds	r3, r3, #1
+ 441              	.LVL35:
+ 126:tmc/BoardAssignment.c **** 	{
+ 442              		.loc 1 126 47 is_stmt 1 view .LVU148
+ 126:tmc/BoardAssignment.c **** 	{
+ 443              		.loc 1 126 2 is_stmt 0 view .LVU149
+ 444 0138 0D2B     		cmp	r3, #13
+ 445 013a ECD1     		bne	.L21
+ 446              	.LBE44:
+ 116:tmc/BoardAssignment.c **** 
+ 447              		.loc 1 116 10 view .LVU150
+ 448 013c 0626     		movs	r6, #6
+ 449 013e F3E7     		b	.L20
+ 450              	.LVL36:
+ 451              	.L26:
+ 116:tmc/BoardAssignment.c **** 
+ 452              		.loc 1 116 10 view .LVU151
+ 453              	.LBE45:
+ 454              	.LBE46:
+ 455              	.LBB47:
+ 456              	.LBB32:
+ 164:tmc/BoardAssignment.c **** 		{
+ 457              		.loc 1 164 8 is_stmt 1 view .LVU152
+ 164:tmc/BoardAssignment.c **** 		{
+ 458              		.loc 1 164 10 is_stmt 0 view .LVU153
+ 459 0140 032B     		cmp	r3, #3
+ 460 0142 05D1     		bne	.L27
+ 461              	.L48:
+ 462              		.loc 1 170 4 is_stmt 1 view .LVU154
+ 463 0144 0022     		movs	r2, #0
+ 464 0146 D5F8CC30 		ldr	r3, [r5, #204]
+ 465 014a 1146     		mov	r1, r2
+ 466 014c 0520     		movs	r0, #5
+ 467 014e B3E7     		b	.L47
+ 468              	.L27:
+ 168:tmc/BoardAssignment.c **** 		{
+ 469              		.loc 1 168 8 view .LVU155
+ 168:tmc/BoardAssignment.c **** 		{
+ 470              		.loc 1 168 10 is_stmt 0 view .LVU156
+ 471 0150 0B2B     		cmp	r3, #11
+ 472 0152 F7D0     		beq	.L48
+ 473              	.L25:
+ 171:tmc/BoardAssignment.c **** 		}
+ 172:tmc/BoardAssignment.c **** 	}
+ 173:tmc/BoardAssignment.c **** 
+ 174:tmc/BoardAssignment.c **** 	if ((ids->ch1.id == ID_TMC4330) || (ids->ch1.id == ID_TMC4331) || (ids->ch1.id == ID_TMC4361) || (
+ 474              		.loc 1 174 2 is_stmt 1 view .LVU157
+ 475              		.loc 1 174 15 is_stmt 0 view .LVU158
+ 476 0154 6378     		ldrb	r3, [r4, #1]	@ zero_extendqisi2
+ 477              		.loc 1 174 65 view .LVU159
+ 478 0156 0F2B     		cmp	r3, #15
+ 479 0158 0ED8     		bhi	.L28
+ 480 015a 48F61042 		movw	r2, #35856
+ 481 015e DA40     		lsrs	r2, r2, r3
+ 482 0160 D243     		mvns	r2, r2
+ 483 0162 12F00102 		ands	r2, r2, #1
+ 484 0166 617D     		ldrb	r1, [r4, #21]	@ zero_extendqisi2
+ 485 0168 06D1     		bne	.L28
+ 175:tmc/BoardAssignment.c **** 	{
+ 176:tmc/BoardAssignment.c **** 		if (ids->ch2.id == ID_TMC2130)
+ 486              		.loc 1 176 3 is_stmt 1 view .LVU160
+ 487              		.loc 1 176 6 is_stmt 0 view .LVU161
+ 488 016a 0329     		cmp	r1, #3
+ 489 016c 04D1     		bne	.L28
+ 177:tmc/BoardAssignment.c **** 		{
+ 178:tmc/BoardAssignment.c **** 			Evalboards.ch2.userFunction(6, 0, NULL);
+ 490              		.loc 1 178 4 is_stmt 1 view .LVU162
+ 491 016e D5F8CC30 		ldr	r3, [r5, #204]
+ 492 0172 1146     		mov	r1, r2
+ 493 0174 0620     		movs	r0, #6
+ 494 0176 9847     		blx	r3
+ 495              	.LVL37:
+ 496              	.L28:
+ 497              		.loc 1 178 4 is_stmt 0 view .LVU163
+ 498              	.LBE32:
+ 499              	.LBE47:
+  68:tmc/BoardAssignment.c **** 	Evalboards.ch2.id = ids->ch2.id;
+ 500              		.loc 1 68 2 is_stmt 1 view .LVU164
+  68:tmc/BoardAssignment.c **** 	Evalboards.ch2.id = ids->ch2.id;
+ 501              		.loc 1 68 30 is_stmt 0 view .LVU165
+ 502 0178 6078     		ldrb	r0, [r4, #1]	@ zero_extendqisi2
+  69:tmc/BoardAssignment.c **** 
+ 503              		.loc 1 69 20 view .LVU166
+ 504 017a 637D     		ldrb	r3, [r4, #21]	@ zero_extendqisi2
+  68:tmc/BoardAssignment.c **** 	Evalboards.ch2.id = ids->ch2.id;
+ 505              		.loc 1 68 20 view .LVU167
+ 506 017c 2871     		strb	r0, [r5, #4]
+  69:tmc/BoardAssignment.c **** 
+ 507              		.loc 1 69 2 is_stmt 1 view .LVU168
+  69:tmc/BoardAssignment.c **** 
+ 508              		.loc 1 69 20 is_stmt 0 view .LVU169
+ 509 017e 85F87C30 		strb	r3, [r5, #124]
+  71:tmc/BoardAssignment.c **** 	out |= (ids->ch2.id     << 16) & 0xFF;
+ 510              		.loc 1 71 2 is_stmt 1 view .LVU170
+  72:tmc/BoardAssignment.c **** 	out |= (ids->ch1.state  << 8)  & 0xFF;
+ 511              		.loc 1 72 2 view .LVU171
+  73:tmc/BoardAssignment.c **** 	out |= (ids->ch1.id     << 0)  & 0xFF;
+ 512              		.loc 1 73 2 view .LVU172
+  74:tmc/BoardAssignment.c **** 
+ 513              		.loc 1 74 2 view .LVU173
+ 514              	.LVL38:
+  76:tmc/BoardAssignment.c **** }
+ 515              		.loc 1 76 2 view .LVU174
+  76:tmc/BoardAssignment.c **** }
+ 516              		.loc 1 76 9 is_stmt 0 view .LVU175
+ 517 0182 54E7     		b	.L1
+ 518              	.L50:
+ 519              		.align	2
+ 520              	.L49:
+ 521 0184 00000000 		.word	Evalboards
+ 522 0188 00000000 		.word	.LANCHOR0
+ 523 018c 80000000 		.word	.LANCHOR0+128
+ 524 0190 00000000 		.word	HAL
+ 525              		.cfi_endproc
+ 526              	.LFE1:
+ 528              		.align	1
+ 529              		.global	Board_supported
+ 530              		.syntax unified
+ 531              		.thumb
+ 532              		.thumb_func
+ 533              		.fpu softvfp
+ 535              	Board_supported:
+ 536              	.LVL39:
+ 537              	.LFB2:
+  80:tmc/BoardAssignment.c **** 	int32_t out = 0;
+ 538              		.loc 1 80 1 is_stmt 1 view -0
+ 539              		.cfi_startproc
+ 540              		@ args = 0, pretend = 0, frame = 0
+ 541              		@ frame_needed = 0, uses_anonymous_args = 0
+  81:tmc/BoardAssignment.c **** 
+ 542              		.loc 1 81 2 view .LVU177
+  83:tmc/BoardAssignment.c **** 	ids->ch2.state = assignCh2(ids->ch2.id, true);
+ 543              		.loc 1 83 2 view .LVU178
+  80:tmc/BoardAssignment.c **** 	int32_t out = 0;
+ 544              		.loc 1 80 1 is_stmt 0 view .LVU179
+ 545 0194 F0B5     		push	{r4, r5, r6, r7, lr}
+ 546              	.LCFI3:
+ 547              		.cfi_def_cfa_offset 20
+ 548              		.cfi_offset 4, -20
+ 549              		.cfi_offset 5, -16
+ 550              		.cfi_offset 6, -12
+ 551              		.cfi_offset 7, -8
+ 552              		.cfi_offset 14, -4
+  83:tmc/BoardAssignment.c **** 	ids->ch2.state = assignCh2(ids->ch2.id, true);
+ 553              		.loc 1 83 19 view .LVU180
+ 554 0196 4378     		ldrb	r3, [r0, #1]	@ zero_extendqisi2
+ 555              	.LVL40:
+ 556              	.LBB54:
+ 557              	.LBI54:
+  94:tmc/BoardAssignment.c **** {
+ 558              		.loc 1 94 16 is_stmt 1 view .LVU181
+ 559              	.LBB55:
+  96:tmc/BoardAssignment.c **** 	if(!justCheck)
+ 560              		.loc 1 96 2 view .LVU182
+  97:tmc/BoardAssignment.c **** 		tmcmotioncontroller_init();
+ 561              		.loc 1 97 2 view .LVU183
+ 562              	.LBB56:
+ 100:tmc/BoardAssignment.c **** 	{
+ 563              		.loc 1 100 47 view .LVU184
+ 102:tmc/BoardAssignment.c **** 		{
+ 564              		.loc 1 102 17 is_stmt 0 view .LVU185
+ 565 0198 1149     		ldr	r1, .L60
+ 100:tmc/BoardAssignment.c **** 	{
+ 566              		.loc 1 100 13 view .LVU186
+ 567 019a 0022     		movs	r2, #0
+ 102:tmc/BoardAssignment.c **** 		{
+ 568              		.loc 1 102 5 view .LVU187
+ 569 019c 1C46     		mov	r4, r3
+ 570              	.LVL41:
+ 571              	.L53:
+ 102:tmc/BoardAssignment.c **** 		{
+ 572              		.loc 1 102 3 is_stmt 1 view .LVU188
+ 102:tmc/BoardAssignment.c **** 		{
+ 573              		.loc 1 102 5 is_stmt 0 view .LVU189
+ 574 019e 31F83250 		ldrh	r5, [r1, r2, lsl #3]
+ 575 01a2 A542     		cmp	r5, r4
+ 576 01a4 18D0     		beq	.L56
+ 100:tmc/BoardAssignment.c **** 	{
+ 577              		.loc 1 100 55 is_stmt 1 view .LVU190
+ 100:tmc/BoardAssignment.c **** 	{
+ 578              		.loc 1 100 56 is_stmt 0 view .LVU191
+ 579 01a6 0132     		adds	r2, r2, #1
+ 580              	.LVL42:
+ 100:tmc/BoardAssignment.c **** 	{
+ 581              		.loc 1 100 47 is_stmt 1 view .LVU192
+ 100:tmc/BoardAssignment.c **** 	{
+ 582              		.loc 1 100 2 is_stmt 0 view .LVU193
+ 583 01a8 102A     		cmp	r2, #16
+ 584 01aa F8D1     		bne	.L53
+ 585              	.LBE56:
+  96:tmc/BoardAssignment.c **** 	if(!justCheck)
+ 586              		.loc 1 96 10 view .LVU194
+ 587 01ac 0621     		movs	r1, #6
+ 588              	.L52:
+ 589              	.LVL43:
+ 111:tmc/BoardAssignment.c **** }
+ 590              		.loc 1 111 2 is_stmt 1 view .LVU195
+ 111:tmc/BoardAssignment.c **** }
+ 591              		.loc 1 111 2 is_stmt 0 view .LVU196
+ 592              	.LBE55:
+ 593              	.LBE54:
+  84:tmc/BoardAssignment.c **** 
+ 594              		.loc 1 84 19 view .LVU197
+ 595 01ae 447D     		ldrb	r4, [r0, #21]	@ zero_extendqisi2
+ 596              	.LBB59:
+ 597              	.LBB60:
+ 598              	.LBB61:
+ 128:tmc/BoardAssignment.c **** 		{
+ 599              		.loc 1 128 17 view .LVU198
+ 600 01b0 0C4D     		ldr	r5, .L60+4
+ 601              	.LBE61:
+ 602              	.LBE60:
+ 603              	.LBE59:
+  83:tmc/BoardAssignment.c **** 	ids->ch2.state = assignCh2(ids->ch2.id, true);
+ 604              		.loc 1 83 17 view .LVU199
+ 605 01b2 0170     		strb	r1, [r0]
+  84:tmc/BoardAssignment.c **** 
+ 606              		.loc 1 84 2 is_stmt 1 view .LVU200
+ 607              	.LVL44:
+ 608              	.LBB66:
+ 609              	.LBI59:
+ 114:tmc/BoardAssignment.c **** {
+ 610              		.loc 1 114 16 view .LVU201
+ 611              	.LBB64:
+ 612              	.LBB62:
+ 126:tmc/BoardAssignment.c **** 	{
+ 613              		.loc 1 126 47 view .LVU202
+ 126:tmc/BoardAssignment.c **** 	{
+ 614              		.loc 1 126 13 is_stmt 0 view .LVU203
+ 615 01b4 0022     		movs	r2, #0
+ 128:tmc/BoardAssignment.c **** 		{
+ 616              		.loc 1 128 5 view .LVU204
+ 617 01b6 2646     		mov	r6, r4
+ 618              	.LVL45:
+ 619              	.L55:
+ 128:tmc/BoardAssignment.c **** 		{
+ 620              		.loc 1 128 3 is_stmt 1 view .LVU205
+ 128:tmc/BoardAssignment.c **** 		{
+ 621              		.loc 1 128 5 is_stmt 0 view .LVU206
+ 622 01b8 35F83270 		ldrh	r7, [r5, r2, lsl #3]
+ 623 01bc B742     		cmp	r7, r6
+ 624 01be 0DD0     		beq	.L57
+ 126:tmc/BoardAssignment.c **** 	{
+ 625              		.loc 1 126 55 is_stmt 1 view .LVU207
+ 126:tmc/BoardAssignment.c **** 	{
+ 626              		.loc 1 126 56 is_stmt 0 view .LVU208
+ 627 01c0 0132     		adds	r2, r2, #1
+ 628              	.LVL46:
+ 126:tmc/BoardAssignment.c **** 	{
+ 629              		.loc 1 126 47 is_stmt 1 view .LVU209
+ 126:tmc/BoardAssignment.c **** 	{
+ 630              		.loc 1 126 2 is_stmt 0 view .LVU210
+ 631 01c2 0D2A     		cmp	r2, #13
+ 632 01c4 F8D1     		bne	.L55
+ 633              	.LBE62:
+ 116:tmc/BoardAssignment.c **** 
+ 634              		.loc 1 116 10 view .LVU211
+ 635 01c6 0622     		movs	r2, #6
+ 636              	.LVL47:
+ 637              	.L54:
+ 137:tmc/BoardAssignment.c **** }
+ 638              		.loc 1 137 2 is_stmt 1 view .LVU212
+ 137:tmc/BoardAssignment.c **** }
+ 639              		.loc 1 137 2 is_stmt 0 view .LVU213
+ 640              	.LBE64:
+ 641              	.LBE66:
+  89:tmc/BoardAssignment.c **** 
+ 642              		.loc 1 89 6 view .LVU214
+ 643 01c8 43EA0443 		orr	r3, r3, r4, lsl #16
+  84:tmc/BoardAssignment.c **** 
+ 644              		.loc 1 84 17 view .LVU215
+ 645 01cc 0275     		strb	r2, [r0, #20]
+  86:tmc/BoardAssignment.c **** 	out |= ids->ch2.id     << 16;
+ 646              		.loc 1 86 2 is_stmt 1 view .LVU216
+ 647              	.LVL48:
+  87:tmc/BoardAssignment.c **** 	out |= ids->ch1.state  << 8;
+ 648              		.loc 1 87 2 view .LVU217
+  88:tmc/BoardAssignment.c **** 	out |= ids->ch1.id     << 0;
+ 649              		.loc 1 88 2 view .LVU218
+  89:tmc/BoardAssignment.c **** 
+ 650              		.loc 1 89 2 view .LVU219
+  91:tmc/BoardAssignment.c **** }
+ 651              		.loc 1 91 2 view .LVU220
+  89:tmc/BoardAssignment.c **** 
+ 652              		.loc 1 89 6 is_stmt 0 view .LVU221
+ 653 01ce 43EA0123 		orr	r3, r3, r1, lsl #8
+  92:tmc/BoardAssignment.c **** 
+ 654              		.loc 1 92 1 view .LVU222
+ 655 01d2 43EA0260 		orr	r0, r3, r2, lsl #24
+ 656              	.LVL49:
+  92:tmc/BoardAssignment.c **** 
+ 657              		.loc 1 92 1 view .LVU223
+ 658 01d6 F0BD     		pop	{r4, r5, r6, r7, pc}
+ 659              	.LVL50:
+ 660              	.L56:
+ 661              	.LBB67:
+ 662              	.LBB58:
+ 663              	.LBB57:
+ 106:tmc/BoardAssignment.c **** 			break;
+ 664              		.loc 1 106 7 view .LVU224
+ 665 01d8 0221     		movs	r1, #2
+ 666 01da E8E7     		b	.L52
+ 667              	.LVL51:
+ 668              	.L57:
+ 106:tmc/BoardAssignment.c **** 			break;
+ 669              		.loc 1 106 7 view .LVU225
+ 670              	.LBE57:
+ 671              	.LBE58:
+ 672              	.LBE67:
+ 673              	.LBB68:
+ 674              	.LBB65:
+ 675              	.LBB63:
+ 132:tmc/BoardAssignment.c **** 			break;
+ 676              		.loc 1 132 7 view .LVU226
+ 677 01dc 0222     		movs	r2, #2
+ 678              	.LVL52:
+ 132:tmc/BoardAssignment.c **** 			break;
+ 679              		.loc 1 132 7 view .LVU227
+ 680 01de F3E7     		b	.L54
+ 681              	.L61:
+ 682              		.align	2
+ 683              	.L60:
+ 684 01e0 00000000 		.word	.LANCHOR0
+ 685 01e4 80000000 		.word	.LANCHOR0+128
+ 686              	.LBE63:
+ 687              	.LBE65:
+ 688              	.LBE68:
+ 689              		.cfi_endproc
+ 690              	.LFE2:
+ 692              		.align	1
+ 693              		.global	periodicJob
+ 694              		.syntax unified
+ 695              		.thumb
+ 696              		.thumb_func
+ 697              		.fpu softvfp
+ 699              	periodicJob:
+ 700              	.LVL53:
+ 701              	.LFB7:
+ 179:tmc/BoardAssignment.c **** 		}
+ 180:tmc/BoardAssignment.c **** 	}
+ 181:tmc/BoardAssignment.c **** }
+ 182:tmc/BoardAssignment.c **** 
+ 183:tmc/BoardAssignment.c **** static void unassign(IdAssignmentTypeDef *ids)
+ 184:tmc/BoardAssignment.c **** {
+ 185:tmc/BoardAssignment.c **** 	UNUSED(ids);
+ 186:tmc/BoardAssignment.c **** }
+ 187:tmc/BoardAssignment.c **** 
+ 188:tmc/BoardAssignment.c **** void periodicJob(unsigned int tick)
+ 189:tmc/BoardAssignment.c **** {
+ 702              		.loc 1 189 1 is_stmt 1 view -0
+ 703              		.cfi_startproc
+ 704              		@ args = 0, pretend = 0, frame = 0
+ 705              		@ frame_needed = 0, uses_anonymous_args = 0
+ 706              		@ link register save eliminated.
+ 190:tmc/BoardAssignment.c **** 	UNUSED(tick);
+ 707              		.loc 1 190 2 view .LVU229
+ 191:tmc/BoardAssignment.c **** }
+ 708              		.loc 1 191 1 is_stmt 0 view .LVU230
+ 709 01e8 7047     		bx	lr
+ 710              		.cfi_endproc
+ 711              	.LFE7:
+ 713              		.align	1
+ 714              		.global	deInit
+ 715              		.syntax unified
+ 716              		.thumb
+ 717              		.thumb_func
+ 718              		.fpu softvfp
+ 720              	deInit:
+ 721              	.LFB8:
+ 192:tmc/BoardAssignment.c **** 
+ 193:tmc/BoardAssignment.c **** void deInit(void)
+ 194:tmc/BoardAssignment.c **** {
+ 722              		.loc 1 194 1 is_stmt 1 view -0
+ 723              		.cfi_startproc
+ 724              		@ args = 0, pretend = 0, frame = 0
+ 725              		@ frame_needed = 0, uses_anonymous_args = 0
+ 195:tmc/BoardAssignment.c **** 	IdAssignmentTypeDef ids;
+ 726              		.loc 1 195 2 view .LVU232
+ 196:tmc/BoardAssignment.c **** 	Evalboards.ch1.deInit();
+ 727              		.loc 1 196 2 view .LVU233
+ 194:tmc/BoardAssignment.c **** 	IdAssignmentTypeDef ids;
+ 728              		.loc 1 194 1 is_stmt 0 view .LVU234
+ 729 01ea 10B5     		push	{r4, lr}
+ 730              	.LCFI4:
+ 731              		.cfi_def_cfa_offset 8
+ 732              		.cfi_offset 4, -8
+ 733              		.cfi_offset 14, -4
+ 734              		.loc 1 196 16 view .LVU235
+ 735 01ec 054C     		ldr	r4, .L64
+ 736              		.loc 1 196 2 view .LVU236
+ 737 01ee E36D     		ldr	r3, [r4, #92]
+ 738 01f0 9847     		blx	r3
+ 739              	.LVL54:
+ 197:tmc/BoardAssignment.c **** 	Evalboards.ch2.deInit();
+ 740              		.loc 1 197 2 is_stmt 1 view .LVU237
+ 741 01f2 D4F8D430 		ldr	r3, [r4, #212]
+ 742 01f6 9847     		blx	r3
+ 743              	.LVL55:
+ 198:tmc/BoardAssignment.c **** 
+ 199:tmc/BoardAssignment.c **** 	ids.ch1.id = Evalboards.ch1.id;
+ 744              		.loc 1 199 2 view .LVU238
+ 200:tmc/BoardAssignment.c **** 	ids.ch2.id = Evalboards.ch2.id;
+ 745              		.loc 1 200 2 view .LVU239
+ 201:tmc/BoardAssignment.c **** 	unassign(&ids);
+ 746              		.loc 1 201 2 view .LVU240
+ 185:tmc/BoardAssignment.c **** }
+ 747              		.loc 1 185 2 view .LVU241
+ 202:tmc/BoardAssignment.c **** 
+ 203:tmc/BoardAssignment.c **** 	tmcdriver_init();
+ 748              		.loc 1 203 2 view .LVU242
+ 749 01f8 FFF7FEFF 		bl	tmcdriver_init
+ 750              	.LVL56:
+ 204:tmc/BoardAssignment.c **** 	tmcmotioncontroller_init();
+ 751              		.loc 1 204 2 view .LVU243
+ 205:tmc/BoardAssignment.c **** }
+ 752              		.loc 1 205 1 is_stmt 0 view .LVU244
+ 753 01fc BDE81040 		pop	{r4, lr}
+ 754              	.LCFI5:
+ 755              		.cfi_restore 14
+ 756              		.cfi_restore 4
+ 757              		.cfi_def_cfa_offset 0
+ 204:tmc/BoardAssignment.c **** 	tmcmotioncontroller_init();
+ 758              		.loc 1 204 2 view .LVU245
+ 759 0200 FFF7FEBF 		b	tmcmotioncontroller_init
+ 760              	.LVL57:
+ 761              	.L65:
+ 762              		.align	2
+ 763              	.L64:
+ 764 0204 00000000 		.word	Evalboards
+ 765              		.cfi_endproc
+ 766              	.LFE8:
+ 768              		.comm	EEPROM,48,2
+ 769              		.comm	IdState,40,4
+ 770              		.comm	TMCMotionController,532,4
+ 771              		.comm	TMCDriver,532,4
+ 772              		.comm	Evalboards,244,4
+ 773              		.comm	VitalSignsMonitor,20,4
+ 774              		.comm	hwid,1,1
+ 775              		.comm	HAL,48,4
+ 776              		.comm	UART,40,4
+ 777              		.comm	Timer,16,4
+ 778              		.comm	WLAN,36,4
+ 779              		.comm	RS232,36,4
+ 780              		.comm	LEDs,28,4
+ 781              		.comm	USB,36,4
+ 782              		.comm	uart0_interrupt,1,1
+ 783              		.comm	ADCs,32,4
+ 784              		.comm	SPI,44,4
+ 785              		.comm	IOMap,2088,4
+ 786              		.comm	IOs,52,4
+ 787              		.comm	Cpu,8,4
+ 788              		.section	.rodata
+ 789              		.align	2
+ 790              		.set	.LANCHOR0,. + 0
+ 793              	init_ch1:
+ 794 0000 0200     		.short	2
+ 795 0002 0000     		.space	2
+ 796 0004 00000000 		.word	TMC5031_init
+ 797 0008 0400     		.short	4
+ 798 000a 0000     		.space	2
+ 799 000c 00000000 		.word	TMC4361_init
+ 800 0010 0500     		.short	5
+ 801 0012 0000     		.space	2
+ 802 0014 00000000 		.word	TMC5130_init
+ 803 0018 0600     		.short	6
+ 804 001a 0000     		.space	2
+ 805 001c 00000000 		.word	TMC5041_init
+ 806 0020 0700     		.short	7
+ 807 0022 0000     		.space	2
+ 808 0024 00000000 		.word	TMC5072_init
+ 809 0028 0900     		.short	9
+ 810 002a 0000     		.space	2
+ 811 002c 00000000 		.word	TMC4670_init
+ 812 0030 0A00     		.short	10
+ 813 0032 0000     		.space	2
+ 814 0034 00000000 		.word	TMC4331_init
+ 815 0038 0B00     		.short	11
+ 816 003a 0000     		.space	2
+ 817 003c 00000000 		.word	TMC4361A_init
+ 818 0040 0D00     		.short	13
+ 819 0042 0000     		.space	2
+ 820 0044 00000000 		.word	TMC4671_init
+ 821 0048 0F00     		.short	15
+ 822 004a 0000     		.space	2
+ 823 004c 00000000 		.word	TMC4330_init
+ 824 0050 1000     		.short	16
+ 825 0052 0000     		.space	2
+ 826 0054 00000000 		.word	TMC5160_init
+ 827 0058 1200     		.short	18
+ 828 005a 0000     		.space	2
+ 829 005c 00000000 		.word	TMC5161_init
+ 830 0060 1900     		.short	25
+ 831 0062 0000     		.space	2
+ 832 0064 00000000 		.word	TMC5062_init
+ 833 0068 1A00     		.short	26
+ 834 006a 0000     		.space	2
+ 835 006c 00000000 		.word	TMC8461_init_ch1
+ 836 0070 1B00     		.short	27
+ 837 0072 0000     		.space	2
+ 838 0074 00000000 		.word	TMC8462_init_ch1
+ 839 0078 FF00     		.short	255
+ 840 007a 0000     		.space	2
+ 841 007c 00000000 		.word	SelfTest_init
+ 844              	init_ch2:
+ 845 0080 0100     		.short	1
+ 846 0082 0000     		.space	2
+ 847 0084 00000000 		.word	TMC2660_init
+ 848 0088 0300     		.short	3
+ 849 008a 0000     		.space	2
+ 850 008c 00000000 		.word	TMC2130_init
+ 851 0090 0400     		.short	4
+ 852 0092 0000     		.space	2
+ 853 0094 00000000 		.word	TMC2100_init
+ 854 0098 0500     		.short	5
+ 855 009a 0000     		.space	2
+ 856 009c 00000000 		.word	TMC2041_init
+ 857 00a0 0600     		.short	6
+ 858 00a2 0000     		.space	2
+ 859 00a4 00000000 		.word	TMC2208_init
+ 860 00a8 0800     		.short	8
+ 861 00aa 0000     		.space	2
+ 862 00ac 00000000 		.word	TMC2209_init
+ 863 00b0 0700     		.short	7
+ 864 00b2 0000     		.space	2
+ 865 00b4 00000000 		.word	TMC2224_init
+ 866 00b8 1200     		.short	18
+ 867 00ba 0000     		.space	2
+ 868 00bc 00000000 		.word	TMC2225_init
+ 869 00c0 0D00     		.short	13
+ 870 00c2 0000     		.space	2
+ 871 00c4 00000000 		.word	TMC2590_init
+ 872 00c8 0900     		.short	9
+ 873 00ca 0000     		.space	2
+ 874 00cc 00000000 		.word	TMCC160_init
+ 875 00d0 1300     		.short	19
+ 876 00d2 0000     		.space	2
+ 877 00d4 00000000 		.word	TMC6100_init
+ 878 00d8 0A00     		.short	10
+ 879 00da 0000     		.space	2
+ 880 00dc 00000000 		.word	TMC6200_init
+ 881 00e0 0B00     		.short	11
+ 882 00e2 0000     		.space	2
+ 883 00e4 00000000 		.word	TMC2160_init
+ 884              		.bss
+ 885              		.align	1
+ 888              	ADCValue:
+ 889 0000 00000000 		.space	12
+ 889      00000000 
+ 889      00000000 
+ 890              		.text
+ 891              	.Letext0:
+ 892              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 893              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 894              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 895              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 896              		.file 6 "TMC-API/tmc/helpers/Config.h"
+ 897              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 898              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 899              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 900              		.file 10 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\in
+ 901              		.file 11 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 902              		.file 12 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 903              		.file 13 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 904              		.file 14 "./hal/IOs.h"
+ 905              		.file 15 "./hal/IOMap.h"
+ 906              		.file 16 "./hal/SPI.h"
+ 907              		.file 17 "./hal/ADCs.h"
+ 908              		.file 18 "./hal/RXTX.h"
+ 909              		.file 19 "./hal/USB.h"
+ 910              		.file 20 "./hal/LEDs.h"
+ 911              		.file 21 "./hal/RS232.h"
+ 912              		.file 22 "./hal/WLAN.h"
+ 913              		.file 23 "./hal/Timer.h"
+ 914              		.file 24 "./hal/UART.h"
+ 915              		.file 25 "./hal/HAL.h"
+ 916              		.file 26 "./tmc/VitalSignsMonitor.h"
+ 917              		.file 27 "./boards/Board.h"
+ 918              		.file 28 "./boards/TMCDriver.h"
+ 919              		.file 29 "./boards/TMCMotionController.h"
+ 920              		.file 30 "tmc/BoardAssignment.h"
+ 921              		.file 31 "tmc/EEPROM.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 BoardAssignment.c
+C:\Users\Shubham\AppData\Local\Temp\cclEMQCm.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\cclEMQCm.s:23     .text:00000000 Board_assign
+C:\Users\Shubham\AppData\Local\Temp\cclEMQCm.s:521    .text:00000184 $d
+                            *COM*:000000f4 Evalboards
+                            *COM*:00000030 HAL
+C:\Users\Shubham\AppData\Local\Temp\cclEMQCm.s:528    .text:00000194 $t
+C:\Users\Shubham\AppData\Local\Temp\cclEMQCm.s:535    .text:00000194 Board_supported
+C:\Users\Shubham\AppData\Local\Temp\cclEMQCm.s:684    .text:000001e0 $d
+C:\Users\Shubham\AppData\Local\Temp\cclEMQCm.s:692    .text:000001e8 $t
+C:\Users\Shubham\AppData\Local\Temp\cclEMQCm.s:699    .text:000001e8 periodicJob
+C:\Users\Shubham\AppData\Local\Temp\cclEMQCm.s:720    .text:000001ea deInit
+C:\Users\Shubham\AppData\Local\Temp\cclEMQCm.s:764    .text:00000204 $d
+                            *COM*:00000030 EEPROM
+                            *COM*:00000028 IdState
+                            *COM*:00000214 TMCMotionController
+                            *COM*:00000214 TMCDriver
+                            *COM*:00000014 VitalSignsMonitor
+                            *COM*:00000001 hwid
+                            *COM*:00000028 UART
+                            *COM*:00000010 Timer
+                            *COM*:00000024 WLAN
+                            *COM*:00000024 RS232
+                            *COM*:0000001c LEDs
+                            *COM*:00000024 USB
+                            *COM*:00000001 uart0_interrupt
+                            *COM*:00000020 ADCs
+                            *COM*:0000002c SPI
+                            *COM*:00000828 IOMap
+                            *COM*:00000034 IOs
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\cclEMQCm.s:789    .rodata:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\cclEMQCm.s:793    .rodata:00000000 init_ch1
+C:\Users\Shubham\AppData\Local\Temp\cclEMQCm.s:844    .rodata:00000080 init_ch2
+C:\Users\Shubham\AppData\Local\Temp\cclEMQCm.s:885    .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\cclEMQCm.s:888    .bss:00000000 ADCValue
+
+UNDEFINED SYMBOLS
+tmcmotioncontroller_init
+tmcdriver_init
+TMC5031_init
+TMC4361_init
+TMC5130_init
+TMC5041_init
+TMC5072_init
+TMC4670_init
+TMC4331_init
+TMC4361A_init
+TMC4671_init
+TMC4330_init
+TMC5160_init
+TMC5161_init
+TMC5062_init
+TMC8461_init_ch1
+TMC8462_init_ch1
+SelfTest_init
+TMC2660_init
+TMC2130_init
+TMC2100_init
+TMC2041_init
+TMC2208_init
+TMC2209_init
+TMC2224_init
+TMC2225_init
+TMC2590_init
+TMCC160_init
+TMC6100_init
+TMC6200_init
+TMC2160_init

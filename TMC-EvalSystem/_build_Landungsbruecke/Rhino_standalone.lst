@@ -1,0 +1,802 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"Rhino_standalone.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.arch armv7e-m
+  17              		.syntax unified
+  18              		.thumb
+  19              		.thumb_func
+  20              		.fpu softvfp
+  22              	getInt:
+  23              	.LFB3:
+  24              		.file 1 "boards/Rhino_standalone.c"
+   1:boards/Rhino_standalone.c **** #include "Rhino_standalone.h"
+   2:boards/Rhino_standalone.c **** 
+   3:boards/Rhino_standalone.c **** #include "Board.h"
+   4:boards/Rhino_standalone.c **** #include "tmc/ic/TMC5130/TMC5130_Register.h"
+   5:boards/Rhino_standalone.c **** 
+   6:boards/Rhino_standalone.c **** static uint32_t getInt();
+   7:boards/Rhino_standalone.c **** static void set();
+   8:boards/Rhino_standalone.c **** static void reset();
+   9:boards/Rhino_standalone.c **** static void setConfig(TMCRhinoTypeStandAloneConfigDef *config);
+  10:boards/Rhino_standalone.c **** static void getConfig(TMCRhinoTypeStandAloneConfigDef *config);
+  11:boards/Rhino_standalone.c **** static void setPins(IO_States *CFG);
+  12:boards/Rhino_standalone.c **** static void getPins(IO_States *CFG);
+  13:boards/Rhino_standalone.c **** static void setInt(uint32_t state);
+  14:boards/Rhino_standalone.c **** 
+  15:boards/Rhino_standalone.c **** static IOPinTypeDef IODummy = { .bitWeight = DUMMY_BITWEIGHT };
+  16:boards/Rhino_standalone.c **** static IOPinTypeDef *CFGPins[] = { &IODummy, &IODummy, &IODummy, &IODummy, &IODummy, &IODummy, &IOD
+  17:boards/Rhino_standalone.c **** 
+  18:boards/Rhino_standalone.c **** static IO_States settings[7] = {IOS_LOW, IOS_LOW, IOS_LOW, IOS_LOW, IOS_LOW, IOS_LOW, IOS_LOW};
+  19:boards/Rhino_standalone.c **** 
+  20:boards/Rhino_standalone.c **** TMCRhinoTypeStandAloneDef TMCRhinoSA =
+  21:boards/Rhino_standalone.c **** {
+  22:boards/Rhino_standalone.c **** 	.reset      = reset,
+  23:boards/Rhino_standalone.c **** 	.setConfig  = setConfig,
+  24:boards/Rhino_standalone.c **** 	.getConfig  = getConfig,
+  25:boards/Rhino_standalone.c **** 	.setPins    = setPins,
+  26:boards/Rhino_standalone.c **** 	.getPins    = getPins,
+  27:boards/Rhino_standalone.c **** 	.setInt     = setInt,
+  28:boards/Rhino_standalone.c **** 	.getInt     = getInt,
+  29:boards/Rhino_standalone.c **** 
+  30:boards/Rhino_standalone.c **** 	.MicrostepResolutionSettings1 =
+  31:boards/Rhino_standalone.c **** 	{ //	CFG1
+  32:boards/Rhino_standalone.c **** 		.BY1_INTERPOL0              = IOS_LOW,
+  33:boards/Rhino_standalone.c **** 		.BY2_INTERPOL0              = IOS_HIGH,
+  34:boards/Rhino_standalone.c **** 		.BY2_INTERPOL256            = IOS_OPEN,
+  35:boards/Rhino_standalone.c **** 		.BY4_INTERPOL0              = IOS_LOW,
+  36:boards/Rhino_standalone.c **** 		.BY4_INTERPOL256            = IOS_OPEN,
+  37:boards/Rhino_standalone.c **** 		.BY16_INTERPOL0             = IOS_HIGH,
+  38:boards/Rhino_standalone.c **** 		.BY16_INTERPOL256           = IOS_LOW,
+  39:boards/Rhino_standalone.c **** 		.PWM_CHOP_BY4_INTERPOL256   = IOS_HIGH,
+  40:boards/Rhino_standalone.c **** 		.PWM_CHOP_BY16_INTERPOL256  = IOS_OPEN
+  41:boards/Rhino_standalone.c **** 	},
+  42:boards/Rhino_standalone.c **** 
+  43:boards/Rhino_standalone.c **** 	.MicrostepResolutionSettings2 =
+  44:boards/Rhino_standalone.c **** 	{ // CFG2
+  45:boards/Rhino_standalone.c **** 		.BY1_INTERPOL0              = IOS_LOW,
+  46:boards/Rhino_standalone.c **** 		.BY2_INTERPOL0              = IOS_LOW,
+  47:boards/Rhino_standalone.c **** 		.BY2_INTERPOL256            = IOS_LOW,
+  48:boards/Rhino_standalone.c **** 		.BY4_INTERPOL0              = IOS_HIGH,
+  49:boards/Rhino_standalone.c **** 		.BY4_INTERPOL256            = IOS_HIGH,
+  50:boards/Rhino_standalone.c **** 		.BY16_INTERPOL0             = IOS_HIGH,
+  51:boards/Rhino_standalone.c **** 		.BY16_INTERPOL256           = IOS_OPEN,
+  52:boards/Rhino_standalone.c **** 		.PWM_CHOP_BY4_INTERPOL256   = IOS_OPEN,
+  53:boards/Rhino_standalone.c **** 		.PWM_CHOP_BY16_INTERPOL256  = IOS_OPEN,
+  54:boards/Rhino_standalone.c **** 	},
+  55:boards/Rhino_standalone.c **** 
+  56:boards/Rhino_standalone.c **** 	.resetSettings =
+  57:boards/Rhino_standalone.c **** 	(
+  58:boards/Rhino_standalone.c **** 		0
+  59:boards/Rhino_standalone.c **** 		| (IOS_LOW	<< 0)   // CFG0	= TCLKx140                   : ChopperOffTimeSettings
+  60:boards/Rhino_standalone.c **** 		| (IOS_LOW	<< 2)   // CFG1 = PWM_CHOP_BY16_INTERPOL256  : MicrosteResolutionSettings 1
+  61:boards/Rhino_standalone.c **** 		| (IOS_OPEN	<< 4)   // CFG2 = PWM_CHOP_BY16_INTERPOL256  : MicrosteResolutionSettings 2
+  62:boards/Rhino_standalone.c **** 		| (IOS_LOW	<< 6)   // CFG3 = RSENSE_ONLY                : CurrentSettings
+  63:boards/Rhino_standalone.c **** 		| (IOS_LOW	<< 8)   // CFG4 = TOFF5                      : ChopperHysteresisSettings
+  64:boards/Rhino_standalone.c **** 		| (IOS_LOW	<< 10)  // CFG5 = BLANK16                    : ChopperBlankTimeSettings
+  65:boards/Rhino_standalone.c **** 		| (IOS_OPEN	<< 12)  // CFG6 = ENABLED_034                : Enable_StandStillPowerDownSettings
+  66:boards/Rhino_standalone.c **** 	),
+  67:boards/Rhino_standalone.c **** 	.CFGPins = CFGPins
+  68:boards/Rhino_standalone.c **** 
+  69:boards/Rhino_standalone.c **** };
+  70:boards/Rhino_standalone.c **** 
+  71:boards/Rhino_standalone.c **** static void reset()
+  72:boards/Rhino_standalone.c **** {
+  73:boards/Rhino_standalone.c **** 	setInt(TMCRhinoSA.resetSettings);
+  74:boards/Rhino_standalone.c **** }
+  75:boards/Rhino_standalone.c **** 
+  76:boards/Rhino_standalone.c **** static void setInt(uint32_t state)
+  77:boards/Rhino_standalone.c **** {
+  78:boards/Rhino_standalone.c **** 	for(uint8_t i = 0; i < 7; i++)
+  79:boards/Rhino_standalone.c **** 	{
+  80:boards/Rhino_standalone.c **** 		settings[i] = state & 0x03;
+  81:boards/Rhino_standalone.c **** 		state >>= 2;
+  82:boards/Rhino_standalone.c **** 	}
+  83:boards/Rhino_standalone.c **** 	set();
+  84:boards/Rhino_standalone.c **** }
+  85:boards/Rhino_standalone.c **** 
+  86:boards/Rhino_standalone.c **** static uint32_t getInt()
+  87:boards/Rhino_standalone.c **** {
+  25              		.loc 1 87 1 view -0
+  26              		.cfi_startproc
+  27              		@ args = 0, pretend = 0, frame = 0
+  28              		@ frame_needed = 0, uses_anonymous_args = 0
+  29              		@ link register save eliminated.
+  88:boards/Rhino_standalone.c **** 	uint32_t state = 0;
+  30              		.loc 1 88 2 view .LVU1
+  31              	.LVL0:
+  89:boards/Rhino_standalone.c **** 
+  90:boards/Rhino_standalone.c **** 	for(uint8_t i = 0; i < 7; i++)
+  32              		.loc 1 90 2 view .LVU2
+  33              	.LBB2:
+  34              		.loc 1 90 6 view .LVU3
+  35              		.loc 1 90 21 view .LVU4
+  36              	.LBE2:
+  87:boards/Rhino_standalone.c **** 	uint32_t state = 0;
+  37              		.loc 1 87 1 is_stmt 0 view .LVU5
+  38 0000 0023     		movs	r3, #0
+  39 0002 0649     		ldr	r1, .L4
+  88:boards/Rhino_standalone.c **** 	uint32_t state = 0;
+  40              		.loc 1 88 11 view .LVU6
+  41 0004 1846     		mov	r0, r3
+  42              	.LVL1:
+  43              	.L2:
+  44              	.LBB3:
+  91:boards/Rhino_standalone.c **** 	{
+  92:boards/Rhino_standalone.c **** 		state |= (settings[i] & 0x03) << (i<<1);
+  45              		.loc 1 92 3 is_stmt 1 discriminator 3 view .LVU7
+  46              		.loc 1 92 21 is_stmt 0 discriminator 3 view .LVU8
+  47 0006 11F8012B 		ldrb	r2, [r1], #1	@ zero_extendqisi2
+  48              	.LVL2:
+  49              		.loc 1 92 25 discriminator 3 view .LVU9
+  50 000a 02F00302 		and	r2, r2, #3
+  51              		.loc 1 92 33 discriminator 3 view .LVU10
+  52 000e 9A40     		lsls	r2, r2, r3
+  53 0010 0233     		adds	r3, r3, #2
+  90:boards/Rhino_standalone.c **** 	{
+  54              		.loc 1 90 2 discriminator 3 view .LVU11
+  55 0012 0E2B     		cmp	r3, #14
+  56              		.loc 1 92 9 discriminator 3 view .LVU12
+  57 0014 40EA0200 		orr	r0, r0, r2
+  58              	.LVL3:
+  90:boards/Rhino_standalone.c **** 	{
+  59              		.loc 1 90 28 is_stmt 1 discriminator 3 view .LVU13
+  90:boards/Rhino_standalone.c **** 	{
+  60              		.loc 1 90 21 discriminator 3 view .LVU14
+  90:boards/Rhino_standalone.c **** 	{
+  61              		.loc 1 90 2 is_stmt 0 discriminator 3 view .LVU15
+  62 0018 F5D1     		bne	.L2
+  63              	.LBE3:
+  93:boards/Rhino_standalone.c **** 	}
+  94:boards/Rhino_standalone.c **** 
+  95:boards/Rhino_standalone.c **** 	return state;
+  96:boards/Rhino_standalone.c **** }
+  64              		.loc 1 96 1 view .LVU16
+  65 001a 7047     		bx	lr
+  66              	.L5:
+  67              		.align	2
+  68              	.L4:
+  69 001c 00000000 		.word	.LANCHOR0
+  70              		.cfi_endproc
+  71              	.LFE3:
+  73              		.align	1
+  74              		.syntax unified
+  75              		.thumb
+  76              		.thumb_func
+  77              		.fpu softvfp
+  79              	getPins:
+  80              	.LVL4:
+  81              	.LFB5:
+  97:boards/Rhino_standalone.c **** 
+  98:boards/Rhino_standalone.c **** static void setPins(IO_States *CFG)
+  99:boards/Rhino_standalone.c **** {
+ 100:boards/Rhino_standalone.c **** 	for(uint8_t i = 0; i < 7; i++)
+ 101:boards/Rhino_standalone.c **** 		settings[i] = CFG[i] & 0x03;
+ 102:boards/Rhino_standalone.c **** 	set();
+ 103:boards/Rhino_standalone.c **** }
+ 104:boards/Rhino_standalone.c **** 
+ 105:boards/Rhino_standalone.c **** static void getPins(IO_States *CFG)
+ 106:boards/Rhino_standalone.c **** {
+  82              		.loc 1 106 1 is_stmt 1 view -0
+  83              		.cfi_startproc
+  84              		@ args = 0, pretend = 0, frame = 0
+  85              		@ frame_needed = 0, uses_anonymous_args = 0
+  86              		@ link register save eliminated.
+ 107:boards/Rhino_standalone.c **** 	for(uint8_t i = 0; i < 7; i++)
+  87              		.loc 1 107 2 view .LVU18
+  88              	.LBB4:
+  89              		.loc 1 107 6 view .LVU19
+  90              		.loc 1 107 21 view .LVU20
+  91 0020 0549     		ldr	r1, .L9
+  92 0022 431E     		subs	r3, r0, #1
+  93 0024 0630     		adds	r0, r0, #6
+  94              	.LVL5:
+  95              	.L7:
+ 108:boards/Rhino_standalone.c **** 		CFG[i] = settings[i] & 0x03;
+  96              		.loc 1 108 3 discriminator 3 view .LVU21
+  97              		.loc 1 108 20 is_stmt 0 discriminator 3 view .LVU22
+  98 0026 11F8012B 		ldrb	r2, [r1], #1	@ zero_extendqisi2
+  99              	.LVL6:
+ 100              		.loc 1 108 24 discriminator 3 view .LVU23
+ 101 002a 02F00302 		and	r2, r2, #3
+ 102              		.loc 1 108 10 discriminator 3 view .LVU24
+ 103 002e 03F8012F 		strb	r2, [r3, #1]!
+ 107:boards/Rhino_standalone.c **** 	for(uint8_t i = 0; i < 7; i++)
+ 104              		.loc 1 107 28 is_stmt 1 discriminator 3 view .LVU25
+ 105              	.LVL7:
+ 107:boards/Rhino_standalone.c **** 	for(uint8_t i = 0; i < 7; i++)
+ 106              		.loc 1 107 21 discriminator 3 view .LVU26
+ 107:boards/Rhino_standalone.c **** 	for(uint8_t i = 0; i < 7; i++)
+ 107              		.loc 1 107 2 is_stmt 0 discriminator 3 view .LVU27
+ 108 0032 8342     		cmp	r3, r0
+ 109 0034 F7D1     		bne	.L7
+ 110              	.LBE4:
+ 109:boards/Rhino_standalone.c **** }
+ 111              		.loc 1 109 1 view .LVU28
+ 112 0036 7047     		bx	lr
+ 113              	.L10:
+ 114              		.align	2
+ 115              	.L9:
+ 116 0038 00000000 		.word	.LANCHOR0
+ 117              		.cfi_endproc
+ 118              	.LFE5:
+ 120              		.align	1
+ 121              		.syntax unified
+ 122              		.thumb
+ 123              		.thumb_func
+ 124              		.fpu softvfp
+ 126              	getConfig:
+ 127              	.LVL8:
+ 128              	.LFB7:
+ 110:boards/Rhino_standalone.c **** 
+ 111:boards/Rhino_standalone.c **** static void setConfig(TMCRhinoTypeStandAloneConfigDef *config)
+ 112:boards/Rhino_standalone.c **** {
+ 113:boards/Rhino_standalone.c **** 	settings[0] = config->chopperOffTime;
+ 114:boards/Rhino_standalone.c **** 	settings[1] = config->microstepResolution1;
+ 115:boards/Rhino_standalone.c **** 	settings[2] = config->microstepResolution2;
+ 116:boards/Rhino_standalone.c **** 	settings[3] = config->currentSetting;
+ 117:boards/Rhino_standalone.c **** 	settings[4] = config->chopperHysteresis;
+ 118:boards/Rhino_standalone.c **** 	settings[5] = config->chopperBlankTime;
+ 119:boards/Rhino_standalone.c **** 	settings[6] = config->enableStandStillPowerDown;
+ 120:boards/Rhino_standalone.c **** 	set();
+ 121:boards/Rhino_standalone.c **** }
+ 122:boards/Rhino_standalone.c **** 
+ 123:boards/Rhino_standalone.c **** static void getConfig(TMCRhinoTypeStandAloneConfigDef *config)
+ 124:boards/Rhino_standalone.c **** {
+ 129              		.loc 1 124 1 is_stmt 1 view -0
+ 130              		.cfi_startproc
+ 131              		@ args = 0, pretend = 0, frame = 0
+ 132              		@ frame_needed = 0, uses_anonymous_args = 0
+ 133              		@ link register save eliminated.
+ 125:boards/Rhino_standalone.c **** 	config->chopperOffTime             = settings[0];
+ 134              		.loc 1 125 2 view .LVU30
+ 135              		.loc 1 125 47 is_stmt 0 view .LVU31
+ 136 003c 074B     		ldr	r3, .L12
+ 137 003e 1A78     		ldrb	r2, [r3]	@ zero_extendqisi2
+ 138              		.loc 1 125 37 view .LVU32
+ 139 0040 0270     		strb	r2, [r0]
+ 126:boards/Rhino_standalone.c **** 	config->microstepResolution1       = settings[1];
+ 140              		.loc 1 126 2 is_stmt 1 view .LVU33
+ 141              		.loc 1 126 47 is_stmt 0 view .LVU34
+ 142 0042 5A78     		ldrb	r2, [r3, #1]	@ zero_extendqisi2
+ 143              		.loc 1 126 37 view .LVU35
+ 144 0044 4270     		strb	r2, [r0, #1]
+ 127:boards/Rhino_standalone.c **** 	config->microstepResolution2       = settings[2];
+ 145              		.loc 1 127 2 is_stmt 1 view .LVU36
+ 146              		.loc 1 127 47 is_stmt 0 view .LVU37
+ 147 0046 9A78     		ldrb	r2, [r3, #2]	@ zero_extendqisi2
+ 148              		.loc 1 127 37 view .LVU38
+ 149 0048 8270     		strb	r2, [r0, #2]
+ 128:boards/Rhino_standalone.c **** 	config->currentSetting             = settings[3];
+ 150              		.loc 1 128 2 is_stmt 1 view .LVU39
+ 151              		.loc 1 128 47 is_stmt 0 view .LVU40
+ 152 004a DA78     		ldrb	r2, [r3, #3]	@ zero_extendqisi2
+ 153              		.loc 1 128 37 view .LVU41
+ 154 004c C270     		strb	r2, [r0, #3]
+ 129:boards/Rhino_standalone.c **** 	config->chopperHysteresis          = settings[4];
+ 155              		.loc 1 129 2 is_stmt 1 view .LVU42
+ 156              		.loc 1 129 47 is_stmt 0 view .LVU43
+ 157 004e 1A79     		ldrb	r2, [r3, #4]	@ zero_extendqisi2
+ 158              		.loc 1 129 37 view .LVU44
+ 159 0050 0271     		strb	r2, [r0, #4]
+ 130:boards/Rhino_standalone.c **** 	config->chopperBlankTime           = settings[5];
+ 160              		.loc 1 130 2 is_stmt 1 view .LVU45
+ 161              		.loc 1 130 47 is_stmt 0 view .LVU46
+ 162 0052 5A79     		ldrb	r2, [r3, #5]	@ zero_extendqisi2
+ 163              		.loc 1 130 37 view .LVU47
+ 164 0054 4271     		strb	r2, [r0, #5]
+ 131:boards/Rhino_standalone.c **** 	config->enableStandStillPowerDown  = settings[6];
+ 165              		.loc 1 131 2 is_stmt 1 view .LVU48
+ 166              		.loc 1 131 47 is_stmt 0 view .LVU49
+ 167 0056 9B79     		ldrb	r3, [r3, #6]	@ zero_extendqisi2
+ 168              		.loc 1 131 37 view .LVU50
+ 169 0058 8371     		strb	r3, [r0, #6]
+ 132:boards/Rhino_standalone.c **** }
+ 170              		.loc 1 132 1 view .LVU51
+ 171 005a 7047     		bx	lr
+ 172              	.L13:
+ 173              		.align	2
+ 174              	.L12:
+ 175 005c 00000000 		.word	.LANCHOR0
+ 176              		.cfi_endproc
+ 177              	.LFE7:
+ 179              		.align	1
+ 180              		.syntax unified
+ 181              		.thumb
+ 182              		.thumb_func
+ 183              		.fpu softvfp
+ 185              	set:
+ 186              	.LFB8:
+ 133:boards/Rhino_standalone.c **** 
+ 134:boards/Rhino_standalone.c **** static void set()
+ 135:boards/Rhino_standalone.c **** {
+ 187              		.loc 1 135 1 is_stmt 1 view -0
+ 188              		.cfi_startproc
+ 189              		@ args = 0, pretend = 0, frame = 0
+ 190              		@ frame_needed = 0, uses_anonymous_args = 0
+ 136:boards/Rhino_standalone.c **** 	for(uint8_t i = 0; i < 7; i++)
+ 191              		.loc 1 136 2 view .LVU53
+ 192              	.LBB5:
+ 193              		.loc 1 136 6 view .LVU54
+ 194              	.LVL9:
+ 195              		.loc 1 136 21 view .LVU55
+ 196              	.LBE5:
+ 135:boards/Rhino_standalone.c **** 	for(uint8_t i = 0; i < 7; i++)
+ 197              		.loc 1 135 1 is_stmt 0 view .LVU56
+ 198 0060 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 199              	.LCFI0:
+ 200              		.cfi_def_cfa_offset 24
+ 201              		.cfi_offset 3, -24
+ 202              		.cfi_offset 4, -20
+ 203              		.cfi_offset 5, -16
+ 204              		.cfi_offset 6, -12
+ 205              		.cfi_offset 7, -8
+ 206              		.cfi_offset 14, -4
+ 207              	.LBB6:
+ 137:boards/Rhino_standalone.c **** 		HAL.IOs->config->setToState(TMCRhinoSA.CFGPins[i], settings[i] & 0x03);
+ 208              		.loc 1 137 6 view .LVU57
+ 209 0062 094B     		ldr	r3, .L17
+ 210 0064 094D     		ldr	r5, .L17+4
+ 211              		.loc 1 137 41 view .LVU58
+ 212 0066 0A4F     		ldr	r7, .L17+8
+ 213              		.loc 1 137 10 view .LVU59
+ 214 0068 DE68     		ldr	r6, [r3, #12]
+ 215              	.LBE6:
+ 135:boards/Rhino_standalone.c **** 	for(uint8_t i = 0; i < 7; i++)
+ 216              		.loc 1 135 1 view .LVU60
+ 217 006a 0024     		movs	r4, #0
+ 218              	.LVL10:
+ 219              	.L15:
+ 220              	.LBB7:
+ 221              		.loc 1 137 3 is_stmt 1 discriminator 3 view .LVU61
+ 222              		.loc 1 137 62 is_stmt 0 discriminator 3 view .LVU62
+ 223 006c 15F8011B 		ldrb	r1, [r5], #1	@ zero_extendqisi2
+ 224              	.LVL11:
+ 225              		.loc 1 137 3 discriminator 3 view .LVU63
+ 226 0070 7A6C     		ldr	r2, [r7, #68]
+ 227              		.loc 1 137 18 discriminator 3 view .LVU64
+ 228 0072 3368     		ldr	r3, [r6]
+ 229              		.loc 1 137 3 discriminator 3 view .LVU65
+ 230 0074 1059     		ldr	r0, [r2, r4]
+ 231 0076 DB69     		ldr	r3, [r3, #28]
+ 232 0078 01F00301 		and	r1, r1, #3
+ 233 007c 0434     		adds	r4, r4, #4
+ 234 007e 9847     		blx	r3
+ 235              	.LVL12:
+ 136:boards/Rhino_standalone.c **** 	for(uint8_t i = 0; i < 7; i++)
+ 236              		.loc 1 136 28 is_stmt 1 discriminator 3 view .LVU66
+ 136:boards/Rhino_standalone.c **** 	for(uint8_t i = 0; i < 7; i++)
+ 237              		.loc 1 136 21 discriminator 3 view .LVU67
+ 136:boards/Rhino_standalone.c **** 	for(uint8_t i = 0; i < 7; i++)
+ 238              		.loc 1 136 2 is_stmt 0 discriminator 3 view .LVU68
+ 239 0080 1C2C     		cmp	r4, #28
+ 240 0082 F3D1     		bne	.L15
+ 241              	.LBE7:
+ 138:boards/Rhino_standalone.c **** }
+ 242              		.loc 1 138 1 view .LVU69
+ 243 0084 F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 244              	.LVL13:
+ 245              	.L18:
+ 246              		.loc 1 138 1 view .LVU70
+ 247 0086 00BF     		.align	2
+ 248              	.L17:
+ 249 0088 00000000 		.word	HAL
+ 250 008c 00000000 		.word	.LANCHOR0
+ 251 0090 00000000 		.word	.LANCHOR1
+ 252              		.cfi_endproc
+ 253              	.LFE8:
+ 255              		.align	1
+ 256              		.syntax unified
+ 257              		.thumb
+ 258              		.thumb_func
+ 259              		.fpu softvfp
+ 261              	setInt:
+ 262              	.LVL14:
+ 263              	.LFB2:
+  77:boards/Rhino_standalone.c **** 	for(uint8_t i = 0; i < 7; i++)
+ 264              		.loc 1 77 1 is_stmt 1 view -0
+ 265              		.cfi_startproc
+ 266              		@ args = 0, pretend = 0, frame = 0
+ 267              		@ frame_needed = 0, uses_anonymous_args = 0
+ 268              		@ link register save eliminated.
+  78:boards/Rhino_standalone.c **** 	{
+ 269              		.loc 1 78 2 view .LVU72
+ 270              	.LBB8:
+  78:boards/Rhino_standalone.c **** 	{
+ 271              		.loc 1 78 6 view .LVU73
+  78:boards/Rhino_standalone.c **** 	{
+ 272              		.loc 1 78 21 view .LVU74
+ 273 0094 064A     		ldr	r2, .L22
+ 274              	.LBE8:
+  77:boards/Rhino_standalone.c **** 	for(uint8_t i = 0; i < 7; i++)
+ 275              		.loc 1 77 1 is_stmt 0 view .LVU75
+ 276 0096 0723     		movs	r3, #7
+ 277              	.LVL15:
+ 278              	.L20:
+ 279              	.LBB9:
+  80:boards/Rhino_standalone.c **** 		state >>= 2;
+ 280              		.loc 1 80 3 is_stmt 1 discriminator 3 view .LVU76
+ 281 0098 013B     		subs	r3, r3, #1
+  80:boards/Rhino_standalone.c **** 		state >>= 2;
+ 282              		.loc 1 80 23 is_stmt 0 discriminator 3 view .LVU77
+ 283 009a 00F00301 		and	r1, r0, #3
+  78:boards/Rhino_standalone.c **** 	{
+ 284              		.loc 1 78 2 discriminator 3 view .LVU78
+ 285 009e 13F0FF03 		ands	r3, r3, #255
+  80:boards/Rhino_standalone.c **** 		state >>= 2;
+ 286              		.loc 1 80 15 discriminator 3 view .LVU79
+ 287 00a2 02F8011B 		strb	r1, [r2], #1
+ 288              	.LVL16:
+  81:boards/Rhino_standalone.c **** 	}
+ 289              		.loc 1 81 3 is_stmt 1 discriminator 3 view .LVU80
+  81:boards/Rhino_standalone.c **** 	}
+ 290              		.loc 1 81 9 is_stmt 0 discriminator 3 view .LVU81
+ 291 00a6 4FEA9000 		lsr	r0, r0, #2
+ 292              	.LVL17:
+  78:boards/Rhino_standalone.c **** 	{
+ 293              		.loc 1 78 28 is_stmt 1 discriminator 3 view .LVU82
+  78:boards/Rhino_standalone.c **** 	{
+ 294              		.loc 1 78 21 discriminator 3 view .LVU83
+  78:boards/Rhino_standalone.c **** 	{
+ 295              		.loc 1 78 2 is_stmt 0 discriminator 3 view .LVU84
+ 296 00aa F5D1     		bne	.L20
+ 297              	.LBE9:
+  83:boards/Rhino_standalone.c **** }
+ 298              		.loc 1 83 2 is_stmt 1 view .LVU85
+ 299 00ac D8E7     		b	set
+ 300              	.LVL18:
+ 301              	.L23:
+  83:boards/Rhino_standalone.c **** }
+ 302              		.loc 1 83 2 is_stmt 0 view .LVU86
+ 303 00ae 00BF     		.align	2
+ 304              	.L22:
+ 305 00b0 00000000 		.word	.LANCHOR0
+ 306              		.cfi_endproc
+ 307              	.LFE2:
+ 309              		.align	1
+ 310              		.syntax unified
+ 311              		.thumb
+ 312              		.thumb_func
+ 313              		.fpu softvfp
+ 315              	reset:
+ 316              	.LFB1:
+  72:boards/Rhino_standalone.c **** 	setInt(TMCRhinoSA.resetSettings);
+ 317              		.loc 1 72 1 is_stmt 1 view -0
+ 318              		.cfi_startproc
+ 319              		@ args = 0, pretend = 0, frame = 0
+ 320              		@ frame_needed = 0, uses_anonymous_args = 0
+ 321              		@ link register save eliminated.
+  73:boards/Rhino_standalone.c **** }
+ 322              		.loc 1 73 2 view .LVU88
+ 323 00b4 014B     		ldr	r3, .L25
+ 324 00b6 586A     		ldr	r0, [r3, #36]
+ 325 00b8 ECE7     		b	setInt
+ 326              	.LVL19:
+ 327              	.L26:
+ 328 00ba 00BF     		.align	2
+ 329              	.L25:
+ 330 00bc 00000000 		.word	.LANCHOR1
+ 331              		.cfi_endproc
+ 332              	.LFE1:
+ 334              		.align	1
+ 335              		.syntax unified
+ 336              		.thumb
+ 337              		.thumb_func
+ 338              		.fpu softvfp
+ 340              	setPins:
+ 341              	.LVL20:
+ 342              	.LFB4:
+  99:boards/Rhino_standalone.c **** 	for(uint8_t i = 0; i < 7; i++)
+ 343              		.loc 1 99 1 view -0
+ 344              		.cfi_startproc
+ 345              		@ args = 0, pretend = 0, frame = 0
+ 346              		@ frame_needed = 0, uses_anonymous_args = 0
+ 347              		@ link register save eliminated.
+ 100:boards/Rhino_standalone.c **** 		settings[i] = CFG[i] & 0x03;
+ 348              		.loc 1 100 2 view .LVU90
+ 349              	.LBB10:
+ 100:boards/Rhino_standalone.c **** 		settings[i] = CFG[i] & 0x03;
+ 350              		.loc 1 100 6 view .LVU91
+ 100:boards/Rhino_standalone.c **** 		settings[i] = CFG[i] & 0x03;
+ 351              		.loc 1 100 21 view .LVU92
+ 352 00c0 0549     		ldr	r1, .L30
+ 353 00c2 431E     		subs	r3, r0, #1
+ 354 00c4 0630     		adds	r0, r0, #6
+ 355              	.LVL21:
+ 356              	.L28:
+ 101:boards/Rhino_standalone.c **** 	set();
+ 357              		.loc 1 101 3 discriminator 3 view .LVU93
+ 101:boards/Rhino_standalone.c **** 	set();
+ 358              		.loc 1 101 24 is_stmt 0 discriminator 3 view .LVU94
+ 359 00c6 13F8012F 		ldrb	r2, [r3, #1]!	@ zero_extendqisi2
+ 360              	.LVL22:
+ 101:boards/Rhino_standalone.c **** 	set();
+ 361              		.loc 1 101 24 discriminator 3 view .LVU95
+ 362 00ca 02F00302 		and	r2, r2, #3
+ 100:boards/Rhino_standalone.c **** 		settings[i] = CFG[i] & 0x03;
+ 363              		.loc 1 100 2 discriminator 3 view .LVU96
+ 364 00ce 8342     		cmp	r3, r0
+ 101:boards/Rhino_standalone.c **** 	set();
+ 365              		.loc 1 101 15 discriminator 3 view .LVU97
+ 366 00d0 01F8012B 		strb	r2, [r1], #1
+ 100:boards/Rhino_standalone.c **** 		settings[i] = CFG[i] & 0x03;
+ 367              		.loc 1 100 28 is_stmt 1 discriminator 3 view .LVU98
+ 368              	.LVL23:
+ 100:boards/Rhino_standalone.c **** 		settings[i] = CFG[i] & 0x03;
+ 369              		.loc 1 100 21 discriminator 3 view .LVU99
+ 100:boards/Rhino_standalone.c **** 		settings[i] = CFG[i] & 0x03;
+ 370              		.loc 1 100 2 is_stmt 0 discriminator 3 view .LVU100
+ 371 00d4 F7D1     		bne	.L28
+ 372              	.LBE10:
+ 102:boards/Rhino_standalone.c **** }
+ 373              		.loc 1 102 2 is_stmt 1 view .LVU101
+ 374 00d6 C3E7     		b	set
+ 375              	.LVL24:
+ 376              	.L31:
+ 102:boards/Rhino_standalone.c **** }
+ 377              		.loc 1 102 2 is_stmt 0 view .LVU102
+ 378              		.align	2
+ 379              	.L30:
+ 380 00d8 00000000 		.word	.LANCHOR0
+ 381              		.cfi_endproc
+ 382              	.LFE4:
+ 384              		.align	1
+ 385              		.syntax unified
+ 386              		.thumb
+ 387              		.thumb_func
+ 388              		.fpu softvfp
+ 390              	setConfig:
+ 391              	.LVL25:
+ 392              	.LFB6:
+ 112:boards/Rhino_standalone.c **** 	settings[0] = config->chopperOffTime;
+ 393              		.loc 1 112 1 is_stmt 1 view -0
+ 394              		.cfi_startproc
+ 395              		@ args = 0, pretend = 0, frame = 0
+ 396              		@ frame_needed = 0, uses_anonymous_args = 0
+ 397              		@ link register save eliminated.
+ 113:boards/Rhino_standalone.c **** 	settings[1] = config->microstepResolution1;
+ 398              		.loc 1 113 2 view .LVU104
+ 113:boards/Rhino_standalone.c **** 	settings[1] = config->microstepResolution1;
+ 399              		.loc 1 113 14 is_stmt 0 view .LVU105
+ 400 00dc 074B     		ldr	r3, .L33
+ 113:boards/Rhino_standalone.c **** 	settings[1] = config->microstepResolution1;
+ 401              		.loc 1 113 22 view .LVU106
+ 402 00de 0278     		ldrb	r2, [r0]	@ zero_extendqisi2
+ 113:boards/Rhino_standalone.c **** 	settings[1] = config->microstepResolution1;
+ 403              		.loc 1 113 14 view .LVU107
+ 404 00e0 1A70     		strb	r2, [r3]
+ 114:boards/Rhino_standalone.c **** 	settings[2] = config->microstepResolution2;
+ 405              		.loc 1 114 2 is_stmt 1 view .LVU108
+ 114:boards/Rhino_standalone.c **** 	settings[2] = config->microstepResolution2;
+ 406              		.loc 1 114 22 is_stmt 0 view .LVU109
+ 407 00e2 4278     		ldrb	r2, [r0, #1]	@ zero_extendqisi2
+ 114:boards/Rhino_standalone.c **** 	settings[2] = config->microstepResolution2;
+ 408              		.loc 1 114 14 view .LVU110
+ 409 00e4 5A70     		strb	r2, [r3, #1]
+ 115:boards/Rhino_standalone.c **** 	settings[3] = config->currentSetting;
+ 410              		.loc 1 115 2 is_stmt 1 view .LVU111
+ 115:boards/Rhino_standalone.c **** 	settings[3] = config->currentSetting;
+ 411              		.loc 1 115 22 is_stmt 0 view .LVU112
+ 412 00e6 8278     		ldrb	r2, [r0, #2]	@ zero_extendqisi2
+ 115:boards/Rhino_standalone.c **** 	settings[3] = config->currentSetting;
+ 413              		.loc 1 115 14 view .LVU113
+ 414 00e8 9A70     		strb	r2, [r3, #2]
+ 116:boards/Rhino_standalone.c **** 	settings[4] = config->chopperHysteresis;
+ 415              		.loc 1 116 2 is_stmt 1 view .LVU114
+ 116:boards/Rhino_standalone.c **** 	settings[4] = config->chopperHysteresis;
+ 416              		.loc 1 116 22 is_stmt 0 view .LVU115
+ 417 00ea C278     		ldrb	r2, [r0, #3]	@ zero_extendqisi2
+ 116:boards/Rhino_standalone.c **** 	settings[4] = config->chopperHysteresis;
+ 418              		.loc 1 116 14 view .LVU116
+ 419 00ec DA70     		strb	r2, [r3, #3]
+ 117:boards/Rhino_standalone.c **** 	settings[5] = config->chopperBlankTime;
+ 420              		.loc 1 117 2 is_stmt 1 view .LVU117
+ 117:boards/Rhino_standalone.c **** 	settings[5] = config->chopperBlankTime;
+ 421              		.loc 1 117 22 is_stmt 0 view .LVU118
+ 422 00ee 0279     		ldrb	r2, [r0, #4]	@ zero_extendqisi2
+ 117:boards/Rhino_standalone.c **** 	settings[5] = config->chopperBlankTime;
+ 423              		.loc 1 117 14 view .LVU119
+ 424 00f0 1A71     		strb	r2, [r3, #4]
+ 118:boards/Rhino_standalone.c **** 	settings[6] = config->enableStandStillPowerDown;
+ 425              		.loc 1 118 2 is_stmt 1 view .LVU120
+ 118:boards/Rhino_standalone.c **** 	settings[6] = config->enableStandStillPowerDown;
+ 426              		.loc 1 118 22 is_stmt 0 view .LVU121
+ 427 00f2 4279     		ldrb	r2, [r0, #5]	@ zero_extendqisi2
+ 118:boards/Rhino_standalone.c **** 	settings[6] = config->enableStandStillPowerDown;
+ 428              		.loc 1 118 14 view .LVU122
+ 429 00f4 5A71     		strb	r2, [r3, #5]
+ 119:boards/Rhino_standalone.c **** 	set();
+ 430              		.loc 1 119 2 is_stmt 1 view .LVU123
+ 119:boards/Rhino_standalone.c **** 	set();
+ 431              		.loc 1 119 22 is_stmt 0 view .LVU124
+ 432 00f6 8279     		ldrb	r2, [r0, #6]	@ zero_extendqisi2
+ 119:boards/Rhino_standalone.c **** 	set();
+ 433              		.loc 1 119 14 view .LVU125
+ 434 00f8 9A71     		strb	r2, [r3, #6]
+ 120:boards/Rhino_standalone.c **** }
+ 435              		.loc 1 120 2 is_stmt 1 view .LVU126
+ 436 00fa B1E7     		b	set
+ 437              	.LVL26:
+ 438              	.L34:
+ 120:boards/Rhino_standalone.c **** }
+ 439              		.loc 1 120 2 is_stmt 0 view .LVU127
+ 440              		.align	2
+ 441              	.L33:
+ 442 00fc 00000000 		.word	.LANCHOR0
+ 443              		.cfi_endproc
+ 444              	.LFE6:
+ 446              		.global	TMCRhinoSA
+ 447              		.comm	TMCMotionController,532,4
+ 448              		.comm	TMCDriver,532,4
+ 449              		.comm	Evalboards,244,4
+ 450              		.comm	VitalSignsMonitor,20,4
+ 451              		.comm	hwid,1,1
+ 452              		.comm	HAL,48,4
+ 453              		.comm	UART,40,4
+ 454              		.comm	Timer,16,4
+ 455              		.comm	WLAN,36,4
+ 456              		.comm	RS232,36,4
+ 457              		.comm	LEDs,28,4
+ 458              		.comm	USB,36,4
+ 459              		.comm	uart0_interrupt,1,1
+ 460              		.comm	ADCs,32,4
+ 461              		.comm	SPI,44,4
+ 462              		.comm	IOMap,2088,4
+ 463              		.comm	IOs,52,4
+ 464              		.comm	Cpu,8,4
+ 465              		.data
+ 466              		.align	2
+ 467              		.set	.LANCHOR1,. + 0
+ 470              	TMCRhinoSA:
+ 471 0000 000000   		.space	3
+ 472 0003 00       		.byte	0
+ 473 0004 01       		.byte	1
+ 474 0005 02       		.byte	2
+ 475 0006 00       		.byte	0
+ 476 0007 02       		.byte	2
+ 477 0008 01       		.byte	1
+ 478 0009 01       		.byte	1
+ 479 000a 00       		.byte	0
+ 480 000b 02       		.byte	2
+ 481 000c 00       		.byte	0
+ 482 000d 00       		.byte	0
+ 483 000e 00       		.byte	0
+ 484 000f 01       		.byte	1
+ 485 0010 01       		.byte	1
+ 486 0011 02       		.byte	2
+ 487 0012 01       		.byte	1
+ 488 0013 02       		.byte	2
+ 489 0014 02       		.byte	2
+ 490 0015 00000000 		.space	15
+ 490      00000000 
+ 490      00000000 
+ 490      000000
+ 491 0024 20200000 		.word	8224
+ 492 0028 00000000 		.word	reset
+ 493 002c 00000000 		.word	setConfig
+ 494 0030 00000000 		.word	getConfig
+ 495 0034 00000000 		.word	setPins
+ 496 0038 00000000 		.word	getPins
+ 497 003c 00000000 		.word	setInt
+ 498 0040 00000000 		.word	getInt
+ 499 0044 48000000 		.word	CFGPins
+ 502              	CFGPins:
+ 503 0048 08000000 		.word	IODummy
+ 504 004c 08000000 		.word	IODummy
+ 505 0050 08000000 		.word	IODummy
+ 506 0054 08000000 		.word	IODummy
+ 507 0058 08000000 		.word	IODummy
+ 508 005c 08000000 		.word	IODummy
+ 509 0060 08000000 		.word	IODummy
+ 510              		.bss
+ 511              		.align	2
+ 512              		.set	.LANCHOR0,. + 0
+ 515              	settings:
+ 516 0000 00000000 		.space	7
+ 516      000000
+ 517 0007 00       		.space	1
+ 520              	IODummy:
+ 521 0008 00000000 		.space	32
+ 521      00000000 
+ 521      00000000 
+ 521      00000000 
+ 521      00000000 
+ 524              	ADCValue:
+ 525 0028 00000000 		.space	12
+ 525      00000000 
+ 525      00000000 
+ 526              		.text
+ 527              	.Letext0:
+ 528              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 529              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 530              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 531              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 532              		.file 6 "TMC-API/tmc/helpers/Config.h"
+ 533              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 534              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 535              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 536              		.file 10 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\in
+ 537              		.file 11 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 538              		.file 12 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 539              		.file 13 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 540              		.file 14 "./hal/IOs.h"
+ 541              		.file 15 "./hal/IOMap.h"
+ 542              		.file 16 "./hal/SPI.h"
+ 543              		.file 17 "./hal/ADCs.h"
+ 544              		.file 18 "./hal/RXTX.h"
+ 545              		.file 19 "./hal/USB.h"
+ 546              		.file 20 "./hal/LEDs.h"
+ 547              		.file 21 "./hal/RS232.h"
+ 548              		.file 22 "./hal/WLAN.h"
+ 549              		.file 23 "./hal/Timer.h"
+ 550              		.file 24 "./hal/UART.h"
+ 551              		.file 25 "./hal/HAL.h"
+ 552              		.file 26 "./tmc/VitalSignsMonitor.h"
+ 553              		.file 27 "boards/Board.h"
+ 554              		.file 28 "boards/TMCDriver.h"
+ 555              		.file 29 "boards/TMCMotionController.h"
+ 556              		.file 30 "boards/Rhino_standalone.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 Rhino_standalone.c
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:22     .text:00000000 getInt
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:69     .text:0000001c $d
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:73     .text:00000020 $t
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:79     .text:00000020 getPins
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:116    .text:00000038 $d
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:120    .text:0000003c $t
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:126    .text:0000003c getConfig
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:175    .text:0000005c $d
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:179    .text:00000060 $t
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:185    .text:00000060 set
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:249    .text:00000088 $d
+                            *COM*:00000030 HAL
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:255    .text:00000094 $t
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:261    .text:00000094 setInt
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:305    .text:000000b0 $d
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:309    .text:000000b4 $t
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:315    .text:000000b4 reset
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:330    .text:000000bc $d
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:334    .text:000000c0 $t
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:340    .text:000000c0 setPins
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:380    .text:000000d8 $d
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:384    .text:000000dc $t
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:390    .text:000000dc setConfig
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:442    .text:000000fc $d
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:470    .data:00000000 TMCRhinoSA
+                            *COM*:00000214 TMCMotionController
+                            *COM*:00000214 TMCDriver
+                            *COM*:000000f4 Evalboards
+                            *COM*:00000014 VitalSignsMonitor
+                            *COM*:00000001 hwid
+                            *COM*:00000028 UART
+                            *COM*:00000010 Timer
+                            *COM*:00000024 WLAN
+                            *COM*:00000024 RS232
+                            *COM*:0000001c LEDs
+                            *COM*:00000024 USB
+                            *COM*:00000001 uart0_interrupt
+                            *COM*:00000020 ADCs
+                            *COM*:0000002c SPI
+                            *COM*:00000828 IOMap
+                            *COM*:00000034 IOs
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:466    .data:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:502    .data:00000048 CFGPins
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:520    .bss:00000008 IODummy
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:511    .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:515    .bss:00000000 settings
+C:\Users\Shubham\AppData\Local\Temp\ccu2wtW2.s:524    .bss:00000028 ADCValue
+
+NO UNDEFINED SYMBOLS

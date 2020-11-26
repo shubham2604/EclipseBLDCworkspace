@@ -1,0 +1,327 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"SysTick.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.global	SysTick_Handler
+  17              		.arch armv7e-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	SysTick_Handler:
+  24              	.LFB0:
+  25              		.file 1 "hal/Landungsbruecke/tmc/SysTick.c"
+   1:hal/Landungsbruecke/tmc/SysTick.c **** #include "hal/HAL.h"
+   2:hal/Landungsbruecke/tmc/SysTick.c **** #include "hal/SysTick.h"
+   3:hal/Landungsbruecke/tmc/SysTick.c **** 
+   4:hal/Landungsbruecke/tmc/SysTick.c **** volatile uint32_t systick = 0;
+   5:hal/Landungsbruecke/tmc/SysTick.c **** 
+   6:hal/Landungsbruecke/tmc/SysTick.c **** void __attribute__ ((interrupt)) SysTick_Handler(void);
+   7:hal/Landungsbruecke/tmc/SysTick.c **** 
+   8:hal/Landungsbruecke/tmc/SysTick.c **** void SysTick_Handler(void)
+   9:hal/Landungsbruecke/tmc/SysTick.c **** {
+  26              		.loc 1 9 1 view -0
+  27              		.cfi_startproc
+  28              		@ Stack Align: May be called with mis-aligned SP.
+  29              		@ args = 0, pretend = 0, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  10:hal/Landungsbruecke/tmc/SysTick.c **** 	systick++;
+  31              		.loc 1 10 2 view .LVU1
+   9:hal/Landungsbruecke/tmc/SysTick.c **** 	systick++;
+  32              		.loc 1 9 1 is_stmt 0 view .LVU2
+  33 0000 6846     		mov	r0, sp
+  34              		.cfi_register 13, 0
+  35 0002 20F00701 		bic	r1, r0, #7
+  36 0006 8D46     		mov	sp, r1
+  37 0008 01B5     		push	{r0, lr}
+  38              	.LCFI0:
+  39              		.cfi_def_cfa_offset 8
+  40              		.cfi_offset 13, -8
+  41              		.cfi_offset 14, -4
+  42              		.loc 1 10 9 view .LVU3
+  43 000a 044A     		ldr	r2, .L2
+  11:hal/Landungsbruecke/tmc/SysTick.c **** }
+  44              		.loc 1 11 1 view .LVU4
+  45 000c BDE80140 		pop	{r0, lr}
+  46              	.LCFI1:
+  47              		.cfi_restore 14
+  48              		.cfi_restore 0
+  49              		.cfi_def_cfa_offset 0
+  10:hal/Landungsbruecke/tmc/SysTick.c **** 	systick++;
+  50              		.loc 1 10 9 view .LVU5
+  51 0010 1368     		ldr	r3, [r2]
+  52 0012 0133     		adds	r3, r3, #1
+  53 0014 1360     		str	r3, [r2]
+  54              		.loc 1 11 1 view .LVU6
+  55 0016 8546     		mov	sp, r0
+  56 0018 7047     		bx	lr
+  57              	.L3:
+  58 001a 00BF     		.align	2
+  59              	.L2:
+  60 001c 00000000 		.word	.LANCHOR0
+  61              		.cfi_endproc
+  62              	.LFE0:
+  64              		.align	1
+  65              		.global	systick_init
+  66              		.syntax unified
+  67              		.thumb
+  68              		.thumb_func
+  69              		.fpu softvfp
+  71              	systick_init:
+  72              	.LFB1:
+  12:hal/Landungsbruecke/tmc/SysTick.c **** 
+  13:hal/Landungsbruecke/tmc/SysTick.c **** void systick_init()
+  14:hal/Landungsbruecke/tmc/SysTick.c **** {
+  73              		.loc 1 14 1 is_stmt 1 view -0
+  74              		.cfi_startproc
+  75              		@ args = 0, pretend = 0, frame = 0
+  76              		@ frame_needed = 0, uses_anonymous_args = 0
+  77              		@ link register save eliminated.
+  15:hal/Landungsbruecke/tmc/SysTick.c **** 	SYST_RVR  = 48000;
+  78              		.loc 1 15 2 view .LVU8
+  79              		.loc 1 15 12 is_stmt 0 view .LVU9
+  80 0020 034B     		ldr	r3, .L5
+  81 0022 4BF68032 		movw	r2, #48000
+  82 0026 5A60     		str	r2, [r3, #4]
+  16:hal/Landungsbruecke/tmc/SysTick.c **** 	SYST_CSR  = 7;
+  83              		.loc 1 16 2 is_stmt 1 view .LVU10
+  84              		.loc 1 16 12 is_stmt 0 view .LVU11
+  85 0028 0722     		movs	r2, #7
+  86 002a 1A60     		str	r2, [r3]
+  17:hal/Landungsbruecke/tmc/SysTick.c **** }
+  87              		.loc 1 17 1 view .LVU12
+  88 002c 7047     		bx	lr
+  89              	.L6:
+  90 002e 00BF     		.align	2
+  91              	.L5:
+  92 0030 10E000E0 		.word	-536813552
+  93              		.cfi_endproc
+  94              	.LFE1:
+  96              		.align	1
+  97              		.global	systick_getTick
+  98              		.syntax unified
+  99              		.thumb
+ 100              		.thumb_func
+ 101              		.fpu softvfp
+ 103              	systick_getTick:
+ 104              	.LFB2:
+  18:hal/Landungsbruecke/tmc/SysTick.c **** 
+  19:hal/Landungsbruecke/tmc/SysTick.c **** uint32_t systick_getTick()
+  20:hal/Landungsbruecke/tmc/SysTick.c **** {
+ 105              		.loc 1 20 1 is_stmt 1 view -0
+ 106              		.cfi_startproc
+ 107              		@ args = 0, pretend = 0, frame = 0
+ 108              		@ frame_needed = 0, uses_anonymous_args = 0
+ 109              		@ link register save eliminated.
+  21:hal/Landungsbruecke/tmc/SysTick.c **** 	return systick;
+ 110              		.loc 1 21 2 view .LVU14
+ 111              		.loc 1 21 9 is_stmt 0 view .LVU15
+ 112 0034 014B     		ldr	r3, .L8
+ 113 0036 1868     		ldr	r0, [r3]
+  22:hal/Landungsbruecke/tmc/SysTick.c **** }
+ 114              		.loc 1 22 1 view .LVU16
+ 115 0038 7047     		bx	lr
+ 116              	.L9:
+ 117 003a 00BF     		.align	2
+ 118              	.L8:
+ 119 003c 00000000 		.word	.LANCHOR0
+ 120              		.cfi_endproc
+ 121              	.LFE2:
+ 123              		.align	1
+ 124              		.global	wait
+ 125              		.syntax unified
+ 126              		.thumb
+ 127              		.thumb_func
+ 128              		.fpu softvfp
+ 130              	wait:
+ 131              	.LVL0:
+ 132              	.LFB3:
+  23:hal/Landungsbruecke/tmc/SysTick.c **** 
+  24:hal/Landungsbruecke/tmc/SysTick.c **** /* Systick values are in milliseconds, accessing the value is faster. As a result
+  25:hal/Landungsbruecke/tmc/SysTick.c ****  * we have a random invisible delay of less than a millisecond whenever we use
+  26:hal/Landungsbruecke/tmc/SysTick.c ****  * systicks. This can result in a situation where we access the systick just before it changes:
+  27:hal/Landungsbruecke/tmc/SysTick.c ****  *  -> Access at 0,99ms gives systick 0ms
+  28:hal/Landungsbruecke/tmc/SysTick.c ****  *  -> Access at 1.01ms gives systick 1ms
+  29:hal/Landungsbruecke/tmc/SysTick.c ****  *  -> systick difference of 1ms, even though only 0.02 ms passed
+  30:hal/Landungsbruecke/tmc/SysTick.c ****  * To prevent this, we generally apply a correction of -1 to any systick difference.
+  31:hal/Landungsbruecke/tmc/SysTick.c ****  * In wait() this is done by using '<=' instead of '<'
+  32:hal/Landungsbruecke/tmc/SysTick.c ****  * In timeSince() the subtraction is carried out on the result. That subtraction is prevented from 
+  33:hal/Landungsbruecke/tmc/SysTick.c ****  * to UINT32_MAX, returning 0 in that case (Saturated subtraction).
+  34:hal/Landungsbruecke/tmc/SysTick.c ****  *
+  35:hal/Landungsbruecke/tmc/SysTick.c ****  */
+  36:hal/Landungsbruecke/tmc/SysTick.c **** void wait(uint32_t delay)	// wait for [delay] ms/systicks
+  37:hal/Landungsbruecke/tmc/SysTick.c **** {
+ 133              		.loc 1 37 1 is_stmt 1 view -0
+ 134              		.cfi_startproc
+ 135              		@ args = 0, pretend = 0, frame = 0
+ 136              		@ frame_needed = 0, uses_anonymous_args = 0
+ 137              		@ link register save eliminated.
+  38:hal/Landungsbruecke/tmc/SysTick.c **** 	uint32_t startTick = systick;
+ 138              		.loc 1 38 2 view .LVU18
+ 139              		.loc 1 38 11 is_stmt 0 view .LVU19
+ 140 0040 034B     		ldr	r3, .L13
+ 141 0042 1968     		ldr	r1, [r3]
+ 142              	.LVL1:
+  39:hal/Landungsbruecke/tmc/SysTick.c **** 	while((systick-startTick) <= delay) {}
+ 143              		.loc 1 39 2 is_stmt 1 view .LVU20
+ 144              	.L11:
+ 145              		.loc 1 39 39 discriminator 1 view .LVU21
+ 146              		.loc 1 39 7 discriminator 1 view .LVU22
+ 147              		.loc 1 39 16 is_stmt 0 discriminator 1 view .LVU23
+ 148 0044 1A68     		ldr	r2, [r3]
+ 149 0046 521A     		subs	r2, r2, r1
+ 150              		.loc 1 39 7 discriminator 1 view .LVU24
+ 151 0048 8242     		cmp	r2, r0
+ 152 004a FBD9     		bls	.L11
+  40:hal/Landungsbruecke/tmc/SysTick.c **** }
+ 153              		.loc 1 40 1 view .LVU25
+ 154 004c 7047     		bx	lr
+ 155              	.L14:
+ 156 004e 00BF     		.align	2
+ 157              	.L13:
+ 158 0050 00000000 		.word	.LANCHOR0
+ 159              		.cfi_endproc
+ 160              	.LFE3:
+ 162              		.align	1
+ 163              		.global	timeSince
+ 164              		.syntax unified
+ 165              		.thumb
+ 166              		.thumb_func
+ 167              		.fpu softvfp
+ 169              	timeSince:
+ 170              	.LVL2:
+ 171              	.LFB4:
+  41:hal/Landungsbruecke/tmc/SysTick.c **** 
+  42:hal/Landungsbruecke/tmc/SysTick.c **** uint32_t timeSince(uint32_t tick)	// time difference since the [tick] timestamp in ms/systicks
+  43:hal/Landungsbruecke/tmc/SysTick.c **** {
+ 172              		.loc 1 43 1 is_stmt 1 view -0
+ 173              		.cfi_startproc
+ 174              		@ args = 0, pretend = 0, frame = 0
+ 175              		@ frame_needed = 0, uses_anonymous_args = 0
+ 176              		@ link register save eliminated.
+  44:hal/Landungsbruecke/tmc/SysTick.c **** 	uint32_t tickDiff = systick - tick;
+ 177              		.loc 1 44 2 view .LVU27
+ 178              		.loc 1 44 30 is_stmt 0 view .LVU28
+ 179 0054 034B     		ldr	r3, .L20
+ 180 0056 1B68     		ldr	r3, [r3]
+ 181              	.LVL3:
+  45:hal/Landungsbruecke/tmc/SysTick.c **** 
+  46:hal/Landungsbruecke/tmc/SysTick.c **** 	// Prevent subtraction underflow - saturate to 0 instead
+  47:hal/Landungsbruecke/tmc/SysTick.c **** 	if(tickDiff != 0)
+ 182              		.loc 1 47 2 is_stmt 1 view .LVU29
+ 183              		.loc 1 47 4 is_stmt 0 view .LVU30
+ 184 0058 181A     		subs	r0, r3, r0
+ 185              	.LVL4:
+  48:hal/Landungsbruecke/tmc/SysTick.c **** 		return tickDiff - 1;
+ 186              		.loc 1 48 3 is_stmt 1 view .LVU31
+ 187              		.loc 1 48 19 is_stmt 0 view .LVU32
+ 188 005a 18BF     		it	ne
+ 189 005c 00F1FF30 		addne	r0, r0, #-1
+ 190              	.LVL5:
+  49:hal/Landungsbruecke/tmc/SysTick.c **** 	else
+  50:hal/Landungsbruecke/tmc/SysTick.c **** 		return 0;
+  51:hal/Landungsbruecke/tmc/SysTick.c **** }
+ 191              		.loc 1 51 1 view .LVU33
+ 192 0060 7047     		bx	lr
+ 193              	.L21:
+ 194 0062 00BF     		.align	2
+ 195              	.L20:
+ 196 0064 00000000 		.word	.LANCHOR0
+ 197              		.cfi_endproc
+ 198              	.LFE4:
+ 200              		.global	systick
+ 201              		.comm	hwid,1,1
+ 202              		.comm	HAL,48,4
+ 203              		.comm	UART,40,4
+ 204              		.comm	Timer,16,4
+ 205              		.comm	WLAN,36,4
+ 206              		.comm	RS232,36,4
+ 207              		.comm	LEDs,28,4
+ 208              		.comm	USB,36,4
+ 209              		.comm	uart0_interrupt,1,1
+ 210              		.comm	ADCs,32,4
+ 211              		.comm	SPI,44,4
+ 212              		.comm	IOMap,2088,4
+ 213              		.comm	IOs,52,4
+ 214              		.comm	Cpu,8,4
+ 215              		.bss
+ 216              		.align	2
+ 217              		.set	.LANCHOR0,. + 0
+ 220              	systick:
+ 221 0000 00000000 		.space	4
+ 224              	ADCValue:
+ 225 0004 00000000 		.space	12
+ 225      00000000 
+ 225      00000000 
+ 226              		.text
+ 227              	.Letext0:
+ 228              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 229              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 230              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 231              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 232              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 233              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 234              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 235              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 236              		.file 10 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 237              		.file 11 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 238              		.file 12 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 239              		.file 13 "./hal/IOs.h"
+ 240              		.file 14 "./hal/IOMap.h"
+ 241              		.file 15 "./hal/SPI.h"
+ 242              		.file 16 "./hal/ADCs.h"
+ 243              		.file 17 "./hal/RXTX.h"
+ 244              		.file 18 "./hal/USB.h"
+ 245              		.file 19 "./hal/LEDs.h"
+ 246              		.file 20 "./hal/RS232.h"
+ 247              		.file 21 "./hal/WLAN.h"
+ 248              		.file 22 "./hal/Timer.h"
+ 249              		.file 23 "./hal/UART.h"
+ 250              		.file 24 "./hal/HAL.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 SysTick.c
+C:\Users\Shubham\AppData\Local\Temp\ccNjlISq.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccNjlISq.s:23     .text:00000000 SysTick_Handler
+C:\Users\Shubham\AppData\Local\Temp\ccNjlISq.s:60     .text:0000001c $d
+C:\Users\Shubham\AppData\Local\Temp\ccNjlISq.s:64     .text:00000020 $t
+C:\Users\Shubham\AppData\Local\Temp\ccNjlISq.s:71     .text:00000020 systick_init
+C:\Users\Shubham\AppData\Local\Temp\ccNjlISq.s:92     .text:00000030 $d
+C:\Users\Shubham\AppData\Local\Temp\ccNjlISq.s:96     .text:00000034 $t
+C:\Users\Shubham\AppData\Local\Temp\ccNjlISq.s:103    .text:00000034 systick_getTick
+C:\Users\Shubham\AppData\Local\Temp\ccNjlISq.s:119    .text:0000003c $d
+C:\Users\Shubham\AppData\Local\Temp\ccNjlISq.s:123    .text:00000040 $t
+C:\Users\Shubham\AppData\Local\Temp\ccNjlISq.s:130    .text:00000040 wait
+C:\Users\Shubham\AppData\Local\Temp\ccNjlISq.s:158    .text:00000050 $d
+C:\Users\Shubham\AppData\Local\Temp\ccNjlISq.s:162    .text:00000054 $t
+C:\Users\Shubham\AppData\Local\Temp\ccNjlISq.s:169    .text:00000054 timeSince
+C:\Users\Shubham\AppData\Local\Temp\ccNjlISq.s:196    .text:00000064 $d
+C:\Users\Shubham\AppData\Local\Temp\ccNjlISq.s:220    .bss:00000000 systick
+                            *COM*:00000001 hwid
+                            *COM*:00000030 HAL
+                            *COM*:00000028 UART
+                            *COM*:00000010 Timer
+                            *COM*:00000024 WLAN
+                            *COM*:00000024 RS232
+                            *COM*:0000001c LEDs
+                            *COM*:00000024 USB
+                            *COM*:00000001 uart0_interrupt
+                            *COM*:00000020 ADCs
+                            *COM*:0000002c SPI
+                            *COM*:00000828 IOMap
+                            *COM*:00000034 IOs
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\ccNjlISq.s:216    .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccNjlISq.s:224    .bss:00000004 ADCValue
+
+NO UNDEFINED SYMBOLS

@@ -1,0 +1,2754 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"TMC4670.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.global	tmc4670_readInt
+  17              		.arch armv7e-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	tmc4670_readInt:
+  24              	.LVL0:
+  25              	.LFB0:
+  26              		.file 1 "TMC-API/tmc/ic/TMC4670/TMC4670.c"
+   1:TMC-API/tmc/ic/TMC4670/TMC4670.c **** /*
+   2:TMC-API/tmc/ic/TMC4670/TMC4670.c ****  * TMC4670.c
+   3:TMC-API/tmc/ic/TMC4670/TMC4670.c ****  *
+   4:TMC-API/tmc/ic/TMC4670/TMC4670.c ****  *  Created on: 30.09.2016
+   5:TMC-API/tmc/ic/TMC4670/TMC4670.c ****  *      Author: ed
+   6:TMC-API/tmc/ic/TMC4670/TMC4670.c ****  */
+   7:TMC-API/tmc/ic/TMC4670/TMC4670.c **** #include "TMC4670.h"
+   8:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+   9:TMC-API/tmc/ic/TMC4670/TMC4670.c **** #define STATE_NOTHING_TO_DO    0
+  10:TMC-API/tmc/ic/TMC4670/TMC4670.c **** #define STATE_START_INIT       1
+  11:TMC-API/tmc/ic/TMC4670/TMC4670.c **** #define STATE_WAIT_INIT_TIME   2
+  12:TMC-API/tmc/ic/TMC4670/TMC4670.c **** #define STATE_ESTIMATE_OFFSET  3
+  13:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+  14:TMC-API/tmc/ic/TMC4670/TMC4670.c **** // => SPI wrapper
+  15:TMC-API/tmc/ic/TMC4670/TMC4670.c **** extern uint8_t tmc4670_readwriteByte(uint8_t motor, uint8_t data, uint8_t lastTransfer);
+  16:TMC-API/tmc/ic/TMC4670/TMC4670.c **** // <= SPI wrapper
+  17:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+  18:TMC-API/tmc/ic/TMC4670/TMC4670.c **** // spi access
+  19:TMC-API/tmc/ic/TMC4670/TMC4670.c **** int32_t tmc4670_readInt(uint8_t motor, uint8_t address)
+  20:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+  27              		.loc 1 20 1 view -0
+  28              		.cfi_startproc
+  29              		@ args = 0, pretend = 0, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  21:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// clear write bit
+  22:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	address &= 0x7F;
+  31              		.loc 1 22 2 view .LVU1
+  23:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+  24:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// write address
+  25:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_readwriteByte(motor, address, false);
+  32              		.loc 1 25 2 view .LVU2
+  20:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// clear write bit
+  33              		.loc 1 20 1 is_stmt 0 view .LVU3
+  34 0000 38B5     		push	{r3, r4, r5, lr}
+  35              	.LCFI0:
+  36              		.cfi_def_cfa_offset 16
+  37              		.cfi_offset 3, -16
+  38              		.cfi_offset 4, -12
+  39              		.cfi_offset 5, -8
+  40              		.cfi_offset 14, -4
+  41              		.loc 1 25 2 view .LVU4
+  42 0002 0022     		movs	r2, #0
+  43 0004 01F07F01 		and	r1, r1, #127
+  44              	.LVL1:
+  20:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// clear write bit
+  45              		.loc 1 20 1 view .LVU5
+  46 0008 0446     		mov	r4, r0
+  47              		.loc 1 25 2 view .LVU6
+  48 000a FFF7FEFF 		bl	tmc4670_readwriteByte
+  49              	.LVL2:
+  26:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+  27:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// read data
+  28:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	int32_t value = tmc4670_readwriteByte(motor, 0, false);
+  50              		.loc 1 28 2 is_stmt 1 view .LVU7
+  51              		.loc 1 28 18 is_stmt 0 view .LVU8
+  52 000e 0022     		movs	r2, #0
+  53 0010 1146     		mov	r1, r2
+  54 0012 2046     		mov	r0, r4
+  55 0014 FFF7FEFF 		bl	tmc4670_readwriteByte
+  56              	.LVL3:
+  29:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	value <<= 8;
+  57              		.loc 1 29 2 is_stmt 1 view .LVU9
+  30:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	value |= tmc4670_readwriteByte(motor, 0, false);
+  58              		.loc 1 30 11 is_stmt 0 view .LVU10
+  59 0018 0022     		movs	r2, #0
+  60 001a 1146     		mov	r1, r2
+  29:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	value <<= 8;
+  61              		.loc 1 29 8 view .LVU11
+  62 001c 0502     		lsls	r5, r0, #8
+  63              	.LVL4:
+  64              		.loc 1 30 2 is_stmt 1 view .LVU12
+  65              		.loc 1 30 11 is_stmt 0 view .LVU13
+  66 001e 2046     		mov	r0, r4
+  67 0020 FFF7FEFF 		bl	tmc4670_readwriteByte
+  68              	.LVL5:
+  31:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	value <<= 8;
+  32:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	value |= tmc4670_readwriteByte(motor, 0, false);
+  69              		.loc 1 32 11 view .LVU14
+  70 0024 0022     		movs	r2, #0
+  71 0026 1146     		mov	r1, r2
+  30:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	value |= tmc4670_readwriteByte(motor, 0, false);
+  72              		.loc 1 30 8 view .LVU15
+  73 0028 0543     		orrs	r5, r5, r0
+  74              	.LVL6:
+  31:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	value <<= 8;
+  75              		.loc 1 31 2 is_stmt 1 view .LVU16
+  76              		.loc 1 32 11 is_stmt 0 view .LVU17
+  77 002a 2046     		mov	r0, r4
+  78 002c FFF7FEFF 		bl	tmc4670_readwriteByte
+  79              	.LVL7:
+  31:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	value <<= 8;
+  80              		.loc 1 31 8 view .LVU18
+  81 0030 2D02     		lsls	r5, r5, #8
+  82              	.LVL8:
+  83              		.loc 1 32 2 is_stmt 1 view .LVU19
+  84              		.loc 1 32 8 is_stmt 0 view .LVU20
+  85 0032 0543     		orrs	r5, r5, r0
+  86              	.LVL9:
+  33:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	value <<= 8;
+  87              		.loc 1 33 2 is_stmt 1 view .LVU21
+  34:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	value |= tmc4670_readwriteByte(motor, 0, true);
+  88              		.loc 1 34 11 is_stmt 0 view .LVU22
+  89 0034 0122     		movs	r2, #1
+  90 0036 0021     		movs	r1, #0
+  91 0038 2046     		mov	r0, r4
+  92 003a FFF7FEFF 		bl	tmc4670_readwriteByte
+  93              	.LVL10:
+  33:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	value <<= 8;
+  94              		.loc 1 33 8 view .LVU23
+  95 003e 2D02     		lsls	r5, r5, #8
+  96              	.LVL11:
+  97              		.loc 1 34 2 is_stmt 1 view .LVU24
+  35:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+  36:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return value;
+  98              		.loc 1 36 2 view .LVU25
+  37:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+  99              		.loc 1 37 1 is_stmt 0 view .LVU26
+ 100 0040 2843     		orrs	r0, r0, r5
+ 101              	.LVL12:
+ 102              		.loc 1 37 1 view .LVU27
+ 103 0042 38BD     		pop	{r3, r4, r5, pc}
+ 104              		.cfi_endproc
+ 105              	.LFE0:
+ 107              		.align	1
+ 108              		.global	tmc4670_writeInt
+ 109              		.syntax unified
+ 110              		.thumb
+ 111              		.thumb_func
+ 112              		.fpu softvfp
+ 114              	tmc4670_writeInt:
+ 115              	.LVL13:
+ 116              	.LFB1:
+  38:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+  39:TMC-API/tmc/ic/TMC4670/TMC4670.c **** void tmc4670_writeInt(uint8_t motor, uint8_t address, int32_t value)
+  40:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 117              		.loc 1 40 1 is_stmt 1 view -0
+ 118              		.cfi_startproc
+ 119              		@ args = 0, pretend = 0, frame = 0
+ 120              		@ frame_needed = 0, uses_anonymous_args = 0
+  41:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// write address
+  42:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_readwriteByte(motor, address|0x80, false);
+ 121              		.loc 1 42 2 view .LVU29
+  40:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// write address
+ 122              		.loc 1 40 1 is_stmt 0 view .LVU30
+ 123 0044 38B5     		push	{r3, r4, r5, lr}
+ 124              	.LCFI1:
+ 125              		.cfi_def_cfa_offset 16
+ 126              		.cfi_offset 3, -16
+ 127              		.cfi_offset 4, -12
+ 128              		.cfi_offset 5, -8
+ 129              		.cfi_offset 14, -4
+ 130              		.loc 1 42 2 view .LVU31
+ 131 0046 41F08001 		orr	r1, r1, #128
+ 132              	.LVL14:
+  40:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// write address
+ 133              		.loc 1 40 1 view .LVU32
+ 134 004a 0446     		mov	r4, r0
+ 135 004c 1546     		mov	r5, r2
+ 136              		.loc 1 42 2 view .LVU33
+ 137 004e 0022     		movs	r2, #0
+ 138              	.LVL15:
+ 139              		.loc 1 42 2 view .LVU34
+ 140 0050 FFF7FEFF 		bl	tmc4670_readwriteByte
+ 141              	.LVL16:
+  43:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+  44:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// write value
+  45:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_readwriteByte(motor, 0xFF & (value>>24), false);
+ 142              		.loc 1 45 2 is_stmt 1 view .LVU35
+ 143 0054 290E     		lsrs	r1, r5, #24
+ 144 0056 0022     		movs	r2, #0
+ 145 0058 2046     		mov	r0, r4
+ 146 005a FFF7FEFF 		bl	tmc4670_readwriteByte
+ 147              	.LVL17:
+  46:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_readwriteByte(motor, 0xFF & (value>>16), false);
+ 148              		.loc 1 46 2 view .LVU36
+ 149 005e C5F30741 		ubfx	r1, r5, #16, #8
+ 150 0062 0022     		movs	r2, #0
+ 151 0064 2046     		mov	r0, r4
+ 152 0066 FFF7FEFF 		bl	tmc4670_readwriteByte
+ 153              	.LVL18:
+  47:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_readwriteByte(motor, 0xFF & (value>>8), false);
+ 154              		.loc 1 47 2 view .LVU37
+ 155 006a C5F30721 		ubfx	r1, r5, #8, #8
+ 156 006e 0022     		movs	r2, #0
+ 157 0070 2046     		mov	r0, r4
+ 158 0072 FFF7FEFF 		bl	tmc4670_readwriteByte
+ 159              	.LVL19:
+  48:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_readwriteByte(motor, 0xFF & (value>>0), true);
+ 160              		.loc 1 48 2 view .LVU38
+ 161 0076 E9B2     		uxtb	r1, r5
+ 162 0078 2046     		mov	r0, r4
+ 163 007a 0122     		movs	r2, #1
+  49:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 164              		.loc 1 49 1 is_stmt 0 view .LVU39
+ 165 007c BDE83840 		pop	{r3, r4, r5, lr}
+ 166              	.LCFI2:
+ 167              		.cfi_restore 14
+ 168              		.cfi_restore 5
+ 169              		.cfi_restore 4
+ 170              		.cfi_restore 3
+ 171              		.cfi_def_cfa_offset 0
+ 172              	.LVL20:
+  48:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_readwriteByte(motor, 0xFF & (value>>0), true);
+ 173              		.loc 1 48 2 view .LVU40
+ 174 0080 FFF7FEBF 		b	tmc4670_readwriteByte
+ 175              	.LVL21:
+ 176              		.cfi_endproc
+ 177              	.LFE1:
+ 179              		.align	1
+ 180              		.global	tmc4670_readRegister16BitValue
+ 181              		.syntax unified
+ 182              		.thumb
+ 183              		.thumb_func
+ 184              		.fpu softvfp
+ 186              	tmc4670_readRegister16BitValue:
+ 187              	.LVL22:
+ 188              	.LFB2:
+  50:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+  51:TMC-API/tmc/ic/TMC4670/TMC4670.c **** uint16_t tmc4670_readRegister16BitValue(uint8_t motor, uint8_t address, uint8_t channel)
+  52:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 189              		.loc 1 52 1 is_stmt 1 view -0
+ 190              		.cfi_startproc
+ 191              		@ args = 0, pretend = 0, frame = 0
+ 192              		@ frame_needed = 0, uses_anonymous_args = 0
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	int32_t registerValue = tmc4670_readInt(motor, address);
+ 193              		.loc 1 53 2 view .LVU42
+  52:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	int32_t registerValue = tmc4670_readInt(motor, address);
+ 194              		.loc 1 52 1 is_stmt 0 view .LVU43
+ 195 0084 10B5     		push	{r4, lr}
+ 196              	.LCFI3:
+ 197              		.cfi_def_cfa_offset 8
+ 198              		.cfi_offset 4, -8
+ 199              		.cfi_offset 14, -4
+  52:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	int32_t registerValue = tmc4670_readInt(motor, address);
+ 200              		.loc 1 52 1 view .LVU44
+ 201 0086 1446     		mov	r4, r2
+ 202              		.loc 1 53 26 view .LVU45
+ 203 0088 FFF7FEFF 		bl	tmc4670_readInt
+ 204              	.LVL23:
+  54:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+  55:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// read one channel
+  56:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	switch(channel)
+ 205              		.loc 1 56 2 is_stmt 1 view .LVU46
+ 206 008c 1CB1     		cbz	r4, .L4
+ 207 008e 012C     		cmp	r4, #1
+ 208 0090 03D0     		beq	.L5
+ 209 0092 0020     		movs	r0, #0
+ 210              	.LVL24:
+ 211              	.L6:
+  57:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	{
+  58:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	case BIT_0_TO_15:
+  59:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		return (registerValue & 0xFFFF);
+  60:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+  61:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	case BIT_16_TO_31:
+  62:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		return ((registerValue >> 16) & 0xFFFF);
+  63:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+  64:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	}
+  65:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return 0;
+  66:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 212              		.loc 1 66 1 is_stmt 0 view .LVU47
+ 213 0094 10BD     		pop	{r4, pc}
+ 214              	.LVL25:
+ 215              	.L4:
+  59:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 216              		.loc 1 59 3 is_stmt 1 view .LVU48
+  59:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 217              		.loc 1 59 25 is_stmt 0 view .LVU49
+ 218 0096 80B2     		uxth	r0, r0
+ 219              	.LVL26:
+  59:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 220              		.loc 1 59 25 view .LVU50
+ 221 0098 FCE7     		b	.L6
+ 222              	.LVL27:
+ 223              	.L5:
+  60:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	case BIT_16_TO_31:
+ 224              		.loc 1 60 3 is_stmt 1 view .LVU51
+  62:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 225              		.loc 1 62 3 view .LVU52
+  62:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 226              		.loc 1 62 33 is_stmt 0 view .LVU53
+ 227 009a 000C     		lsrs	r0, r0, #16
+ 228              	.LVL28:
+  62:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 229              		.loc 1 62 33 view .LVU54
+ 230 009c FAE7     		b	.L6
+ 231              		.cfi_endproc
+ 232              	.LFE2:
+ 234              		.align	1
+ 235              		.global	tmc4670_writeRegister16BitValue
+ 236              		.syntax unified
+ 237              		.thumb
+ 238              		.thumb_func
+ 239              		.fpu softvfp
+ 241              	tmc4670_writeRegister16BitValue:
+ 242              	.LVL29:
+ 243              	.LFB3:
+  67:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+  68:TMC-API/tmc/ic/TMC4670/TMC4670.c **** void tmc4670_writeRegister16BitValue(uint8_t motor, uint8_t address, uint8_t channel, uint16_t valu
+  69:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 244              		.loc 1 69 1 is_stmt 1 view -0
+ 245              		.cfi_startproc
+ 246              		@ args = 0, pretend = 0, frame = 0
+ 247              		@ frame_needed = 0, uses_anonymous_args = 0
+  70:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// read actual register content
+  71:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	int32_t registerValue = tmc4670_readInt(motor, address);
+ 248              		.loc 1 71 2 view .LVU56
+  69:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// read actual register content
+ 249              		.loc 1 69 1 is_stmt 0 view .LVU57
+ 250 009e F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 251              	.LCFI4:
+ 252              		.cfi_def_cfa_offset 24
+ 253              		.cfi_offset 3, -24
+ 254              		.cfi_offset 4, -20
+ 255              		.cfi_offset 5, -16
+ 256              		.cfi_offset 6, -12
+ 257              		.cfi_offset 7, -8
+ 258              		.cfi_offset 14, -4
+  69:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// read actual register content
+ 259              		.loc 1 69 1 view .LVU58
+ 260 00a0 1546     		mov	r5, r2
+ 261 00a2 0646     		mov	r6, r0
+ 262 00a4 0F46     		mov	r7, r1
+ 263 00a6 1C46     		mov	r4, r3
+ 264              		.loc 1 71 26 view .LVU59
+ 265 00a8 FFF7FEFF 		bl	tmc4670_readInt
+ 266              	.LVL30:
+ 267              		.loc 1 71 26 view .LVU60
+ 268 00ac 0246     		mov	r2, r0
+ 269              	.LVL31:
+  72:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+  73:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// update one channel
+  74:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	switch(channel)
+ 270              		.loc 1 74 2 is_stmt 1 view .LVU61
+ 271 00ae 3DB1     		cbz	r5, .L8
+ 272 00b0 012D     		cmp	r5, #1
+ 273 00b2 08D0     		beq	.L9
+ 274              	.LVL32:
+ 275              	.L10:
+  75:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	{
+  76:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	case BIT_0_TO_15:
+  77:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		registerValue &= 0xFFFF0000;
+  78:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		registerValue |= value;
+  79:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+  80:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	case BIT_16_TO_31:
+  81:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		registerValue &= 0x0000FFFF;
+  82:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		registerValue |= (value << 16);
+  83:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+  84:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	}
+  85:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// write the register
+  86:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeInt(motor, address, registerValue);
+ 276              		.loc 1 86 2 view .LVU62
+ 277 00b4 3946     		mov	r1, r7
+ 278 00b6 3046     		mov	r0, r6
+  87:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 279              		.loc 1 87 1 is_stmt 0 view .LVU63
+ 280 00b8 BDE8F840 		pop	{r3, r4, r5, r6, r7, lr}
+ 281              	.LCFI5:
+ 282              		.cfi_remember_state
+ 283              		.cfi_restore 14
+ 284              		.cfi_restore 7
+ 285              		.cfi_restore 6
+ 286              		.cfi_restore 5
+ 287              		.cfi_restore 4
+ 288              		.cfi_restore 3
+ 289              		.cfi_def_cfa_offset 0
+  86:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 290              		.loc 1 86 2 view .LVU64
+ 291 00bc FFF7FEBF 		b	tmc4670_writeInt
+ 292              	.LVL33:
+ 293              	.L8:
+ 294              	.LCFI6:
+ 295              		.cfi_restore_state
+  77:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		registerValue |= value;
+ 296              		.loc 1 77 3 is_stmt 1 view .LVU65
+  78:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 297              		.loc 1 78 3 view .LVU66
+  78:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 298              		.loc 1 78 17 is_stmt 0 view .LVU67
+ 299 00c0 64F30F02 		bfi	r2, r4, #0, #16
+ 300              	.LVL34:
+  79:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	case BIT_16_TO_31:
+ 301              		.loc 1 79 3 is_stmt 1 view .LVU68
+ 302 00c4 F6E7     		b	.L10
+ 303              	.LVL35:
+ 304              	.L9:
+  81:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		registerValue |= (value << 16);
+ 305              		.loc 1 81 3 view .LVU69
+  82:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 306              		.loc 1 82 3 view .LVU70
+  82:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 307              		.loc 1 82 17 is_stmt 0 view .LVU71
+ 308 00c6 64F31F42 		bfi	r2, r4, #16, #16
+ 309              	.LVL36:
+  83:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	}
+ 310              		.loc 1 83 3 is_stmt 1 view .LVU72
+ 311 00ca F3E7     		b	.L10
+ 312              		.cfi_endproc
+ 313              	.LFE3:
+ 315              		.align	1
+ 316              		.global	tmc4670_switchToMotionMode
+ 317              		.syntax unified
+ 318              		.thumb
+ 319              		.thumb_func
+ 320              		.fpu softvfp
+ 322              	tmc4670_switchToMotionMode:
+ 323              	.LVL37:
+ 324              	.LFB4:
+  88:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+  89:TMC-API/tmc/ic/TMC4670/TMC4670.c **** void tmc4670_switchToMotionMode(uint8_t motor, uint8_t mode)
+  90:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 325              		.loc 1 90 1 view -0
+ 326              		.cfi_startproc
+ 327              		@ args = 0, pretend = 0, frame = 0
+ 328              		@ frame_needed = 0, uses_anonymous_args = 0
+  91:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// switch motion mode
+  92:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	uint32_t actualModeRegister = tmc4670_readInt(motor, TMC4670_MODE_RAMP_MODE_MOTION);
+ 329              		.loc 1 92 2 view .LVU74
+  90:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// switch motion mode
+ 330              		.loc 1 90 1 is_stmt 0 view .LVU75
+ 331 00cc 38B5     		push	{r3, r4, r5, lr}
+ 332              	.LCFI7:
+ 333              		.cfi_def_cfa_offset 16
+ 334              		.cfi_offset 3, -16
+ 335              		.cfi_offset 4, -12
+ 336              		.cfi_offset 5, -8
+ 337              		.cfi_offset 14, -4
+  90:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// switch motion mode
+ 338              		.loc 1 90 1 view .LVU76
+ 339 00ce 0D46     		mov	r5, r1
+ 340              		.loc 1 92 32 view .LVU77
+ 341 00d0 6321     		movs	r1, #99
+ 342              	.LVL38:
+  90:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// switch motion mode
+ 343              		.loc 1 90 1 view .LVU78
+ 344 00d2 0446     		mov	r4, r0
+ 345              		.loc 1 92 32 view .LVU79
+ 346 00d4 FFF7FEFF 		bl	tmc4670_readInt
+ 347              	.LVL39:
+  93:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	actualModeRegister &= 0xFFFFFF00;
+ 348              		.loc 1 93 2 is_stmt 1 view .LVU80
+ 349              		.loc 1 93 21 is_stmt 0 view .LVU81
+ 350 00d8 20F0FF00 		bic	r0, r0, #255
+ 351              	.LVL40:
+  94:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	actualModeRegister |= mode;
+ 352              		.loc 1 94 2 is_stmt 1 view .LVU82
+  95:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeInt(motor, TMC4670_MODE_RAMP_MODE_MOTION, actualModeRegister);
+ 353              		.loc 1 95 2 view .LVU83
+ 354 00dc 45EA0002 		orr	r2, r5, r0
+ 355 00e0 6321     		movs	r1, #99
+ 356 00e2 2046     		mov	r0, r4
+ 357              	.LVL41:
+  96:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 358              		.loc 1 96 1 is_stmt 0 view .LVU84
+ 359 00e4 BDE83840 		pop	{r3, r4, r5, lr}
+ 360              	.LCFI8:
+ 361              		.cfi_restore 14
+ 362              		.cfi_restore 5
+ 363              		.cfi_restore 4
+ 364              		.cfi_restore 3
+ 365              		.cfi_def_cfa_offset 0
+  95:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeInt(motor, TMC4670_MODE_RAMP_MODE_MOTION, actualModeRegister);
+ 366              		.loc 1 95 2 view .LVU85
+ 367 00e8 FFF7FEBF 		b	tmc4670_writeInt
+ 368              	.LVL42:
+ 369              		.cfi_endproc
+ 370              	.LFE4:
+ 372              		.align	1
+ 373              		.global	tmc4670_setTargetTorque_raw
+ 374              		.syntax unified
+ 375              		.thumb
+ 376              		.thumb_func
+ 377              		.fpu softvfp
+ 379              	tmc4670_setTargetTorque_raw:
+ 380              	.LVL43:
+ 381              	.LFB5:
+  97:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+  98:TMC-API/tmc/ic/TMC4670/TMC4670.c **** void tmc4670_setTargetTorque_raw(uint8_t motor, int32_t targetTorque)
+  99:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 382              		.loc 1 99 1 is_stmt 1 view -0
+ 383              		.cfi_startproc
+ 384              		@ args = 0, pretend = 0, frame = 0
+ 385              		@ frame_needed = 0, uses_anonymous_args = 0
+ 100:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_switchToMotionMode(motor, TMC4670_MOTION_MODE_TORQUE);
+ 386              		.loc 1 100 2 view .LVU87
+  99:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_switchToMotionMode(motor, TMC4670_MOTION_MODE_TORQUE);
+ 387              		.loc 1 99 1 is_stmt 0 view .LVU88
+ 388 00ec 70B5     		push	{r4, r5, r6, lr}
+ 389              	.LCFI9:
+ 390              		.cfi_def_cfa_offset 16
+ 391              		.cfi_offset 4, -16
+ 392              		.cfi_offset 5, -12
+ 393              		.cfi_offset 6, -8
+ 394              		.cfi_offset 14, -4
+  99:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_switchToMotionMode(motor, TMC4670_MOTION_MODE_TORQUE);
+ 395              		.loc 1 99 1 view .LVU89
+ 396 00ee 0446     		mov	r4, r0
+ 397 00f0 0D46     		mov	r5, r1
+ 398              		.loc 1 100 2 view .LVU90
+ 399 00f2 0121     		movs	r1, #1
+ 400              	.LVL44:
+ 401              		.loc 1 100 2 view .LVU91
+ 402 00f4 FFF7FEFF 		bl	tmc4670_switchToMotionMode
+ 403              	.LVL45:
+ 101:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeRegister16BitValue(motor, TMC4670_PID_TORQUE_FLUX_TARGET, BIT_16_TO_31, targetTorque)
+ 404              		.loc 1 101 2 is_stmt 1 view .LVU92
+ 405 00f8 ABB2     		uxth	r3, r5
+ 406 00fa 2046     		mov	r0, r4
+ 407 00fc 0122     		movs	r2, #1
+ 102:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 408              		.loc 1 102 1 is_stmt 0 view .LVU93
+ 409 00fe BDE87040 		pop	{r4, r5, r6, lr}
+ 410              	.LCFI10:
+ 411              		.cfi_restore 14
+ 412              		.cfi_restore 6
+ 413              		.cfi_restore 5
+ 414              		.cfi_restore 4
+ 415              		.cfi_def_cfa_offset 0
+ 416              	.LVL46:
+ 101:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeRegister16BitValue(motor, TMC4670_PID_TORQUE_FLUX_TARGET, BIT_16_TO_31, targetTorque)
+ 417              		.loc 1 101 2 view .LVU94
+ 418 0102 6421     		movs	r1, #100
+ 419 0104 FFF7FEBF 		b	tmc4670_writeRegister16BitValue
+ 420              	.LVL47:
+ 421              		.cfi_endproc
+ 422              	.LFE5:
+ 424              		.align	1
+ 425              		.global	tmc4670_getTargetTorque_raw
+ 426              		.syntax unified
+ 427              		.thumb
+ 428              		.thumb_func
+ 429              		.fpu softvfp
+ 431              	tmc4670_getTargetTorque_raw:
+ 432              	.LVL48:
+ 433              	.LFB6:
+ 103:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 104:TMC-API/tmc/ic/TMC4670/TMC4670.c **** int32_t tmc4670_getTargetTorque_raw(uint8_t motor)
+ 105:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 434              		.loc 1 105 1 is_stmt 1 view -0
+ 435              		.cfi_startproc
+ 436              		@ args = 0, pretend = 0, frame = 0
+ 437              		@ frame_needed = 0, uses_anonymous_args = 0
+ 106:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeInt(motor, TMC4670_INTERIM_ADDR, 0);
+ 438              		.loc 1 106 2 view .LVU96
+ 105:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeInt(motor, TMC4670_INTERIM_ADDR, 0);
+ 439              		.loc 1 105 1 is_stmt 0 view .LVU97
+ 440 0108 10B5     		push	{r4, lr}
+ 441              	.LCFI11:
+ 442              		.cfi_def_cfa_offset 8
+ 443              		.cfi_offset 4, -8
+ 444              		.cfi_offset 14, -4
+ 445              		.loc 1 106 2 view .LVU98
+ 446 010a 6F21     		movs	r1, #111
+ 105:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeInt(motor, TMC4670_INTERIM_ADDR, 0);
+ 447              		.loc 1 105 1 view .LVU99
+ 448 010c 0446     		mov	r4, r0
+ 449              		.loc 1 106 2 view .LVU100
+ 450 010e 0022     		movs	r2, #0
+ 451 0110 FFF7FEFF 		bl	tmc4670_writeInt
+ 452              	.LVL49:
+ 107:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (int32_t) tmc4670_readInt(motor, TMC4670_INTERIM_DATA);
+ 453              		.loc 1 107 2 is_stmt 1 view .LVU101
+ 454              		.loc 1 107 19 is_stmt 0 view .LVU102
+ 455 0114 2046     		mov	r0, r4
+ 456 0116 6E21     		movs	r1, #110
+ 108:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 457              		.loc 1 108 1 view .LVU103
+ 458 0118 BDE81040 		pop	{r4, lr}
+ 459              	.LCFI12:
+ 460              		.cfi_restore 14
+ 461              		.cfi_restore 4
+ 462              		.cfi_def_cfa_offset 0
+ 107:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (int32_t) tmc4670_readInt(motor, TMC4670_INTERIM_DATA);
+ 463              		.loc 1 107 19 view .LVU104
+ 464 011c FFF7FEBF 		b	tmc4670_readInt
+ 465              	.LVL50:
+ 466              		.cfi_endproc
+ 467              	.LFE6:
+ 469              		.align	1
+ 470              		.global	tmc4670_getActualTorque_raw
+ 471              		.syntax unified
+ 472              		.thumb
+ 473              		.thumb_func
+ 474              		.fpu softvfp
+ 476              	tmc4670_getActualTorque_raw:
+ 477              	.LVL51:
+ 478              	.LFB7:
+ 109:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 110:TMC-API/tmc/ic/TMC4670/TMC4670.c **** int32_t tmc4670_getActualTorque_raw(uint8_t motor)
+ 111:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 479              		.loc 1 111 1 is_stmt 1 view -0
+ 480              		.cfi_startproc
+ 481              		@ args = 0, pretend = 0, frame = 0
+ 482              		@ frame_needed = 0, uses_anonymous_args = 0
+ 112:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (int16_t) tmc4670_readRegister16BitValue(motor, TMC4670_PID_TORQUE_FLUX_ACTUAL, BIT_16_TO_3
+ 483              		.loc 1 112 2 view .LVU106
+ 484              	.LBB27:
+ 485              	.LBI27:
+  51:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 486              		.loc 1 51 10 view .LVU107
+ 487              	.LBB28:
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 488              		.loc 1 53 2 view .LVU108
+ 489              	.LBE28:
+ 490              	.LBE27:
+ 111:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (int16_t) tmc4670_readRegister16BitValue(motor, TMC4670_PID_TORQUE_FLUX_ACTUAL, BIT_16_TO_3
+ 491              		.loc 1 111 1 is_stmt 0 view .LVU109
+ 492 0120 08B5     		push	{r3, lr}
+ 493              	.LCFI13:
+ 494              		.cfi_def_cfa_offset 8
+ 495              		.cfi_offset 3, -8
+ 496              		.cfi_offset 14, -4
+ 497              	.LBB30:
+ 498              	.LBB29:
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 499              		.loc 1 53 26 view .LVU110
+ 500 0122 6921     		movs	r1, #105
+ 501 0124 FFF7FEFF 		bl	tmc4670_readInt
+ 502              	.LVL52:
+  56:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	{
+ 503              		.loc 1 56 2 is_stmt 1 view .LVU111
+  60:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	case BIT_16_TO_31:
+ 504              		.loc 1 60 3 view .LVU112
+  62:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 505              		.loc 1 62 3 view .LVU113
+  62:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 506              		.loc 1 62 3 is_stmt 0 view .LVU114
+ 507              	.LBE29:
+ 508              	.LBE30:
+ 113:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 509              		.loc 1 113 1 view .LVU115
+ 510 0128 0014     		asrs	r0, r0, #16
+ 511 012a 08BD     		pop	{r3, pc}
+ 512              		.cfi_endproc
+ 513              	.LFE7:
+ 515              		.align	1
+ 516              		.global	tmc4670_getActualRampTorque_raw
+ 517              		.syntax unified
+ 518              		.thumb
+ 519              		.thumb_func
+ 520              		.fpu softvfp
+ 522              	tmc4670_getActualRampTorque_raw:
+ 523              	.LVL53:
+ 524              	.LFB8:
+ 114:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 115:TMC-API/tmc/ic/TMC4670/TMC4670.c **** int32_t tmc4670_getActualRampTorque_raw(uint8_t motor)
+ 116:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 525              		.loc 1 116 1 is_stmt 1 view -0
+ 526              		.cfi_startproc
+ 527              		@ args = 0, pretend = 0, frame = 0
+ 528              		@ frame_needed = 0, uses_anonymous_args = 0
+ 529              		@ link register save eliminated.
+ 117:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// no ramp implemented
+ 118:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	UNUSED(motor);
+ 530              		.loc 1 118 2 view .LVU117
+ 119:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return 0;
+ 531              		.loc 1 119 2 view .LVU118
+ 120:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 532              		.loc 1 120 1 is_stmt 0 view .LVU119
+ 533 012c 0020     		movs	r0, #0
+ 534              	.LVL54:
+ 535              		.loc 1 120 1 view .LVU120
+ 536 012e 7047     		bx	lr
+ 537              		.cfi_endproc
+ 538              	.LFE8:
+ 540              		.align	1
+ 541              		.global	tmc4670_setTargetTorque_mA
+ 542              		.syntax unified
+ 543              		.thumb
+ 544              		.thumb_func
+ 545              		.fpu softvfp
+ 547              	tmc4670_setTargetTorque_mA:
+ 548              	.LVL55:
+ 549              	.LFB9:
+ 121:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 122:TMC-API/tmc/ic/TMC4670/TMC4670.c **** void tmc4670_setTargetTorque_mA(uint8_t motor, uint16_t torqueMeasurementFactor, int32_t targetTorq
+ 123:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 550              		.loc 1 123 1 is_stmt 1 view -0
+ 551              		.cfi_startproc
+ 552              		@ args = 0, pretend = 0, frame = 0
+ 553              		@ frame_needed = 0, uses_anonymous_args = 0
+ 124:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_switchToMotionMode(motor, TMC4670_MOTION_MODE_TORQUE);
+ 554              		.loc 1 124 2 view .LVU122
+ 123:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_switchToMotionMode(motor, TMC4670_MOTION_MODE_TORQUE);
+ 555              		.loc 1 123 1 is_stmt 0 view .LVU123
+ 556 0130 70B5     		push	{r4, r5, r6, lr}
+ 557              	.LCFI14:
+ 558              		.cfi_def_cfa_offset 16
+ 559              		.cfi_offset 4, -16
+ 560              		.cfi_offset 5, -12
+ 561              		.cfi_offset 6, -8
+ 562              		.cfi_offset 14, -4
+ 123:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_switchToMotionMode(motor, TMC4670_MOTION_MODE_TORQUE);
+ 563              		.loc 1 123 1 view .LVU124
+ 564 0132 0546     		mov	r5, r0
+ 565 0134 0E46     		mov	r6, r1
+ 566 0136 1446     		mov	r4, r2
+ 567              		.loc 1 124 2 view .LVU125
+ 568 0138 0121     		movs	r1, #1
+ 569              	.LVL56:
+ 570              		.loc 1 124 2 view .LVU126
+ 571 013a FFF7FEFF 		bl	tmc4670_switchToMotionMode
+ 572              	.LVL57:
+ 125:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeRegister16BitValue(motor, TMC4670_PID_TORQUE_FLUX_TARGET, BIT_16_TO_31, (targetTorque
+ 573              		.loc 1 125 2 is_stmt 1 view .LVU127
+ 574              		.loc 1 125 101 is_stmt 0 view .LVU128
+ 575 013e 2402     		lsls	r4, r4, #8
+ 576              	.LVL58:
+ 577              		.loc 1 125 2 view .LVU129
+ 578 0140 2846     		mov	r0, r5
+ 579              		.loc 1 125 108 view .LVU130
+ 580 0142 94FBF6F3 		sdiv	r3, r4, r6
+ 581              		.loc 1 125 2 view .LVU131
+ 582 0146 0122     		movs	r2, #1
+ 126:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 583              		.loc 1 126 1 view .LVU132
+ 584 0148 BDE87040 		pop	{r4, r5, r6, lr}
+ 585              	.LCFI15:
+ 586              		.cfi_restore 14
+ 587              		.cfi_restore 6
+ 588              		.cfi_restore 5
+ 589              		.cfi_restore 4
+ 590              		.cfi_def_cfa_offset 0
+ 125:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeRegister16BitValue(motor, TMC4670_PID_TORQUE_FLUX_TARGET, BIT_16_TO_31, (targetTorque
+ 591              		.loc 1 125 2 view .LVU133
+ 592 014c 9BB2     		uxth	r3, r3
+ 593 014e 6421     		movs	r1, #100
+ 594 0150 FFF7FEBF 		b	tmc4670_writeRegister16BitValue
+ 595              	.LVL59:
+ 596              		.cfi_endproc
+ 597              	.LFE9:
+ 599              		.align	1
+ 600              		.global	tmc4670_getTargetTorque_mA
+ 601              		.syntax unified
+ 602              		.thumb
+ 603              		.thumb_func
+ 604              		.fpu softvfp
+ 606              	tmc4670_getTargetTorque_mA:
+ 607              	.LVL60:
+ 608              	.LFB10:
+ 127:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 128:TMC-API/tmc/ic/TMC4670/TMC4670.c **** int32_t tmc4670_getTargetTorque_mA(uint8_t motor, uint16_t torqueMeasurementFactor)
+ 129:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 609              		.loc 1 129 1 is_stmt 1 view -0
+ 610              		.cfi_startproc
+ 611              		@ args = 0, pretend = 0, frame = 0
+ 612              		@ frame_needed = 0, uses_anonymous_args = 0
+ 130:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (tmc4670_getTargetTorque_raw(motor) * (int32_t) torqueMeasurementFactor) / 256;
+ 613              		.loc 1 130 2 view .LVU135
+ 129:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (tmc4670_getTargetTorque_raw(motor) * (int32_t) torqueMeasurementFactor) / 256;
+ 614              		.loc 1 129 1 is_stmt 0 view .LVU136
+ 615 0154 10B5     		push	{r4, lr}
+ 616              	.LCFI16:
+ 617              		.cfi_def_cfa_offset 8
+ 618              		.cfi_offset 4, -8
+ 619              		.cfi_offset 14, -4
+ 129:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (tmc4670_getTargetTorque_raw(motor) * (int32_t) torqueMeasurementFactor) / 256;
+ 620              		.loc 1 129 1 view .LVU137
+ 621 0156 0C46     		mov	r4, r1
+ 622              		.loc 1 130 10 view .LVU138
+ 623 0158 FFF7FEFF 		bl	tmc4670_getTargetTorque_raw
+ 624              	.LVL61:
+ 625              		.loc 1 130 82 view .LVU139
+ 626 015c 6043     		muls	r0, r4, r0
+ 627 015e 48BF     		it	mi
+ 628 0160 FF30     		addmi	r0, r0, #255
+ 131:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 629              		.loc 1 131 1 view .LVU140
+ 630 0162 0012     		asrs	r0, r0, #8
+ 631 0164 10BD     		pop	{r4, pc}
+ 632              		.cfi_endproc
+ 633              	.LFE10:
+ 635              		.align	1
+ 636              		.global	tmc4670_getActualTorque_mA
+ 637              		.syntax unified
+ 638              		.thumb
+ 639              		.thumb_func
+ 640              		.fpu softvfp
+ 642              	tmc4670_getActualTorque_mA:
+ 643              	.LVL62:
+ 644              	.LFB11:
+ 132:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 133:TMC-API/tmc/ic/TMC4670/TMC4670.c **** int32_t tmc4670_getActualTorque_mA(uint8_t motor, uint16_t torqueMeasurementFactor)
+ 134:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 645              		.loc 1 134 1 is_stmt 1 view -0
+ 646              		.cfi_startproc
+ 647              		@ args = 0, pretend = 0, frame = 0
+ 648              		@ frame_needed = 0, uses_anonymous_args = 0
+ 135:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (tmc4670_getActualTorque_raw(motor) * (int32_t) torqueMeasurementFactor) / 256;
+ 649              		.loc 1 135 2 view .LVU142
+ 134:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (tmc4670_getActualTorque_raw(motor) * (int32_t) torqueMeasurementFactor) / 256;
+ 650              		.loc 1 134 1 is_stmt 0 view .LVU143
+ 651 0166 10B5     		push	{r4, lr}
+ 652              	.LCFI17:
+ 653              		.cfi_def_cfa_offset 8
+ 654              		.cfi_offset 4, -8
+ 655              		.cfi_offset 14, -4
+ 134:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (tmc4670_getActualTorque_raw(motor) * (int32_t) torqueMeasurementFactor) / 256;
+ 656              		.loc 1 134 1 view .LVU144
+ 657 0168 0C46     		mov	r4, r1
+ 658              		.loc 1 135 10 view .LVU145
+ 659 016a FFF7FEFF 		bl	tmc4670_getActualTorque_raw
+ 660              	.LVL63:
+ 661              		.loc 1 135 82 view .LVU146
+ 662 016e 6043     		muls	r0, r4, r0
+ 663 0170 48BF     		it	mi
+ 664 0172 FF30     		addmi	r0, r0, #255
+ 136:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 665              		.loc 1 136 1 view .LVU147
+ 666 0174 0012     		asrs	r0, r0, #8
+ 667 0176 10BD     		pop	{r4, pc}
+ 668              		.cfi_endproc
+ 669              	.LFE11:
+ 671              		.align	1
+ 672              		.global	tmc4670_getActualRampTorque_mA
+ 673              		.syntax unified
+ 674              		.thumb
+ 675              		.thumb_func
+ 676              		.fpu softvfp
+ 678              	tmc4670_getActualRampTorque_mA:
+ 679              	.LVL64:
+ 680              	.LFB12:
+ 137:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 138:TMC-API/tmc/ic/TMC4670/TMC4670.c **** int32_t tmc4670_getActualRampTorque_mA(uint8_t motor, uint16_t torqueMeasurementFactor)
+ 139:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 681              		.loc 1 139 1 is_stmt 1 view -0
+ 682              		.cfi_startproc
+ 683              		@ args = 0, pretend = 0, frame = 0
+ 684              		@ frame_needed = 0, uses_anonymous_args = 0
+ 685              		@ link register save eliminated.
+ 140:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// no ramp implemented
+ 141:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	UNUSED(motor);
+ 686              		.loc 1 141 2 view .LVU149
+ 142:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	UNUSED(torqueMeasurementFactor);
+ 687              		.loc 1 142 2 view .LVU150
+ 143:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return 0;
+ 688              		.loc 1 143 2 view .LVU151
+ 144:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 689              		.loc 1 144 1 is_stmt 0 view .LVU152
+ 690 0178 0020     		movs	r0, #0
+ 691              	.LVL65:
+ 692              		.loc 1 144 1 view .LVU153
+ 693 017a 7047     		bx	lr
+ 694              		.cfi_endproc
+ 695              	.LFE12:
+ 697              		.align	1
+ 698              		.global	tmc4670_setTargetFlux_raw
+ 699              		.syntax unified
+ 700              		.thumb
+ 701              		.thumb_func
+ 702              		.fpu softvfp
+ 704              	tmc4670_setTargetFlux_raw:
+ 705              	.LVL66:
+ 706              	.LFB13:
+ 145:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 146:TMC-API/tmc/ic/TMC4670/TMC4670.c **** void tmc4670_setTargetFlux_raw(uint8_t motor, int32_t targetFlux)
+ 147:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 707              		.loc 1 147 1 is_stmt 1 view -0
+ 708              		.cfi_startproc
+ 709              		@ args = 0, pretend = 0, frame = 0
+ 710              		@ frame_needed = 0, uses_anonymous_args = 0
+ 711              		@ link register save eliminated.
+ 148:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// do not change the MOTION_MODE here! target flux can also be used during velocity and position m
+ 149:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeRegister16BitValue(motor, TMC4670_PID_TORQUE_FLUX_TARGET, BIT_0_TO_15, targetFlux);
+ 712              		.loc 1 149 2 view .LVU155
+ 713 017c 8BB2     		uxth	r3, r1
+ 714 017e 0022     		movs	r2, #0
+ 715 0180 6421     		movs	r1, #100
+ 716              	.LVL67:
+ 717              		.loc 1 149 2 is_stmt 0 view .LVU156
+ 718 0182 FFF7FEBF 		b	tmc4670_writeRegister16BitValue
+ 719              	.LVL68:
+ 720              		.loc 1 149 2 view .LVU157
+ 721              		.cfi_endproc
+ 722              	.LFE13:
+ 724              		.align	1
+ 725              		.global	tmc4670_getTargetFlux_raw
+ 726              		.syntax unified
+ 727              		.thumb
+ 728              		.thumb_func
+ 729              		.fpu softvfp
+ 731              	tmc4670_getTargetFlux_raw:
+ 732              	.LVL69:
+ 733              	.LFB14:
+ 150:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 151:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 152:TMC-API/tmc/ic/TMC4670/TMC4670.c **** int32_t tmc4670_getTargetFlux_raw(uint8_t motor)
+ 153:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 734              		.loc 1 153 1 is_stmt 1 view -0
+ 735              		.cfi_startproc
+ 736              		@ args = 0, pretend = 0, frame = 0
+ 737              		@ frame_needed = 0, uses_anonymous_args = 0
+ 154:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeInt(motor, TMC4670_INTERIM_ADDR, 1);
+ 738              		.loc 1 154 2 view .LVU159
+ 153:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeInt(motor, TMC4670_INTERIM_ADDR, 1);
+ 739              		.loc 1 153 1 is_stmt 0 view .LVU160
+ 740 0186 10B5     		push	{r4, lr}
+ 741              	.LCFI18:
+ 742              		.cfi_def_cfa_offset 8
+ 743              		.cfi_offset 4, -8
+ 744              		.cfi_offset 14, -4
+ 745              		.loc 1 154 2 view .LVU161
+ 746 0188 6F21     		movs	r1, #111
+ 153:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeInt(motor, TMC4670_INTERIM_ADDR, 1);
+ 747              		.loc 1 153 1 view .LVU162
+ 748 018a 0446     		mov	r4, r0
+ 749              		.loc 1 154 2 view .LVU163
+ 750 018c 0122     		movs	r2, #1
+ 751 018e FFF7FEFF 		bl	tmc4670_writeInt
+ 752              	.LVL70:
+ 155:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (int32_t) tmc4670_readInt(motor, TMC4670_INTERIM_DATA);
+ 753              		.loc 1 155 2 is_stmt 1 view .LVU164
+ 754              		.loc 1 155 19 is_stmt 0 view .LVU165
+ 755 0192 2046     		mov	r0, r4
+ 756 0194 6E21     		movs	r1, #110
+ 156:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 757              		.loc 1 156 1 view .LVU166
+ 758 0196 BDE81040 		pop	{r4, lr}
+ 759              	.LCFI19:
+ 760              		.cfi_restore 14
+ 761              		.cfi_restore 4
+ 762              		.cfi_def_cfa_offset 0
+ 155:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (int32_t) tmc4670_readInt(motor, TMC4670_INTERIM_DATA);
+ 763              		.loc 1 155 19 view .LVU167
+ 764 019a FFF7FEBF 		b	tmc4670_readInt
+ 765              	.LVL71:
+ 766              		.cfi_endproc
+ 767              	.LFE14:
+ 769              		.align	1
+ 770              		.global	tmc4670_getActualFlux_raw
+ 771              		.syntax unified
+ 772              		.thumb
+ 773              		.thumb_func
+ 774              		.fpu softvfp
+ 776              	tmc4670_getActualFlux_raw:
+ 777              	.LVL72:
+ 778              	.LFB15:
+ 157:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 158:TMC-API/tmc/ic/TMC4670/TMC4670.c **** int32_t tmc4670_getActualFlux_raw(uint8_t motor)
+ 159:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 779              		.loc 1 159 1 is_stmt 1 view -0
+ 780              		.cfi_startproc
+ 781              		@ args = 0, pretend = 0, frame = 0
+ 782              		@ frame_needed = 0, uses_anonymous_args = 0
+ 160:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (int16_t) tmc4670_readRegister16BitValue(motor, TMC4670_PID_TORQUE_FLUX_ACTUAL, BIT_0_TO_15
+ 783              		.loc 1 160 2 view .LVU169
+ 784              	.LBB31:
+ 785              	.LBI31:
+  51:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 786              		.loc 1 51 10 view .LVU170
+ 787              	.LBB32:
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 788              		.loc 1 53 2 view .LVU171
+ 789              	.LBE32:
+ 790              	.LBE31:
+ 159:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (int16_t) tmc4670_readRegister16BitValue(motor, TMC4670_PID_TORQUE_FLUX_ACTUAL, BIT_0_TO_15
+ 791              		.loc 1 159 1 is_stmt 0 view .LVU172
+ 792 019e 08B5     		push	{r3, lr}
+ 793              	.LCFI20:
+ 794              		.cfi_def_cfa_offset 8
+ 795              		.cfi_offset 3, -8
+ 796              		.cfi_offset 14, -4
+ 797              	.LBB34:
+ 798              	.LBB33:
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 799              		.loc 1 53 26 view .LVU173
+ 800 01a0 6921     		movs	r1, #105
+ 801 01a2 FFF7FEFF 		bl	tmc4670_readInt
+ 802              	.LVL73:
+  56:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	{
+ 803              		.loc 1 56 2 is_stmt 1 view .LVU174
+  59:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 804              		.loc 1 59 3 view .LVU175
+  59:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 805              		.loc 1 59 3 is_stmt 0 view .LVU176
+ 806              	.LBE33:
+ 807              	.LBE34:
+ 161:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 808              		.loc 1 161 1 view .LVU177
+ 809 01a6 00B2     		sxth	r0, r0
+ 810 01a8 08BD     		pop	{r3, pc}
+ 811              		.cfi_endproc
+ 812              	.LFE15:
+ 814              		.align	1
+ 815              		.global	tmc4670_setTargetFlux_mA
+ 816              		.syntax unified
+ 817              		.thumb
+ 818              		.thumb_func
+ 819              		.fpu softvfp
+ 821              	tmc4670_setTargetFlux_mA:
+ 822              	.LVL74:
+ 823              	.LFB16:
+ 162:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 163:TMC-API/tmc/ic/TMC4670/TMC4670.c **** void tmc4670_setTargetFlux_mA(uint8_t motor, uint16_t torqueMeasurementFactor, int32_t targetFlux)
+ 164:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 824              		.loc 1 164 1 is_stmt 1 view -0
+ 825              		.cfi_startproc
+ 826              		@ args = 0, pretend = 0, frame = 0
+ 827              		@ frame_needed = 0, uses_anonymous_args = 0
+ 828              		@ link register save eliminated.
+ 165:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// do not change the MOTION_MODE here! target flux can also be used during velocity and position m
+ 166:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeRegister16BitValue(motor, TMC4670_PID_TORQUE_FLUX_TARGET, BIT_0_TO_15, (targetFlux * 
+ 829              		.loc 1 166 2 view .LVU179
+ 830              		.loc 1 166 98 is_stmt 0 view .LVU180
+ 831 01aa 1202     		lsls	r2, r2, #8
+ 832              	.LVL75:
+ 833              		.loc 1 166 105 view .LVU181
+ 834 01ac 92FBF1F2 		sdiv	r2, r2, r1
+ 835              		.loc 1 166 2 view .LVU182
+ 836 01b0 6421     		movs	r1, #100
+ 837              	.LVL76:
+ 838              		.loc 1 166 2 view .LVU183
+ 839 01b2 93B2     		uxth	r3, r2
+ 840 01b4 0022     		movs	r2, #0
+ 841 01b6 FFF7FEBF 		b	tmc4670_writeRegister16BitValue
+ 842              	.LVL77:
+ 843              		.loc 1 166 2 view .LVU184
+ 844              		.cfi_endproc
+ 845              	.LFE16:
+ 847              		.align	1
+ 848              		.global	tmc4670_getTargetFlux_mA
+ 849              		.syntax unified
+ 850              		.thumb
+ 851              		.thumb_func
+ 852              		.fpu softvfp
+ 854              	tmc4670_getTargetFlux_mA:
+ 855              	.LVL78:
+ 856              	.LFB17:
+ 167:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 168:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 169:TMC-API/tmc/ic/TMC4670/TMC4670.c **** int32_t tmc4670_getTargetFlux_mA(uint8_t motor, uint16_t torqueMeasurementFactor)
+ 170:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 857              		.loc 1 170 1 is_stmt 1 view -0
+ 858              		.cfi_startproc
+ 859              		@ args = 0, pretend = 0, frame = 0
+ 860              		@ frame_needed = 0, uses_anonymous_args = 0
+ 171:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (tmc4670_getTargetFlux_raw(motor) * (int32_t) torqueMeasurementFactor) / 256;
+ 861              		.loc 1 171 2 view .LVU186
+ 170:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (tmc4670_getTargetFlux_raw(motor) * (int32_t) torqueMeasurementFactor) / 256;
+ 862              		.loc 1 170 1 is_stmt 0 view .LVU187
+ 863 01ba 10B5     		push	{r4, lr}
+ 864              	.LCFI21:
+ 865              		.cfi_def_cfa_offset 8
+ 866              		.cfi_offset 4, -8
+ 867              		.cfi_offset 14, -4
+ 170:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (tmc4670_getTargetFlux_raw(motor) * (int32_t) torqueMeasurementFactor) / 256;
+ 868              		.loc 1 170 1 view .LVU188
+ 869 01bc 0C46     		mov	r4, r1
+ 870              		.loc 1 171 10 view .LVU189
+ 871 01be FFF7FEFF 		bl	tmc4670_getTargetFlux_raw
+ 872              	.LVL79:
+ 873              		.loc 1 171 80 view .LVU190
+ 874 01c2 6043     		muls	r0, r4, r0
+ 875 01c4 48BF     		it	mi
+ 876 01c6 FF30     		addmi	r0, r0, #255
+ 172:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 877              		.loc 1 172 1 view .LVU191
+ 878 01c8 0012     		asrs	r0, r0, #8
+ 879 01ca 10BD     		pop	{r4, pc}
+ 880              		.cfi_endproc
+ 881              	.LFE17:
+ 883              		.align	1
+ 884              		.global	tmc4670_getActualFlux_mA
+ 885              		.syntax unified
+ 886              		.thumb
+ 887              		.thumb_func
+ 888              		.fpu softvfp
+ 890              	tmc4670_getActualFlux_mA:
+ 891              	.LVL80:
+ 892              	.LFB18:
+ 173:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 174:TMC-API/tmc/ic/TMC4670/TMC4670.c **** int32_t tmc4670_getActualFlux_mA(uint8_t motor, uint16_t torqueMeasurementFactor)
+ 175:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 893              		.loc 1 175 1 is_stmt 1 view -0
+ 894              		.cfi_startproc
+ 895              		@ args = 0, pretend = 0, frame = 0
+ 896              		@ frame_needed = 0, uses_anonymous_args = 0
+ 176:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (tmc4670_getActualFlux_raw(motor) * (int32_t) torqueMeasurementFactor) / 256;
+ 897              		.loc 1 176 2 view .LVU193
+ 175:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (tmc4670_getActualFlux_raw(motor) * (int32_t) torqueMeasurementFactor) / 256;
+ 898              		.loc 1 175 1 is_stmt 0 view .LVU194
+ 899 01cc 10B5     		push	{r4, lr}
+ 900              	.LCFI22:
+ 901              		.cfi_def_cfa_offset 8
+ 902              		.cfi_offset 4, -8
+ 903              		.cfi_offset 14, -4
+ 175:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (tmc4670_getActualFlux_raw(motor) * (int32_t) torqueMeasurementFactor) / 256;
+ 904              		.loc 1 175 1 view .LVU195
+ 905 01ce 0C46     		mov	r4, r1
+ 906              		.loc 1 176 10 view .LVU196
+ 907 01d0 FFF7FEFF 		bl	tmc4670_getActualFlux_raw
+ 908              	.LVL81:
+ 909              		.loc 1 176 80 view .LVU197
+ 910 01d4 6043     		muls	r0, r4, r0
+ 911 01d6 48BF     		it	mi
+ 912 01d8 FF30     		addmi	r0, r0, #255
+ 177:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 913              		.loc 1 177 1 view .LVU198
+ 914 01da 0012     		asrs	r0, r0, #8
+ 915 01dc 10BD     		pop	{r4, pc}
+ 916              		.cfi_endproc
+ 917              	.LFE18:
+ 919              		.align	1
+ 920              		.global	tmc4670_setTorqueFluxLimit_mA
+ 921              		.syntax unified
+ 922              		.thumb
+ 923              		.thumb_func
+ 924              		.fpu softvfp
+ 926              	tmc4670_setTorqueFluxLimit_mA:
+ 927              	.LVL82:
+ 928              	.LFB19:
+ 178:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 179:TMC-API/tmc/ic/TMC4670/TMC4670.c **** void tmc4670_setTorqueFluxLimit_mA(uint8_t motor, uint16_t torqueMeasurementFactor, int32_t max)
+ 180:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 929              		.loc 1 180 1 is_stmt 1 view -0
+ 930              		.cfi_startproc
+ 931              		@ args = 0, pretend = 0, frame = 0
+ 932              		@ frame_needed = 0, uses_anonymous_args = 0
+ 933              		@ link register save eliminated.
+ 181:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeRegister16BitValue(motor, TMC4670_PID_TORQUE_FLUX_LIMITS, BIT_0_TO_15, (max * 256) / 
+ 934              		.loc 1 181 2 view .LVU200
+ 935              		.loc 1 181 91 is_stmt 0 view .LVU201
+ 936 01de 1202     		lsls	r2, r2, #8
+ 937              	.LVL83:
+ 938              		.loc 1 181 98 view .LVU202
+ 939 01e0 92FBF1F2 		sdiv	r2, r2, r1
+ 940              		.loc 1 181 2 view .LVU203
+ 941 01e4 5E21     		movs	r1, #94
+ 942              	.LVL84:
+ 943              		.loc 1 181 2 view .LVU204
+ 944 01e6 93B2     		uxth	r3, r2
+ 945 01e8 0022     		movs	r2, #0
+ 946 01ea FFF7FEBF 		b	tmc4670_writeRegister16BitValue
+ 947              	.LVL85:
+ 948              		.loc 1 181 2 view .LVU205
+ 949              		.cfi_endproc
+ 950              	.LFE19:
+ 952              		.align	1
+ 953              		.global	tmc4670_getTorqueFluxLimit_mA
+ 954              		.syntax unified
+ 955              		.thumb
+ 956              		.thumb_func
+ 957              		.fpu softvfp
+ 959              	tmc4670_getTorqueFluxLimit_mA:
+ 960              	.LVL86:
+ 961              	.LFB20:
+ 182:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 183:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 184:TMC-API/tmc/ic/TMC4670/TMC4670.c **** int32_t tmc4670_getTorqueFluxLimit_mA(uint8_t motor, uint16_t torqueMeasurementFactor)
+ 185:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 962              		.loc 1 185 1 is_stmt 1 view -0
+ 963              		.cfi_startproc
+ 964              		@ args = 0, pretend = 0, frame = 0
+ 965              		@ frame_needed = 0, uses_anonymous_args = 0
+ 186:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return ((int32_t) tmc4670_readRegister16BitValue(motor, TMC4670_PID_TORQUE_FLUX_LIMITS, BIT_0_TO_1
+ 966              		.loc 1 186 2 view .LVU207
+ 967              	.LBB35:
+ 968              	.LBI35:
+  51:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 969              		.loc 1 51 10 view .LVU208
+ 970              	.LBB36:
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 971              		.loc 1 53 2 view .LVU209
+ 972              	.LBE36:
+ 973              	.LBE35:
+ 185:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return ((int32_t) tmc4670_readRegister16BitValue(motor, TMC4670_PID_TORQUE_FLUX_LIMITS, BIT_0_TO_1
+ 974              		.loc 1 185 1 is_stmt 0 view .LVU210
+ 975 01ee 10B5     		push	{r4, lr}
+ 976              	.LCFI23:
+ 977              		.cfi_def_cfa_offset 8
+ 978              		.cfi_offset 4, -8
+ 979              		.cfi_offset 14, -4
+ 185:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return ((int32_t) tmc4670_readRegister16BitValue(motor, TMC4670_PID_TORQUE_FLUX_LIMITS, BIT_0_TO_1
+ 980              		.loc 1 185 1 view .LVU211
+ 981 01f0 0C46     		mov	r4, r1
+ 982              	.LBB38:
+ 983              	.LBB37:
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 984              		.loc 1 53 26 view .LVU212
+ 985 01f2 5E21     		movs	r1, #94
+ 986              	.LVL87:
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 987              		.loc 1 53 26 view .LVU213
+ 988 01f4 FFF7FEFF 		bl	tmc4670_readInt
+ 989              	.LVL88:
+  56:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	{
+ 990              		.loc 1 56 2 is_stmt 1 view .LVU214
+  59:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 991              		.loc 1 59 3 view .LVU215
+  59:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 992              		.loc 1 59 3 is_stmt 0 view .LVU216
+ 993              	.LBE37:
+ 994              	.LBE38:
+ 995              		.loc 1 186 103 view .LVU217
+ 996 01f8 80B2     		uxth	r0, r0
+ 997 01fa 6043     		muls	r0, r4, r0
+ 187:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 998              		.loc 1 187 1 view .LVU218
+ 999 01fc 0012     		asrs	r0, r0, #8
+ 1000 01fe 10BD     		pop	{r4, pc}
+ 1001              		.cfi_endproc
+ 1002              	.LFE20:
+ 1004              		.align	1
+ 1005              		.global	tmc4670_setTargetVelocity
+ 1006              		.syntax unified
+ 1007              		.thumb
+ 1008              		.thumb_func
+ 1009              		.fpu softvfp
+ 1011              	tmc4670_setTargetVelocity:
+ 1012              	.LVL89:
+ 1013              	.LFB21:
+ 188:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 189:TMC-API/tmc/ic/TMC4670/TMC4670.c **** void tmc4670_setTargetVelocity(uint8_t motor, int32_t targetVelocity)
+ 190:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 1014              		.loc 1 190 1 is_stmt 1 view -0
+ 1015              		.cfi_startproc
+ 1016              		@ args = 0, pretend = 0, frame = 0
+ 1017              		@ frame_needed = 0, uses_anonymous_args = 0
+ 191:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_switchToMotionMode(motor, TMC4670_MOTION_MODE_VELOCITY);
+ 1018              		.loc 1 191 2 view .LVU220
+ 190:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_switchToMotionMode(motor, TMC4670_MOTION_MODE_VELOCITY);
+ 1019              		.loc 1 190 1 is_stmt 0 view .LVU221
+ 1020 0200 38B5     		push	{r3, r4, r5, lr}
+ 1021              	.LCFI24:
+ 1022              		.cfi_def_cfa_offset 16
+ 1023              		.cfi_offset 3, -16
+ 1024              		.cfi_offset 4, -12
+ 1025              		.cfi_offset 5, -8
+ 1026              		.cfi_offset 14, -4
+ 190:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_switchToMotionMode(motor, TMC4670_MOTION_MODE_VELOCITY);
+ 1027              		.loc 1 190 1 view .LVU222
+ 1028 0202 0446     		mov	r4, r0
+ 1029 0204 0D46     		mov	r5, r1
+ 1030              		.loc 1 191 2 view .LVU223
+ 1031 0206 0221     		movs	r1, #2
+ 1032              	.LVL90:
+ 1033              		.loc 1 191 2 view .LVU224
+ 1034 0208 FFF7FEFF 		bl	tmc4670_switchToMotionMode
+ 1035              	.LVL91:
+ 192:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeInt(motor, TMC4670_PID_VELOCITY_TARGET, targetVelocity);
+ 1036              		.loc 1 192 2 is_stmt 1 view .LVU225
+ 1037 020c 2A46     		mov	r2, r5
+ 1038 020e 2046     		mov	r0, r4
+ 1039 0210 6621     		movs	r1, #102
+ 193:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 1040              		.loc 1 193 1 is_stmt 0 view .LVU226
+ 1041 0212 BDE83840 		pop	{r3, r4, r5, lr}
+ 1042              	.LCFI25:
+ 1043              		.cfi_restore 14
+ 1044              		.cfi_restore 5
+ 1045              		.cfi_restore 4
+ 1046              		.cfi_restore 3
+ 1047              		.cfi_def_cfa_offset 0
+ 1048              	.LVL92:
+ 192:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeInt(motor, TMC4670_PID_VELOCITY_TARGET, targetVelocity);
+ 1049              		.loc 1 192 2 view .LVU227
+ 1050 0216 FFF7FEBF 		b	tmc4670_writeInt
+ 1051              	.LVL93:
+ 192:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeInt(motor, TMC4670_PID_VELOCITY_TARGET, targetVelocity);
+ 1052              		.loc 1 192 2 view .LVU228
+ 1053              		.cfi_endproc
+ 1054              	.LFE21:
+ 1056              		.align	1
+ 1057              		.global	tmc4670_getTargetVelocity
+ 1058              		.syntax unified
+ 1059              		.thumb
+ 1060              		.thumb_func
+ 1061              		.fpu softvfp
+ 1063              	tmc4670_getTargetVelocity:
+ 1064              	.LVL94:
+ 1065              	.LFB22:
+ 194:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 195:TMC-API/tmc/ic/TMC4670/TMC4670.c **** int32_t tmc4670_getTargetVelocity(uint8_t motor)
+ 196:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 1066              		.loc 1 196 1 is_stmt 1 view -0
+ 1067              		.cfi_startproc
+ 1068              		@ args = 0, pretend = 0, frame = 0
+ 1069              		@ frame_needed = 0, uses_anonymous_args = 0
+ 197:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeInt(motor, TMC4670_INTERIM_ADDR, 2);
+ 1070              		.loc 1 197 2 view .LVU230
+ 196:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeInt(motor, TMC4670_INTERIM_ADDR, 2);
+ 1071              		.loc 1 196 1 is_stmt 0 view .LVU231
+ 1072 021a 10B5     		push	{r4, lr}
+ 1073              	.LCFI26:
+ 1074              		.cfi_def_cfa_offset 8
+ 1075              		.cfi_offset 4, -8
+ 1076              		.cfi_offset 14, -4
+ 1077              		.loc 1 197 2 view .LVU232
+ 1078 021c 6F21     		movs	r1, #111
+ 196:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeInt(motor, TMC4670_INTERIM_ADDR, 2);
+ 1079              		.loc 1 196 1 view .LVU233
+ 1080 021e 0446     		mov	r4, r0
+ 1081              		.loc 1 197 2 view .LVU234
+ 1082 0220 0222     		movs	r2, #2
+ 1083 0222 FFF7FEFF 		bl	tmc4670_writeInt
+ 1084              	.LVL95:
+ 198:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (int32_t) tmc4670_readInt(motor, TMC4670_INTERIM_DATA);
+ 1085              		.loc 1 198 2 is_stmt 1 view .LVU235
+ 1086              		.loc 1 198 19 is_stmt 0 view .LVU236
+ 1087 0226 2046     		mov	r0, r4
+ 1088 0228 6E21     		movs	r1, #110
+ 199:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 1089              		.loc 1 199 1 view .LVU237
+ 1090 022a BDE81040 		pop	{r4, lr}
+ 1091              	.LCFI27:
+ 1092              		.cfi_restore 14
+ 1093              		.cfi_restore 4
+ 1094              		.cfi_def_cfa_offset 0
+ 198:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (int32_t) tmc4670_readInt(motor, TMC4670_INTERIM_DATA);
+ 1095              		.loc 1 198 19 view .LVU238
+ 1096 022e FFF7FEBF 		b	tmc4670_readInt
+ 1097              	.LVL96:
+ 1098              		.cfi_endproc
+ 1099              	.LFE22:
+ 1101              		.align	1
+ 1102              		.global	tmc4670_getActualVelocity
+ 1103              		.syntax unified
+ 1104              		.thumb
+ 1105              		.thumb_func
+ 1106              		.fpu softvfp
+ 1108              	tmc4670_getActualVelocity:
+ 1109              	.LVL97:
+ 1110              	.LFB23:
+ 200:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 201:TMC-API/tmc/ic/TMC4670/TMC4670.c **** int32_t tmc4670_getActualVelocity(uint8_t motor)
+ 202:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 1111              		.loc 1 202 1 is_stmt 1 view -0
+ 1112              		.cfi_startproc
+ 1113              		@ args = 0, pretend = 0, frame = 0
+ 1114              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1115              		@ link register save eliminated.
+ 203:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (int32_t) tmc4670_readInt(motor, TMC4670_PID_VELOCITY_ACTUAL);
+ 1116              		.loc 1 203 2 view .LVU240
+ 1117              		.loc 1 203 19 is_stmt 0 view .LVU241
+ 1118 0232 6A21     		movs	r1, #106
+ 1119 0234 FFF7FEBF 		b	tmc4670_readInt
+ 1120              	.LVL98:
+ 1121              		.loc 1 203 19 view .LVU242
+ 1122              		.cfi_endproc
+ 1123              	.LFE23:
+ 1125              		.align	1
+ 1126              		.global	tmc4670_getActualRampVelocity
+ 1127              		.syntax unified
+ 1128              		.thumb
+ 1129              		.thumb_func
+ 1130              		.fpu softvfp
+ 1132              	tmc4670_getActualRampVelocity:
+ 1133              	.LFB39:
+ 1134              		.cfi_startproc
+ 1135              		@ args = 0, pretend = 0, frame = 0
+ 1136              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1137              		@ link register save eliminated.
+ 1138 0238 0020     		movs	r0, #0
+ 1139 023a 7047     		bx	lr
+ 1140              		.cfi_endproc
+ 1141              	.LFE39:
+ 1143              		.align	1
+ 1144              		.global	tmc4670_setAbsolutTargetPosition
+ 1145              		.syntax unified
+ 1146              		.thumb
+ 1147              		.thumb_func
+ 1148              		.fpu softvfp
+ 1150              	tmc4670_setAbsolutTargetPosition:
+ 1151              	.LVL99:
+ 1152              	.LFB25:
+ 204:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 205:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 206:TMC-API/tmc/ic/TMC4670/TMC4670.c **** int32_t tmc4670_getActualRampVelocity(uint8_t motor)
+ 207:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 208:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	UNUSED(motor);
+ 209:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// no ramp implemented
+ 210:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return 0;
+ 211:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 212:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 213:TMC-API/tmc/ic/TMC4670/TMC4670.c **** void tmc4670_setAbsolutTargetPosition(uint8_t motor, int32_t targetPosition)
+ 214:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 1153              		.loc 1 214 1 is_stmt 1 view -0
+ 1154              		.cfi_startproc
+ 1155              		@ args = 0, pretend = 0, frame = 0
+ 1156              		@ frame_needed = 0, uses_anonymous_args = 0
+ 215:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_switchToMotionMode(motor, TMC4670_MOTION_MODE_POSITION);
+ 1157              		.loc 1 215 2 view .LVU244
+ 214:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_switchToMotionMode(motor, TMC4670_MOTION_MODE_POSITION);
+ 1158              		.loc 1 214 1 is_stmt 0 view .LVU245
+ 1159 023c 38B5     		push	{r3, r4, r5, lr}
+ 1160              	.LCFI28:
+ 1161              		.cfi_def_cfa_offset 16
+ 1162              		.cfi_offset 3, -16
+ 1163              		.cfi_offset 4, -12
+ 1164              		.cfi_offset 5, -8
+ 1165              		.cfi_offset 14, -4
+ 214:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_switchToMotionMode(motor, TMC4670_MOTION_MODE_POSITION);
+ 1166              		.loc 1 214 1 view .LVU246
+ 1167 023e 0446     		mov	r4, r0
+ 1168 0240 0D46     		mov	r5, r1
+ 1169              		.loc 1 215 2 view .LVU247
+ 1170 0242 0321     		movs	r1, #3
+ 1171              	.LVL100:
+ 1172              		.loc 1 215 2 view .LVU248
+ 1173 0244 FFF7FEFF 		bl	tmc4670_switchToMotionMode
+ 1174              	.LVL101:
+ 216:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeInt(motor, TMC4670_PID_POSITION_TARGET, targetPosition);
+ 1175              		.loc 1 216 2 is_stmt 1 view .LVU249
+ 1176 0248 2A46     		mov	r2, r5
+ 1177 024a 2046     		mov	r0, r4
+ 1178 024c 6821     		movs	r1, #104
+ 217:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 1179              		.loc 1 217 1 is_stmt 0 view .LVU250
+ 1180 024e BDE83840 		pop	{r3, r4, r5, lr}
+ 1181              	.LCFI29:
+ 1182              		.cfi_restore 14
+ 1183              		.cfi_restore 5
+ 1184              		.cfi_restore 4
+ 1185              		.cfi_restore 3
+ 1186              		.cfi_def_cfa_offset 0
+ 1187              	.LVL102:
+ 216:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeInt(motor, TMC4670_PID_POSITION_TARGET, targetPosition);
+ 1188              		.loc 1 216 2 view .LVU251
+ 1189 0252 FFF7FEBF 		b	tmc4670_writeInt
+ 1190              	.LVL103:
+ 216:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeInt(motor, TMC4670_PID_POSITION_TARGET, targetPosition);
+ 1191              		.loc 1 216 2 view .LVU252
+ 1192              		.cfi_endproc
+ 1193              	.LFE25:
+ 1195              		.align	1
+ 1196              		.global	tmc4670_setRelativeTargetPosition
+ 1197              		.syntax unified
+ 1198              		.thumb
+ 1199              		.thumb_func
+ 1200              		.fpu softvfp
+ 1202              	tmc4670_setRelativeTargetPosition:
+ 1203              	.LVL104:
+ 1204              	.LFB26:
+ 218:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 219:TMC-API/tmc/ic/TMC4670/TMC4670.c **** void tmc4670_setRelativeTargetPosition(uint8_t motor, int32_t relativePosition)
+ 220:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 1205              		.loc 1 220 1 is_stmt 1 view -0
+ 1206              		.cfi_startproc
+ 1207              		@ args = 0, pretend = 0, frame = 0
+ 1208              		@ frame_needed = 0, uses_anonymous_args = 0
+ 221:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_switchToMotionMode(motor, TMC4670_MOTION_MODE_POSITION);
+ 1209              		.loc 1 221 2 view .LVU254
+ 220:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_switchToMotionMode(motor, TMC4670_MOTION_MODE_POSITION);
+ 1210              		.loc 1 220 1 is_stmt 0 view .LVU255
+ 1211 0256 38B5     		push	{r3, r4, r5, lr}
+ 1212              	.LCFI30:
+ 1213              		.cfi_def_cfa_offset 16
+ 1214              		.cfi_offset 3, -16
+ 1215              		.cfi_offset 4, -12
+ 1216              		.cfi_offset 5, -8
+ 1217              		.cfi_offset 14, -4
+ 220:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_switchToMotionMode(motor, TMC4670_MOTION_MODE_POSITION);
+ 1218              		.loc 1 220 1 view .LVU256
+ 1219 0258 0446     		mov	r4, r0
+ 1220 025a 0D46     		mov	r5, r1
+ 1221              		.loc 1 221 2 view .LVU257
+ 1222 025c 0321     		movs	r1, #3
+ 1223              	.LVL105:
+ 1224              		.loc 1 221 2 view .LVU258
+ 1225 025e FFF7FEFF 		bl	tmc4670_switchToMotionMode
+ 1226              	.LVL106:
+ 222:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// determine actual position and add relative position ticks
+ 223:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeInt(motor, TMC4670_PID_POSITION_TARGET, (int32_t) tmc4670_readInt(motor, TMC4670_PID_
+ 1227              		.loc 1 223 2 is_stmt 1 view .LVU259
+ 1228              		.loc 1 223 65 is_stmt 0 view .LVU260
+ 1229 0262 6B21     		movs	r1, #107
+ 1230 0264 2046     		mov	r0, r4
+ 1231 0266 FFF7FEFF 		bl	tmc4670_readInt
+ 1232              	.LVL107:
+ 1233              		.loc 1 223 2 view .LVU261
+ 1234 026a 6821     		movs	r1, #104
+ 1235 026c 4219     		adds	r2, r0, r5
+ 1236 026e 2046     		mov	r0, r4
+ 224:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 1237              		.loc 1 224 1 view .LVU262
+ 1238 0270 BDE83840 		pop	{r3, r4, r5, lr}
+ 1239              	.LCFI31:
+ 1240              		.cfi_restore 14
+ 1241              		.cfi_restore 5
+ 1242              		.cfi_restore 4
+ 1243              		.cfi_restore 3
+ 1244              		.cfi_def_cfa_offset 0
+ 1245              	.LVL108:
+ 223:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 1246              		.loc 1 223 2 view .LVU263
+ 1247 0274 FFF7FEBF 		b	tmc4670_writeInt
+ 1248              	.LVL109:
+ 1249              		.cfi_endproc
+ 1250              	.LFE26:
+ 1252              		.align	1
+ 1253              		.global	tmc4670_getTargetPosition
+ 1254              		.syntax unified
+ 1255              		.thumb
+ 1256              		.thumb_func
+ 1257              		.fpu softvfp
+ 1259              	tmc4670_getTargetPosition:
+ 1260              	.LVL110:
+ 1261              	.LFB27:
+ 225:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 226:TMC-API/tmc/ic/TMC4670/TMC4670.c **** int32_t tmc4670_getTargetPosition(uint8_t motor)
+ 227:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 1262              		.loc 1 227 1 is_stmt 1 view -0
+ 1263              		.cfi_startproc
+ 1264              		@ args = 0, pretend = 0, frame = 0
+ 1265              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1266              		@ link register save eliminated.
+ 228:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (int32_t) tmc4670_readInt(motor, TMC4670_PID_POSITION_TARGET);
+ 1267              		.loc 1 228 2 view .LVU265
+ 1268              		.loc 1 228 19 is_stmt 0 view .LVU266
+ 1269 0278 6821     		movs	r1, #104
+ 1270 027a FFF7FEBF 		b	tmc4670_readInt
+ 1271              	.LVL111:
+ 1272              		.loc 1 228 19 view .LVU267
+ 1273              		.cfi_endproc
+ 1274              	.LFE27:
+ 1276              		.align	1
+ 1277              		.global	tmc4670_setActualPosition
+ 1278              		.syntax unified
+ 1279              		.thumb
+ 1280              		.thumb_func
+ 1281              		.fpu softvfp
+ 1283              	tmc4670_setActualPosition:
+ 1284              	.LVL112:
+ 1285              	.LFB28:
+ 229:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 230:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 231:TMC-API/tmc/ic/TMC4670/TMC4670.c **** void tmc4670_setActualPosition(uint8_t motor, int32_t actualPosition)
+ 232:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 1286              		.loc 1 232 1 is_stmt 1 view -0
+ 1287              		.cfi_startproc
+ 1288              		@ args = 0, pretend = 0, frame = 0
+ 1289              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1290              		@ link register save eliminated.
+ 233:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeInt(motor, TMC4670_PID_POSITION_ACTUAL, actualPosition);
+ 1291              		.loc 1 233 2 view .LVU269
+ 232:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeInt(motor, TMC4670_PID_POSITION_ACTUAL, actualPosition);
+ 1292              		.loc 1 232 1 is_stmt 0 view .LVU270
+ 1293 027e 0A46     		mov	r2, r1
+ 1294              		.loc 1 233 2 view .LVU271
+ 1295 0280 6B21     		movs	r1, #107
+ 1296              	.LVL113:
+ 1297              		.loc 1 233 2 view .LVU272
+ 1298 0282 FFF7FEBF 		b	tmc4670_writeInt
+ 1299              	.LVL114:
+ 1300              		.loc 1 233 2 view .LVU273
+ 1301              		.cfi_endproc
+ 1302              	.LFE28:
+ 1304              		.align	1
+ 1305              		.global	tmc4670_getActualPosition
+ 1306              		.syntax unified
+ 1307              		.thumb
+ 1308              		.thumb_func
+ 1309              		.fpu softvfp
+ 1311              	tmc4670_getActualPosition:
+ 1312              	.LVL115:
+ 1313              	.LFB29:
+ 234:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 235:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 236:TMC-API/tmc/ic/TMC4670/TMC4670.c **** int32_t tmc4670_getActualPosition(uint8_t motor)
+ 237:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 1314              		.loc 1 237 1 is_stmt 1 view -0
+ 1315              		.cfi_startproc
+ 1316              		@ args = 0, pretend = 0, frame = 0
+ 1317              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1318              		@ link register save eliminated.
+ 238:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (int32_t) tmc4670_readInt(motor, TMC4670_PID_POSITION_ACTUAL);
+ 1319              		.loc 1 238 2 view .LVU275
+ 1320              		.loc 1 238 19 is_stmt 0 view .LVU276
+ 1321 0286 6B21     		movs	r1, #107
+ 1322 0288 FFF7FEBF 		b	tmc4670_readInt
+ 1323              	.LVL116:
+ 1324              		.loc 1 238 19 view .LVU277
+ 1325              		.cfi_endproc
+ 1326              	.LFE29:
+ 1328              		.align	1
+ 1329              		.global	tmc4670_getActualRampPosition
+ 1330              		.syntax unified
+ 1331              		.thumb
+ 1332              		.thumb_func
+ 1333              		.fpu softvfp
+ 1335              	tmc4670_getActualRampPosition:
+ 1336              	.LFB41:
+ 1337              		.cfi_startproc
+ 1338              		@ args = 0, pretend = 0, frame = 0
+ 1339              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1340              		@ link register save eliminated.
+ 1341 028c 0020     		movs	r0, #0
+ 1342 028e 7047     		bx	lr
+ 1343              		.cfi_endproc
+ 1344              	.LFE41:
+ 1346              		.align	1
+ 1347              		.global	tmc4670_doEncoderInitializationMode0
+ 1348              		.syntax unified
+ 1349              		.thumb
+ 1350              		.thumb_func
+ 1351              		.fpu softvfp
+ 1353              	tmc4670_doEncoderInitializationMode0:
+ 1354              	.LVL117:
+ 1355              	.LFB31:
+ 239:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 240:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 241:TMC-API/tmc/ic/TMC4670/TMC4670.c **** int32_t tmc4670_getActualRampPosition(uint8_t motor)
+ 242:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 243:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	UNUSED(motor);
+ 244:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// no ramp implemented
+ 245:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return 0;
+ 246:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 247:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 248:TMC-API/tmc/ic/TMC4670/TMC4670.c **** // encoder initialization
+ 249:TMC-API/tmc/ic/TMC4670/TMC4670.c **** void tmc4670_doEncoderInitializationMode0(uint8_t motor, uint8_t *initState, uint16_t initWaitTime,
+ 250:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 1356              		.loc 1 250 1 is_stmt 1 view -0
+ 1357              		.cfi_startproc
+ 1358              		@ args = 4, pretend = 0, frame = 0
+ 1359              		@ frame_needed = 0, uses_anonymous_args = 0
+ 251:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	static uint16_t last_Phi_E_Selection = 0;
+ 1360              		.loc 1 251 2 view .LVU279
+ 252:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	static uint32_t last_UQ_UD_EXT = 0;
+ 1361              		.loc 1 252 2 view .LVU280
+ 253:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	static int16_t last_PHI_E_EXT = 0;
+ 1362              		.loc 1 253 2 view .LVU281
+ 254:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 255:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	switch (*initState)
+ 1363              		.loc 1 255 2 view .LVU282
+ 250:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	static uint16_t last_Phi_E_Selection = 0;
+ 1364              		.loc 1 250 1 is_stmt 0 view .LVU283
+ 1365 0290 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 1366              	.LCFI32:
+ 1367              		.cfi_def_cfa_offset 24
+ 1368              		.cfi_offset 3, -24
+ 1369              		.cfi_offset 4, -20
+ 1370              		.cfi_offset 5, -16
+ 1371              		.cfi_offset 6, -12
+ 1372              		.cfi_offset 7, -8
+ 1373              		.cfi_offset 14, -4
+ 1374              		.loc 1 255 10 view .LVU284
+ 1375 0292 0D78     		ldrb	r5, [r1]	@ zero_extendqisi2
+ 1376              		.loc 1 255 2 view .LVU285
+ 1377 0294 012D     		cmp	r5, #1
+ 250:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	static uint16_t last_Phi_E_Selection = 0;
+ 1378              		.loc 1 250 1 view .LVU286
+ 1379 0296 0446     		mov	r4, r0
+ 1380 0298 0E46     		mov	r6, r1
+ 1381              		.loc 1 255 2 view .LVU287
+ 1382 029a 05D0     		beq	.L43
+ 1383 029c 022D     		cmp	r5, #2
+ 1384 029e 34D0     		beq	.L44
+ 1385 02a0 002D     		cmp	r5, #0
+ 1386 02a2 50D1     		bne	.L45
+ 256:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	{
+ 257:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	case STATE_NOTHING_TO_DO:
+ 258:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		*actualInitWaitTime = 0;
+ 1387              		.loc 1 258 3 is_stmt 1 view .LVU288
+ 1388              		.loc 1 258 23 is_stmt 0 view .LVU289
+ 1389 02a4 1D80     		strh	r5, [r3]	@ movhi
+ 259:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1390              		.loc 1 259 3 is_stmt 1 view .LVU290
+ 1391              	.LVL118:
+ 1392              	.L42:
+ 260:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	case STATE_START_INIT: // started by writing 1 to initState
+ 261:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 262:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		// save actual set values for PHI_E_SELECTION, UQ_UD_EXT, and PHI_E_EXT
+ 263:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		last_Phi_E_Selection = (uint16_t) tmc4670_readRegister16BitValue(motor, TMC4670_PHI_E_SELECTION, 
+ 264:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		last_UQ_UD_EXT = (uint32_t) tmc4670_readInt(motor, TMC4670_UQ_UD_EXT);
+ 265:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		last_PHI_E_EXT = (int16_t) tmc4670_readRegister16BitValue(motor, TMC4670_PHI_E_EXT, BIT_0_TO_15);
+ 266:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 267:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		// set ABN_DECODER_PHI_E_OFFSET to zero
+ 268:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		tmc4670_writeRegister16BitValue(motor, TMC4670_ABN_DECODER_PHI_E_PHI_M_OFFSET, BIT_16_TO_31, 0);
+ 269:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 270:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		// select phi_e_ext
+ 271:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		tmc4670_writeRegister16BitValue(motor, TMC4670_PHI_E_SELECTION, BIT_0_TO_15, 1);
+ 272:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 273:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		// set an initialization voltage on UD_EXT (to the flux, not the torque!)
+ 274:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		tmc4670_writeRegister16BitValue(motor, TMC4670_UQ_UD_EXT, BIT_16_TO_31, 0);
+ 275:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		tmc4670_writeRegister16BitValue(motor, TMC4670_UQ_UD_EXT, BIT_0_TO_15, startVoltage);
+ 276:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 277:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		// set the "zero" angle
+ 278:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		tmc4670_writeRegister16BitValue(motor, TMC4670_PHI_E_EXT, BIT_0_TO_15, 0);
+ 279:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 280:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		*initState = STATE_WAIT_INIT_TIME;
+ 281:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 282:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	case STATE_WAIT_INIT_TIME:
+ 283:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		// wait until initialization time is over (until no more vibration on the motor)
+ 284:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		(*actualInitWaitTime)++;
+ 285:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		if(*actualInitWaitTime >= initWaitTime)
+ 286:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		{
+ 287:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			// set internal encoder value to zero
+ 288:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			tmc4670_writeInt(motor, TMC4670_ABN_DECODER_COUNT, 0);
+ 289:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 290:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			// switch back to last used UQ_UD_EXT setting
+ 291:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			tmc4670_writeInt(motor, TMC4670_UQ_UD_EXT, last_UQ_UD_EXT);
+ 292:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 293:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			// set PHI_E_EXT back to last value
+ 294:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			tmc4670_writeRegister16BitValue(motor, TMC4670_PHI_E_EXT, BIT_0_TO_15, last_PHI_E_EXT);
+ 295:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 296:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			// switch back to last used PHI_E_SELECTION setting
+ 297:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			tmc4670_writeRegister16BitValue(motor, TMC4670_PHI_E_SELECTION, BIT_0_TO_15, last_Phi_E_Selectio
+ 298:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 299:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			// go to next state
+ 300:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			*initState = STATE_ESTIMATE_OFFSET;
+ 301:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		}
+ 302:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 303:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	case STATE_ESTIMATE_OFFSET:
+ 304:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		// you can do offset estimation here (wait for N-Channel if available and save encoder value)
+ 305:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 306:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		// go to ready state
+ 307:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		*initState = 0;
+ 308:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 309:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	default:
+ 310:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		*initState = 0;
+ 311:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 312:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	}
+ 313:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 1393              		.loc 1 313 1 is_stmt 0 view .LVU291
+ 1394 02a6 F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 1395              	.LVL119:
+ 1396              	.L43:
+ 263:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		last_UQ_UD_EXT = (uint32_t) tmc4670_readInt(motor, TMC4670_UQ_UD_EXT);
+ 1397              		.loc 1 263 3 is_stmt 1 view .LVU292
+ 1398              	.LBB39:
+ 1399              	.LBI39:
+  51:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 1400              		.loc 1 51 10 view .LVU293
+ 1401              	.LBB40:
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1402              		.loc 1 53 2 view .LVU294
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1403              		.loc 1 53 26 is_stmt 0 view .LVU295
+ 1404 02a8 5221     		movs	r1, #82
+ 1405              	.LVL120:
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1406              		.loc 1 53 26 view .LVU296
+ 1407 02aa FFF7FEFF 		bl	tmc4670_readInt
+ 1408              	.LVL121:
+  56:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	{
+ 1409              		.loc 1 56 2 is_stmt 1 view .LVU297
+  59:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1410              		.loc 1 59 3 view .LVU298
+  59:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1411              		.loc 1 59 3 is_stmt 0 view .LVU299
+ 1412              	.LBE40:
+ 1413              	.LBE39:
+ 263:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		last_UQ_UD_EXT = (uint32_t) tmc4670_readInt(motor, TMC4670_UQ_UD_EXT);
+ 1414              		.loc 1 263 24 view .LVU300
+ 1415 02ae 274F     		ldr	r7, .L48
+ 264:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		last_PHI_E_EXT = (int16_t) tmc4670_readRegister16BitValue(motor, TMC4670_PHI_E_EXT, BIT_0_TO_15);
+ 1416              		.loc 1 264 31 view .LVU301
+ 1417 02b0 2421     		movs	r1, #36
+ 1418              	.LBB42:
+ 1419              	.LBB41:
+  59:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1420              		.loc 1 59 25 view .LVU302
+ 1421 02b2 3880     		strh	r0, [r7]	@ movhi
+ 1422              	.LBE41:
+ 1423              	.LBE42:
+ 264:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		last_PHI_E_EXT = (int16_t) tmc4670_readRegister16BitValue(motor, TMC4670_PHI_E_EXT, BIT_0_TO_15);
+ 1424              		.loc 1 264 3 is_stmt 1 view .LVU303
+ 264:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		last_PHI_E_EXT = (int16_t) tmc4670_readRegister16BitValue(motor, TMC4670_PHI_E_EXT, BIT_0_TO_15);
+ 1425              		.loc 1 264 31 is_stmt 0 view .LVU304
+ 1426 02b4 2046     		mov	r0, r4
+ 1427 02b6 FFF7FEFF 		bl	tmc4670_readInt
+ 1428              	.LVL122:
+ 1429              	.LBB43:
+ 1430              	.LBB44:
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1431              		.loc 1 53 26 view .LVU305
+ 1432 02ba 1C21     		movs	r1, #28
+ 1433              	.LBE44:
+ 1434              	.LBE43:
+ 264:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		last_PHI_E_EXT = (int16_t) tmc4670_readRegister16BitValue(motor, TMC4670_PHI_E_EXT, BIT_0_TO_15);
+ 1435              		.loc 1 264 18 view .LVU306
+ 1436 02bc 7860     		str	r0, [r7, #4]
+ 265:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1437              		.loc 1 265 3 is_stmt 1 view .LVU307
+ 1438              	.LVL123:
+ 1439              	.LBB46:
+ 1440              	.LBI43:
+  51:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 1441              		.loc 1 51 10 view .LVU308
+ 1442              	.LBB45:
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1443              		.loc 1 53 2 view .LVU309
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1444              		.loc 1 53 26 is_stmt 0 view .LVU310
+ 1445 02be 2046     		mov	r0, r4
+ 1446 02c0 FFF7FEFF 		bl	tmc4670_readInt
+ 1447              	.LVL124:
+  56:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	{
+ 1448              		.loc 1 56 2 is_stmt 1 view .LVU311
+  59:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1449              		.loc 1 59 3 view .LVU312
+  59:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1450              		.loc 1 59 3 is_stmt 0 view .LVU313
+ 1451              	.LBE45:
+ 1452              	.LBE46:
+ 268:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1453              		.loc 1 268 3 view .LVU314
+ 1454 02c4 0023     		movs	r3, #0
+ 265:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1455              		.loc 1 265 20 view .LVU315
+ 1456 02c6 3881     		strh	r0, [r7, #8]	@ movhi
+ 268:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1457              		.loc 1 268 3 is_stmt 1 view .LVU316
+ 1458 02c8 2A46     		mov	r2, r5
+ 1459 02ca 2921     		movs	r1, #41
+ 1460 02cc 2046     		mov	r0, r4
+ 1461 02ce FFF7FEFF 		bl	tmc4670_writeRegister16BitValue
+ 1462              	.LVL125:
+ 271:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1463              		.loc 1 271 3 view .LVU317
+ 1464 02d2 2B46     		mov	r3, r5
+ 1465 02d4 0022     		movs	r2, #0
+ 1466 02d6 5221     		movs	r1, #82
+ 1467 02d8 2046     		mov	r0, r4
+ 1468 02da FFF7FEFF 		bl	tmc4670_writeRegister16BitValue
+ 1469              	.LVL126:
+ 274:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		tmc4670_writeRegister16BitValue(motor, TMC4670_UQ_UD_EXT, BIT_0_TO_15, startVoltage);
+ 1470              		.loc 1 274 3 view .LVU318
+ 1471 02de 0023     		movs	r3, #0
+ 1472 02e0 2A46     		mov	r2, r5
+ 1473 02e2 2421     		movs	r1, #36
+ 1474 02e4 2046     		mov	r0, r4
+ 1475 02e6 FFF7FEFF 		bl	tmc4670_writeRegister16BitValue
+ 1476              	.LVL127:
+ 275:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1477              		.loc 1 275 3 view .LVU319
+ 1478 02ea BDF81830 		ldrh	r3, [sp, #24]
+ 1479 02ee 0022     		movs	r2, #0
+ 1480 02f0 2421     		movs	r1, #36
+ 1481 02f2 2046     		mov	r0, r4
+ 1482 02f4 FFF7FEFF 		bl	tmc4670_writeRegister16BitValue
+ 1483              	.LVL128:
+ 278:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1484              		.loc 1 278 3 view .LVU320
+ 1485 02f8 0023     		movs	r3, #0
+ 1486 02fa 1A46     		mov	r2, r3
+ 1487 02fc 1C21     		movs	r1, #28
+ 1488 02fe 2046     		mov	r0, r4
+ 1489 0300 FFF7FEFF 		bl	tmc4670_writeRegister16BitValue
+ 1490              	.LVL129:
+ 280:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1491              		.loc 1 280 3 view .LVU321
+ 280:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1492              		.loc 1 280 14 is_stmt 0 view .LVU322
+ 1493 0304 0223     		movs	r3, #2
+ 1494              	.L47:
+ 307:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1495              		.loc 1 307 14 view .LVU323
+ 1496 0306 3370     		strb	r3, [r6]
+ 308:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	default:
+ 1497              		.loc 1 308 3 is_stmt 1 view .LVU324
+ 1498              		.loc 1 313 1 is_stmt 0 view .LVU325
+ 1499 0308 CDE7     		b	.L42
+ 1500              	.LVL130:
+ 1501              	.L44:
+ 284:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		if(*actualInitWaitTime >= initWaitTime)
+ 1502              		.loc 1 284 3 is_stmt 1 view .LVU326
+ 284:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		if(*actualInitWaitTime >= initWaitTime)
+ 1503              		.loc 1 284 24 is_stmt 0 view .LVU327
+ 1504 030a 1988     		ldrh	r1, [r3]
+ 1505              	.LVL131:
+ 284:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		if(*actualInitWaitTime >= initWaitTime)
+ 1506              		.loc 1 284 24 view .LVU328
+ 1507 030c 0131     		adds	r1, r1, #1
+ 1508 030e 89B2     		uxth	r1, r1
+ 285:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		{
+ 1509              		.loc 1 285 5 view .LVU329
+ 1510 0310 9142     		cmp	r1, r2
+ 284:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		if(*actualInitWaitTime >= initWaitTime)
+ 1511              		.loc 1 284 24 view .LVU330
+ 1512 0312 1980     		strh	r1, [r3]	@ movhi
+ 285:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		{
+ 1513              		.loc 1 285 3 is_stmt 1 view .LVU331
+ 285:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		{
+ 1514              		.loc 1 285 5 is_stmt 0 view .LVU332
+ 1515 0314 C7D3     		bcc	.L42
+ 288:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1516              		.loc 1 288 4 is_stmt 1 view .LVU333
+ 291:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1517              		.loc 1 291 4 is_stmt 0 view .LVU334
+ 1518 0316 0D4D     		ldr	r5, .L48
+ 288:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1519              		.loc 1 288 4 view .LVU335
+ 1520 0318 0022     		movs	r2, #0
+ 1521              	.LVL132:
+ 288:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1522              		.loc 1 288 4 view .LVU336
+ 1523 031a 2721     		movs	r1, #39
+ 1524 031c FFF7FEFF 		bl	tmc4670_writeInt
+ 1525              	.LVL133:
+ 291:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1526              		.loc 1 291 4 is_stmt 1 view .LVU337
+ 1527 0320 6A68     		ldr	r2, [r5, #4]
+ 1528 0322 2421     		movs	r1, #36
+ 1529 0324 2046     		mov	r0, r4
+ 1530 0326 FFF7FEFF 		bl	tmc4670_writeInt
+ 1531              	.LVL134:
+ 294:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1532              		.loc 1 294 4 view .LVU338
+ 1533 032a 2B89     		ldrh	r3, [r5, #8]
+ 1534 032c 0022     		movs	r2, #0
+ 1535 032e 1C21     		movs	r1, #28
+ 1536 0330 2046     		mov	r0, r4
+ 1537 0332 FFF7FEFF 		bl	tmc4670_writeRegister16BitValue
+ 1538              	.LVL135:
+ 297:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1539              		.loc 1 297 4 view .LVU339
+ 1540 0336 2B88     		ldrh	r3, [r5]
+ 1541 0338 0022     		movs	r2, #0
+ 1542 033a 5221     		movs	r1, #82
+ 1543 033c 2046     		mov	r0, r4
+ 1544 033e FFF7FEFF 		bl	tmc4670_writeRegister16BitValue
+ 1545              	.LVL136:
+ 300:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		}
+ 1546              		.loc 1 300 4 view .LVU340
+ 300:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		}
+ 1547              		.loc 1 300 15 is_stmt 0 view .LVU341
+ 1548 0342 0323     		movs	r3, #3
+ 1549 0344 DFE7     		b	.L47
+ 1550              	.LVL137:
+ 1551              	.L45:
+ 307:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1552              		.loc 1 307 3 is_stmt 1 view .LVU342
+ 307:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1553              		.loc 1 307 14 is_stmt 0 view .LVU343
+ 1554 0346 0023     		movs	r3, #0
+ 1555              	.LVL138:
+ 307:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1556              		.loc 1 307 14 view .LVU344
+ 1557 0348 DDE7     		b	.L47
+ 1558              	.L49:
+ 1559 034a 00BF     		.align	2
+ 1560              	.L48:
+ 1561 034c 00000000 		.word	.LANCHOR0
+ 1562              		.cfi_endproc
+ 1563              	.LFE31:
+ 1565              		.align	1
+ 1566              		.global	tmc4670_getS16CircleDifference
+ 1567              		.syntax unified
+ 1568              		.thumb
+ 1569              		.thumb_func
+ 1570              		.fpu softvfp
+ 1572              	tmc4670_getS16CircleDifference:
+ 1573              	.LVL139:
+ 1574              	.LFB32:
+ 314:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 315:TMC-API/tmc/ic/TMC4670/TMC4670.c **** int16_t tmc4670_getS16CircleDifference(int16_t newValue, int16_t oldValue)
+ 316:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 1575              		.loc 1 316 1 is_stmt 1 view -0
+ 1576              		.cfi_startproc
+ 1577              		@ args = 0, pretend = 0, frame = 0
+ 1578              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1579              		@ link register save eliminated.
+ 317:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	return (newValue - oldValue);
+ 1580              		.loc 1 317 2 view .LVU346
+ 1581              		.loc 1 317 19 is_stmt 0 view .LVU347
+ 1582 0350 401A     		subs	r0, r0, r1
+ 1583              	.LVL140:
+ 318:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 1584              		.loc 1 318 1 view .LVU348
+ 1585 0352 00B2     		sxth	r0, r0
+ 1586 0354 7047     		bx	lr
+ 1587              		.cfi_endproc
+ 1588              	.LFE32:
+ 1590              		.align	1
+ 1591              		.global	tmc4670_doEncoderInitializationMode2
+ 1592              		.syntax unified
+ 1593              		.thumb
+ 1594              		.thumb_func
+ 1595              		.fpu softvfp
+ 1597              	tmc4670_doEncoderInitializationMode2:
+ 1598              	.LVL141:
+ 1599              	.LFB33:
+ 319:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 320:TMC-API/tmc/ic/TMC4670/TMC4670.c **** void tmc4670_doEncoderInitializationMode2(uint8_t motor, uint8_t *initState, uint16_t *actualInitWa
+ 321:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 1600              		.loc 1 321 1 is_stmt 1 view -0
+ 1601              		.cfi_startproc
+ 1602              		@ args = 0, pretend = 0, frame = 0
+ 1603              		@ frame_needed = 0, uses_anonymous_args = 0
+ 322:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	static int16_t hall_phi_e_old = 0;
+ 1604              		.loc 1 322 2 view .LVU350
+ 323:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	static int16_t hall_phi_e_new = 0;
+ 1605              		.loc 1 323 2 view .LVU351
+ 324:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	static int16_t actual_coarse_offset = 0;
+ 1606              		.loc 1 324 2 view .LVU352
+ 325:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 326:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	switch (*initState)
+ 1607              		.loc 1 326 2 view .LVU353
+ 321:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	static int16_t hall_phi_e_old = 0;
+ 1608              		.loc 1 321 1 is_stmt 0 view .LVU354
+ 1609 0356 2DE9F041 		push	{r4, r5, r6, r7, r8, lr}
+ 1610              	.LCFI33:
+ 1611              		.cfi_def_cfa_offset 24
+ 1612              		.cfi_offset 4, -24
+ 1613              		.cfi_offset 5, -20
+ 1614              		.cfi_offset 6, -16
+ 1615              		.cfi_offset 7, -12
+ 1616              		.cfi_offset 8, -8
+ 1617              		.cfi_offset 14, -4
+ 1618              		.loc 1 326 10 view .LVU355
+ 1619 035a 0E78     		ldrb	r6, [r1]	@ zero_extendqisi2
+ 1620              		.loc 1 326 2 view .LVU356
+ 1621 035c 012E     		cmp	r6, #1
+ 321:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	static int16_t hall_phi_e_old = 0;
+ 1622              		.loc 1 321 1 view .LVU357
+ 1623 035e 0546     		mov	r5, r0
+ 1624 0360 0F46     		mov	r7, r1
+ 1625              		.loc 1 326 2 view .LVU358
+ 1626 0362 06D0     		beq	.L52
+ 1627 0364 022E     		cmp	r6, #2
+ 1628 0366 2DD0     		beq	.L53
+ 1629 0368 002E     		cmp	r6, #0
+ 1630 036a 4DD1     		bne	.L54
+ 327:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	{
+ 328:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	case STATE_NOTHING_TO_DO:
+ 329:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		*actualInitWaitTime = 0;
+ 1631              		.loc 1 329 3 is_stmt 1 view .LVU359
+ 1632              		.loc 1 329 23 is_stmt 0 view .LVU360
+ 1633 036c 1680     		strh	r6, [r2]	@ movhi
+ 330:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1634              		.loc 1 330 3 is_stmt 1 view .LVU361
+ 1635              	.LVL142:
+ 1636              	.L51:
+ 331:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	case STATE_START_INIT: // started by writing 1 to initState
+ 332:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		// turn hall_mode interpolation off (read, clear bit 8, write back)
+ 333:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		tmc4670_writeInt(motor, TMC4670_HALL_MODE, tmc4670_readInt(motor, TMC4670_HALL_MODE) & 0xFFFFFEFF
+ 334:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 335:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		// set ABN_DECODER_PHI_E_OFFSET to zero
+ 336:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		tmc4670_writeRegister16BitValue(motor, TMC4670_ABN_DECODER_PHI_E_PHI_M_OFFSET, BIT_16_TO_31, 0);
+ 337:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 338:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		// read actual hall angle
+ 339:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		hall_phi_e_old = (int16_t) tmc4670_readRegister16BitValue(motor, TMC4670_HALL_PHI_E_INTERPOLATED_
+ 340:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 341:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		// read actual abn_decoder angle and compute difference to actual hall angle
+ 342:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		actual_coarse_offset = tmc4670_getS16CircleDifference(hall_phi_e_old, (int16_t) tmc4670_readRegis
+ 343:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 344:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		// set ABN_DECODER_PHI_E_OFFSET to actual hall-abn-difference, to use the actual hall angle for c
+ 345:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		tmc4670_writeRegister16BitValue(motor, TMC4670_ABN_DECODER_PHI_E_PHI_M_OFFSET, BIT_16_TO_31, actu
+ 346:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 347:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		*initState = STATE_WAIT_INIT_TIME;
+ 348:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 349:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	case STATE_WAIT_INIT_TIME:
+ 350:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		// read actual hall angle
+ 351:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		hall_phi_e_new = (int16_t) tmc4670_readRegister16BitValue(motor, TMC4670_HALL_PHI_E_INTERPOLATED_
+ 352:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 353:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		// wait until hall angle changed
+ 354:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		if(hall_phi_e_old != hall_phi_e_new)
+ 355:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		{
+ 356:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			// estimated value = old value + diff between old and new (handle int16_t overrun)
+ 357:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			int16_t hall_phi_e_estimated = hall_phi_e_old + tmc4670_getS16CircleDifference(hall_phi_e_new, h
+ 358:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 359:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			// read actual abn_decoder angle and consider last set abn_decoder_offset
+ 360:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			int16_t abn_phi_e_actual = (int16_t) tmc4670_readRegister16BitValue(motor, TMC4670_ABN_DECODER_P
+ 361:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 362:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			// set ABN_DECODER_PHI_E_OFFSET to actual estimated angle - abn_phi_e_actual difference
+ 363:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			tmc4670_writeRegister16BitValue(motor, TMC4670_ABN_DECODER_PHI_E_PHI_M_OFFSET, BIT_16_TO_31, tmc
+ 364:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 365:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			// go to ready state
+ 366:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			*initState = 0;
+ 367:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		}
+ 368:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 369:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	default:
+ 370:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		*initState = 0;
+ 371:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 372:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	}
+ 373:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 1637              		.loc 1 373 1 is_stmt 0 view .LVU362
+ 1638 036e BDE8F081 		pop	{r4, r5, r6, r7, r8, pc}
+ 1639              	.LVL143:
+ 1640              	.L52:
+ 333:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1641              		.loc 1 333 3 is_stmt 1 view .LVU363
+ 333:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1642              		.loc 1 333 46 is_stmt 0 view .LVU364
+ 1643 0372 3321     		movs	r1, #51
+ 1644              	.LVL144:
+ 333:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1645              		.loc 1 333 46 view .LVU365
+ 1646 0374 FFF7FEFF 		bl	tmc4670_readInt
+ 1647              	.LVL145:
+ 333:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1648              		.loc 1 333 3 view .LVU366
+ 1649 0378 3321     		movs	r1, #51
+ 1650 037a 20F48072 		bic	r2, r0, #256
+ 1651 037e 2846     		mov	r0, r5
+ 1652 0380 FFF7FEFF 		bl	tmc4670_writeInt
+ 1653              	.LVL146:
+ 336:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1654              		.loc 1 336 3 is_stmt 1 view .LVU367
+ 1655 0384 0023     		movs	r3, #0
+ 1656 0386 3246     		mov	r2, r6
+ 1657 0388 2921     		movs	r1, #41
+ 1658 038a 2846     		mov	r0, r5
+ 1659 038c FFF7FEFF 		bl	tmc4670_writeRegister16BitValue
+ 1660              	.LVL147:
+ 339:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1661              		.loc 1 339 3 view .LVU368
+ 1662              	.LBB47:
+ 1663              	.LBI47:
+  51:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 1664              		.loc 1 51 10 view .LVU369
+ 1665              	.LBB48:
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1666              		.loc 1 53 2 view .LVU370
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1667              		.loc 1 53 26 is_stmt 0 view .LVU371
+ 1668 0390 3921     		movs	r1, #57
+ 1669 0392 2846     		mov	r0, r5
+ 1670 0394 FFF7FEFF 		bl	tmc4670_readInt
+ 1671              	.LVL148:
+ 1672              	.LBE48:
+ 1673              	.LBE47:
+ 339:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1674              		.loc 1 339 18 view .LVU372
+ 1675 0398 DFF87080 		ldr	r8, .L57
+ 1676              	.LBB50:
+ 1677              	.LBB49:
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1678              		.loc 1 53 26 view .LVU373
+ 1679 039c 0446     		mov	r4, r0
+ 1680              	.LVL149:
+  56:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	{
+ 1681              		.loc 1 56 2 is_stmt 1 view .LVU374
+  59:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1682              		.loc 1 59 3 view .LVU375
+  59:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1683              		.loc 1 59 3 is_stmt 0 view .LVU376
+ 1684              	.LBE49:
+ 1685              	.LBE50:
+ 339:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1686              		.loc 1 339 20 view .LVU377
+ 1687 039e A8F80A00 		strh	r0, [r8, #10]	@ movhi
+ 342:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1688              		.loc 1 342 3 is_stmt 1 view .LVU378
+ 1689              	.LVL150:
+ 1690              	.LBB51:
+ 1691              	.LBI51:
+  51:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 1692              		.loc 1 51 10 view .LVU379
+ 1693              	.LBB52:
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1694              		.loc 1 53 2 view .LVU380
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1695              		.loc 1 53 26 is_stmt 0 view .LVU381
+ 1696 03a2 2A21     		movs	r1, #42
+ 1697 03a4 2846     		mov	r0, r5
+ 1698 03a6 FFF7FEFF 		bl	tmc4670_readInt
+ 1699              	.LVL151:
+  56:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	{
+ 1700              		.loc 1 56 2 is_stmt 1 view .LVU382
+  60:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	case BIT_16_TO_31:
+ 1701              		.loc 1 60 3 view .LVU383
+  62:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1702              		.loc 1 62 3 view .LVU384
+  62:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1703              		.loc 1 62 3 is_stmt 0 view .LVU385
+ 1704              	.LBE52:
+ 1705              	.LBE51:
+ 1706              	.LBB53:
+ 1707              	.LBI53:
+ 315:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 1708              		.loc 1 315 9 is_stmt 1 view .LVU386
+ 1709              	.LBB54:
+ 317:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 1710              		.loc 1 317 2 view .LVU387
+ 317:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 1711              		.loc 1 317 19 is_stmt 0 view .LVU388
+ 1712 03aa A4EB1043 		sub	r3, r4, r0, lsr #16
+ 1713 03ae 9BB2     		uxth	r3, r3
+ 1714              	.LVL152:
+ 317:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 1715              		.loc 1 317 19 view .LVU389
+ 1716              	.LBE54:
+ 1717              	.LBE53:
+ 345:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1718              		.loc 1 345 3 view .LVU390
+ 1719 03b0 3246     		mov	r2, r6
+ 1720 03b2 2921     		movs	r1, #41
+ 1721 03b4 2846     		mov	r0, r5
+ 342:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1722              		.loc 1 342 24 view .LVU391
+ 1723 03b6 A8F80C30 		strh	r3, [r8, #12]	@ movhi
+ 345:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1724              		.loc 1 345 3 is_stmt 1 view .LVU392
+ 1725 03ba FFF7FEFF 		bl	tmc4670_writeRegister16BitValue
+ 1726              	.LVL153:
+ 347:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1727              		.loc 1 347 3 view .LVU393
+ 347:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1728              		.loc 1 347 14 is_stmt 0 view .LVU394
+ 1729 03be 0223     		movs	r3, #2
+ 1730              	.L56:
+ 370:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1731              		.loc 1 370 14 view .LVU395
+ 1732 03c0 3B70     		strb	r3, [r7]
+ 371:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	}
+ 1733              		.loc 1 371 3 is_stmt 1 view .LVU396
+ 1734              		.loc 1 373 1 is_stmt 0 view .LVU397
+ 1735 03c2 D4E7     		b	.L51
+ 1736              	.LVL154:
+ 1737              	.L53:
+ 351:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1738              		.loc 1 351 3 is_stmt 1 view .LVU398
+ 1739              	.LBB55:
+ 1740              	.LBI55:
+  51:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 1741              		.loc 1 51 10 view .LVU399
+ 1742              	.LBB56:
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1743              		.loc 1 53 2 view .LVU400
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1744              		.loc 1 53 26 is_stmt 0 view .LVU401
+ 1745 03c4 3921     		movs	r1, #57
+ 1746              	.LVL155:
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1747              		.loc 1 53 26 view .LVU402
+ 1748 03c6 FFF7FEFF 		bl	tmc4670_readInt
+ 1749              	.LVL156:
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1750              		.loc 1 53 26 view .LVU403
+ 1751              	.LBE56:
+ 1752              	.LBE55:
+ 354:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		{
+ 1753              		.loc 1 354 21 view .LVU404
+ 1754 03ca DFF84080 		ldr	r8, .L57
+ 1755 03ce B8F90A40 		ldrsh	r4, [r8, #10]
+ 354:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		{
+ 1756              		.loc 1 354 5 view .LVU405
+ 1757 03d2 03B2     		sxth	r3, r0
+ 1758 03d4 A342     		cmp	r3, r4
+ 1759              	.LBB58:
+ 1760              	.LBB57:
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1761              		.loc 1 53 26 view .LVU406
+ 1762 03d6 0646     		mov	r6, r0
+ 1763              	.LVL157:
+  56:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	{
+ 1764              		.loc 1 56 2 is_stmt 1 view .LVU407
+  59:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1765              		.loc 1 59 3 view .LVU408
+  59:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1766              		.loc 1 59 3 is_stmt 0 view .LVU409
+ 1767              	.LBE57:
+ 1768              	.LBE58:
+ 354:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		{
+ 1769              		.loc 1 354 3 is_stmt 1 view .LVU410
+ 354:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		{
+ 1770              		.loc 1 354 5 is_stmt 0 view .LVU411
+ 1771 03d8 C9D0     		beq	.L51
+ 1772              	.LBB59:
+ 357:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1773              		.loc 1 357 4 is_stmt 1 view .LVU412
+ 1774              	.LVL158:
+ 1775              	.LBB60:
+ 1776              	.LBI60:
+ 315:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 1777              		.loc 1 315 9 view .LVU413
+ 1778              	.LBB61:
+ 317:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 1779              		.loc 1 317 2 view .LVU414
+ 317:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 1780              		.loc 1 317 19 is_stmt 0 view .LVU415
+ 1781 03da A4B2     		uxth	r4, r4
+ 1782              	.LVL159:
+ 317:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 1783              		.loc 1 317 19 view .LVU416
+ 1784              	.LBE61:
+ 1785              	.LBE60:
+ 360:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1786              		.loc 1 360 4 is_stmt 1 view .LVU417
+ 1787              	.LBB63:
+ 1788              	.LBI63:
+  51:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 1789              		.loc 1 51 10 view .LVU418
+ 1790              	.LBB64:
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1791              		.loc 1 53 2 view .LVU419
+ 1792              	.LBE64:
+ 1793              	.LBE63:
+ 1794              	.LBB66:
+ 1795              	.LBB62:
+ 317:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 1796              		.loc 1 317 19 is_stmt 0 view .LVU420
+ 1797 03dc 361B     		subs	r6, r6, r4
+ 1798              	.LVL160:
+ 317:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 1799              		.loc 1 317 19 view .LVU421
+ 1800              	.LBE62:
+ 1801              	.LBE66:
+ 1802              	.LBB67:
+ 1803              	.LBB65:
+  53:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1804              		.loc 1 53 26 view .LVU422
+ 1805 03de 2A21     		movs	r1, #42
+ 1806 03e0 2846     		mov	r0, r5
+ 1807 03e2 FFF7FEFF 		bl	tmc4670_readInt
+ 1808              	.LVL161:
+  56:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	{
+ 1809              		.loc 1 56 2 is_stmt 1 view .LVU423
+  60:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	case BIT_16_TO_31:
+ 1810              		.loc 1 60 3 view .LVU424
+  62:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1811              		.loc 1 62 3 view .LVU425
+  62:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1812              		.loc 1 62 3 is_stmt 0 view .LVU426
+ 1813              	.LBE65:
+ 1814              	.LBE67:
+ 363:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1815              		.loc 1 363 4 is_stmt 1 view .LVU427
+ 1816              	.LBB68:
+ 1817              	.LBI68:
+ 315:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 1818              		.loc 1 315 9 view .LVU428
+ 1819              	.LBB69:
+ 317:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 1820              		.loc 1 317 2 view .LVU429
+ 317:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 1821              		.loc 1 317 2 is_stmt 0 view .LVU430
+ 1822              	.LBE69:
+ 1823              	.LBE68:
+ 357:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1824              		.loc 1 357 50 view .LVU431
+ 1825 03e6 C6F3C033 		ubfx	r3, r6, #15, #1
+ 1826 03ea 03FA86F6 		sxtah	r6, r3, r6
+ 1827              	.LBB71:
+ 1828              	.LBB70:
+ 317:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 1829              		.loc 1 317 19 view .LVU432
+ 1830 03ee B8F80C30 		ldrh	r3, [r8, #12]
+ 1831 03f2 1C44     		add	r4, r4, r3
+ 1832 03f4 04EB6604 		add	r4, r4, r6, asr #1
+ 1833 03f8 A4EB1044 		sub	r4, r4, r0, lsr #16
+ 1834              	.LBE70:
+ 1835              	.LBE71:
+ 363:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1836              		.loc 1 363 4 view .LVU433
+ 1837 03fc A3B2     		uxth	r3, r4
+ 1838 03fe 0122     		movs	r2, #1
+ 1839 0400 2921     		movs	r1, #41
+ 1840 0402 2846     		mov	r0, r5
+ 1841              	.LVL162:
+ 363:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 1842              		.loc 1 363 4 view .LVU434
+ 1843 0404 FFF7FEFF 		bl	tmc4670_writeRegister16BitValue
+ 1844              	.LVL163:
+ 366:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		}
+ 1845              		.loc 1 366 4 is_stmt 1 view .LVU435
+ 1846              	.L54:
+ 366:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		}
+ 1847              		.loc 1 366 4 is_stmt 0 view .LVU436
+ 1848              	.LBE59:
+ 370:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1849              		.loc 1 370 3 is_stmt 1 view .LVU437
+ 370:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		break;
+ 1850              		.loc 1 370 14 is_stmt 0 view .LVU438
+ 1851 0408 0023     		movs	r3, #0
+ 1852 040a D9E7     		b	.L56
+ 1853              	.L58:
+ 1854              		.align	2
+ 1855              	.L57:
+ 1856 040c 00000000 		.word	.LANCHOR0
+ 1857              		.cfi_endproc
+ 1858              	.LFE33:
+ 1860              		.align	1
+ 1861              		.global	tmc4670_checkEncderInitialization
+ 1862              		.syntax unified
+ 1863              		.thumb
+ 1864              		.thumb_func
+ 1865              		.fpu softvfp
+ 1867              	tmc4670_checkEncderInitialization:
+ 1868              	.LVL164:
+ 1869              	.LFB34:
+ 374:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 375:TMC-API/tmc/ic/TMC4670/TMC4670.c **** void tmc4670_checkEncderInitialization(uint8_t motor, uint32_t actualSystick, uint8_t initMode, uin
+ 376:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 1870              		.loc 1 376 1 is_stmt 1 view -0
+ 1871              		.cfi_startproc
+ 1872              		@ args = 12, pretend = 0, frame = 0
+ 1873              		@ frame_needed = 0, uses_anonymous_args = 0
+ 377:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// use the systick as 1ms timer for encoder initialization
+ 378:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	static uint32_t lastSystick = 0;
+ 1874              		.loc 1 378 2 view .LVU440
+ 379:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	if(actualSystick != lastSystick)
+ 1875              		.loc 1 379 2 view .LVU441
+ 376:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// use the systick as 1ms timer for encoder initialization
+ 1876              		.loc 1 376 1 is_stmt 0 view .LVU442
+ 1877 0410 2DE9F743 		push	{r0, r1, r2, r4, r5, r6, r7, r8, r9, lr}
+ 1878              	.LCFI34:
+ 1879              		.cfi_def_cfa_offset 40
+ 1880              		.cfi_offset 4, -28
+ 1881              		.cfi_offset 5, -24
+ 1882              		.cfi_offset 6, -20
+ 1883              		.cfi_offset 7, -16
+ 1884              		.cfi_offset 8, -12
+ 1885              		.cfi_offset 9, -8
+ 1886              		.cfi_offset 14, -4
+ 1887              		.loc 1 379 19 view .LVU443
+ 1888 0414 104E     		ldr	r6, .L63
+ 376:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// use the systick as 1ms timer for encoder initialization
+ 1889              		.loc 1 376 1 view .LVU444
+ 1890 0416 DDF82C90 		ldr	r9, [sp, #44]
+ 1891 041a 1C46     		mov	r4, r3
+ 1892              		.loc 1 379 4 view .LVU445
+ 1893 041c 3369     		ldr	r3, [r6, #16]
+ 1894              	.LVL165:
+ 376:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// use the systick as 1ms timer for encoder initialization
+ 1895              		.loc 1 376 1 view .LVU446
+ 1896 041e 0F46     		mov	r7, r1
+ 1897              		.loc 1 379 4 view .LVU447
+ 1898 0420 BB42     		cmp	r3, r7
+ 376:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// use the systick as 1ms timer for encoder initialization
+ 1899              		.loc 1 376 1 view .LVU448
+ 1900 0422 1546     		mov	r5, r2
+ 1901 0424 BDF83010 		ldrh	r1, [sp, #48]
+ 1902              	.LVL166:
+ 376:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// use the systick as 1ms timer for encoder initialization
+ 1903              		.loc 1 376 1 view .LVU449
+ 1904 0428 BDF82820 		ldrh	r2, [sp, #40]
+ 1905              	.LVL167:
+ 376:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// use the systick as 1ms timer for encoder initialization
+ 1906              		.loc 1 376 1 view .LVU450
+ 1907 042c 8046     		mov	r8, r0
+ 1908              		.loc 1 379 4 view .LVU451
+ 1909 042e 06D0     		beq	.L60
+ 380:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	{
+ 381:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		// needs timer to use the wait time
+ 382:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		if(initMode == 0)
+ 1910              		.loc 1 382 3 is_stmt 1 view .LVU452
+ 1911              		.loc 1 382 5 is_stmt 0 view .LVU453
+ 1912 0430 25B9     		cbnz	r5, .L61
+ 383:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		{
+ 384:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			tmc4670_doEncoderInitializationMode0(motor, initState, initWaitTime, actualInitWaitTime, startVo
+ 1913              		.loc 1 384 4 is_stmt 1 view .LVU454
+ 1914 0432 0091     		str	r1, [sp]
+ 1915 0434 4B46     		mov	r3, r9
+ 1916 0436 2146     		mov	r1, r4
+ 1917 0438 FFF7FEFF 		bl	tmc4670_doEncoderInitializationMode0
+ 1918              	.LVL168:
+ 1919              	.L61:
+ 385:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		}
+ 386:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		lastSystick = actualSystick;
+ 1920              		.loc 1 386 3 view .LVU455
+ 1921              		.loc 1 386 15 is_stmt 0 view .LVU456
+ 1922 043c 3761     		str	r7, [r6, #16]
+ 1923              	.L60:
+ 387:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	}
+ 388:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 389:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// needs no timer
+ 390:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	if(initMode == 2)
+ 1924              		.loc 1 390 2 is_stmt 1 view .LVU457
+ 1925              		.loc 1 390 4 is_stmt 0 view .LVU458
+ 1926 043e 022D     		cmp	r5, #2
+ 1927 0440 07D1     		bne	.L59
+ 391:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	{
+ 392:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		tmc4670_doEncoderInitializationMode2(motor, initState, actualInitWaitTime);
+ 1928              		.loc 1 392 3 is_stmt 1 view .LVU459
+ 1929 0442 4A46     		mov	r2, r9
+ 1930 0444 2146     		mov	r1, r4
+ 1931 0446 4046     		mov	r0, r8
+ 393:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	}
+ 394:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 1932              		.loc 1 394 1 is_stmt 0 view .LVU460
+ 1933 0448 03B0     		add	sp, sp, #12
+ 1934              	.LCFI35:
+ 1935              		.cfi_remember_state
+ 1936              		.cfi_def_cfa_offset 28
+ 1937              		@ sp needed
+ 1938 044a BDE8F043 		pop	{r4, r5, r6, r7, r8, r9, lr}
+ 1939              	.LCFI36:
+ 1940              		.cfi_restore 14
+ 1941              		.cfi_restore 9
+ 1942              		.cfi_restore 8
+ 1943              		.cfi_restore 7
+ 1944              		.cfi_restore 6
+ 1945              		.cfi_restore 5
+ 1946              		.cfi_restore 4
+ 1947              		.cfi_def_cfa_offset 0
+ 1948              	.LVL169:
+ 392:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	}
+ 1949              		.loc 1 392 3 view .LVU461
+ 1950 044e FFF7FEBF 		b	tmc4670_doEncoderInitializationMode2
+ 1951              	.LVL170:
+ 1952              	.L59:
+ 1953              	.LCFI37:
+ 1954              		.cfi_restore_state
+ 1955              		.loc 1 394 1 view .LVU462
+ 1956 0452 03B0     		add	sp, sp, #12
+ 1957              	.LCFI38:
+ 1958              		.cfi_def_cfa_offset 28
+ 1959              		@ sp needed
+ 1960 0454 BDE8F083 		pop	{r4, r5, r6, r7, r8, r9, pc}
+ 1961              	.LVL171:
+ 1962              	.L64:
+ 1963              		.loc 1 394 1 view .LVU463
+ 1964              		.align	2
+ 1965              	.L63:
+ 1966 0458 00000000 		.word	.LANCHOR0
+ 1967              		.cfi_endproc
+ 1968              	.LFE34:
+ 1970              		.align	1
+ 1971              		.global	tmc4670_periodicJob
+ 1972              		.syntax unified
+ 1973              		.thumb
+ 1974              		.thumb_func
+ 1975              		.fpu softvfp
+ 1977              	tmc4670_periodicJob:
+ 1978              	.LVL172:
+ 1979              	.LFB35:
+ 395:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 396:TMC-API/tmc/ic/TMC4670/TMC4670.c **** void tmc4670_periodicJob(uint8_t motor, uint32_t actualSystick, uint8_t initMode, uint8_t *initStat
+ 397:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 1980              		.loc 1 397 1 is_stmt 1 view -0
+ 1981              		.cfi_startproc
+ 1982              		@ args = 12, pretend = 0, frame = 0
+ 1983              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1984              		@ link register save eliminated.
+ 398:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_checkEncderInitialization(motor, actualSystick, initMode, initState, initWaitTime, actualI
+ 1985              		.loc 1 398 2 view .LVU465
+ 397:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_checkEncderInitialization(motor, actualSystick, initMode, initState, initWaitTime, actualI
+ 1986              		.loc 1 397 1 is_stmt 0 view .LVU466
+ 1987 045c 30B4     		push	{r4, r5}
+ 1988              	.LCFI39:
+ 1989              		.cfi_def_cfa_offset 8
+ 1990              		.cfi_offset 4, -8
+ 1991              		.cfi_offset 5, -4
+ 397:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_checkEncderInitialization(motor, actualSystick, initMode, initState, initWaitTime, actualI
+ 1992              		.loc 1 397 1 view .LVU467
+ 1993 045e BDF80840 		ldrh	r4, [sp, #8]
+ 1994 0462 BDF81050 		ldrh	r5, [sp, #16]
+ 1995              		.loc 1 398 2 view .LVU468
+ 1996 0466 0495     		str	r5, [sp, #16]
+ 1997              	.LVL173:
+ 1998              		.loc 1 398 2 view .LVU469
+ 1999 0468 0294     		str	r4, [sp, #8]
+ 2000              	.LVL174:
+ 399:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 2001              		.loc 1 399 1 view .LVU470
+ 2002 046a 30BC     		pop	{r4, r5}
+ 2003              	.LCFI40:
+ 2004              		.cfi_restore 5
+ 2005              		.cfi_restore 4
+ 2006              		.cfi_def_cfa_offset 0
+ 2007              	.LVL175:
+ 398:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_checkEncderInitialization(motor, actualSystick, initMode, initState, initWaitTime, actualI
+ 2008              		.loc 1 398 2 view .LVU471
+ 2009 046c FFF7FEBF 		b	tmc4670_checkEncderInitialization
+ 2010              	.LVL176:
+ 398:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_checkEncderInitialization(motor, actualSystick, initMode, initState, initWaitTime, actualI
+ 2011              		.loc 1 398 2 view .LVU472
+ 2012              		.cfi_endproc
+ 2013              	.LFE35:
+ 2015              		.align	1
+ 2016              		.global	tmc4670_startEncoderInitialization
+ 2017              		.syntax unified
+ 2018              		.thumb
+ 2019              		.thumb_func
+ 2020              		.fpu softvfp
+ 2022              	tmc4670_startEncoderInitialization:
+ 2023              	.LVL177:
+ 2024              	.LFB36:
+ 400:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 401:TMC-API/tmc/ic/TMC4670/TMC4670.c **** void tmc4670_startEncoderInitialization(uint8_t mode, uint8_t *initMode, uint8_t *initState)
+ 402:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 2025              		.loc 1 402 1 is_stmt 1 view -0
+ 2026              		.cfi_startproc
+ 2027              		@ args = 0, pretend = 0, frame = 0
+ 2028              		@ frame_needed = 0, uses_anonymous_args = 0
+ 2029              		@ link register save eliminated.
+ 403:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	// allow only a new initialization if no actual initialization is running
+ 404:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	if(*initState == STATE_NOTHING_TO_DO)
+ 2030              		.loc 1 404 2 view .LVU474
+ 2031              		.loc 1 404 4 is_stmt 0 view .LVU475
+ 2032 0470 1378     		ldrb	r3, [r2]	@ zero_extendqisi2
+ 2033 0472 33B9     		cbnz	r3, .L66
+ 405:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	{
+ 406:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		if(mode == 0) // estimate offset
+ 2034              		.loc 1 406 3 is_stmt 1 view .LVU476
+ 2035              		.loc 1 406 5 is_stmt 0 view .LVU477
+ 2036 0474 18B9     		cbnz	r0, .L68
+ 2037              	.L69:
+ 407:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		{
+ 408:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			// set mode
+ 409:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			*initMode = 0;
+ 410:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 411:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			// start initialization
+ 412:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			*initState = 1;
+ 413:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		}
+ 414:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		else if(mode == 2) // use hall sensor signals
+ 415:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		{
+ 416:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			// set mode
+ 417:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			*initMode = 2;
+ 2038              		.loc 1 417 4 is_stmt 1 view .LVU478
+ 418:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 419:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			// start initialization
+ 420:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 			*initState = 1;
+ 2039              		.loc 1 420 15 is_stmt 0 view .LVU479
+ 2040 0476 0123     		movs	r3, #1
+ 417:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 2041              		.loc 1 417 14 view .LVU480
+ 2042 0478 0870     		strb	r0, [r1]
+ 2043              		.loc 1 420 4 is_stmt 1 view .LVU481
+ 2044              		.loc 1 420 15 is_stmt 0 view .LVU482
+ 2045 047a 1370     		strb	r3, [r2]
+ 421:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		}
+ 422:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	}
+ 423:TMC-API/tmc/ic/TMC4670/TMC4670.c **** }
+ 2046              		.loc 1 423 1 view .LVU483
+ 2047 047c 01E0     		b	.L66
+ 2048              	.L68:
+ 414:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		{
+ 2049              		.loc 1 414 8 is_stmt 1 view .LVU484
+ 414:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 		{
+ 2050              		.loc 1 414 10 is_stmt 0 view .LVU485
+ 2051 047e 0228     		cmp	r0, #2
+ 2052 0480 F9D0     		beq	.L69
+ 2053              	.L66:
+ 2054              		.loc 1 423 1 view .LVU486
+ 2055 0482 7047     		bx	lr
+ 2056              		.cfi_endproc
+ 2057              	.LFE36:
+ 2059              		.align	1
+ 2060              		.global	tmc4670_disablePWM
+ 2061              		.syntax unified
+ 2062              		.thumb
+ 2063              		.thumb_func
+ 2064              		.fpu softvfp
+ 2066              	tmc4670_disablePWM:
+ 2067              	.LVL178:
+ 2068              	.LFB37:
+ 424:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 
+ 425:TMC-API/tmc/ic/TMC4670/TMC4670.c **** void tmc4670_disablePWM(uint8_t motor)
+ 426:TMC-API/tmc/ic/TMC4670/TMC4670.c **** {
+ 2069              		.loc 1 426 1 is_stmt 1 view -0
+ 2070              		.cfi_startproc
+ 2071              		@ args = 0, pretend = 0, frame = 0
+ 2072              		@ frame_needed = 0, uses_anonymous_args = 0
+ 2073              		@ link register save eliminated.
+ 427:TMC-API/tmc/ic/TMC4670/TMC4670.c **** 	tmc4670_writeInt(motor, TMC4670_PWM_SV_CHOP, 0);
+ 2074              		.loc 1 427 2 view .LVU488
+ 2075 0484 0022     		movs	r2, #0
+ 2076 0486 1A21     		movs	r1, #26
+ 2077 0488 FFF7FEBF 		b	tmc4670_writeInt
+ 2078              	.LVL179:
+ 2079              		.loc 1 427 2 is_stmt 0 view .LVU489
+ 2080              		.cfi_endproc
+ 2081              	.LFE37:
+ 2083              		.bss
+ 2084              		.align	2
+ 2085              		.set	.LANCHOR0,. + 0
+ 2088              	last_Phi_E_Selection.5095:
+ 2089 0000 0000     		.space	2
+ 2090 0002 0000     		.space	2
+ 2093              	last_UQ_UD_EXT.5096:
+ 2094 0004 00000000 		.space	4
+ 2097              	last_PHI_E_EXT.5097:
+ 2098 0008 0000     		.space	2
+ 2101              	hall_phi_e_old.5113:
+ 2102 000a 0000     		.space	2
+ 2105              	actual_coarse_offset.5115:
+ 2106 000c 0000     		.space	2
+ 2107 000e 0000     		.space	2
+ 2110              	lastSystick.5132:
+ 2111 0010 00000000 		.space	4
+ 2112              		.text
+ 2113              	.Letext0:
+ 2114              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 2115              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 2116              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 2117              		.file 5 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 2118              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 2119              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 2120              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+DEFINED SYMBOLS
+                            *ABS*:00000000 TMC4670.c
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:23     .text:00000000 tmc4670_readInt
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:114    .text:00000044 tmc4670_writeInt
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:186    .text:00000084 tmc4670_readRegister16BitValue
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:241    .text:0000009e tmc4670_writeRegister16BitValue
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:322    .text:000000cc tmc4670_switchToMotionMode
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:379    .text:000000ec tmc4670_setTargetTorque_raw
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:431    .text:00000108 tmc4670_getTargetTorque_raw
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:476    .text:00000120 tmc4670_getActualTorque_raw
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:522    .text:0000012c tmc4670_getActualRampTorque_raw
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:547    .text:00000130 tmc4670_setTargetTorque_mA
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:606    .text:00000154 tmc4670_getTargetTorque_mA
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:642    .text:00000166 tmc4670_getActualTorque_mA
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:678    .text:00000178 tmc4670_getActualRampTorque_mA
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:704    .text:0000017c tmc4670_setTargetFlux_raw
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:731    .text:00000186 tmc4670_getTargetFlux_raw
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:776    .text:0000019e tmc4670_getActualFlux_raw
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:821    .text:000001aa tmc4670_setTargetFlux_mA
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:854    .text:000001ba tmc4670_getTargetFlux_mA
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:890    .text:000001cc tmc4670_getActualFlux_mA
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:926    .text:000001de tmc4670_setTorqueFluxLimit_mA
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:959    .text:000001ee tmc4670_getTorqueFluxLimit_mA
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:1011   .text:00000200 tmc4670_setTargetVelocity
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:1063   .text:0000021a tmc4670_getTargetVelocity
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:1108   .text:00000232 tmc4670_getActualVelocity
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:1132   .text:00000238 tmc4670_getActualRampVelocity
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:1150   .text:0000023c tmc4670_setAbsolutTargetPosition
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:1202   .text:00000256 tmc4670_setRelativeTargetPosition
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:1259   .text:00000278 tmc4670_getTargetPosition
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:1283   .text:0000027e tmc4670_setActualPosition
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:1311   .text:00000286 tmc4670_getActualPosition
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:1335   .text:0000028c tmc4670_getActualRampPosition
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:1353   .text:00000290 tmc4670_doEncoderInitializationMode0
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:1561   .text:0000034c $d
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:1565   .text:00000350 $t
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:1572   .text:00000350 tmc4670_getS16CircleDifference
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:1597   .text:00000356 tmc4670_doEncoderInitializationMode2
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:1856   .text:0000040c $d
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:1860   .text:00000410 $t
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:1867   .text:00000410 tmc4670_checkEncderInitialization
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:1966   .text:00000458 $d
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:1970   .text:0000045c $t
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:1977   .text:0000045c tmc4670_periodicJob
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:2022   .text:00000470 tmc4670_startEncoderInitialization
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:2066   .text:00000484 tmc4670_disablePWM
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:2084   .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:2088   .bss:00000000 last_Phi_E_Selection.5095
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:2093   .bss:00000004 last_UQ_UD_EXT.5096
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:2097   .bss:00000008 last_PHI_E_EXT.5097
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:2101   .bss:0000000a hall_phi_e_old.5113
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:2105   .bss:0000000c actual_coarse_offset.5115
+C:\Users\Shubham\AppData\Local\Temp\ccRfXOIm.s:2110   .bss:00000010 lastSystick.5132
+
+UNDEFINED SYMBOLS
+tmc4670_readwriteByte

@@ -1,0 +1,2098 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"IdDetection_Landungsbruecke.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.arch armv7e-m
+  17              		.syntax unified
+  18              		.thumb
+  19              		.thumb_func
+  20              		.fpu softvfp
+  22              	assign:
+  23              	.LVL0:
+  24              	.LFB5:
+  25              		.file 1 "tmc/IdDetection_Landungsbruecke.c"
+   1:tmc/IdDetection_Landungsbruecke.c **** /*
+   2:tmc/IdDetection_Landungsbruecke.c ****  * IdDetection_Landungsbruecke.c
+   3:tmc/IdDetection_Landungsbruecke.c ****  *
+   4:tmc/IdDetection_Landungsbruecke.c ****  *  Created on:  24.10.2013
+   5:tmc/IdDetection_Landungsbruecke.c ****  *  Author:      ernst
+   6:tmc/IdDetection_Landungsbruecke.c ****  *
+   7:tmc/IdDetection_Landungsbruecke.c ****  *  Calling IDDetection_detect(IdAssignmentTypeDef *result) will start the ID detection process.
+   8:tmc/IdDetection_Landungsbruecke.c ****  *  The function returns the ID Results through the IdAssignmentTypeDef struct result points to.
+   9:tmc/IdDetection_Landungsbruecke.c ****  *  The detection will be done by monoflop pulse duration measurement or via EEPROM readout.
+  10:tmc/IdDetection_Landungsbruecke.c ****  *  While this process is still ongoing the function will return ID_STATE_WAIT_HIGH. Once the
+  11:tmc/IdDetection_Landungsbruecke.c ****  *  ID detection of both channels has been finished, ID_STATE_DONE will be returned.
+  12:tmc/IdDetection_Landungsbruecke.c ****  *
+  13:tmc/IdDetection_Landungsbruecke.c ****  *  Calling the function again after the detection has finished will start another scan.
+  14:tmc/IdDetection_Landungsbruecke.c ****  */
+  15:tmc/IdDetection_Landungsbruecke.c **** 
+  16:tmc/IdDetection_Landungsbruecke.c **** #include "tmc/helpers/API_Header.h"
+  17:tmc/IdDetection_Landungsbruecke.c **** 
+  18:tmc/IdDetection_Landungsbruecke.c **** #include "hal/derivative.h"
+  19:tmc/IdDetection_Landungsbruecke.c **** #include "hal/HAL.h"
+  20:tmc/IdDetection_Landungsbruecke.c **** #include "BoardAssignment.h"
+  21:tmc/IdDetection_Landungsbruecke.c **** #include "EEPROM.h"
+  22:tmc/IdDetection_Landungsbruecke.c **** #include "IdDetection.h"
+  23:tmc/IdDetection_Landungsbruecke.c **** #include "VitalSignsMonitor.h"
+  24:tmc/IdDetection_Landungsbruecke.c **** #include "TMCL.h"
+  25:tmc/IdDetection_Landungsbruecke.c **** 
+  26:tmc/IdDetection_Landungsbruecke.c **** // Helper macros
+  27:tmc/IdDetection_Landungsbruecke.c **** #define ID_CLK_LOW()   HAL.IOs->config->setLow(&HAL.IOs->pins->ID_CLK);   // set id clk signal to l
+  28:tmc/IdDetection_Landungsbruecke.c **** #define ID_CLK_HIGH()  HAL.IOs->config->setHigh(&HAL.IOs->pins->ID_CLK);  // set id clk signal to h
+  29:tmc/IdDetection_Landungsbruecke.c **** #define IDSTATE_SCAN_DONE(ID_STATE)                             \
+  30:tmc/IdDetection_Landungsbruecke.c ****             (                                                   \
+  31:tmc/IdDetection_Landungsbruecke.c ****                 (ID_STATE.ch1.state != ID_STATE_WAIT_LOW)  &&   \
+  32:tmc/IdDetection_Landungsbruecke.c ****                 (ID_STATE.ch2.state != ID_STATE_WAIT_LOW)  &&   \
+  33:tmc/IdDetection_Landungsbruecke.c ****                 (ID_STATE.ch1.state != ID_STATE_WAIT_HIGH) &&   \
+  34:tmc/IdDetection_Landungsbruecke.c ****                 (ID_STATE.ch2.state != ID_STATE_WAIT_HIGH)      \
+  35:tmc/IdDetection_Landungsbruecke.c ****             )
+  36:tmc/IdDetection_Landungsbruecke.c **** 
+  37:tmc/IdDetection_Landungsbruecke.c **** static uint8_t assign(uint32_t pulse);
+  38:tmc/IdDetection_Landungsbruecke.c **** 
+  39:tmc/IdDetection_Landungsbruecke.c **** #define TIMER_START  5537
+  40:tmc/IdDetection_Landungsbruecke.c **** #define FULLCOUNTER  60000 // 65536 - TIMER_START + 1
+  41:tmc/IdDetection_Landungsbruecke.c **** /* Timer Frequency:
+  42:tmc/IdDetection_Landungsbruecke.c ****  *  System Clock   48MHz
+  43:tmc/IdDetection_Landungsbruecke.c ****  *  ------------ = ----- = 6MHz
+  44:tmc/IdDetection_Landungsbruecke.c ****  *    Prescaler      8
+  45:tmc/IdDetection_Landungsbruecke.c ****  *
+  46:tmc/IdDetection_Landungsbruecke.c ****  * Calculate time interval (t_id) in 0.1µs from the timer tick difference (ticks):
+  47:tmc/IdDetection_Landungsbruecke.c ****  *                 0.1s                  10s
+  48:tmc/IdDetection_Landungsbruecke.c ****  *  t_id * 0.1µs = ---- = ticks * 6MHz * ---     <--- Tick Conversion factor: 10/6
+  49:tmc/IdDetection_Landungsbruecke.c ****  *                 10^6                   6
+  50:tmc/IdDetection_Landungsbruecke.c ****  */
+  51:tmc/IdDetection_Landungsbruecke.c **** #define TICK_FACTOR 10/6
+  52:tmc/IdDetection_Landungsbruecke.c **** 
+  53:tmc/IdDetection_Landungsbruecke.c **** static uint32_t counter = 0;
+  54:tmc/IdDetection_Landungsbruecke.c **** 
+  55:tmc/IdDetection_Landungsbruecke.c **** static bool isScanning;
+  56:tmc/IdDetection_Landungsbruecke.c **** IdAssignmentTypeDef IdState = { 0 };
+  57:tmc/IdDetection_Landungsbruecke.c **** 
+  58:tmc/IdDetection_Landungsbruecke.c **** // Interrupt: Edge on GPIO Port B
+  59:tmc/IdDetection_Landungsbruecke.c **** void PORTB_IRQHandler(void)
+  60:tmc/IdDetection_Landungsbruecke.c **** {
+  61:tmc/IdDetection_Landungsbruecke.c **** 	// Store the timing values
+  62:tmc/IdDetection_Landungsbruecke.c **** 	uint32_t timerVal = FTM2_CNT;
+  63:tmc/IdDetection_Landungsbruecke.c **** 	uint32_t counterVal = counter;
+  64:tmc/IdDetection_Landungsbruecke.c **** 
+  65:tmc/IdDetection_Landungsbruecke.c **** 	// Store the interrupt flag state and then reset the flags
+  66:tmc/IdDetection_Landungsbruecke.c **** 	uint32_t interruptFlags = PORTB_ISFR;
+  67:tmc/IdDetection_Landungsbruecke.c **** 	PORTB_ISFR = PORT_ISFR_ISF_MASK;
+  68:tmc/IdDetection_Landungsbruecke.c **** 
+  69:tmc/IdDetection_Landungsbruecke.c **** 	// Abort if we're not scanning
+  70:tmc/IdDetection_Landungsbruecke.c **** 	if(!isScanning)
+  71:tmc/IdDetection_Landungsbruecke.c **** 		return;
+  72:tmc/IdDetection_Landungsbruecke.c **** 
+  73:tmc/IdDetection_Landungsbruecke.c **** 	// ======== CH0 ==========
+  74:tmc/IdDetection_Landungsbruecke.c **** 	// Check if Pin ID_CH0 generated the interrupt
+  75:tmc/IdDetection_Landungsbruecke.c **** 	if(interruptFlags & PORT_ISFR_ISF(HAL.IOs->pins->ID_CH0.bitWeight))
+  76:tmc/IdDetection_Landungsbruecke.c **** 	{
+  77:tmc/IdDetection_Landungsbruecke.c **** 		if(IdState.ch1.state == ID_STATE_WAIT_HIGH)
+  78:tmc/IdDetection_Landungsbruecke.c **** 		{	// Second ID pulse edge - store timer values -> state DONE
+  79:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch1.timer_2    = timerVal;
+  80:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch1.counter_2  = counterVal;
+  81:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch1.state      = ID_STATE_DONE;
+  82:tmc/IdDetection_Landungsbruecke.c **** 		}
+  83:tmc/IdDetection_Landungsbruecke.c **** 		else
+  84:tmc/IdDetection_Landungsbruecke.c **** 		{	// First ID pulse edge - store timer values -> state WAIT_HIGH
+  85:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch1.timer_1    = timerVal;
+  86:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch1.counter_1  = counterVal;
+  87:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch1.state      = ID_STATE_WAIT_HIGH;
+  88:tmc/IdDetection_Landungsbruecke.c **** 		}
+  89:tmc/IdDetection_Landungsbruecke.c **** 	}
+  90:tmc/IdDetection_Landungsbruecke.c **** 
+  91:tmc/IdDetection_Landungsbruecke.c **** 	// ======== CH1 ==========
+  92:tmc/IdDetection_Landungsbruecke.c **** 	// Check if Pin ID_CH1 generated the interrupt
+  93:tmc/IdDetection_Landungsbruecke.c **** 	if(interruptFlags & PORT_ISFR_ISF(HAL.IOs->pins->ID_CH1.bitWeight))
+  94:tmc/IdDetection_Landungsbruecke.c **** 	{
+  95:tmc/IdDetection_Landungsbruecke.c **** 		if(IdState.ch2.state == ID_STATE_WAIT_HIGH)
+  96:tmc/IdDetection_Landungsbruecke.c **** 		{	// Second ID pulse edge - store timer values -> state DONE
+  97:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch2.timer_2    = timerVal;
+  98:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch2.counter_2  = counterVal;
+  99:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch2.state      = ID_STATE_DONE;
+ 100:tmc/IdDetection_Landungsbruecke.c **** 		}
+ 101:tmc/IdDetection_Landungsbruecke.c **** 		else
+ 102:tmc/IdDetection_Landungsbruecke.c **** 		{	// First ID pulse edge - store timer values -> state WAIT_HIGH
+ 103:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch2.timer_1    = timerVal;
+ 104:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch2.counter_1  = counterVal;
+ 105:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch2.state      = ID_STATE_WAIT_HIGH;
+ 106:tmc/IdDetection_Landungsbruecke.c **** 		}
+ 107:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 108:tmc/IdDetection_Landungsbruecke.c **** }
+ 109:tmc/IdDetection_Landungsbruecke.c **** 
+ 110:tmc/IdDetection_Landungsbruecke.c **** void FTM2_IRQHandler()
+ 111:tmc/IdDetection_Landungsbruecke.c **** {
+ 112:tmc/IdDetection_Landungsbruecke.c **** 	// clear timer overflow flag
+ 113:tmc/IdDetection_Landungsbruecke.c **** 	FTM2_SC &= ~FTM_SC_TOF_MASK;
+ 114:tmc/IdDetection_Landungsbruecke.c **** 
+ 115:tmc/IdDetection_Landungsbruecke.c **** 	counter++;
+ 116:tmc/IdDetection_Landungsbruecke.c **** 
+ 117:tmc/IdDetection_Landungsbruecke.c **** 	// Abort if timeout limit hasn't been reached yet
+ 118:tmc/IdDetection_Landungsbruecke.c **** 	if(counter < 100)
+ 119:tmc/IdDetection_Landungsbruecke.c **** 		return;
+ 120:tmc/IdDetection_Landungsbruecke.c **** 
+ 121:tmc/IdDetection_Landungsbruecke.c **** 	// Reset counter and stop the timer
+ 122:tmc/IdDetection_Landungsbruecke.c **** 	counter = 0;
+ 123:tmc/IdDetection_Landungsbruecke.c **** 	FTM2_SC &= ~FTM_SC_CLKS_MASK;
+ 124:tmc/IdDetection_Landungsbruecke.c **** 
+ 125:tmc/IdDetection_Landungsbruecke.c **** 	// Abort if we're not scanning
+ 126:tmc/IdDetection_Landungsbruecke.c **** 	if(!isScanning)
+ 127:tmc/IdDetection_Landungsbruecke.c **** 		return;
+ 128:tmc/IdDetection_Landungsbruecke.c **** 
+ 129:tmc/IdDetection_Landungsbruecke.c **** 	// Set the Timeout states
+ 130:tmc/IdDetection_Landungsbruecke.c **** 	if(IdState.ch1.state == ID_STATE_WAIT_HIGH)
+ 131:tmc/IdDetection_Landungsbruecke.c **** 	{	// Only detected ID pulse rising edge -> Timeout
+ 132:tmc/IdDetection_Landungsbruecke.c **** 		IdState.ch1.state = ID_STATE_TIMEOUT;
+ 133:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 134:tmc/IdDetection_Landungsbruecke.c **** 	else if(IdState.ch1.state == ID_STATE_WAIT_LOW)
+ 135:tmc/IdDetection_Landungsbruecke.c **** 	{	// Did not detect any edge -> No answer
+ 136:tmc/IdDetection_Landungsbruecke.c **** 		IdState.ch1.state = ID_STATE_NO_ANSWER;
+ 137:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 138:tmc/IdDetection_Landungsbruecke.c **** 
+ 139:tmc/IdDetection_Landungsbruecke.c **** 	if(IdState.ch2.state == ID_STATE_WAIT_HIGH)
+ 140:tmc/IdDetection_Landungsbruecke.c **** 	{	// Only detected ID pulse rising edge -> Timeout
+ 141:tmc/IdDetection_Landungsbruecke.c **** 		IdState.ch2.state = ID_STATE_TIMEOUT;
+ 142:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 143:tmc/IdDetection_Landungsbruecke.c **** 	else if(IdState.ch2.state == ID_STATE_WAIT_LOW)
+ 144:tmc/IdDetection_Landungsbruecke.c **** 	{	// Did not detect any edge -> No answer
+ 145:tmc/IdDetection_Landungsbruecke.c **** 		IdState.ch2.state = ID_STATE_NO_ANSWER;
+ 146:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 147:tmc/IdDetection_Landungsbruecke.c **** }
+ 148:tmc/IdDetection_Landungsbruecke.c **** 
+ 149:tmc/IdDetection_Landungsbruecke.c **** void IDDetection_init(void)
+ 150:tmc/IdDetection_Landungsbruecke.c **** {
+ 151:tmc/IdDetection_Landungsbruecke.c **** 	isScanning = false;
+ 152:tmc/IdDetection_Landungsbruecke.c **** 
+ 153:tmc/IdDetection_Landungsbruecke.c **** 	// ====== Timer initialisation =======
+ 154:tmc/IdDetection_Landungsbruecke.c **** 	// Enable clock for FTM2
+ 155:tmc/IdDetection_Landungsbruecke.c **** 	SIM_SCGC3 |= SIM_SCGC3_FTM2_MASK;
+ 156:tmc/IdDetection_Landungsbruecke.c **** 
+ 157:tmc/IdDetection_Landungsbruecke.c **** 	// Disable write protection, FTM specific registers are available
+ 158:tmc/IdDetection_Landungsbruecke.c **** 	FTM2_MODE |= FTM_MODE_WPDIS_MASK | FTM_MODE_FTMEN_MASK | FTM_MODE_FAULTM_MASK;
+ 159:tmc/IdDetection_Landungsbruecke.c **** 
+ 160:tmc/IdDetection_Landungsbruecke.c **** 	// Clock source: System Clock (48 MHz), Prescaler: 8 -> 6 MHz Timer clock
+ 161:tmc/IdDetection_Landungsbruecke.c **** 	FTM2_SC |= FTM_SC_CLKS(1) | FTM_SC_PS(3);
+ 162:tmc/IdDetection_Landungsbruecke.c **** 
+ 163:tmc/IdDetection_Landungsbruecke.c **** 	// ( MOD  - CNTIN + 1) / 6 MHz = Timer period
+ 164:tmc/IdDetection_Landungsbruecke.c **** 	// (65536 -  5537 + 1) / 6 MHz = 10 ms
+ 165:tmc/IdDetection_Landungsbruecke.c **** 	FTM2_CNTIN = TIMER_START;
+ 166:tmc/IdDetection_Landungsbruecke.c **** 
+ 167:tmc/IdDetection_Landungsbruecke.c **** 	// The TOF bit is set for each counter overflow
+ 168:tmc/IdDetection_Landungsbruecke.c **** 	FTM2_CONF |= FTM_CONF_NUMTOF(0);
+ 169:tmc/IdDetection_Landungsbruecke.c **** 
+ 170:tmc/IdDetection_Landungsbruecke.c **** 	// Edge-Aligned PWM (EPWM) mode
+ 171:tmc/IdDetection_Landungsbruecke.c **** 	FTM2_C0SC |= FTM_CnSC_MSB_MASK | FTM_CnSC_ELSB_MASK;
+ 172:tmc/IdDetection_Landungsbruecke.c **** 
+ 173:tmc/IdDetection_Landungsbruecke.c **** 	// Enable FTM2 Timer Overflow interrupt
+ 174:tmc/IdDetection_Landungsbruecke.c **** 	FTM2_SC |= FTM_SC_TOIE_MASK;
+ 175:tmc/IdDetection_Landungsbruecke.c **** 
+ 176:tmc/IdDetection_Landungsbruecke.c **** 	// Set FTM2 interrupt handler
+ 177:tmc/IdDetection_Landungsbruecke.c **** 	enable_irq(INT_FTM2 - 16);
+ 178:tmc/IdDetection_Landungsbruecke.c **** 
+ 179:tmc/IdDetection_Landungsbruecke.c **** 	// ====== Pin initialisation ======
+ 180:tmc/IdDetection_Landungsbruecke.c **** 	// Enable Clock gating on port B
+ 181:tmc/IdDetection_Landungsbruecke.c **** 	SIM_SCGC5 |= SIM_SCGC5_PORTB_MASK;
+ 182:tmc/IdDetection_Landungsbruecke.c **** 
+ 183:tmc/IdDetection_Landungsbruecke.c **** 	// Configure Pin
+ 184:tmc/IdDetection_Landungsbruecke.c **** 	HAL.IOs->config->toOutput(&HAL.IOs->pins->ID_CLK);
+ 185:tmc/IdDetection_Landungsbruecke.c **** 
+ 186:tmc/IdDetection_Landungsbruecke.c **** 	// Enable GPIO, edge-triggered interrupt, and PullUp/PullDown
+ 187:tmc/IdDetection_Landungsbruecke.c **** 	PORT_PCR_REG(HAL.IOs->pins->ID_CH0.portBase, HAL.IOs->pins->ID_CH0.bit)  = PORT_PCR_MUX(1) | PORT_
+ 188:tmc/IdDetection_Landungsbruecke.c **** 	PORT_PCR_REG(HAL.IOs->pins->ID_CH1.portBase, HAL.IOs->pins->ID_CH1.bit)  = PORT_PCR_MUX(1) | PORT_
+ 189:tmc/IdDetection_Landungsbruecke.c **** 
+ 190:tmc/IdDetection_Landungsbruecke.c **** 	// Clear interrupt flags
+ 191:tmc/IdDetection_Landungsbruecke.c **** 	PORTB_ISFR = -1;
+ 192:tmc/IdDetection_Landungsbruecke.c **** 
+ 193:tmc/IdDetection_Landungsbruecke.c **** 	// Enable interrupt
+ 194:tmc/IdDetection_Landungsbruecke.c **** 	enable_irq(INT_PORTB - 16);
+ 195:tmc/IdDetection_Landungsbruecke.c **** }
+ 196:tmc/IdDetection_Landungsbruecke.c **** 
+ 197:tmc/IdDetection_Landungsbruecke.c **** void IDDetection_deInit()
+ 198:tmc/IdDetection_Landungsbruecke.c **** {
+ 199:tmc/IdDetection_Landungsbruecke.c **** 	disable_irq(INT_FTM2 - 16);
+ 200:tmc/IdDetection_Landungsbruecke.c **** 	FTM2_SC &= ~FTM_SC_CLKS_MASK;
+ 201:tmc/IdDetection_Landungsbruecke.c **** 	FTM2_SC &= ~FTM_SC_TOF_MASK;
+ 202:tmc/IdDetection_Landungsbruecke.c **** 
+ 203:tmc/IdDetection_Landungsbruecke.c **** 	disable_irq(INT_PORTB - 16);
+ 204:tmc/IdDetection_Landungsbruecke.c **** 	PORTB_ISFR = -1;
+ 205:tmc/IdDetection_Landungsbruecke.c **** }
+ 206:tmc/IdDetection_Landungsbruecke.c **** 
+ 207:tmc/IdDetection_Landungsbruecke.c **** //returns ID assigned to given pulse (length in 0.1us)
+ 208:tmc/IdDetection_Landungsbruecke.c **** static uint8_t assign(uint32_t pulse)
+ 209:tmc/IdDetection_Landungsbruecke.c **** {
+  26              		.loc 1 209 1 view -0
+  27              		.cfi_startproc
+  28              		@ args = 0, pretend = 0, frame = 0
+  29              		@ frame_needed = 0, uses_anonymous_args = 0
+  30              		@ link register save eliminated.
+ 210:tmc/IdDetection_Landungsbruecke.c **** 	if(     pulse < 5      ) return 0; // error
+  31              		.loc 1 210 2 view .LVU1
+  32              		.loc 1 210 4 is_stmt 0 view .LVU2
+  33 0000 0428     		cmp	r0, #4
+  34 0002 40F28880 		bls	.L3
+ 211:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse < 110    ) return 1;
+  35              		.loc 1 211 7 is_stmt 1 view .LVU3
+  36              		.loc 1 211 9 is_stmt 0 view .LVU4
+  37 0006 6D28     		cmp	r0, #109
+  38 0008 40F28780 		bls	.L4
+ 212:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse < 135    ) return 2;
+  39              		.loc 1 212 7 is_stmt 1 view .LVU5
+  40              		.loc 1 212 9 is_stmt 0 view .LVU6
+  41 000c 8628     		cmp	r0, #134
+  42 000e 40F28680 		bls	.L5
+ 213:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse < 165    ) return 3;
+  43              		.loc 1 213 7 is_stmt 1 view .LVU7
+  44              		.loc 1 213 9 is_stmt 0 view .LVU8
+  45 0012 A428     		cmp	r0, #164
+  46 0014 40F28580 		bls	.L6
+ 214:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse < 200    ) return 4;
+  47              		.loc 1 214 7 is_stmt 1 view .LVU9
+  48              		.loc 1 214 9 is_stmt 0 view .LVU10
+  49 0018 C728     		cmp	r0, #199
+  50 001a 40F28480 		bls	.L7
+ 215:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse < 245    ) return 5;
+  51              		.loc 1 215 7 is_stmt 1 view .LVU11
+  52              		.loc 1 215 9 is_stmt 0 view .LVU12
+  53 001e F428     		cmp	r0, #244
+  54 0020 40F28380 		bls	.L8
+ 216:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	300    ) return 6;
+  55              		.loc 1 216 7 is_stmt 1 view .LVU13
+  56              		.loc 1 216 9 is_stmt 0 view .LVU14
+  57 0024 B0F5967F 		cmp	r0, #300
+  58 0028 C0F08180 		bcc	.L9
+ 217:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	360    ) return 7;
+  59              		.loc 1 217 7 is_stmt 1 view .LVU15
+  60              		.loc 1 217 9 is_stmt 0 view .LVU16
+  61 002c B0F5B47F 		cmp	r0, #360
+  62 0030 7FD3     		bcc	.L10
+ 218:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	430    ) return 8;
+  63              		.loc 1 218 7 is_stmt 1 view .LVU17
+  64              		.loc 1 218 9 is_stmt 0 view .LVU18
+  65 0032 B0F5D77F 		cmp	r0, #430
+  66 0036 7ED3     		bcc	.L11
+ 219:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	515    ) return 9;
+  67              		.loc 1 219 7 is_stmt 1 view .LVU19
+  68              		.loc 1 219 9 is_stmt 0 view .LVU20
+  69 0038 40F20223 		movw	r3, #514
+  70 003c 9842     		cmp	r0, r3
+  71 003e 7CD9     		bls	.L12
+ 220:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	620    ) return 10;
+  72              		.loc 1 220 7 is_stmt 1 view .LVU21
+  73              		.loc 1 220 9 is_stmt 0 view .LVU22
+  74 0040 B0F51B7F 		cmp	r0, #620
+  75 0044 7BD3     		bcc	.L13
+ 221:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	750    ) return 11;
+  76              		.loc 1 221 7 is_stmt 1 view .LVU23
+  77              		.loc 1 221 9 is_stmt 0 view .LVU24
+  78 0046 40F2ED23 		movw	r3, #749
+  79 004a 9842     		cmp	r0, r3
+  80 004c 79D9     		bls	.L14
+ 222:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	910    ) return 12;
+  81              		.loc 1 222 7 is_stmt 1 view .LVU25
+  82              		.loc 1 222 9 is_stmt 0 view .LVU26
+  83 004e 40F28D33 		movw	r3, #909
+  84 0052 9842     		cmp	r0, r3
+  85 0054 77D9     		bls	.L15
+ 223:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	1100   ) return 13;
+  86              		.loc 1 223 7 is_stmt 1 view .LVU27
+  87              		.loc 1 223 9 is_stmt 0 view .LVU28
+  88 0056 40F24B43 		movw	r3, #1099
+  89 005a 9842     		cmp	r0, r3
+  90 005c 75D9     		bls	.L16
+ 224:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	1350   ) return 14;
+  91              		.loc 1 224 7 is_stmt 1 view .LVU29
+  92              		.loc 1 224 9 is_stmt 0 view .LVU30
+  93 005e 40F24553 		movw	r3, #1349
+  94 0062 9842     		cmp	r0, r3
+  95 0064 73D9     		bls	.L17
+ 225:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	1650   ) return 15;
+  96              		.loc 1 225 7 is_stmt 1 view .LVU31
+  97              		.loc 1 225 9 is_stmt 0 view .LVU32
+  98 0066 40F27163 		movw	r3, #1649
+  99 006a 9842     		cmp	r0, r3
+ 100 006c 71D9     		bls	.L18
+ 226:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	2000   ) return 16;
+ 101              		.loc 1 226 7 is_stmt 1 view .LVU33
+ 102              		.loc 1 226 9 is_stmt 0 view .LVU34
+ 103 006e B0F5FA6F 		cmp	r0, #2000
+ 104 0072 70D3     		bcc	.L19
+ 105              	.LVL1:
+ 106              	.LBB6:
+ 107              	.LBI6:
+ 208:tmc/IdDetection_Landungsbruecke.c **** {
+ 108              		.loc 1 208 16 is_stmt 1 view .LVU35
+ 109              	.LBB7:
+ 227:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	2450   ) return 17;
+ 110              		.loc 1 227 7 view .LVU36
+ 111              		.loc 1 227 9 is_stmt 0 view .LVU37
+ 112 0074 40F69113 		movw	r3, #2449
+ 113 0078 9842     		cmp	r0, r3
+ 114 007a 6ED9     		bls	.L20
+ 228:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	3000   ) return 18;
+ 115              		.loc 1 228 7 is_stmt 1 view .LVU38
+ 116              		.loc 1 228 9 is_stmt 0 view .LVU39
+ 117 007c 40F6B733 		movw	r3, #2999
+ 118 0080 9842     		cmp	r0, r3
+ 119 0082 6CD9     		bls	.L21
+ 229:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	3600   ) return 19;
+ 120              		.loc 1 229 7 is_stmt 1 view .LVU40
+ 121              		.loc 1 229 9 is_stmt 0 view .LVU41
+ 122 0084 B0F5616F 		cmp	r0, #3600
+ 123 0088 6BD3     		bcc	.L22
+ 230:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	4300   ) return 20;
+ 124              		.loc 1 230 7 is_stmt 1 view .LVU42
+ 125              		.loc 1 230 9 is_stmt 0 view .LVU43
+ 126 008a 41F2CB03 		movw	r3, #4299
+ 127 008e 9842     		cmp	r0, r3
+ 128 0090 69D9     		bls	.L23
+ 231:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	5150   ) return 21;
+ 129              		.loc 1 231 7 is_stmt 1 view .LVU44
+ 130              		.loc 1 231 9 is_stmt 0 view .LVU45
+ 131 0092 41F21D43 		movw	r3, #5149
+ 132 0096 9842     		cmp	r0, r3
+ 133 0098 67D9     		bls	.L24
+ 232:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	6200   ) return 22;
+ 134              		.loc 1 232 7 is_stmt 1 view .LVU46
+ 135              		.loc 1 232 9 is_stmt 0 view .LVU47
+ 136 009a 41F63703 		movw	r3, #6199
+ 137 009e 9842     		cmp	r0, r3
+ 138 00a0 65D9     		bls	.L25
+ 233:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	7500   ) return 23;
+ 139              		.loc 1 233 7 is_stmt 1 view .LVU48
+ 140              		.loc 1 233 9 is_stmt 0 view .LVU49
+ 141 00a2 41F64B53 		movw	r3, #7499
+ 142 00a6 9842     		cmp	r0, r3
+ 143 00a8 63D9     		bls	.L26
+ 234:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	9100   ) return 24;
+ 144              		.loc 1 234 7 is_stmt 1 view .LVU50
+ 145              		.loc 1 234 9 is_stmt 0 view .LVU51
+ 146 00aa 42F28B33 		movw	r3, #9099
+ 147 00ae 9842     		cmp	r0, r3
+ 148 00b0 61D9     		bls	.L27
+ 235:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	11000  ) return 25;
+ 149              		.loc 1 235 7 is_stmt 1 view .LVU52
+ 150              		.loc 1 235 9 is_stmt 0 view .LVU53
+ 151 00b2 42F6F723 		movw	r3, #10999
+ 152 00b6 9842     		cmp	r0, r3
+ 153 00b8 5FD9     		bls	.L28
+ 236:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	13500  ) return 26;
+ 154              		.loc 1 236 7 is_stmt 1 view .LVU54
+ 155              		.loc 1 236 9 is_stmt 0 view .LVU55
+ 156 00ba 43F2BB43 		movw	r3, #13499
+ 157 00be 9842     		cmp	r0, r3
+ 158 00c0 5DD9     		bls	.L29
+ 237:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	16500  ) return 27;
+ 159              		.loc 1 237 7 is_stmt 1 view .LVU56
+ 160              		.loc 1 237 9 is_stmt 0 view .LVU57
+ 161 00c2 44F27303 		movw	r3, #16499
+ 162 00c6 9842     		cmp	r0, r3
+ 163 00c8 5BD9     		bls	.L30
+ 238:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	20000  ) return 28;
+ 164              		.loc 1 238 7 is_stmt 1 view .LVU58
+ 165              		.loc 1 238 9 is_stmt 0 view .LVU59
+ 166 00ca 44F61F63 		movw	r3, #19999
+ 167 00ce 9842     		cmp	r0, r3
+ 168 00d0 59D9     		bls	.L31
+ 239:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	24500  ) return 29;
+ 169              		.loc 1 239 7 is_stmt 1 view .LVU60
+ 170              		.loc 1 239 9 is_stmt 0 view .LVU61
+ 171 00d2 45F6B373 		movw	r3, #24499
+ 172 00d6 9842     		cmp	r0, r3
+ 173 00d8 57D9     		bls	.L32
+ 240:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	30000  ) return 30;
+ 174              		.loc 1 240 7 is_stmt 1 view .LVU62
+ 175              		.loc 1 240 9 is_stmt 0 view .LVU63
+ 176 00da 47F22F53 		movw	r3, #29999
+ 177 00de 9842     		cmp	r0, r3
+ 178 00e0 55D9     		bls	.L33
+ 241:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	36000  ) return 31;
+ 179              		.loc 1 241 7 is_stmt 1 view .LVU64
+ 180              		.loc 1 241 9 is_stmt 0 view .LVU65
+ 181 00e2 48F69F43 		movw	r3, #35999
+ 182 00e6 9842     		cmp	r0, r3
+ 183 00e8 53D9     		bls	.L34
+ 242:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	43000  ) return 32;
+ 184              		.loc 1 242 7 is_stmt 1 view .LVU66
+ 185              		.loc 1 242 9 is_stmt 0 view .LVU67
+ 186 00ea 4AF2F773 		movw	r3, #42999
+ 187 00ee 9842     		cmp	r0, r3
+ 188 00f0 51D9     		bls	.L35
+ 243:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	51500  ) return 33;
+ 189              		.loc 1 243 7 is_stmt 1 view .LVU68
+ 190              		.loc 1 243 9 is_stmt 0 view .LVU69
+ 191 00f2 4CF62B13 		movw	r3, #51499
+ 192 00f6 9842     		cmp	r0, r3
+ 193 00f8 4FD9     		bls	.L36
+ 244:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	62000  ) return 34;
+ 194              		.loc 1 244 7 is_stmt 1 view .LVU70
+ 195              		.loc 1 244 9 is_stmt 0 view .LVU71
+ 196 00fa 4FF22F23 		movw	r3, #61999
+ 197 00fe 9842     		cmp	r0, r3
+ 198 0100 4DD9     		bls	.L37
+ 245:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	75000  ) return 35;
+ 199              		.loc 1 245 7 is_stmt 1 view .LVU72
+ 200              		.loc 1 245 9 is_stmt 0 view .LVU73
+ 201 0102 294B     		ldr	r3, .L40
+ 202 0104 9842     		cmp	r0, r3
+ 203 0106 4CD9     		bls	.L38
+ 246:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	91000  ) return 36;
+ 204              		.loc 1 246 7 is_stmt 1 view .LVU74
+ 205              		.loc 1 246 34 is_stmt 0 view .LVU75
+ 206 0108 03F57A53 		add	r3, r3, #16000
+ 207 010c 9842     		cmp	r0, r3
+ 208 010e 94BF     		ite	ls
+ 209 0110 2420     		movls	r0, #36
+ 210 0112 0020     		movhi	r0, #0
+ 211              	.LVL2:
+ 212              		.loc 1 246 34 view .LVU76
+ 213 0114 7047     		bx	lr
+ 214              	.LVL3:
+ 215              	.L3:
+ 216              		.loc 1 246 34 view .LVU77
+ 217              	.LBE7:
+ 218              	.LBE6:
+ 210:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse < 110    ) return 1;
+ 219              		.loc 1 210 34 view .LVU78
+ 220 0116 0020     		movs	r0, #0
+ 221              	.LVL4:
+ 210:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse < 110    ) return 1;
+ 222              		.loc 1 210 34 view .LVU79
+ 223 0118 7047     		bx	lr
+ 224              	.LVL5:
+ 225              	.L4:
+ 211:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse < 135    ) return 2;
+ 226              		.loc 1 211 34 view .LVU80
+ 227 011a 0120     		movs	r0, #1
+ 228              	.LVL6:
+ 211:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse < 135    ) return 2;
+ 229              		.loc 1 211 34 view .LVU81
+ 230 011c 7047     		bx	lr
+ 231              	.LVL7:
+ 232              	.L5:
+ 212:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse < 165    ) return 3;
+ 233              		.loc 1 212 34 view .LVU82
+ 234 011e 0220     		movs	r0, #2
+ 235              	.LVL8:
+ 212:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse < 165    ) return 3;
+ 236              		.loc 1 212 34 view .LVU83
+ 237 0120 7047     		bx	lr
+ 238              	.LVL9:
+ 239              	.L6:
+ 213:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse < 200    ) return 4;
+ 240              		.loc 1 213 34 view .LVU84
+ 241 0122 0320     		movs	r0, #3
+ 242              	.LVL10:
+ 213:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse < 200    ) return 4;
+ 243              		.loc 1 213 34 view .LVU85
+ 244 0124 7047     		bx	lr
+ 245              	.LVL11:
+ 246              	.L7:
+ 214:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse < 245    ) return 5;
+ 247              		.loc 1 214 34 view .LVU86
+ 248 0126 0420     		movs	r0, #4
+ 249              	.LVL12:
+ 214:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse < 245    ) return 5;
+ 250              		.loc 1 214 34 view .LVU87
+ 251 0128 7047     		bx	lr
+ 252              	.LVL13:
+ 253              	.L8:
+ 215:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	300    ) return 6;
+ 254              		.loc 1 215 34 view .LVU88
+ 255 012a 0520     		movs	r0, #5
+ 256              	.LVL14:
+ 215:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	300    ) return 6;
+ 257              		.loc 1 215 34 view .LVU89
+ 258 012c 7047     		bx	lr
+ 259              	.LVL15:
+ 260              	.L9:
+ 216:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	360    ) return 7;
+ 261              		.loc 1 216 34 view .LVU90
+ 262 012e 0620     		movs	r0, #6
+ 263              	.LVL16:
+ 216:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	360    ) return 7;
+ 264              		.loc 1 216 34 view .LVU91
+ 265 0130 7047     		bx	lr
+ 266              	.LVL17:
+ 267              	.L10:
+ 217:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	430    ) return 8;
+ 268              		.loc 1 217 34 view .LVU92
+ 269 0132 0720     		movs	r0, #7
+ 270              	.LVL18:
+ 217:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	430    ) return 8;
+ 271              		.loc 1 217 34 view .LVU93
+ 272 0134 7047     		bx	lr
+ 273              	.LVL19:
+ 274              	.L11:
+ 218:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	515    ) return 9;
+ 275              		.loc 1 218 34 view .LVU94
+ 276 0136 0820     		movs	r0, #8
+ 277              	.LVL20:
+ 218:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	515    ) return 9;
+ 278              		.loc 1 218 34 view .LVU95
+ 279 0138 7047     		bx	lr
+ 280              	.LVL21:
+ 281              	.L12:
+ 219:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	620    ) return 10;
+ 282              		.loc 1 219 34 view .LVU96
+ 283 013a 0920     		movs	r0, #9
+ 284              	.LVL22:
+ 219:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	620    ) return 10;
+ 285              		.loc 1 219 34 view .LVU97
+ 286 013c 7047     		bx	lr
+ 287              	.LVL23:
+ 288              	.L13:
+ 220:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	750    ) return 11;
+ 289              		.loc 1 220 34 view .LVU98
+ 290 013e 0A20     		movs	r0, #10
+ 291              	.LVL24:
+ 220:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	750    ) return 11;
+ 292              		.loc 1 220 34 view .LVU99
+ 293 0140 7047     		bx	lr
+ 294              	.LVL25:
+ 295              	.L14:
+ 221:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	910    ) return 12;
+ 296              		.loc 1 221 34 view .LVU100
+ 297 0142 0B20     		movs	r0, #11
+ 298              	.LVL26:
+ 221:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	910    ) return 12;
+ 299              		.loc 1 221 34 view .LVU101
+ 300 0144 7047     		bx	lr
+ 301              	.LVL27:
+ 302              	.L15:
+ 222:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	1100   ) return 13;
+ 303              		.loc 1 222 34 view .LVU102
+ 304 0146 0C20     		movs	r0, #12
+ 305              	.LVL28:
+ 222:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	1100   ) return 13;
+ 306              		.loc 1 222 34 view .LVU103
+ 307 0148 7047     		bx	lr
+ 308              	.LVL29:
+ 309              	.L16:
+ 223:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	1350   ) return 14;
+ 310              		.loc 1 223 34 view .LVU104
+ 311 014a 0D20     		movs	r0, #13
+ 312              	.LVL30:
+ 223:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	1350   ) return 14;
+ 313              		.loc 1 223 34 view .LVU105
+ 314 014c 7047     		bx	lr
+ 315              	.LVL31:
+ 316              	.L17:
+ 224:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	1650   ) return 15;
+ 317              		.loc 1 224 34 view .LVU106
+ 318 014e 0E20     		movs	r0, #14
+ 319              	.LVL32:
+ 224:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	1650   ) return 15;
+ 320              		.loc 1 224 34 view .LVU107
+ 321 0150 7047     		bx	lr
+ 322              	.LVL33:
+ 323              	.L18:
+ 225:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	2000   ) return 16;
+ 324              		.loc 1 225 34 view .LVU108
+ 325 0152 0F20     		movs	r0, #15
+ 326              	.LVL34:
+ 225:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	2000   ) return 16;
+ 327              		.loc 1 225 34 view .LVU109
+ 328 0154 7047     		bx	lr
+ 329              	.LVL35:
+ 330              	.L19:
+ 226:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	2450   ) return 17;
+ 331              		.loc 1 226 34 view .LVU110
+ 332 0156 1020     		movs	r0, #16
+ 333              	.LVL36:
+ 226:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	2450   ) return 17;
+ 334              		.loc 1 226 34 view .LVU111
+ 335 0158 7047     		bx	lr
+ 336              	.LVL37:
+ 337              	.L20:
+ 338              	.LBB9:
+ 339              	.LBB8:
+ 227:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	3000   ) return 18;
+ 340              		.loc 1 227 34 view .LVU112
+ 341 015a 1120     		movs	r0, #17
+ 342              	.LVL38:
+ 227:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	3000   ) return 18;
+ 343              		.loc 1 227 34 view .LVU113
+ 344 015c 7047     		bx	lr
+ 345              	.LVL39:
+ 346              	.L21:
+ 228:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	3600   ) return 19;
+ 347              		.loc 1 228 34 view .LVU114
+ 348 015e 1220     		movs	r0, #18
+ 349              	.LVL40:
+ 228:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	3600   ) return 19;
+ 350              		.loc 1 228 34 view .LVU115
+ 351 0160 7047     		bx	lr
+ 352              	.LVL41:
+ 353              	.L22:
+ 229:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	4300   ) return 20;
+ 354              		.loc 1 229 34 view .LVU116
+ 355 0162 1320     		movs	r0, #19
+ 356              	.LVL42:
+ 229:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	4300   ) return 20;
+ 357              		.loc 1 229 34 view .LVU117
+ 358 0164 7047     		bx	lr
+ 359              	.LVL43:
+ 360              	.L23:
+ 230:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	5150   ) return 21;
+ 361              		.loc 1 230 34 view .LVU118
+ 362 0166 1420     		movs	r0, #20
+ 363              	.LVL44:
+ 230:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	5150   ) return 21;
+ 364              		.loc 1 230 34 view .LVU119
+ 365 0168 7047     		bx	lr
+ 366              	.LVL45:
+ 367              	.L24:
+ 231:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	6200   ) return 22;
+ 368              		.loc 1 231 34 view .LVU120
+ 369 016a 1520     		movs	r0, #21
+ 370              	.LVL46:
+ 231:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	6200   ) return 22;
+ 371              		.loc 1 231 34 view .LVU121
+ 372 016c 7047     		bx	lr
+ 373              	.LVL47:
+ 374              	.L25:
+ 232:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	7500   ) return 23;
+ 375              		.loc 1 232 34 view .LVU122
+ 376 016e 1620     		movs	r0, #22
+ 377              	.LVL48:
+ 232:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	7500   ) return 23;
+ 378              		.loc 1 232 34 view .LVU123
+ 379 0170 7047     		bx	lr
+ 380              	.LVL49:
+ 381              	.L26:
+ 233:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	9100   ) return 24;
+ 382              		.loc 1 233 34 view .LVU124
+ 383 0172 1720     		movs	r0, #23
+ 384              	.LVL50:
+ 233:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	9100   ) return 24;
+ 385              		.loc 1 233 34 view .LVU125
+ 386 0174 7047     		bx	lr
+ 387              	.LVL51:
+ 388              	.L27:
+ 234:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	11000  ) return 25;
+ 389              		.loc 1 234 34 view .LVU126
+ 390 0176 1820     		movs	r0, #24
+ 391              	.LVL52:
+ 234:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	11000  ) return 25;
+ 392              		.loc 1 234 34 view .LVU127
+ 393 0178 7047     		bx	lr
+ 394              	.LVL53:
+ 395              	.L28:
+ 235:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	13500  ) return 26;
+ 396              		.loc 1 235 34 view .LVU128
+ 397 017a 1920     		movs	r0, #25
+ 398              	.LVL54:
+ 235:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	13500  ) return 26;
+ 399              		.loc 1 235 34 view .LVU129
+ 400 017c 7047     		bx	lr
+ 401              	.LVL55:
+ 402              	.L29:
+ 236:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	16500  ) return 27;
+ 403              		.loc 1 236 34 view .LVU130
+ 404 017e 1A20     		movs	r0, #26
+ 405              	.LVL56:
+ 236:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	16500  ) return 27;
+ 406              		.loc 1 236 34 view .LVU131
+ 407 0180 7047     		bx	lr
+ 408              	.LVL57:
+ 409              	.L30:
+ 237:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	20000  ) return 28;
+ 410              		.loc 1 237 34 view .LVU132
+ 411 0182 1B20     		movs	r0, #27
+ 412              	.LVL58:
+ 237:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	20000  ) return 28;
+ 413              		.loc 1 237 34 view .LVU133
+ 414 0184 7047     		bx	lr
+ 415              	.LVL59:
+ 416              	.L31:
+ 238:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	24500  ) return 29;
+ 417              		.loc 1 238 34 view .LVU134
+ 418 0186 1C20     		movs	r0, #28
+ 419              	.LVL60:
+ 238:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	24500  ) return 29;
+ 420              		.loc 1 238 34 view .LVU135
+ 421 0188 7047     		bx	lr
+ 422              	.LVL61:
+ 423              	.L32:
+ 239:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	30000  ) return 30;
+ 424              		.loc 1 239 34 view .LVU136
+ 425 018a 1D20     		movs	r0, #29
+ 426              	.LVL62:
+ 239:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	30000  ) return 30;
+ 427              		.loc 1 239 34 view .LVU137
+ 428 018c 7047     		bx	lr
+ 429              	.LVL63:
+ 430              	.L33:
+ 240:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	36000  ) return 31;
+ 431              		.loc 1 240 34 view .LVU138
+ 432 018e 1E20     		movs	r0, #30
+ 433              	.LVL64:
+ 240:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	36000  ) return 31;
+ 434              		.loc 1 240 34 view .LVU139
+ 435 0190 7047     		bx	lr
+ 436              	.LVL65:
+ 437              	.L34:
+ 241:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	43000  ) return 32;
+ 438              		.loc 1 241 34 view .LVU140
+ 439 0192 1F20     		movs	r0, #31
+ 440              	.LVL66:
+ 241:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	43000  ) return 32;
+ 441              		.loc 1 241 34 view .LVU141
+ 442 0194 7047     		bx	lr
+ 443              	.LVL67:
+ 444              	.L35:
+ 242:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	51500  ) return 33;
+ 445              		.loc 1 242 34 view .LVU142
+ 446 0196 2020     		movs	r0, #32
+ 447              	.LVL68:
+ 242:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	51500  ) return 33;
+ 448              		.loc 1 242 34 view .LVU143
+ 449 0198 7047     		bx	lr
+ 450              	.LVL69:
+ 451              	.L36:
+ 243:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	62000  ) return 34;
+ 452              		.loc 1 243 34 view .LVU144
+ 453 019a 2120     		movs	r0, #33
+ 454              	.LVL70:
+ 243:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	62000  ) return 34;
+ 455              		.loc 1 243 34 view .LVU145
+ 456 019c 7047     		bx	lr
+ 457              	.LVL71:
+ 458              	.L37:
+ 244:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	75000  ) return 35;
+ 459              		.loc 1 244 34 view .LVU146
+ 460 019e 2220     		movs	r0, #34
+ 461              	.LVL72:
+ 244:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	75000  ) return 35;
+ 462              		.loc 1 244 34 view .LVU147
+ 463 01a0 7047     		bx	lr
+ 464              	.LVL73:
+ 465              	.L38:
+ 245:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	91000  ) return 36;
+ 466              		.loc 1 245 34 view .LVU148
+ 467 01a2 2320     		movs	r0, #35
+ 468              	.LVL74:
+ 245:tmc/IdDetection_Landungsbruecke.c **** 	else if(pulse <	91000  ) return 36;
+ 469              		.loc 1 245 34 view .LVU149
+ 470              	.LBE8:
+ 471              	.LBE9:
+ 247:tmc/IdDetection_Landungsbruecke.c **** 
+ 248:tmc/IdDetection_Landungsbruecke.c **** 	return 0; // error
+ 249:tmc/IdDetection_Landungsbruecke.c **** }
+ 472              		.loc 1 249 1 view .LVU150
+ 473 01a4 7047     		bx	lr
+ 474              	.L41:
+ 475 01a6 00BF     		.align	2
+ 476              	.L40:
+ 477 01a8 F7240100 		.word	74999
+ 478              		.cfi_endproc
+ 479              	.LFE5:
+ 481              		.align	1
+ 482              		.global	PORTB_IRQHandler
+ 483              		.syntax unified
+ 484              		.thumb
+ 485              		.thumb_func
+ 486              		.fpu softvfp
+ 488              	PORTB_IRQHandler:
+ 489              	.LFB1:
+  60:tmc/IdDetection_Landungsbruecke.c **** 	// Store the timing values
+ 490              		.loc 1 60 1 is_stmt 1 view -0
+ 491              		.cfi_startproc
+ 492              		@ args = 0, pretend = 0, frame = 0
+ 493              		@ frame_needed = 0, uses_anonymous_args = 0
+  62:tmc/IdDetection_Landungsbruecke.c **** 	uint32_t counterVal = counter;
+ 494              		.loc 1 62 2 view .LVU152
+  62:tmc/IdDetection_Landungsbruecke.c **** 	uint32_t counterVal = counter;
+ 495              		.loc 1 62 11 is_stmt 0 view .LVU153
+ 496 01ac 164B     		ldr	r3, .L57
+  60:tmc/IdDetection_Landungsbruecke.c **** 	// Store the timing values
+ 497              		.loc 1 60 1 view .LVU154
+ 498 01ae 30B5     		push	{r4, r5, lr}
+ 499              	.LCFI0:
+ 500              		.cfi_def_cfa_offset 12
+ 501              		.cfi_offset 4, -12
+ 502              		.cfi_offset 5, -8
+ 503              		.cfi_offset 14, -4
+  62:tmc/IdDetection_Landungsbruecke.c **** 	uint32_t counterVal = counter;
+ 504              		.loc 1 62 11 view .LVU155
+ 505 01b0 5968     		ldr	r1, [r3, #4]
+ 506              	.LVL75:
+  63:tmc/IdDetection_Landungsbruecke.c **** 
+ 507              		.loc 1 63 2 is_stmt 1 view .LVU156
+  66:tmc/IdDetection_Landungsbruecke.c **** 	PORTB_ISFR = PORT_ISFR_ISF_MASK;
+ 508              		.loc 1 66 11 is_stmt 0 view .LVU157
+ 509 01b2 164C     		ldr	r4, .L57+4
+  63:tmc/IdDetection_Landungsbruecke.c **** 
+ 510              		.loc 1 63 11 view .LVU158
+ 511 01b4 164B     		ldr	r3, .L57+8
+  66:tmc/IdDetection_Landungsbruecke.c **** 	PORTB_ISFR = PORT_ISFR_ISF_MASK;
+ 512              		.loc 1 66 11 view .LVU159
+ 513 01b6 D4F8A000 		ldr	r0, [r4, #160]
+  63:tmc/IdDetection_Landungsbruecke.c **** 
+ 514              		.loc 1 63 11 view .LVU160
+ 515 01ba 1A68     		ldr	r2, [r3]
+ 516              	.LVL76:
+  66:tmc/IdDetection_Landungsbruecke.c **** 	PORTB_ISFR = PORT_ISFR_ISF_MASK;
+ 517              		.loc 1 66 2 is_stmt 1 view .LVU161
+  67:tmc/IdDetection_Landungsbruecke.c **** 
+ 518              		.loc 1 67 2 view .LVU162
+  67:tmc/IdDetection_Landungsbruecke.c **** 
+ 519              		.loc 1 67 13 is_stmt 0 view .LVU163
+ 520 01bc 4FF0FF35 		mov	r5, #-1
+ 521 01c0 C4F8A050 		str	r5, [r4, #160]
+  70:tmc/IdDetection_Landungsbruecke.c **** 		return;
+ 522              		.loc 1 70 2 is_stmt 1 view .LVU164
+  70:tmc/IdDetection_Landungsbruecke.c **** 		return;
+ 523              		.loc 1 70 4 is_stmt 0 view .LVU165
+ 524 01c4 1C79     		ldrb	r4, [r3, #4]	@ zero_extendqisi2
+ 525 01c6 F4B1     		cbz	r4, .L42
+  75:tmc/IdDetection_Landungsbruecke.c **** 	{
+ 526              		.loc 1 75 2 is_stmt 1 view .LVU166
+  75:tmc/IdDetection_Landungsbruecke.c **** 	{
+ 527              		.loc 1 75 22 is_stmt 0 view .LVU167
+ 528 01c8 124C     		ldr	r4, .L57+12
+ 529 01ca E468     		ldr	r4, [r4, #12]
+ 530 01cc 6468     		ldr	r4, [r4, #4]
+  75:tmc/IdDetection_Landungsbruecke.c **** 	{
+ 531              		.loc 1 75 20 view .LVU168
+ 532 01ce A56B     		ldr	r5, [r4, #56]
+  75:tmc/IdDetection_Landungsbruecke.c **** 	{
+ 533              		.loc 1 75 4 view .LVU169
+ 534 01d0 2842     		tst	r0, r5
+ 535 01d2 0AD0     		beq	.L45
+  77:tmc/IdDetection_Landungsbruecke.c **** 		{	// Second ID pulse edge - store timer values -> state DONE
+ 536              		.loc 1 77 3 is_stmt 1 view .LVU170
+  77:tmc/IdDetection_Landungsbruecke.c **** 		{	// Second ID pulse edge - store timer values -> state DONE
+ 537              		.loc 1 77 5 is_stmt 0 view .LVU171
+ 538 01d4 1D7A     		ldrb	r5, [r3, #8]	@ zero_extendqisi2
+ 539 01d6 012D     		cmp	r5, #1
+  79:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch1.counter_2  = counterVal;
+ 540              		.loc 1 79 4 is_stmt 1 view .LVU172
+  81:tmc/IdDetection_Landungsbruecke.c **** 		}
+ 541              		.loc 1 81 27 is_stmt 0 view .LVU173
+ 542 01d8 09BF     		itett	eq
+ 543 01da 0225     		moveq	r5, #2
+  87:tmc/IdDetection_Landungsbruecke.c **** 		}
+ 544              		.loc 1 87 27 view .LVU174
+ 545 01dc 0125     		movne	r5, #1
+  79:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch1.counter_2  = counterVal;
+ 546              		.loc 1 79 27 view .LVU175
+ 547 01de 9961     		streq	r1, [r3, #24]
+  80:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch1.state      = ID_STATE_DONE;
+ 548              		.loc 1 80 4 is_stmt 1 view .LVU176
+  80:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch1.state      = ID_STATE_DONE;
+ 549              		.loc 1 80 27 is_stmt 0 view .LVU177
+ 550 01e0 1A61     		streq	r2, [r3, #16]
+  81:tmc/IdDetection_Landungsbruecke.c **** 		}
+ 551              		.loc 1 81 4 is_stmt 1 view .LVU178
+  85:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch1.counter_1  = counterVal;
+ 552              		.loc 1 85 4 view .LVU179
+  85:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch1.counter_1  = counterVal;
+ 553              		.loc 1 85 27 is_stmt 0 view .LVU180
+ 554 01e2 1CBF     		itt	ne
+ 555 01e4 5961     		strne	r1, [r3, #20]
+  86:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch1.state      = ID_STATE_WAIT_HIGH;
+ 556              		.loc 1 86 4 is_stmt 1 view .LVU181
+  86:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch1.state      = ID_STATE_WAIT_HIGH;
+ 557              		.loc 1 86 27 is_stmt 0 view .LVU182
+ 558 01e6 DA60     		strne	r2, [r3, #12]
+  87:tmc/IdDetection_Landungsbruecke.c **** 		}
+ 559              		.loc 1 87 4 is_stmt 1 view .LVU183
+  87:tmc/IdDetection_Landungsbruecke.c **** 		}
+ 560              		.loc 1 87 27 is_stmt 0 view .LVU184
+ 561 01e8 1D72     		strb	r5, [r3, #8]
+ 562              	.L45:
+  93:tmc/IdDetection_Landungsbruecke.c **** 	{
+ 563              		.loc 1 93 2 is_stmt 1 view .LVU185
+  93:tmc/IdDetection_Landungsbruecke.c **** 	{
+ 564              		.loc 1 93 20 is_stmt 0 view .LVU186
+ 565 01ea A46D     		ldr	r4, [r4, #88]
+  93:tmc/IdDetection_Landungsbruecke.c **** 	{
+ 566              		.loc 1 93 4 view .LVU187
+ 567 01ec 2042     		tst	r0, r4
+ 568 01ee 0AD0     		beq	.L42
+  95:tmc/IdDetection_Landungsbruecke.c **** 		{	// Second ID pulse edge - store timer values -> state DONE
+ 569              		.loc 1 95 3 is_stmt 1 view .LVU188
+  95:tmc/IdDetection_Landungsbruecke.c **** 		{	// Second ID pulse edge - store timer values -> state DONE
+ 570              		.loc 1 95 5 is_stmt 0 view .LVU189
+ 571 01f0 187F     		ldrb	r0, [r3, #28]	@ zero_extendqisi2
+ 572              	.LVL77:
+  95:tmc/IdDetection_Landungsbruecke.c **** 		{	// Second ID pulse edge - store timer values -> state DONE
+ 573              		.loc 1 95 5 view .LVU190
+ 574 01f2 0128     		cmp	r0, #1
+  97:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch2.counter_2  = counterVal;
+ 575              		.loc 1 97 4 is_stmt 1 view .LVU191
+  98:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch2.state      = ID_STATE_DONE;
+ 576              		.loc 1 98 27 is_stmt 0 view .LVU192
+ 577 01f4 0BBF     		itete	eq
+ 578 01f6 5A62     		streq	r2, [r3, #36]
+ 104:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch2.state      = ID_STATE_WAIT_HIGH;
+ 579              		.loc 1 104 27 view .LVU193
+ 580 01f8 1A62     		strne	r2, [r3, #32]
+  99:tmc/IdDetection_Landungsbruecke.c **** 		}
+ 581              		.loc 1 99 27 view .LVU194
+ 582 01fa 0222     		moveq	r2, #2
+ 583              	.LVL78:
+ 105:tmc/IdDetection_Landungsbruecke.c **** 		}
+ 584              		.loc 1 105 27 view .LVU195
+ 585 01fc 0122     		movne	r2, #1
+  97:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch2.counter_2  = counterVal;
+ 586              		.loc 1 97 27 view .LVU196
+ 587 01fe 0CBF     		ite	eq
+ 588 0200 D962     		streq	r1, [r3, #44]
+  98:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch2.state      = ID_STATE_DONE;
+ 589              		.loc 1 98 4 is_stmt 1 view .LVU197
+  99:tmc/IdDetection_Landungsbruecke.c **** 		}
+ 590              		.loc 1 99 4 view .LVU198
+ 103:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch2.counter_1  = counterVal;
+ 591              		.loc 1 103 4 view .LVU199
+ 103:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch2.counter_1  = counterVal;
+ 592              		.loc 1 103 27 is_stmt 0 view .LVU200
+ 593 0202 9962     		strne	r1, [r3, #40]
+ 104:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch2.state      = ID_STATE_WAIT_HIGH;
+ 594              		.loc 1 104 4 is_stmt 1 view .LVU201
+ 105:tmc/IdDetection_Landungsbruecke.c **** 		}
+ 595              		.loc 1 105 4 view .LVU202
+ 105:tmc/IdDetection_Landungsbruecke.c **** 		}
+ 596              		.loc 1 105 27 is_stmt 0 view .LVU203
+ 597 0204 1A77     		strb	r2, [r3, #28]
+ 598              	.L42:
+ 108:tmc/IdDetection_Landungsbruecke.c **** 
+ 599              		.loc 1 108 1 view .LVU204
+ 600 0206 30BD     		pop	{r4, r5, pc}
+ 601              	.L58:
+ 602              		.align	2
+ 603              	.L57:
+ 604 0208 00800B40 		.word	1074495488
+ 605 020c 00A00440 		.word	1074044928
+ 606 0210 00000000 		.word	.LANCHOR0
+ 607 0214 00000000 		.word	HAL
+ 608              		.cfi_endproc
+ 609              	.LFE1:
+ 611              		.align	1
+ 612              		.global	FTM2_IRQHandler
+ 613              		.syntax unified
+ 614              		.thumb
+ 615              		.thumb_func
+ 616              		.fpu softvfp
+ 618              	FTM2_IRQHandler:
+ 619              	.LFB2:
+ 111:tmc/IdDetection_Landungsbruecke.c **** 	// clear timer overflow flag
+ 620              		.loc 1 111 1 is_stmt 1 view -0
+ 621              		.cfi_startproc
+ 622              		@ args = 0, pretend = 0, frame = 0
+ 623              		@ frame_needed = 0, uses_anonymous_args = 0
+ 624              		@ link register save eliminated.
+ 113:tmc/IdDetection_Landungsbruecke.c **** 
+ 625              		.loc 1 113 2 view .LVU206
+ 113:tmc/IdDetection_Landungsbruecke.c **** 
+ 626              		.loc 1 113 10 is_stmt 0 view .LVU207
+ 627 0218 134A     		ldr	r2, .L71
+ 115:tmc/IdDetection_Landungsbruecke.c **** 
+ 628              		.loc 1 115 9 view .LVU208
+ 629 021a 1448     		ldr	r0, .L71+4
+ 113:tmc/IdDetection_Landungsbruecke.c **** 
+ 630              		.loc 1 113 10 view .LVU209
+ 631 021c 1368     		ldr	r3, [r2]
+ 632 021e 23F08003 		bic	r3, r3, #128
+ 633 0222 1360     		str	r3, [r2]
+ 115:tmc/IdDetection_Landungsbruecke.c **** 
+ 634              		.loc 1 115 2 is_stmt 1 view .LVU210
+ 115:tmc/IdDetection_Landungsbruecke.c **** 
+ 635              		.loc 1 115 9 is_stmt 0 view .LVU211
+ 636 0224 0168     		ldr	r1, [r0]
+ 637 0226 0131     		adds	r1, r1, #1
+ 118:tmc/IdDetection_Landungsbruecke.c **** 		return;
+ 638              		.loc 1 118 2 is_stmt 1 view .LVU212
+ 118:tmc/IdDetection_Landungsbruecke.c **** 		return;
+ 639              		.loc 1 118 4 is_stmt 0 view .LVU213
+ 640 0228 6329     		cmp	r1, #99
+ 641 022a 0346     		mov	r3, r0
+ 642 022c 01D8     		bhi	.L60
+ 115:tmc/IdDetection_Landungsbruecke.c **** 
+ 643              		.loc 1 115 9 view .LVU214
+ 644 022e 0160     		str	r1, [r0]
+ 645 0230 7047     		bx	lr
+ 646              	.L60:
+ 122:tmc/IdDetection_Landungsbruecke.c **** 	FTM2_SC &= ~FTM_SC_CLKS_MASK;
+ 647              		.loc 1 122 2 is_stmt 1 view .LVU215
+ 122:tmc/IdDetection_Landungsbruecke.c **** 	FTM2_SC &= ~FTM_SC_CLKS_MASK;
+ 648              		.loc 1 122 10 is_stmt 0 view .LVU216
+ 649 0232 0021     		movs	r1, #0
+ 650 0234 0160     		str	r1, [r0]
+ 123:tmc/IdDetection_Landungsbruecke.c **** 
+ 651              		.loc 1 123 2 is_stmt 1 view .LVU217
+ 123:tmc/IdDetection_Landungsbruecke.c **** 
+ 652              		.loc 1 123 10 is_stmt 0 view .LVU218
+ 653 0236 1168     		ldr	r1, [r2]
+ 654 0238 21F01801 		bic	r1, r1, #24
+ 655 023c 1160     		str	r1, [r2]
+ 126:tmc/IdDetection_Landungsbruecke.c **** 		return;
+ 656              		.loc 1 126 2 is_stmt 1 view .LVU219
+ 126:tmc/IdDetection_Landungsbruecke.c **** 		return;
+ 657              		.loc 1 126 4 is_stmt 0 view .LVU220
+ 658 023e 0279     		ldrb	r2, [r0, #4]	@ zero_extendqisi2
+ 659 0240 4AB1     		cbz	r2, .L59
+ 130:tmc/IdDetection_Landungsbruecke.c **** 	{	// Only detected ID pulse rising edge -> Timeout
+ 660              		.loc 1 130 2 is_stmt 1 view .LVU221
+ 130:tmc/IdDetection_Landungsbruecke.c **** 	{	// Only detected ID pulse rising edge -> Timeout
+ 661              		.loc 1 130 16 is_stmt 0 view .LVU222
+ 662 0242 027A     		ldrb	r2, [r0, #8]	@ zero_extendqisi2
+ 130:tmc/IdDetection_Landungsbruecke.c **** 	{	// Only detected ID pulse rising edge -> Timeout
+ 663              		.loc 1 130 4 view .LVU223
+ 664 0244 012A     		cmp	r2, #1
+ 665 0246 07D1     		bne	.L63
+ 132:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 666              		.loc 1 132 3 is_stmt 1 view .LVU224
+ 132:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 667              		.loc 1 132 21 is_stmt 0 view .LVU225
+ 668 0248 0522     		movs	r2, #5
+ 669              	.L69:
+ 136:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 670              		.loc 1 136 21 view .LVU226
+ 671 024a 1A72     		strb	r2, [r3, #8]
+ 672              	.L64:
+ 139:tmc/IdDetection_Landungsbruecke.c **** 	{	// Only detected ID pulse rising edge -> Timeout
+ 673              		.loc 1 139 2 is_stmt 1 view .LVU227
+ 139:tmc/IdDetection_Landungsbruecke.c **** 	{	// Only detected ID pulse rising edge -> Timeout
+ 674              		.loc 1 139 16 is_stmt 0 view .LVU228
+ 675 024c 1A7F     		ldrb	r2, [r3, #28]	@ zero_extendqisi2
+ 139:tmc/IdDetection_Landungsbruecke.c **** 	{	// Only detected ID pulse rising edge -> Timeout
+ 676              		.loc 1 139 4 view .LVU229
+ 677 024e 012A     		cmp	r2, #1
+ 678 0250 06D1     		bne	.L65
+ 141:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 679              		.loc 1 141 3 is_stmt 1 view .LVU230
+ 141:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 680              		.loc 1 141 21 is_stmt 0 view .LVU231
+ 681 0252 0522     		movs	r2, #5
+ 682              	.L70:
+ 145:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 683              		.loc 1 145 21 view .LVU232
+ 684 0254 1A77     		strb	r2, [r3, #28]
+ 685              	.L59:
+ 147:tmc/IdDetection_Landungsbruecke.c **** 
+ 686              		.loc 1 147 1 view .LVU233
+ 687 0256 7047     		bx	lr
+ 688              	.L63:
+ 134:tmc/IdDetection_Landungsbruecke.c **** 	{	// Did not detect any edge -> No answer
+ 689              		.loc 1 134 7 is_stmt 1 view .LVU234
+ 134:tmc/IdDetection_Landungsbruecke.c **** 	{	// Did not detect any edge -> No answer
+ 690              		.loc 1 134 9 is_stmt 0 view .LVU235
+ 691 0258 002A     		cmp	r2, #0
+ 692 025a F7D1     		bne	.L64
+ 136:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 693              		.loc 1 136 3 is_stmt 1 view .LVU236
+ 136:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 694              		.loc 1 136 21 is_stmt 0 view .LVU237
+ 695 025c 0422     		movs	r2, #4
+ 696 025e F4E7     		b	.L69
+ 697              	.L65:
+ 143:tmc/IdDetection_Landungsbruecke.c **** 	{	// Did not detect any edge -> No answer
+ 698              		.loc 1 143 7 is_stmt 1 view .LVU238
+ 143:tmc/IdDetection_Landungsbruecke.c **** 	{	// Did not detect any edge -> No answer
+ 699              		.loc 1 143 9 is_stmt 0 view .LVU239
+ 700 0260 002A     		cmp	r2, #0
+ 701 0262 F8D1     		bne	.L59
+ 145:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 702              		.loc 1 145 3 is_stmt 1 view .LVU240
+ 145:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 703              		.loc 1 145 21 is_stmt 0 view .LVU241
+ 704 0264 0422     		movs	r2, #4
+ 705 0266 F5E7     		b	.L70
+ 706              	.L72:
+ 707              		.align	2
+ 708              	.L71:
+ 709 0268 00800B40 		.word	1074495488
+ 710 026c 00000000 		.word	.LANCHOR0
+ 711              		.cfi_endproc
+ 712              	.LFE2:
+ 714              		.align	1
+ 715              		.global	IDDetection_init
+ 716              		.syntax unified
+ 717              		.thumb
+ 718              		.thumb_func
+ 719              		.fpu softvfp
+ 721              	IDDetection_init:
+ 722              	.LFB3:
+ 150:tmc/IdDetection_Landungsbruecke.c **** 	isScanning = false;
+ 723              		.loc 1 150 1 is_stmt 1 view -0
+ 724              		.cfi_startproc
+ 725              		@ args = 0, pretend = 0, frame = 0
+ 726              		@ frame_needed = 0, uses_anonymous_args = 0
+ 151:tmc/IdDetection_Landungsbruecke.c **** 
+ 727              		.loc 1 151 2 view .LVU243
+ 151:tmc/IdDetection_Landungsbruecke.c **** 
+ 728              		.loc 1 151 13 is_stmt 0 view .LVU244
+ 729 0270 244B     		ldr	r3, .L74
+ 730 0272 0022     		movs	r2, #0
+ 150:tmc/IdDetection_Landungsbruecke.c **** 	isScanning = false;
+ 731              		.loc 1 150 1 view .LVU245
+ 732 0274 10B5     		push	{r4, lr}
+ 733              	.LCFI1:
+ 734              		.cfi_def_cfa_offset 8
+ 735              		.cfi_offset 4, -8
+ 736              		.cfi_offset 14, -4
+ 155:tmc/IdDetection_Landungsbruecke.c **** 
+ 737              		.loc 1 155 12 view .LVU246
+ 738 0276 244C     		ldr	r4, .L74+4
+ 151:tmc/IdDetection_Landungsbruecke.c **** 
+ 739              		.loc 1 151 13 view .LVU247
+ 740 0278 1A71     		strb	r2, [r3, #4]
+ 155:tmc/IdDetection_Landungsbruecke.c **** 
+ 741              		.loc 1 155 2 is_stmt 1 view .LVU248
+ 155:tmc/IdDetection_Landungsbruecke.c **** 
+ 742              		.loc 1 155 12 is_stmt 0 view .LVU249
+ 743 027a 41F23002 		movw	r2, #4144
+ 177:tmc/IdDetection_Landungsbruecke.c **** 
+ 744              		.loc 1 177 2 view .LVU250
+ 745 027e 4020     		movs	r0, #64
+ 155:tmc/IdDetection_Landungsbruecke.c **** 
+ 746              		.loc 1 155 12 view .LVU251
+ 747 0280 A358     		ldr	r3, [r4, r2]
+ 748 0282 43F08073 		orr	r3, r3, #16777216
+ 749 0286 A350     		str	r3, [r4, r2]
+ 158:tmc/IdDetection_Landungsbruecke.c **** 
+ 750              		.loc 1 158 2 is_stmt 1 view .LVU252
+ 158:tmc/IdDetection_Landungsbruecke.c **** 
+ 751              		.loc 1 158 12 is_stmt 0 view .LVU253
+ 752 0288 204B     		ldr	r3, .L74+8
+ 753 028a 5A6D     		ldr	r2, [r3, #84]
+ 754 028c 42F06502 		orr	r2, r2, #101
+ 755 0290 5A65     		str	r2, [r3, #84]
+ 161:tmc/IdDetection_Landungsbruecke.c **** 
+ 756              		.loc 1 161 2 is_stmt 1 view .LVU254
+ 161:tmc/IdDetection_Landungsbruecke.c **** 
+ 757              		.loc 1 161 10 is_stmt 0 view .LVU255
+ 758 0292 1A68     		ldr	r2, [r3]
+ 759 0294 42F00B02 		orr	r2, r2, #11
+ 760 0298 1A60     		str	r2, [r3]
+ 165:tmc/IdDetection_Landungsbruecke.c **** 
+ 761              		.loc 1 165 2 is_stmt 1 view .LVU256
+ 165:tmc/IdDetection_Landungsbruecke.c **** 
+ 762              		.loc 1 165 13 is_stmt 0 view .LVU257
+ 763 029a 41F2A152 		movw	r2, #5537
+ 764 029e DA64     		str	r2, [r3, #76]
+ 168:tmc/IdDetection_Landungsbruecke.c **** 
+ 765              		.loc 1 168 2 is_stmt 1 view .LVU258
+ 168:tmc/IdDetection_Landungsbruecke.c **** 
+ 766              		.loc 1 168 12 is_stmt 0 view .LVU259
+ 767 02a0 D3F88420 		ldr	r2, [r3, #132]
+ 768 02a4 C3F88420 		str	r2, [r3, #132]
+ 171:tmc/IdDetection_Landungsbruecke.c **** 
+ 769              		.loc 1 171 2 is_stmt 1 view .LVU260
+ 171:tmc/IdDetection_Landungsbruecke.c **** 
+ 770              		.loc 1 171 12 is_stmt 0 view .LVU261
+ 771 02a8 DA68     		ldr	r2, [r3, #12]
+ 772 02aa 42F02802 		orr	r2, r2, #40
+ 773 02ae DA60     		str	r2, [r3, #12]
+ 174:tmc/IdDetection_Landungsbruecke.c **** 
+ 774              		.loc 1 174 2 is_stmt 1 view .LVU262
+ 174:tmc/IdDetection_Landungsbruecke.c **** 
+ 775              		.loc 1 174 10 is_stmt 0 view .LVU263
+ 776 02b0 1A68     		ldr	r2, [r3]
+ 777 02b2 42F04002 		orr	r2, r2, #64
+ 778 02b6 1A60     		str	r2, [r3]
+ 177:tmc/IdDetection_Landungsbruecke.c **** 
+ 779              		.loc 1 177 2 is_stmt 1 view .LVU264
+ 780 02b8 FFF7FEFF 		bl	enable_irq
+ 781              	.LVL79:
+ 181:tmc/IdDetection_Landungsbruecke.c **** 
+ 782              		.loc 1 181 2 view .LVU265
+ 181:tmc/IdDetection_Landungsbruecke.c **** 
+ 783              		.loc 1 181 12 is_stmt 0 view .LVU266
+ 784 02bc 41F23802 		movw	r2, #4152
+ 785 02c0 A358     		ldr	r3, [r4, r2]
+ 786 02c2 43F48063 		orr	r3, r3, #1024
+ 787 02c6 A350     		str	r3, [r4, r2]
+ 184:tmc/IdDetection_Landungsbruecke.c **** 
+ 788              		.loc 1 184 2 is_stmt 1 view .LVU267
+ 184:tmc/IdDetection_Landungsbruecke.c **** 
+ 789              		.loc 1 184 5 is_stmt 0 view .LVU268
+ 790 02c8 114B     		ldr	r3, .L74+12
+ 791 02ca DC68     		ldr	r4, [r3, #12]
+ 184:tmc/IdDetection_Landungsbruecke.c **** 
+ 792              		.loc 1 184 17 view .LVU269
+ 793 02cc D4E90030 		ldrd	r3, r0, [r4]
+ 184:tmc/IdDetection_Landungsbruecke.c **** 
+ 794              		.loc 1 184 2 view .LVU270
+ 795 02d0 DB68     		ldr	r3, [r3, #12]
+ 796 02d2 0830     		adds	r0, r0, #8
+ 797 02d4 9847     		blx	r3
+ 798              	.LVL80:
+ 187:tmc/IdDetection_Landungsbruecke.c **** 	PORT_PCR_REG(HAL.IOs->pins->ID_CH1.portBase, HAL.IOs->pins->ID_CH1.bit)  = PORT_PCR_MUX(1) | PORT_
+ 799              		.loc 1 187 2 is_stmt 1 view .LVU271
+ 800 02d6 6368     		ldr	r3, [r4, #4]
+ 187:tmc/IdDetection_Landungsbruecke.c **** 	PORT_PCR_REG(HAL.IOs->pins->ID_CH1.portBase, HAL.IOs->pins->ID_CH1.bit)  = PORT_PCR_MUX(1) | PORT_
+ 801              		.loc 1 187 75 is_stmt 0 view .LVU272
+ 802 02d8 0E4A     		ldr	r2, .L74+16
+ 187:tmc/IdDetection_Landungsbruecke.c **** 	PORT_PCR_REG(HAL.IOs->pins->ID_CH1.portBase, HAL.IOs->pins->ID_CH1.bit)  = PORT_PCR_MUX(1) | PORT_
+ 803              		.loc 1 187 2 view .LVU273
+ 804 02da 996A     		ldr	r1, [r3, #40]
+ 805 02dc 93F83C00 		ldrb	r0, [r3, #60]	@ zero_extendqisi2
+ 187:tmc/IdDetection_Landungsbruecke.c **** 	PORT_PCR_REG(HAL.IOs->pins->ID_CH1.portBase, HAL.IOs->pins->ID_CH1.bit)  = PORT_PCR_MUX(1) | PORT_
+ 806              		.loc 1 187 75 view .LVU274
+ 807 02e0 41F82020 		str	r2, [r1, r0, lsl #2]
+ 188:tmc/IdDetection_Landungsbruecke.c **** 
+ 808              		.loc 1 188 2 is_stmt 1 view .LVU275
+ 809 02e4 996C     		ldr	r1, [r3, #72]
+ 810 02e6 93F85C30 		ldrb	r3, [r3, #92]	@ zero_extendqisi2
+ 188:tmc/IdDetection_Landungsbruecke.c **** 
+ 811              		.loc 1 188 75 is_stmt 0 view .LVU276
+ 812 02ea 41F82320 		str	r2, [r1, r3, lsl #2]
+ 191:tmc/IdDetection_Landungsbruecke.c **** 
+ 813              		.loc 1 191 2 is_stmt 1 view .LVU277
+ 191:tmc/IdDetection_Landungsbruecke.c **** 
+ 814              		.loc 1 191 13 is_stmt 0 view .LVU278
+ 815 02ee 0A4B     		ldr	r3, .L74+20
+ 816 02f0 4FF0FF32 		mov	r2, #-1
+ 195:tmc/IdDetection_Landungsbruecke.c **** 
+ 817              		.loc 1 195 1 view .LVU279
+ 818 02f4 BDE81040 		pop	{r4, lr}
+ 819              	.LCFI2:
+ 820              		.cfi_restore 14
+ 821              		.cfi_restore 4
+ 822              		.cfi_def_cfa_offset 0
+ 191:tmc/IdDetection_Landungsbruecke.c **** 
+ 823              		.loc 1 191 13 view .LVU280
+ 824 02f8 C3F8A020 		str	r2, [r3, #160]
+ 194:tmc/IdDetection_Landungsbruecke.c **** }
+ 825              		.loc 1 194 2 is_stmt 1 view .LVU281
+ 826 02fc 5820     		movs	r0, #88
+ 827 02fe FFF7FEBF 		b	enable_irq
+ 828              	.LVL81:
+ 829              	.L75:
+ 830 0302 00BF     		.align	2
+ 831              	.L74:
+ 832 0304 00000000 		.word	.LANCHOR0
+ 833 0308 00700440 		.word	1074032640
+ 834 030c 00800B40 		.word	1074495488
+ 835 0310 00000000 		.word	HAL
+ 836 0314 02010B00 		.word	721154
+ 837 0318 00A00440 		.word	1074044928
+ 838              		.cfi_endproc
+ 839              	.LFE3:
+ 841              		.align	1
+ 842              		.global	IDDetection_deInit
+ 843              		.syntax unified
+ 844              		.thumb
+ 845              		.thumb_func
+ 846              		.fpu softvfp
+ 848              	IDDetection_deInit:
+ 849              	.LFB4:
+ 198:tmc/IdDetection_Landungsbruecke.c **** 	disable_irq(INT_FTM2 - 16);
+ 850              		.loc 1 198 1 view -0
+ 851              		.cfi_startproc
+ 852              		@ args = 0, pretend = 0, frame = 0
+ 853              		@ frame_needed = 0, uses_anonymous_args = 0
+ 199:tmc/IdDetection_Landungsbruecke.c **** 	FTM2_SC &= ~FTM_SC_CLKS_MASK;
+ 854              		.loc 1 199 2 view .LVU283
+ 198:tmc/IdDetection_Landungsbruecke.c **** 	disable_irq(INT_FTM2 - 16);
+ 855              		.loc 1 198 1 is_stmt 0 view .LVU284
+ 856 031c 08B5     		push	{r3, lr}
+ 857              	.LCFI3:
+ 858              		.cfi_def_cfa_offset 8
+ 859              		.cfi_offset 3, -8
+ 860              		.cfi_offset 14, -4
+ 199:tmc/IdDetection_Landungsbruecke.c **** 	FTM2_SC &= ~FTM_SC_CLKS_MASK;
+ 861              		.loc 1 199 2 view .LVU285
+ 862 031e 4020     		movs	r0, #64
+ 863 0320 FFF7FEFF 		bl	disable_irq
+ 864              	.LVL82:
+ 200:tmc/IdDetection_Landungsbruecke.c **** 	FTM2_SC &= ~FTM_SC_TOF_MASK;
+ 865              		.loc 1 200 2 is_stmt 1 view .LVU286
+ 200:tmc/IdDetection_Landungsbruecke.c **** 	FTM2_SC &= ~FTM_SC_TOF_MASK;
+ 866              		.loc 1 200 10 is_stmt 0 view .LVU287
+ 867 0324 084B     		ldr	r3, .L77
+ 868 0326 1A68     		ldr	r2, [r3]
+ 869 0328 22F01802 		bic	r2, r2, #24
+ 870 032c 1A60     		str	r2, [r3]
+ 201:tmc/IdDetection_Landungsbruecke.c **** 
+ 871              		.loc 1 201 2 is_stmt 1 view .LVU288
+ 201:tmc/IdDetection_Landungsbruecke.c **** 
+ 872              		.loc 1 201 10 is_stmt 0 view .LVU289
+ 873 032e 1A68     		ldr	r2, [r3]
+ 874 0330 22F08002 		bic	r2, r2, #128
+ 875 0334 1A60     		str	r2, [r3]
+ 203:tmc/IdDetection_Landungsbruecke.c **** 	PORTB_ISFR = -1;
+ 876              		.loc 1 203 2 is_stmt 1 view .LVU290
+ 877 0336 5820     		movs	r0, #88
+ 878 0338 FFF7FEFF 		bl	disable_irq
+ 879              	.LVL83:
+ 204:tmc/IdDetection_Landungsbruecke.c **** }
+ 880              		.loc 1 204 2 view .LVU291
+ 204:tmc/IdDetection_Landungsbruecke.c **** }
+ 881              		.loc 1 204 13 is_stmt 0 view .LVU292
+ 882 033c 034B     		ldr	r3, .L77+4
+ 883 033e 4FF0FF32 		mov	r2, #-1
+ 884 0342 C3F8A020 		str	r2, [r3, #160]
+ 205:tmc/IdDetection_Landungsbruecke.c **** 
+ 885              		.loc 1 205 1 view .LVU293
+ 886 0346 08BD     		pop	{r3, pc}
+ 887              	.L78:
+ 888              		.align	2
+ 889              	.L77:
+ 890 0348 00800B40 		.word	1074495488
+ 891 034c 00A00440 		.word	1074044928
+ 892              		.cfi_endproc
+ 893              	.LFE4:
+ 895              		.align	1
+ 896              		.global	IDDetection_detect
+ 897              		.syntax unified
+ 898              		.thumb
+ 899              		.thumb_func
+ 900              		.fpu softvfp
+ 902              	IDDetection_detect:
+ 903              	.LVL84:
+ 904              	.LFB6:
+ 250:tmc/IdDetection_Landungsbruecke.c **** 
+ 251:tmc/IdDetection_Landungsbruecke.c **** // Detect IDs of attached boards - returns true when done
+ 252:tmc/IdDetection_Landungsbruecke.c **** uint8_t IDDetection_detect(IdAssignmentTypeDef *out)
+ 253:tmc/IdDetection_Landungsbruecke.c **** {
+ 905              		.loc 1 253 1 is_stmt 1 view -0
+ 906              		.cfi_startproc
+ 907              		@ args = 0, pretend = 0, frame = 8
+ 908              		@ frame_needed = 0, uses_anonymous_args = 0
+ 254:tmc/IdDetection_Landungsbruecke.c **** 	if(!isScanning)
+ 909              		.loc 1 254 2 view .LVU295
+ 910              		.loc 1 254 5 is_stmt 0 view .LVU296
+ 911 0350 564B     		ldr	r3, .L104
+ 253:tmc/IdDetection_Landungsbruecke.c **** 	if(!isScanning)
+ 912              		.loc 1 253 1 view .LVU297
+ 913 0352 F7B5     		push	{r0, r1, r2, r4, r5, r6, r7, lr}
+ 914              	.LCFI4:
+ 915              		.cfi_def_cfa_offset 32
+ 916              		.cfi_offset 4, -20
+ 917              		.cfi_offset 5, -16
+ 918              		.cfi_offset 6, -12
+ 919              		.cfi_offset 7, -8
+ 920              		.cfi_offset 14, -4
+ 921              		.loc 1 254 4 view .LVU298
+ 922 0354 1D79     		ldrb	r5, [r3, #4]	@ zero_extendqisi2
+ 253:tmc/IdDetection_Landungsbruecke.c **** 	if(!isScanning)
+ 923              		.loc 1 253 1 view .LVU299
+ 924 0356 0646     		mov	r6, r0
+ 925 0358 1C46     		mov	r4, r3
+ 926              		.loc 1 254 4 view .LVU300
+ 927 035a DDB9     		cbnz	r5, .L80
+ 255:tmc/IdDetection_Landungsbruecke.c **** 	{
+ 256:tmc/IdDetection_Landungsbruecke.c **** 		FTM2_SC &= ~FTM_SC_CLKS_MASK;  // stop timer
+ 928              		.loc 1 256 3 is_stmt 1 view .LVU301
+ 929              		.loc 1 256 11 is_stmt 0 view .LVU302
+ 930 035c 544A     		ldr	r2, .L104+4
+ 931 035e 1168     		ldr	r1, [r2]
+ 932 0360 21F01801 		bic	r1, r1, #24
+ 933 0364 1160     		str	r1, [r2]
+ 257:tmc/IdDetection_Landungsbruecke.c **** 		FTM2_CNTIN = TIMER_START;      // clear counter
+ 934              		.loc 1 257 3 is_stmt 1 view .LVU303
+ 935              		.loc 1 257 14 is_stmt 0 view .LVU304
+ 936 0366 41F2A151 		movw	r1, #5537
+ 937 036a D164     		str	r1, [r2, #76]
+ 258:tmc/IdDetection_Landungsbruecke.c **** 
+ 259:tmc/IdDetection_Landungsbruecke.c **** 		IdState.ch1.state       = ID_STATE_WAIT_LOW;
+ 938              		.loc 1 259 3 is_stmt 1 view .LVU305
+ 939              		.loc 1 259 27 is_stmt 0 view .LVU306
+ 940 036c 1D72     		strb	r5, [r3, #8]
+ 260:tmc/IdDetection_Landungsbruecke.c **** 		IdState.ch1.detectedBy  = FOUND_BY_NONE;
+ 941              		.loc 1 260 3 is_stmt 1 view .LVU307
+ 942              		.loc 1 260 27 is_stmt 0 view .LVU308
+ 943 036e 9D72     		strb	r5, [r3, #10]
+ 261:tmc/IdDetection_Landungsbruecke.c **** 		IdState.ch2.state       = ID_STATE_WAIT_LOW;
+ 944              		.loc 1 261 3 is_stmt 1 view .LVU309
+ 945              		.loc 1 261 27 is_stmt 0 view .LVU310
+ 946 0370 1D77     		strb	r5, [r3, #28]
+ 262:tmc/IdDetection_Landungsbruecke.c **** 		IdState.ch2.detectedBy  = FOUND_BY_NONE;
+ 947              		.loc 1 262 3 is_stmt 1 view .LVU311
+ 948              		.loc 1 262 27 is_stmt 0 view .LVU312
+ 949 0372 9D77     		strb	r5, [r3, #30]
+ 263:tmc/IdDetection_Landungsbruecke.c **** 		isScanning = true;
+ 950              		.loc 1 263 3 is_stmt 1 view .LVU313
+ 951              		.loc 1 263 14 is_stmt 0 view .LVU314
+ 952 0374 0121     		movs	r1, #1
+ 953 0376 1971     		strb	r1, [r3, #4]
+ 264:tmc/IdDetection_Landungsbruecke.c **** 
+ 265:tmc/IdDetection_Landungsbruecke.c **** 		FTM2_SC |= FTM_SC_CLKS(1);  // start timer
+ 954              		.loc 1 265 3 is_stmt 1 view .LVU315
+ 955              		.loc 1 265 11 is_stmt 0 view .LVU316
+ 956 0378 1368     		ldr	r3, [r2]
+ 957 037a 43F00803 		orr	r3, r3, #8
+ 958 037e 1360     		str	r3, [r2]
+ 266:tmc/IdDetection_Landungsbruecke.c **** 		ID_CLK_HIGH();
+ 959              		.loc 1 266 3 is_stmt 1 view .LVU317
+ 960 0380 4C4B     		ldr	r3, .L104+8
+ 961 0382 DB68     		ldr	r3, [r3, #12]
+ 962 0384 D3E90030 		ldrd	r3, r0, [r3]
+ 963              	.LVL85:
+ 964              		.loc 1 266 3 is_stmt 0 view .LVU318
+ 965 0388 5B69     		ldr	r3, [r3, #20]
+ 966 038a 0830     		adds	r0, r0, #8
+ 967 038c 9847     		blx	r3
+ 968              	.LVL86:
+ 969              		.loc 1 266 16 is_stmt 1 view .LVU319
+ 267:tmc/IdDetection_Landungsbruecke.c **** 
+ 268:tmc/IdDetection_Landungsbruecke.c **** 		return false;
+ 970              		.loc 1 268 3 view .LVU320
+ 971              	.L81:
+ 269:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 270:tmc/IdDetection_Landungsbruecke.c **** 
+ 271:tmc/IdDetection_Landungsbruecke.c **** 	if(!IDSTATE_SCAN_DONE(IdState))
+ 272:tmc/IdDetection_Landungsbruecke.c **** 		return false;
+ 273:tmc/IdDetection_Landungsbruecke.c **** 
+ 274:tmc/IdDetection_Landungsbruecke.c **** 	// Scan complete
+ 275:tmc/IdDetection_Landungsbruecke.c **** 	isScanning = false;
+ 276:tmc/IdDetection_Landungsbruecke.c **** 	ID_CLK_LOW();
+ 277:tmc/IdDetection_Landungsbruecke.c **** 	FTM2_SC &= ~FTM_SC_CLKS_MASK; // stop timer
+ 278:tmc/IdDetection_Landungsbruecke.c **** 
+ 279:tmc/IdDetection_Landungsbruecke.c **** 	// ======== CH0 ==========
+ 280:tmc/IdDetection_Landungsbruecke.c **** 	// Assign ID detection state for this channel
+ 281:tmc/IdDetection_Landungsbruecke.c **** 	out->ch1.state = IdState.ch1.state;
+ 282:tmc/IdDetection_Landungsbruecke.c **** 
+ 283:tmc/IdDetection_Landungsbruecke.c **** 	if(IdState.ch1.state == ID_STATE_DONE)
+ 284:tmc/IdDetection_Landungsbruecke.c **** 	{
+ 285:tmc/IdDetection_Landungsbruecke.c **** 		// Assign the ID derived from the ID pulse duration
+ 286:tmc/IdDetection_Landungsbruecke.c **** 		uint32_t tickDiff =    (IdState.ch1.counter_2 - IdState.ch1.counter_1) * FULLCOUNTER
+ 287:tmc/IdDetection_Landungsbruecke.c **** 						   + (IdState.ch1.timer_2   - IdState.ch1.timer_1);
+ 288:tmc/IdDetection_Landungsbruecke.c **** 		out->ch1.id = assign(tickDiff * TICK_FACTOR);
+ 289:tmc/IdDetection_Landungsbruecke.c **** 
+ 290:tmc/IdDetection_Landungsbruecke.c **** 		if(out->ch1.id)
+ 291:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch1.detectedBy = FOUND_BY_MONOFLOP;
+ 292:tmc/IdDetection_Landungsbruecke.c **** 		else
+ 293:tmc/IdDetection_Landungsbruecke.c **** 			out->ch1.state = ID_STATE_INVALID; // Invalid ID pulse detected
+ 294:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 295:tmc/IdDetection_Landungsbruecke.c **** 	else
+ 296:tmc/IdDetection_Landungsbruecke.c **** 	{
+ 297:tmc/IdDetection_Landungsbruecke.c **** 		out->ch1.id = 0;
+ 298:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 299:tmc/IdDetection_Landungsbruecke.c **** 
+ 300:tmc/IdDetection_Landungsbruecke.c **** 	// ======== CH1 ==========
+ 301:tmc/IdDetection_Landungsbruecke.c **** 	// Assign ID detection state for this channel
+ 302:tmc/IdDetection_Landungsbruecke.c **** 	out->ch2.state 	= IdState.ch2.state;
+ 303:tmc/IdDetection_Landungsbruecke.c **** 
+ 304:tmc/IdDetection_Landungsbruecke.c **** 	if(IdState.ch2.state == ID_STATE_DONE)
+ 305:tmc/IdDetection_Landungsbruecke.c **** 	{
+ 306:tmc/IdDetection_Landungsbruecke.c **** 		// Assign the ID derived from the ID pulse duration
+ 307:tmc/IdDetection_Landungsbruecke.c **** 		uint32_t tickDiff =    (IdState.ch2.counter_2 - IdState.ch2.counter_1) * FULLCOUNTER
+ 308:tmc/IdDetection_Landungsbruecke.c **** 						   + (IdState.ch2.timer_2   - IdState.ch2.timer_1);
+ 309:tmc/IdDetection_Landungsbruecke.c **** 		out->ch2.id = assign(tickDiff * TICK_FACTOR);
+ 310:tmc/IdDetection_Landungsbruecke.c **** 
+ 311:tmc/IdDetection_Landungsbruecke.c **** 		if(out->ch2.id)
+ 312:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch2.detectedBy = FOUND_BY_MONOFLOP;
+ 313:tmc/IdDetection_Landungsbruecke.c **** 		else
+ 314:tmc/IdDetection_Landungsbruecke.c **** 			out->ch2.state = ID_STATE_INVALID; // Invalid ID pulse detected
+ 315:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 316:tmc/IdDetection_Landungsbruecke.c **** 	else
+ 317:tmc/IdDetection_Landungsbruecke.c **** 	{
+ 318:tmc/IdDetection_Landungsbruecke.c **** 		out->ch2.id = 0;
+ 319:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 320:tmc/IdDetection_Landungsbruecke.c **** 
+ 321:tmc/IdDetection_Landungsbruecke.c **** 	// ====== EEPROM Check ======
+ 322:tmc/IdDetection_Landungsbruecke.c **** 	// EEPROM spec reserves 2 bytes for the ID buffer.
+ 323:tmc/IdDetection_Landungsbruecke.c **** 	// Currently we only use one byte for IDs, both here in the firmware
+ 324:tmc/IdDetection_Landungsbruecke.c **** 	// and in the IDE - once we deplete that ID pool, this needs to be extended
+ 325:tmc/IdDetection_Landungsbruecke.c **** 	// (uint8_t to uint16_t and change EEPROM read to read two bytes instead of one)
+ 326:tmc/IdDetection_Landungsbruecke.c **** 	uint8_t idBuffer[2];
+ 327:tmc/IdDetection_Landungsbruecke.c **** 	// ====== CH1 ======
+ 328:tmc/IdDetection_Landungsbruecke.c **** 	if(!out->ch1.id)
+ 329:tmc/IdDetection_Landungsbruecke.c **** 	{
+ 330:tmc/IdDetection_Landungsbruecke.c **** 		// EEPROM is not ready -> assume it is not connected -> skip EEPROM ID read
+ 331:tmc/IdDetection_Landungsbruecke.c **** 		if(!eeprom_check(&SPI.ch1))
+ 332:tmc/IdDetection_Landungsbruecke.c **** 		{
+ 333:tmc/IdDetection_Landungsbruecke.c **** 			eeprom_read_array(&SPI.ch1, EEPROM_ADDR_ID, &idBuffer[0], 1);
+ 334:tmc/IdDetection_Landungsbruecke.c **** 			out->ch1.id = idBuffer[0];
+ 335:tmc/IdDetection_Landungsbruecke.c **** 			// ID was correctly detected via EEPROM
+ 336:tmc/IdDetection_Landungsbruecke.c **** 			if(out->ch1.id)
+ 337:tmc/IdDetection_Landungsbruecke.c **** 			{
+ 338:tmc/IdDetection_Landungsbruecke.c **** 				out->ch1.state = ID_STATE_DONE;
+ 339:tmc/IdDetection_Landungsbruecke.c **** 				IdState.ch1.detectedBy = FOUND_BY_EEPROM;
+ 340:tmc/IdDetection_Landungsbruecke.c **** 			}
+ 341:tmc/IdDetection_Landungsbruecke.c **** 		}
+ 342:tmc/IdDetection_Landungsbruecke.c **** 		// EEPROM access changes the ID_CH0 pin configuration -> write it again // todo CHECK 2: workarou
+ 343:tmc/IdDetection_Landungsbruecke.c **** 		PORT_PCR_REG(HAL.IOs->pins->ID_CH0.portBase, HAL.IOs->pins->ID_CH0.bit) = PORT_PCR_MUX(1) | PORT_
+ 344:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 345:tmc/IdDetection_Landungsbruecke.c **** 
+ 346:tmc/IdDetection_Landungsbruecke.c **** 	// ====== CH2 ======
+ 347:tmc/IdDetection_Landungsbruecke.c **** 	if(!out->ch2.id)
+ 348:tmc/IdDetection_Landungsbruecke.c **** 	{
+ 349:tmc/IdDetection_Landungsbruecke.c **** 		// EEPROM is not ready -> assume it is not connected -> skip EEPROM ID read
+ 350:tmc/IdDetection_Landungsbruecke.c **** 		if(!eeprom_check(&SPI.ch2))
+ 351:tmc/IdDetection_Landungsbruecke.c **** 		{
+ 352:tmc/IdDetection_Landungsbruecke.c **** 			eeprom_read_array(&SPI.ch2, EEPROM_ADDR_ID, &idBuffer[0], 1);
+ 353:tmc/IdDetection_Landungsbruecke.c **** 			out->ch2.id = idBuffer[0];
+ 354:tmc/IdDetection_Landungsbruecke.c **** 			//id was correctly detected via EEPROM
+ 355:tmc/IdDetection_Landungsbruecke.c **** 			if(out->ch2.id)
+ 356:tmc/IdDetection_Landungsbruecke.c **** 			{
+ 357:tmc/IdDetection_Landungsbruecke.c **** 				out->ch2.state = ID_STATE_DONE;
+ 358:tmc/IdDetection_Landungsbruecke.c **** 				IdState.ch2.detectedBy = FOUND_BY_EEPROM;
+ 359:tmc/IdDetection_Landungsbruecke.c **** 			}
+ 360:tmc/IdDetection_Landungsbruecke.c **** 		}
+ 361:tmc/IdDetection_Landungsbruecke.c **** 		// EEPROM access changes the ID_CH1 pin configuration -> write it again // todo CHECK 2: workarou
+ 362:tmc/IdDetection_Landungsbruecke.c **** 		PORT_PCR_REG(HAL.IOs->pins->ID_CH1.portBase, HAL.IOs->pins->ID_CH1.bit) = PORT_PCR_MUX(1) | PORT_
+ 363:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 364:tmc/IdDetection_Landungsbruecke.c **** 
+ 365:tmc/IdDetection_Landungsbruecke.c **** 	return true;
+ 366:tmc/IdDetection_Landungsbruecke.c **** }
+ 972              		.loc 1 366 1 is_stmt 0 view .LVU321
+ 973 038e 2846     		mov	r0, r5
+ 974 0390 03B0     		add	sp, sp, #12
+ 975              	.LCFI5:
+ 976              		.cfi_remember_state
+ 977              		.cfi_def_cfa_offset 20
+ 978              		@ sp needed
+ 979 0392 F0BD     		pop	{r4, r5, r6, r7, pc}
+ 980              	.LVL87:
+ 981              	.L80:
+ 982              	.LCFI6:
+ 983              		.cfi_restore_state
+ 271:tmc/IdDetection_Landungsbruecke.c **** 		return false;
+ 984              		.loc 1 271 2 is_stmt 1 view .LVU322
+ 271:tmc/IdDetection_Landungsbruecke.c **** 		return false;
+ 985              		.loc 1 271 4 is_stmt 0 view .LVU323
+ 986 0394 1B7A     		ldrb	r3, [r3, #8]	@ zero_extendqisi2
+ 987 0396 012B     		cmp	r3, #1
+ 988 0398 4FF00005 		mov	r5, #0
+ 989 039c F7D9     		bls	.L81
+ 271:tmc/IdDetection_Landungsbruecke.c **** 		return false;
+ 990              		.loc 1 271 6 discriminator 1 view .LVU324
+ 991 039e 237F     		ldrb	r3, [r4, #28]	@ zero_extendqisi2
+ 992 03a0 012B     		cmp	r3, #1
+ 993 03a2 F4D9     		bls	.L81
+ 994              	.LVL88:
+ 995              	.LBB14:
+ 996              	.LBI14:
+ 252:tmc/IdDetection_Landungsbruecke.c **** {
+ 997              		.loc 1 252 9 is_stmt 1 view .LVU325
+ 998              	.LBB15:
+ 275:tmc/IdDetection_Landungsbruecke.c **** 	ID_CLK_LOW();
+ 999              		.loc 1 275 2 view .LVU326
+ 276:tmc/IdDetection_Landungsbruecke.c **** 	FTM2_SC &= ~FTM_SC_CLKS_MASK; // stop timer
+ 1000              		.loc 1 276 2 is_stmt 0 view .LVU327
+ 1001 03a4 434B     		ldr	r3, .L104+8
+ 275:tmc/IdDetection_Landungsbruecke.c **** 	ID_CLK_LOW();
+ 1002              		.loc 1 275 13 view .LVU328
+ 1003 03a6 2571     		strb	r5, [r4, #4]
+ 276:tmc/IdDetection_Landungsbruecke.c **** 	FTM2_SC &= ~FTM_SC_CLKS_MASK; // stop timer
+ 1004              		.loc 1 276 2 is_stmt 1 view .LVU329
+ 1005 03a8 DF68     		ldr	r7, [r3, #12]
+ 1006 03aa D7E90030 		ldrd	r3, r0, [r7]
+ 1007              	.LVL89:
+ 276:tmc/IdDetection_Landungsbruecke.c **** 	FTM2_SC &= ~FTM_SC_CLKS_MASK; // stop timer
+ 1008              		.loc 1 276 2 is_stmt 0 view .LVU330
+ 1009 03ae 9B69     		ldr	r3, [r3, #24]
+ 1010 03b0 0830     		adds	r0, r0, #8
+ 1011 03b2 9847     		blx	r3
+ 1012              	.LVL90:
+ 276:tmc/IdDetection_Landungsbruecke.c **** 	FTM2_SC &= ~FTM_SC_CLKS_MASK; // stop timer
+ 1013              		.loc 1 276 14 is_stmt 1 view .LVU331
+ 277:tmc/IdDetection_Landungsbruecke.c **** 
+ 1014              		.loc 1 277 2 view .LVU332
+ 277:tmc/IdDetection_Landungsbruecke.c **** 
+ 1015              		.loc 1 277 10 is_stmt 0 view .LVU333
+ 1016 03b4 3E4A     		ldr	r2, .L104+4
+ 1017 03b6 1368     		ldr	r3, [r2]
+ 1018 03b8 23F01803 		bic	r3, r3, #24
+ 1019 03bc 1360     		str	r3, [r2]
+ 281:tmc/IdDetection_Landungsbruecke.c **** 
+ 1020              		.loc 1 281 2 is_stmt 1 view .LVU334
+ 281:tmc/IdDetection_Landungsbruecke.c **** 
+ 1021              		.loc 1 281 30 is_stmt 0 view .LVU335
+ 1022 03be 237A     		ldrb	r3, [r4, #8]	@ zero_extendqisi2
+ 281:tmc/IdDetection_Landungsbruecke.c **** 
+ 1023              		.loc 1 281 17 view .LVU336
+ 1024 03c0 3370     		strb	r3, [r6]
+ 283:tmc/IdDetection_Landungsbruecke.c **** 	{
+ 1025              		.loc 1 283 2 is_stmt 1 view .LVU337
+ 283:tmc/IdDetection_Landungsbruecke.c **** 	{
+ 1026              		.loc 1 283 4 is_stmt 0 view .LVU338
+ 1027 03c2 237A     		ldrb	r3, [r4, #8]	@ zero_extendqisi2
+ 1028 03c4 022B     		cmp	r3, #2
+ 1029 03c6 69D1     		bne	.L82
+ 1030              	.LBB16:
+ 286:tmc/IdDetection_Landungsbruecke.c **** 						   + (IdState.ch1.timer_2   - IdState.ch1.timer_1);
+ 1031              		.loc 1 286 3 is_stmt 1 view .LVU339
+ 1032              	.LVL91:
+ 288:tmc/IdDetection_Landungsbruecke.c **** 
+ 1033              		.loc 1 288 3 view .LVU340
+ 286:tmc/IdDetection_Landungsbruecke.c **** 						   + (IdState.ch1.timer_2   - IdState.ch1.timer_1);
+ 1034              		.loc 1 286 49 is_stmt 0 view .LVU341
+ 1035 03c8 D4E90330 		ldrd	r3, r0, [r4, #12]
+ 1036 03cc C01A     		subs	r0, r0, r3
+ 287:tmc/IdDetection_Landungsbruecke.c **** 		out->ch1.id = assign(tickDiff * TICK_FACTOR);
+ 1037              		.loc 1 287 35 view .LVU342
+ 1038 03ce D4E90523 		ldrd	r2, r3, [r4, #20]
+ 1039 03d2 9B1A     		subs	r3, r3, r2
+ 286:tmc/IdDetection_Landungsbruecke.c **** 						   + (IdState.ch1.timer_2   - IdState.ch1.timer_1);
+ 1040              		.loc 1 286 12 view .LVU343
+ 1041 03d4 4EF66022 		movw	r2, #60000
+ 1042 03d8 02FB0030 		mla	r0, r2, r0, r3
+ 1043              	.LVL92:
+ 288:tmc/IdDetection_Landungsbruecke.c **** 
+ 1044              		.loc 1 288 33 view .LVU344
+ 1045 03dc 0A23     		movs	r3, #10
+ 1046 03de 5843     		muls	r0, r3, r0
+ 1047              	.LVL93:
+ 288:tmc/IdDetection_Landungsbruecke.c **** 
+ 1048              		.loc 1 288 17 view .LVU345
+ 1049 03e0 0623     		movs	r3, #6
+ 1050 03e2 B0FBF3F0 		udiv	r0, r0, r3
+ 1051 03e6 FFF70BFE 		bl	assign
+ 1052              	.LVL94:
+ 288:tmc/IdDetection_Landungsbruecke.c **** 
+ 1053              		.loc 1 288 15 view .LVU346
+ 1054 03ea 7070     		strb	r0, [r6, #1]
+ 290:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch1.detectedBy = FOUND_BY_MONOFLOP;
+ 1055              		.loc 1 290 3 is_stmt 1 view .LVU347
+ 290:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch1.detectedBy = FOUND_BY_MONOFLOP;
+ 1056              		.loc 1 290 5 is_stmt 0 view .LVU348
+ 1057 03ec 0028     		cmp	r0, #0
+ 1058 03ee 52D0     		beq	.L83
+ 291:tmc/IdDetection_Landungsbruecke.c **** 		else
+ 1059              		.loc 1 291 4 is_stmt 1 view .LVU349
+ 291:tmc/IdDetection_Landungsbruecke.c **** 		else
+ 1060              		.loc 1 291 27 is_stmt 0 view .LVU350
+ 1061 03f0 0123     		movs	r3, #1
+ 1062 03f2 A372     		strb	r3, [r4, #10]
+ 1063              	.L84:
+ 291:tmc/IdDetection_Landungsbruecke.c **** 		else
+ 1064              		.loc 1 291 27 view .LVU351
+ 1065              	.LBE16:
+ 302:tmc/IdDetection_Landungsbruecke.c **** 
+ 1066              		.loc 1 302 2 is_stmt 1 view .LVU352
+ 302:tmc/IdDetection_Landungsbruecke.c **** 
+ 1067              		.loc 1 302 31 is_stmt 0 view .LVU353
+ 1068 03f4 237F     		ldrb	r3, [r4, #28]	@ zero_extendqisi2
+ 302:tmc/IdDetection_Landungsbruecke.c **** 
+ 1069              		.loc 1 302 18 view .LVU354
+ 1070 03f6 3375     		strb	r3, [r6, #20]
+ 304:tmc/IdDetection_Landungsbruecke.c **** 	{
+ 1071              		.loc 1 304 2 is_stmt 1 view .LVU355
+ 304:tmc/IdDetection_Landungsbruecke.c **** 	{
+ 1072              		.loc 1 304 4 is_stmt 0 view .LVU356
+ 1073 03f8 237F     		ldrb	r3, [r4, #28]	@ zero_extendqisi2
+ 1074 03fa 022B     		cmp	r3, #2
+ 1075 03fc 53D1     		bne	.L85
+ 1076              	.LBB17:
+ 307:tmc/IdDetection_Landungsbruecke.c **** 						   + (IdState.ch2.timer_2   - IdState.ch2.timer_1);
+ 1077              		.loc 1 307 3 is_stmt 1 view .LVU357
+ 1078              	.LVL95:
+ 309:tmc/IdDetection_Landungsbruecke.c **** 
+ 1079              		.loc 1 309 3 view .LVU358
+ 307:tmc/IdDetection_Landungsbruecke.c **** 						   + (IdState.ch2.timer_2   - IdState.ch2.timer_1);
+ 1080              		.loc 1 307 49 is_stmt 0 view .LVU359
+ 1081 03fe D4E90830 		ldrd	r3, r0, [r4, #32]
+ 1082 0402 C01A     		subs	r0, r0, r3
+ 308:tmc/IdDetection_Landungsbruecke.c **** 		out->ch2.id = assign(tickDiff * TICK_FACTOR);
+ 1083              		.loc 1 308 35 view .LVU360
+ 1084 0404 D4E90A23 		ldrd	r2, r3, [r4, #40]
+ 1085 0408 9B1A     		subs	r3, r3, r2
+ 307:tmc/IdDetection_Landungsbruecke.c **** 						   + (IdState.ch2.timer_2   - IdState.ch2.timer_1);
+ 1086              		.loc 1 307 12 view .LVU361
+ 1087 040a 4EF66022 		movw	r2, #60000
+ 1088 040e 02FB0030 		mla	r0, r2, r0, r3
+ 1089              	.LVL96:
+ 309:tmc/IdDetection_Landungsbruecke.c **** 
+ 1090              		.loc 1 309 33 view .LVU362
+ 1091 0412 0A23     		movs	r3, #10
+ 1092 0414 5843     		muls	r0, r3, r0
+ 1093              	.LVL97:
+ 309:tmc/IdDetection_Landungsbruecke.c **** 
+ 1094              		.loc 1 309 17 view .LVU363
+ 1095 0416 0623     		movs	r3, #6
+ 1096 0418 B0FBF3F0 		udiv	r0, r0, r3
+ 1097 041c FFF7F0FD 		bl	assign
+ 1098              	.LVL98:
+ 309:tmc/IdDetection_Landungsbruecke.c **** 
+ 1099              		.loc 1 309 15 view .LVU364
+ 1100 0420 7075     		strb	r0, [r6, #21]
+ 311:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch2.detectedBy = FOUND_BY_MONOFLOP;
+ 1101              		.loc 1 311 3 is_stmt 1 view .LVU365
+ 311:tmc/IdDetection_Landungsbruecke.c **** 			IdState.ch2.detectedBy = FOUND_BY_MONOFLOP;
+ 1102              		.loc 1 311 5 is_stmt 0 view .LVU366
+ 1103 0422 0028     		cmp	r0, #0
+ 1104 0424 3CD0     		beq	.L86
+ 312:tmc/IdDetection_Landungsbruecke.c **** 		else
+ 1105              		.loc 1 312 4 is_stmt 1 view .LVU367
+ 312:tmc/IdDetection_Landungsbruecke.c **** 		else
+ 1106              		.loc 1 312 27 is_stmt 0 view .LVU368
+ 1107 0426 0123     		movs	r3, #1
+ 1108 0428 A377     		strb	r3, [r4, #30]
+ 1109              	.L87:
+ 312:tmc/IdDetection_Landungsbruecke.c **** 		else
+ 1110              		.loc 1 312 27 view .LVU369
+ 1111              	.LBE17:
+ 326:tmc/IdDetection_Landungsbruecke.c **** 	// ====== CH1 ======
+ 1112              		.loc 1 326 2 is_stmt 1 view .LVU370
+ 328:tmc/IdDetection_Landungsbruecke.c **** 	{
+ 1113              		.loc 1 328 2 view .LVU371
+ 328:tmc/IdDetection_Landungsbruecke.c **** 	{
+ 1114              		.loc 1 328 4 is_stmt 0 view .LVU372
+ 1115 042a 7378     		ldrb	r3, [r6, #1]	@ zero_extendqisi2
+ 1116 042c BBB9     		cbnz	r3, .L88
+ 331:tmc/IdDetection_Landungsbruecke.c **** 		{
+ 1117              		.loc 1 331 3 is_stmt 1 view .LVU373
+ 331:tmc/IdDetection_Landungsbruecke.c **** 		{
+ 1118              		.loc 1 331 7 is_stmt 0 view .LVU374
+ 1119 042e 2248     		ldr	r0, .L104+12
+ 1120 0430 FFF7FEFF 		bl	eeprom_check
+ 1121              	.LVL99:
+ 331:tmc/IdDetection_Landungsbruecke.c **** 		{
+ 1122              		.loc 1 331 5 view .LVU375
+ 1123 0434 60B9     		cbnz	r0, .L90
+ 333:tmc/IdDetection_Landungsbruecke.c **** 			out->ch1.id = idBuffer[0];
+ 1124              		.loc 1 333 4 is_stmt 1 view .LVU376
+ 1125 0436 0123     		movs	r3, #1
+ 1126 0438 1F48     		ldr	r0, .L104+12
+ 1127 043a 01AA     		add	r2, sp, #4
+ 1128 043c 1021     		movs	r1, #16
+ 1129 043e FFF7FEFF 		bl	eeprom_read_array
+ 1130              	.LVL100:
+ 334:tmc/IdDetection_Landungsbruecke.c **** 			// ID was correctly detected via EEPROM
+ 1131              		.loc 1 334 4 view .LVU377
+ 334:tmc/IdDetection_Landungsbruecke.c **** 			// ID was correctly detected via EEPROM
+ 1132              		.loc 1 334 26 is_stmt 0 view .LVU378
+ 1133 0442 9DF80430 		ldrb	r3, [sp, #4]	@ zero_extendqisi2
+ 334:tmc/IdDetection_Landungsbruecke.c **** 			// ID was correctly detected via EEPROM
+ 1134              		.loc 1 334 16 view .LVU379
+ 1135 0446 7370     		strb	r3, [r6, #1]
+ 336:tmc/IdDetection_Landungsbruecke.c **** 			{
+ 1136              		.loc 1 336 4 is_stmt 1 view .LVU380
+ 336:tmc/IdDetection_Landungsbruecke.c **** 			{
+ 1137              		.loc 1 336 6 is_stmt 0 view .LVU381
+ 1138 0448 13B1     		cbz	r3, .L90
+ 338:tmc/IdDetection_Landungsbruecke.c **** 				IdState.ch1.detectedBy = FOUND_BY_EEPROM;
+ 1139              		.loc 1 338 5 is_stmt 1 view .LVU382
+ 338:tmc/IdDetection_Landungsbruecke.c **** 				IdState.ch1.detectedBy = FOUND_BY_EEPROM;
+ 1140              		.loc 1 338 20 is_stmt 0 view .LVU383
+ 1141 044a 0223     		movs	r3, #2
+ 1142 044c 3370     		strb	r3, [r6]
+ 339:tmc/IdDetection_Landungsbruecke.c **** 			}
+ 1143              		.loc 1 339 5 is_stmt 1 view .LVU384
+ 339:tmc/IdDetection_Landungsbruecke.c **** 			}
+ 1144              		.loc 1 339 28 is_stmt 0 view .LVU385
+ 1145 044e A372     		strb	r3, [r4, #10]
+ 1146              	.L90:
+ 343:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 1147              		.loc 1 343 3 is_stmt 1 view .LVU386
+ 1148 0450 7B68     		ldr	r3, [r7, #4]
+ 343:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 1149              		.loc 1 343 75 is_stmt 0 view .LVU387
+ 1150 0452 1A49     		ldr	r1, .L104+16
+ 343:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 1151              		.loc 1 343 3 view .LVU388
+ 1152 0454 9A6A     		ldr	r2, [r3, #40]
+ 1153 0456 93F83C30 		ldrb	r3, [r3, #60]	@ zero_extendqisi2
+ 343:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 1154              		.loc 1 343 75 view .LVU389
+ 1155 045a 42F82310 		str	r1, [r2, r3, lsl #2]
+ 1156              	.L88:
+ 347:tmc/IdDetection_Landungsbruecke.c **** 	{
+ 1157              		.loc 1 347 2 is_stmt 1 view .LVU390
+ 347:tmc/IdDetection_Landungsbruecke.c **** 	{
+ 1158              		.loc 1 347 4 is_stmt 0 view .LVU391
+ 1159 045e 737D     		ldrb	r3, [r6, #21]	@ zero_extendqisi2
+ 1160 0460 BBB9     		cbnz	r3, .L92
+ 350:tmc/IdDetection_Landungsbruecke.c **** 		{
+ 1161              		.loc 1 350 3 is_stmt 1 view .LVU392
+ 350:tmc/IdDetection_Landungsbruecke.c **** 		{
+ 1162              		.loc 1 350 7 is_stmt 0 view .LVU393
+ 1163 0462 1748     		ldr	r0, .L104+20
+ 1164 0464 FFF7FEFF 		bl	eeprom_check
+ 1165              	.LVL101:
+ 350:tmc/IdDetection_Landungsbruecke.c **** 		{
+ 1166              		.loc 1 350 5 view .LVU394
+ 1167 0468 60B9     		cbnz	r0, .L94
+ 352:tmc/IdDetection_Landungsbruecke.c **** 			out->ch2.id = idBuffer[0];
+ 1168              		.loc 1 352 4 is_stmt 1 view .LVU395
+ 1169 046a 0123     		movs	r3, #1
+ 1170 046c 1448     		ldr	r0, .L104+20
+ 1171 046e 01AA     		add	r2, sp, #4
+ 1172 0470 1021     		movs	r1, #16
+ 1173 0472 FFF7FEFF 		bl	eeprom_read_array
+ 1174              	.LVL102:
+ 353:tmc/IdDetection_Landungsbruecke.c **** 			//id was correctly detected via EEPROM
+ 1175              		.loc 1 353 4 view .LVU396
+ 353:tmc/IdDetection_Landungsbruecke.c **** 			//id was correctly detected via EEPROM
+ 1176              		.loc 1 353 26 is_stmt 0 view .LVU397
+ 1177 0476 9DF80430 		ldrb	r3, [sp, #4]	@ zero_extendqisi2
+ 353:tmc/IdDetection_Landungsbruecke.c **** 			//id was correctly detected via EEPROM
+ 1178              		.loc 1 353 16 view .LVU398
+ 1179 047a 7375     		strb	r3, [r6, #21]
+ 355:tmc/IdDetection_Landungsbruecke.c **** 			{
+ 1180              		.loc 1 355 4 is_stmt 1 view .LVU399
+ 355:tmc/IdDetection_Landungsbruecke.c **** 			{
+ 1181              		.loc 1 355 6 is_stmt 0 view .LVU400
+ 1182 047c 13B1     		cbz	r3, .L94
+ 357:tmc/IdDetection_Landungsbruecke.c **** 				IdState.ch2.detectedBy = FOUND_BY_EEPROM;
+ 1183              		.loc 1 357 5 is_stmt 1 view .LVU401
+ 357:tmc/IdDetection_Landungsbruecke.c **** 				IdState.ch2.detectedBy = FOUND_BY_EEPROM;
+ 1184              		.loc 1 357 20 is_stmt 0 view .LVU402
+ 1185 047e 0223     		movs	r3, #2
+ 1186 0480 3375     		strb	r3, [r6, #20]
+ 358:tmc/IdDetection_Landungsbruecke.c **** 			}
+ 1187              		.loc 1 358 5 is_stmt 1 view .LVU403
+ 358:tmc/IdDetection_Landungsbruecke.c **** 			}
+ 1188              		.loc 1 358 28 is_stmt 0 view .LVU404
+ 1189 0482 A377     		strb	r3, [r4, #30]
+ 1190              	.L94:
+ 362:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 1191              		.loc 1 362 3 is_stmt 1 view .LVU405
+ 1192 0484 7B68     		ldr	r3, [r7, #4]
+ 362:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 1193              		.loc 1 362 75 is_stmt 0 view .LVU406
+ 1194 0486 0D49     		ldr	r1, .L104+16
+ 362:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 1195              		.loc 1 362 3 view .LVU407
+ 1196 0488 9A6C     		ldr	r2, [r3, #72]
+ 1197 048a 93F85C30 		ldrb	r3, [r3, #92]	@ zero_extendqisi2
+ 362:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 1198              		.loc 1 362 75 view .LVU408
+ 1199 048e 42F82310 		str	r1, [r2, r3, lsl #2]
+ 1200              	.L92:
+ 1201              	.LVL103:
+ 362:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 1202              		.loc 1 362 75 view .LVU409
+ 1203 0492 0125     		movs	r5, #1
+ 1204 0494 7BE7     		b	.L81
+ 1205              	.LVL104:
+ 1206              	.L83:
+ 1207              	.LBB18:
+ 293:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 1208              		.loc 1 293 4 is_stmt 1 view .LVU410
+ 293:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 1209              		.loc 1 293 19 is_stmt 0 view .LVU411
+ 1210 0496 0323     		movs	r3, #3
+ 1211 0498 3370     		strb	r3, [r6]
+ 1212 049a ABE7     		b	.L84
+ 1213              	.L82:
+ 293:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 1214              		.loc 1 293 19 view .LVU412
+ 1215              	.LBE18:
+ 297:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 1216              		.loc 1 297 3 is_stmt 1 view .LVU413
+ 297:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 1217              		.loc 1 297 15 is_stmt 0 view .LVU414
+ 1218 049c 7570     		strb	r5, [r6, #1]
+ 1219 049e A9E7     		b	.L84
+ 1220              	.L86:
+ 1221              	.LBB19:
+ 314:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 1222              		.loc 1 314 4 is_stmt 1 view .LVU415
+ 314:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 1223              		.loc 1 314 19 is_stmt 0 view .LVU416
+ 1224 04a0 0323     		movs	r3, #3
+ 1225 04a2 3375     		strb	r3, [r6, #20]
+ 1226 04a4 C1E7     		b	.L87
+ 1227              	.L85:
+ 314:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 1228              		.loc 1 314 19 view .LVU417
+ 1229              	.LBE19:
+ 318:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 1230              		.loc 1 318 3 is_stmt 1 view .LVU418
+ 318:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 1231              		.loc 1 318 15 is_stmt 0 view .LVU419
+ 1232 04a6 0023     		movs	r3, #0
+ 1233 04a8 7375     		strb	r3, [r6, #21]
+ 1234 04aa BEE7     		b	.L87
+ 1235              	.L105:
+ 1236              		.align	2
+ 1237              	.L104:
+ 1238 04ac 00000000 		.word	.LANCHOR0
+ 1239 04b0 00800B40 		.word	1074495488
+ 1240 04b4 00000000 		.word	HAL
+ 1241 04b8 00000000 		.word	SPI
+ 1242 04bc 02010B00 		.word	721154
+ 1243 04c0 14000000 		.word	SPI+20
+ 1244              	.LBE15:
+ 1245              	.LBE14:
+ 1246              		.cfi_endproc
+ 1247              	.LFE6:
+ 1249              		.align	1
+ 1250              		.global	IDDetection_initialScan
+ 1251              		.syntax unified
+ 1252              		.thumb
+ 1253              		.thumb_func
+ 1254              		.fpu softvfp
+ 1256              	IDDetection_initialScan:
+ 1257              	.LVL105:
+ 1258              	.LFB7:
+ 367:tmc/IdDetection_Landungsbruecke.c **** 
+ 368:tmc/IdDetection_Landungsbruecke.c **** void IDDetection_initialScan(IdAssignmentTypeDef *ids)
+ 369:tmc/IdDetection_Landungsbruecke.c **** {
+ 1259              		.loc 1 369 1 is_stmt 1 view -0
+ 1260              		.cfi_startproc
+ 1261              		@ args = 0, pretend = 0, frame = 0
+ 1262              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1263              		.loc 1 369 1 is_stmt 0 view .LVU421
+ 1264 04c4 10B5     		push	{r4, lr}
+ 1265              	.LCFI7:
+ 1266              		.cfi_def_cfa_offset 8
+ 1267              		.cfi_offset 4, -8
+ 1268              		.cfi_offset 14, -4
+ 1269 04c6 0446     		mov	r4, r0
+ 370:tmc/IdDetection_Landungsbruecke.c **** 	while(!IDDetection_detect(ids))
+ 1270              		.loc 1 370 2 is_stmt 1 view .LVU422
+ 1271              	.LVL106:
+ 1272              	.L107:
+ 1273              		.loc 1 370 7 view .LVU423
+ 1274              		.loc 1 370 9 is_stmt 0 view .LVU424
+ 1275 04c8 2046     		mov	r0, r4
+ 1276 04ca FFF7FEFF 		bl	IDDetection_detect
+ 1277              	.LVL107:
+ 1278              		.loc 1 370 7 view .LVU425
+ 1279 04ce 00B1     		cbz	r0, .L108
+ 371:tmc/IdDetection_Landungsbruecke.c **** 	{
+ 372:tmc/IdDetection_Landungsbruecke.c **** 		vitalsignsmonitor_checkVitalSigns();
+ 373:tmc/IdDetection_Landungsbruecke.c **** 		tmcl_process();
+ 374:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 375:tmc/IdDetection_Landungsbruecke.c **** }
+ 1280              		.loc 1 375 1 view .LVU426
+ 1281 04d0 10BD     		pop	{r4, pc}
+ 1282              	.LVL108:
+ 1283              	.L108:
+ 372:tmc/IdDetection_Landungsbruecke.c **** 		tmcl_process();
+ 1284              		.loc 1 372 3 is_stmt 1 view .LVU427
+ 1285 04d2 FFF7FEFF 		bl	vitalsignsmonitor_checkVitalSigns
+ 1286              	.LVL109:
+ 373:tmc/IdDetection_Landungsbruecke.c **** 	}
+ 1287              		.loc 1 373 3 view .LVU428
+ 1288 04d6 FFF7FEFF 		bl	tmcl_process
+ 1289              	.LVL110:
+ 1290 04da F5E7     		b	.L107
+ 1291              		.cfi_endproc
+ 1292              	.LFE7:
+ 1294              		.comm	EEPROM,48,2
+ 1295              		.global	IdState
+ 1296              		.comm	TMCMotionController,532,4
+ 1297              		.comm	TMCDriver,532,4
+ 1298              		.comm	Evalboards,244,4
+ 1299              		.comm	VitalSignsMonitor,20,4
+ 1300              		.comm	hwid,1,1
+ 1301              		.comm	HAL,48,4
+ 1302              		.comm	UART,40,4
+ 1303              		.comm	Timer,16,4
+ 1304              		.comm	WLAN,36,4
+ 1305              		.comm	RS232,36,4
+ 1306              		.comm	LEDs,28,4
+ 1307              		.comm	USB,36,4
+ 1308              		.comm	uart0_interrupt,1,1
+ 1309              		.comm	ADCs,32,4
+ 1310              		.comm	SPI,44,4
+ 1311              		.comm	IOMap,2088,4
+ 1312              		.comm	IOs,52,4
+ 1313              		.comm	Cpu,8,4
+ 1314              		.bss
+ 1315              		.align	2
+ 1316              		.set	.LANCHOR0,. + 0
+ 1319              	counter:
+ 1320 0000 00000000 		.space	4
+ 1323              	isScanning:
+ 1324 0004 00       		.space	1
+ 1325 0005 000000   		.space	3
+ 1328              	IdState:
+ 1329 0008 00000000 		.space	40
+ 1329      00000000 
+ 1329      00000000 
+ 1329      00000000 
+ 1329      00000000 
+ 1332              	ADCValue:
+ 1333 0030 00000000 		.space	12
+ 1333      00000000 
+ 1333      00000000 
+ 1334              		.text
+ 1335              	.Letext0:
+ 1336              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 1337              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1338              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1339              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 1340              		.file 6 "TMC-API/tmc/helpers/Config.h"
+ 1341              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1342              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1343              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1344              		.file 10 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\in
+ 1345              		.file 11 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 1346              		.file 12 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 1347              		.file 13 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 1348              		.file 14 "./hal/IOs.h"
+ 1349              		.file 15 "./hal/IOMap.h"
+ 1350              		.file 16 "./hal/SPI.h"
+ 1351              		.file 17 "./hal/ADCs.h"
+ 1352              		.file 18 "./hal/RXTX.h"
+ 1353              		.file 19 "./hal/USB.h"
+ 1354              		.file 20 "./hal/LEDs.h"
+ 1355              		.file 21 "./hal/RS232.h"
+ 1356              		.file 22 "./hal/WLAN.h"
+ 1357              		.file 23 "./hal/Timer.h"
+ 1358              		.file 24 "./hal/UART.h"
+ 1359              		.file 25 "./hal/HAL.h"
+ 1360              		.file 26 "./tmc/VitalSignsMonitor.h"
+ 1361              		.file 27 "./boards/Board.h"
+ 1362              		.file 28 "./boards/TMCDriver.h"
+ 1363              		.file 29 "./boards/TMCMotionController.h"
+ 1364              		.file 30 "tmc/BoardAssignment.h"
+ 1365              		.file 31 "tmc/EEPROM.h"
+ 1366              		.file 32 "tmc/TMCL.h"
+ 1367              		.file 33 "./hal/Landungsbruecke/freescale/nvic.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 IdDetection_Landungsbruecke.c
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:22     .text:00000000 assign
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:477    .text:000001a8 $d
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:481    .text:000001ac $t
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:488    .text:000001ac PORTB_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:604    .text:00000208 $d
+                            *COM*:00000030 HAL
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:611    .text:00000218 $t
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:618    .text:00000218 FTM2_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:709    .text:00000268 $d
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:714    .text:00000270 $t
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:721    .text:00000270 IDDetection_init
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:832    .text:00000304 $d
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:841    .text:0000031c $t
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:848    .text:0000031c IDDetection_deInit
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:890    .text:00000348 $d
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:895    .text:00000350 $t
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:902    .text:00000350 IDDetection_detect
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:1238   .text:000004ac $d
+                            *COM*:0000002c SPI
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:1249   .text:000004c4 $t
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:1256   .text:000004c4 IDDetection_initialScan
+                            *COM*:00000030 EEPROM
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:1328   .bss:00000008 IdState
+                            *COM*:00000214 TMCMotionController
+                            *COM*:00000214 TMCDriver
+                            *COM*:000000f4 Evalboards
+                            *COM*:00000014 VitalSignsMonitor
+                            *COM*:00000001 hwid
+                            *COM*:00000028 UART
+                            *COM*:00000010 Timer
+                            *COM*:00000024 WLAN
+                            *COM*:00000024 RS232
+                            *COM*:0000001c LEDs
+                            *COM*:00000024 USB
+                            *COM*:00000001 uart0_interrupt
+                            *COM*:00000020 ADCs
+                            *COM*:00000828 IOMap
+                            *COM*:00000034 IOs
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:1315   .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:1319   .bss:00000000 counter
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:1323   .bss:00000004 isScanning
+C:\Users\Shubham\AppData\Local\Temp\cc3eINdn.s:1332   .bss:00000030 ADCValue
+
+UNDEFINED SYMBOLS
+enable_irq
+disable_irq
+eeprom_check
+eeprom_read_array
+vitalsignsmonitor_checkVitalSigns
+tmcl_process

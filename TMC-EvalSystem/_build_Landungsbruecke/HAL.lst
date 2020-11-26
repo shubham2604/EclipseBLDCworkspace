@@ -1,0 +1,823 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"HAL.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.arch armv7e-m
+  17              		.syntax unified
+  18              		.thumb
+  19              		.thumb_func
+  20              		.fpu softvfp
+  22              	reset:
+  23              	.LVL0:
+  24              	.LFB1:
+  25              		.file 1 "hal/Landungsbruecke/tmc/HAL.c"
+   1:hal/Landungsbruecke/tmc/HAL.c **** #include "hal/HAL.h"
+   2:hal/Landungsbruecke/tmc/HAL.c **** 
+   3:hal/Landungsbruecke/tmc/HAL.c **** static void init(void);
+   4:hal/Landungsbruecke/tmc/HAL.c **** static void reset(uint8_t ResetPeripherals);
+   5:hal/Landungsbruecke/tmc/HAL.c **** static void NVIC_DeInit(void);
+   6:hal/Landungsbruecke/tmc/HAL.c **** static void get_hwid(void);
+   7:hal/Landungsbruecke/tmc/HAL.c **** 
+   8:hal/Landungsbruecke/tmc/HAL.c **** static const IOsFunctionsTypeDef IOFunctions =
+   9:hal/Landungsbruecke/tmc/HAL.c **** {
+  10:hal/Landungsbruecke/tmc/HAL.c **** 	.config  = &IOs,
+  11:hal/Landungsbruecke/tmc/HAL.c **** 	.pins    = &IOMap,
+  12:hal/Landungsbruecke/tmc/HAL.c **** };
+  13:hal/Landungsbruecke/tmc/HAL.c **** 
+  14:hal/Landungsbruecke/tmc/HAL.c **** const HALTypeDef HAL =
+  15:hal/Landungsbruecke/tmc/HAL.c **** {
+  16:hal/Landungsbruecke/tmc/HAL.c **** 	.init         = init,
+  17:hal/Landungsbruecke/tmc/HAL.c **** 	.reset        = reset,
+  18:hal/Landungsbruecke/tmc/HAL.c **** 	.NVIC_DeInit  = NVIC_DeInit,
+  19:hal/Landungsbruecke/tmc/HAL.c **** 	.SPI          = &SPI,
+  20:hal/Landungsbruecke/tmc/HAL.c **** 	.USB          = &USB,
+  21:hal/Landungsbruecke/tmc/HAL.c **** 	.LEDs         = &LEDs,
+  22:hal/Landungsbruecke/tmc/HAL.c **** 	.ADCs         = &ADCs,
+  23:hal/Landungsbruecke/tmc/HAL.c **** 	.IOs          = &IOFunctions,
+  24:hal/Landungsbruecke/tmc/HAL.c **** 	.RS232        = &RS232,
+  25:hal/Landungsbruecke/tmc/HAL.c **** 	.WLAN         = &WLAN,
+  26:hal/Landungsbruecke/tmc/HAL.c **** 	.Timer        = &Timer,
+  27:hal/Landungsbruecke/tmc/HAL.c **** 	.UART         = &UART
+  28:hal/Landungsbruecke/tmc/HAL.c **** };
+  29:hal/Landungsbruecke/tmc/HAL.c **** 
+  30:hal/Landungsbruecke/tmc/HAL.c **** static void init(void)
+  31:hal/Landungsbruecke/tmc/HAL.c **** {
+  32:hal/Landungsbruecke/tmc/HAL.c **** 	Cpu.initClocks();
+  33:hal/Landungsbruecke/tmc/HAL.c **** 	Cpu.initLowLevel();
+  34:hal/Landungsbruecke/tmc/HAL.c **** 	EnableInterrupts;;
+  35:hal/Landungsbruecke/tmc/HAL.c **** 
+  36:hal/Landungsbruecke/tmc/HAL.c **** 	systick_init();
+  37:hal/Landungsbruecke/tmc/HAL.c **** 	wait(100);
+  38:hal/Landungsbruecke/tmc/HAL.c **** 
+  39:hal/Landungsbruecke/tmc/HAL.c **** 	IOs.init();
+  40:hal/Landungsbruecke/tmc/HAL.c **** 	IOMap.init();
+  41:hal/Landungsbruecke/tmc/HAL.c **** 	LEDs.init();
+  42:hal/Landungsbruecke/tmc/HAL.c **** 	ADCs.init();
+  43:hal/Landungsbruecke/tmc/HAL.c **** 	SPI.init();
+  44:hal/Landungsbruecke/tmc/HAL.c **** 	WLAN.init();
+  45:hal/Landungsbruecke/tmc/HAL.c **** 	RS232.init();
+  46:hal/Landungsbruecke/tmc/HAL.c **** 	USB.init();
+  47:hal/Landungsbruecke/tmc/HAL.c **** 
+  48:hal/Landungsbruecke/tmc/HAL.c **** 	// Determine HW version
+  49:hal/Landungsbruecke/tmc/HAL.c **** 	get_hwid();
+  50:hal/Landungsbruecke/tmc/HAL.c **** }
+  51:hal/Landungsbruecke/tmc/HAL.c **** 
+  52:hal/Landungsbruecke/tmc/HAL.c **** static void __attribute((noreturn)) reset(uint8_t ResetPeripherals)
+  53:hal/Landungsbruecke/tmc/HAL.c **** {
+  26              		.loc 1 53 1 view -0
+  27              		.cfi_startproc
+  28              		@ Volatile: function does not return.
+  29              		@ args = 0, pretend = 0, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  31              		@ link register save eliminated.
+  54:hal/Landungsbruecke/tmc/HAL.c **** 	DisableInterrupts;
+  32              		.loc 1 54 2 view .LVU1
+  33              		.syntax unified
+  34              	@ 54 "hal/Landungsbruecke/tmc/HAL.c" 1
+  35 0000 72B6     		 CPSID i
+  36              	@ 0 "" 2
+  55:hal/Landungsbruecke/tmc/HAL.c **** 
+  56:hal/Landungsbruecke/tmc/HAL.c **** 	if(ResetPeripherals)
+  37              		.loc 1 56 2 view .LVU2
+  38              		.thumb
+  39              		.syntax unified
+  40 0002 4FF0E023 		mov	r3, #-536813568
+  41              		.loc 1 56 4 is_stmt 0 view .LVU3
+  42 0006 18B1     		cbz	r0, .L2
+  57:hal/Landungsbruecke/tmc/HAL.c **** 		SCB_AIRCR = SCB_AIRCR_VECTKEY(0x5FA) | SCB_AIRCR_SYSRESETREQ_MASK;
+  43              		.loc 1 57 3 is_stmt 1 view .LVU4
+  44              		.loc 1 57 13 is_stmt 0 view .LVU5
+  45 0008 034A     		ldr	r2, .L5
+  46 000a C3F80C2D 		str	r2, [r3, #3340]
+  47              	.L3:
+  48              	.L4:
+  58:hal/Landungsbruecke/tmc/HAL.c **** 	else
+  59:hal/Landungsbruecke/tmc/HAL.c **** 		SCB_AIRCR = SCB_AIRCR_VECTKEY(0x5FA) | SCB_AIRCR_VECTRESET_MASK;
+  60:hal/Landungsbruecke/tmc/HAL.c **** 
+  61:hal/Landungsbruecke/tmc/HAL.c **** 	// SYSRESETREQ does not happen instantly since peripheral reset timing is not specified.
+  62:hal/Landungsbruecke/tmc/HAL.c **** 	// Trap execution here so nothing else happens until the reset completes.
+  63:hal/Landungsbruecke/tmc/HAL.c **** 	while(1);
+  49              		.loc 1 63 2 is_stmt 1 discriminator 1 view .LVU6
+  50              		.loc 1 63 10 discriminator 1 view .LVU7
+  51              		.loc 1 63 7 discriminator 1 view .LVU8
+  52 000e FEE7     		b	.L4
+  53              	.L2:
+  59:hal/Landungsbruecke/tmc/HAL.c **** 
+  54              		.loc 1 59 3 view .LVU9
+  59:hal/Landungsbruecke/tmc/HAL.c **** 
+  55              		.loc 1 59 13 is_stmt 0 view .LVU10
+  56 0010 024A     		ldr	r2, .L5+4
+  57 0012 C3F80C2D 		str	r2, [r3, #3340]
+  58 0016 FAE7     		b	.L3
+  59              	.L6:
+  60              		.align	2
+  61              	.L5:
+  62 0018 0400FA05 		.word	100270084
+  63 001c 0100FA05 		.word	100270081
+  64              		.cfi_endproc
+  65              	.LFE1:
+  67              		.align	1
+  68              		.syntax unified
+  69              		.thumb
+  70              		.thumb_func
+  71              		.fpu softvfp
+  73              	NVIC_DeInit:
+  74              	.LFB2:
+  64:hal/Landungsbruecke/tmc/HAL.c **** }
+  65:hal/Landungsbruecke/tmc/HAL.c **** 
+  66:hal/Landungsbruecke/tmc/HAL.c **** static void NVIC_DeInit(void)
+  67:hal/Landungsbruecke/tmc/HAL.c **** {
+  75              		.loc 1 67 1 is_stmt 1 view -0
+  76              		.cfi_startproc
+  77              		@ args = 0, pretend = 0, frame = 0
+  78              		@ frame_needed = 0, uses_anonymous_args = 0
+  79              		@ link register save eliminated.
+  68:hal/Landungsbruecke/tmc/HAL.c **** 	uint8_t index;
+  80              		.loc 1 68 2 view .LVU12
+  69:hal/Landungsbruecke/tmc/HAL.c **** 
+  70:hal/Landungsbruecke/tmc/HAL.c **** 	asm volatile("CPSID I\n");	// disable interrupts
+  81              		.loc 1 70 2 view .LVU13
+  82              		.syntax unified
+  83              	@ 70 "hal/Landungsbruecke/tmc/HAL.c" 1
+  84 0020 72B6     		CPSID I
+  85              	
+  86              	@ 0 "" 2
+  71:hal/Landungsbruecke/tmc/HAL.c **** 
+  72:hal/Landungsbruecke/tmc/HAL.c **** 	// Clear all NVIC interrupts
+  73:hal/Landungsbruecke/tmc/HAL.c **** 	for(index = 0; index < (sizeof(NVIC_BASE_PTR->ICER)/sizeof(NVIC_BASE_PTR->ICER[0])); index++)
+  87              		.loc 1 73 2 view .LVU14
+  88              	.LVL1:
+  89              		.loc 1 73 17 view .LVU15
+  74:hal/Landungsbruecke/tmc/HAL.c **** 		NVIC_ICER_REG(NVIC_BASE_PTR,index) = 0xFFFFFFFF;	// Interrupt clear-enable Registers
+  90              		.loc 1 74 3 view .LVU16
+  91              		.loc 1 74 38 is_stmt 0 view .LVU17
+  92              		.thumb
+  93              		.syntax unified
+  94 0022 0F4B     		ldr	r3, .L10
+  95 0024 4FF0FF32 		mov	r2, #-1
+  96 0028 C3F88020 		str	r2, [r3, #128]
+  73:hal/Landungsbruecke/tmc/HAL.c **** 		NVIC_ICER_REG(NVIC_BASE_PTR,index) = 0xFFFFFFFF;	// Interrupt clear-enable Registers
+  97              		.loc 1 73 87 is_stmt 1 view .LVU18
+  98              	.LVL2:
+  73:hal/Landungsbruecke/tmc/HAL.c **** 		NVIC_ICER_REG(NVIC_BASE_PTR,index) = 0xFFFFFFFF;	// Interrupt clear-enable Registers
+  99              		.loc 1 73 17 view .LVU19
+ 100              		.loc 1 74 3 view .LVU20
+ 101              		.loc 1 74 38 is_stmt 0 view .LVU21
+ 102 002c C3F88420 		str	r2, [r3, #132]
+  73:hal/Landungsbruecke/tmc/HAL.c **** 		NVIC_ICER_REG(NVIC_BASE_PTR,index) = 0xFFFFFFFF;	// Interrupt clear-enable Registers
+ 103              		.loc 1 73 87 is_stmt 1 view .LVU22
+ 104              	.LVL3:
+  73:hal/Landungsbruecke/tmc/HAL.c **** 		NVIC_ICER_REG(NVIC_BASE_PTR,index) = 0xFFFFFFFF;	// Interrupt clear-enable Registers
+ 105              		.loc 1 73 17 view .LVU23
+ 106              		.loc 1 74 3 view .LVU24
+ 107              		.loc 1 74 38 is_stmt 0 view .LVU25
+ 108 0030 C3F88820 		str	r2, [r3, #136]
+  73:hal/Landungsbruecke/tmc/HAL.c **** 		NVIC_ICER_REG(NVIC_BASE_PTR,index) = 0xFFFFFFFF;	// Interrupt clear-enable Registers
+ 109              		.loc 1 73 87 is_stmt 1 view .LVU26
+ 110              	.LVL4:
+  73:hal/Landungsbruecke/tmc/HAL.c **** 		NVIC_ICER_REG(NVIC_BASE_PTR,index) = 0xFFFFFFFF;	// Interrupt clear-enable Registers
+ 111              		.loc 1 73 17 view .LVU27
+ 112              		.loc 1 74 3 view .LVU28
+ 113              		.loc 1 74 38 is_stmt 0 view .LVU29
+ 114 0034 C3F88C20 		str	r2, [r3, #140]
+  73:hal/Landungsbruecke/tmc/HAL.c **** 		NVIC_ICER_REG(NVIC_BASE_PTR,index) = 0xFFFFFFFF;	// Interrupt clear-enable Registers
+ 115              		.loc 1 73 87 is_stmt 1 view .LVU30
+ 116              	.LVL5:
+  73:hal/Landungsbruecke/tmc/HAL.c **** 		NVIC_ICER_REG(NVIC_BASE_PTR,index) = 0xFFFFFFFF;	// Interrupt clear-enable Registers
+ 117              		.loc 1 73 17 view .LVU31
+  75:hal/Landungsbruecke/tmc/HAL.c **** 	for(index = 0; index < (sizeof(NVIC_BASE_PTR->ICPR)/sizeof(NVIC_BASE_PTR->ICPR[0])); index++)
+ 118              		.loc 1 75 17 view .LVU32
+  76:hal/Landungsbruecke/tmc/HAL.c **** 		NVIC_ICPR_REG(NVIC_BASE_PTR,index) = 0xFFFFFFFF;	// Interrupt clear-pending Registers
+ 119              		.loc 1 76 3 view .LVU33
+ 120              		.loc 1 76 38 is_stmt 0 view .LVU34
+ 121 0038 C3F88021 		str	r2, [r3, #384]
+  75:hal/Landungsbruecke/tmc/HAL.c **** 	for(index = 0; index < (sizeof(NVIC_BASE_PTR->ICPR)/sizeof(NVIC_BASE_PTR->ICPR[0])); index++)
+ 122              		.loc 1 75 87 is_stmt 1 view .LVU35
+ 123              	.LVL6:
+  75:hal/Landungsbruecke/tmc/HAL.c **** 	for(index = 0; index < (sizeof(NVIC_BASE_PTR->ICPR)/sizeof(NVIC_BASE_PTR->ICPR[0])); index++)
+ 124              		.loc 1 75 17 view .LVU36
+ 125              		.loc 1 76 3 view .LVU37
+ 126              		.loc 1 76 38 is_stmt 0 view .LVU38
+ 127 003c C3F88421 		str	r2, [r3, #388]
+  75:hal/Landungsbruecke/tmc/HAL.c **** 	for(index = 0; index < (sizeof(NVIC_BASE_PTR->ICPR)/sizeof(NVIC_BASE_PTR->ICPR[0])); index++)
+ 128              		.loc 1 75 87 is_stmt 1 view .LVU39
+ 129              	.LVL7:
+  75:hal/Landungsbruecke/tmc/HAL.c **** 	for(index = 0; index < (sizeof(NVIC_BASE_PTR->ICPR)/sizeof(NVIC_BASE_PTR->ICPR[0])); index++)
+ 130              		.loc 1 75 17 view .LVU40
+ 131              		.loc 1 76 3 view .LVU41
+ 132              		.loc 1 76 38 is_stmt 0 view .LVU42
+ 133 0040 C3F88821 		str	r2, [r3, #392]
+  75:hal/Landungsbruecke/tmc/HAL.c **** 	for(index = 0; index < (sizeof(NVIC_BASE_PTR->ICPR)/sizeof(NVIC_BASE_PTR->ICPR[0])); index++)
+ 134              		.loc 1 75 87 is_stmt 1 view .LVU43
+ 135              	.LVL8:
+  75:hal/Landungsbruecke/tmc/HAL.c **** 	for(index = 0; index < (sizeof(NVIC_BASE_PTR->ICPR)/sizeof(NVIC_BASE_PTR->ICPR[0])); index++)
+ 136              		.loc 1 75 17 view .LVU44
+ 137              		.loc 1 76 3 view .LVU45
+ 138              		.loc 1 76 38 is_stmt 0 view .LVU46
+ 139 0044 C3F88C21 		str	r2, [r3, #396]
+  75:hal/Landungsbruecke/tmc/HAL.c **** 	for(index = 0; index < (sizeof(NVIC_BASE_PTR->ICPR)/sizeof(NVIC_BASE_PTR->ICPR[0])); index++)
+ 140              		.loc 1 75 87 is_stmt 1 view .LVU47
+ 141              	.LVL9:
+  75:hal/Landungsbruecke/tmc/HAL.c **** 	for(index = 0; index < (sizeof(NVIC_BASE_PTR->ICPR)/sizeof(NVIC_BASE_PTR->ICPR[0])); index++)
+ 142              		.loc 1 75 17 view .LVU48
+  77:hal/Landungsbruecke/tmc/HAL.c **** 
+  78:hal/Landungsbruecke/tmc/HAL.c **** 	// Reset interrupt priorities
+  79:hal/Landungsbruecke/tmc/HAL.c **** 	for(index = 0; index < (sizeof(NVIC_BASE_PTR->IP)/sizeof(NVIC_BASE_PTR->IP[0])); index++)
+ 143              		.loc 1 79 17 view .LVU49
+  76:hal/Landungsbruecke/tmc/HAL.c **** 		NVIC_ICPR_REG(NVIC_BASE_PTR,index) = 0xFFFFFFFF;	// Interrupt clear-pending Registers
+ 144              		.loc 1 76 38 is_stmt 0 view .LVU50
+ 145 0048 0022     		movs	r2, #0
+  80:hal/Landungsbruecke/tmc/HAL.c **** 		NVIC_IP_REG(NVIC_BASE_PTR,index) = 0x00000000;
+ 146              		.loc 1 80 36 view .LVU51
+ 147 004a 1146     		mov	r1, r2
+ 148              	.LVL10:
+ 149              	.L8:
+ 150              		.loc 1 80 3 is_stmt 1 discriminator 3 view .LVU52
+ 151              		.loc 1 80 36 is_stmt 0 discriminator 3 view .LVU53
+ 152 004c 9818     		adds	r0, r3, r2
+ 153 004e 0132     		adds	r2, r2, #1
+ 154              	.LVL11:
+  79:hal/Landungsbruecke/tmc/HAL.c **** 		NVIC_IP_REG(NVIC_BASE_PTR,index) = 0x00000000;
+ 155              		.loc 1 79 2 discriminator 3 view .LVU54
+ 156 0050 6A2A     		cmp	r2, #106
+ 157              		.loc 1 80 36 discriminator 3 view .LVU55
+ 158 0052 80F80013 		strb	r1, [r0, #768]
+  79:hal/Landungsbruecke/tmc/HAL.c **** 		NVIC_IP_REG(NVIC_BASE_PTR,index) = 0x00000000;
+ 159              		.loc 1 79 83 is_stmt 1 discriminator 3 view .LVU56
+  79:hal/Landungsbruecke/tmc/HAL.c **** 		NVIC_IP_REG(NVIC_BASE_PTR,index) = 0x00000000;
+ 160              		.loc 1 79 17 discriminator 3 view .LVU57
+  79:hal/Landungsbruecke/tmc/HAL.c **** 		NVIC_IP_REG(NVIC_BASE_PTR,index) = 0x00000000;
+ 161              		.loc 1 79 2 is_stmt 0 discriminator 3 view .LVU58
+ 162 0056 F9D1     		bne	.L8
+  81:hal/Landungsbruecke/tmc/HAL.c **** 
+  82:hal/Landungsbruecke/tmc/HAL.c **** 	SYST_CSR = 0; // disable systick
+ 163              		.loc 1 82 2 is_stmt 1 view .LVU59
+ 164              		.loc 1 82 11 is_stmt 0 view .LVU60
+ 165 0058 024B     		ldr	r3, .L10+4
+ 166 005a 1960     		str	r1, [r3]
+  83:hal/Landungsbruecke/tmc/HAL.c **** }
+ 167              		.loc 1 83 1 view .LVU61
+ 168 005c 7047     		bx	lr
+ 169              	.L11:
+ 170 005e 00BF     		.align	2
+ 171              	.L10:
+ 172 0060 00E100E0 		.word	-536813312
+ 173 0064 10E000E0 		.word	-536813552
+ 174              		.cfi_endproc
+ 175              	.LFE2:
+ 177              		.align	1
+ 178              		.syntax unified
+ 179              		.thumb
+ 180              		.thumb_func
+ 181              		.fpu softvfp
+ 183              	getTristate:
+ 184              	.LVL12:
+ 185              	.LFB3:
+  84:hal/Landungsbruecke/tmc/HAL.c **** 
+  85:hal/Landungsbruecke/tmc/HAL.c **** typedef enum {
+  86:hal/Landungsbruecke/tmc/HAL.c **** 	STATE_Z    = 0,
+  87:hal/Landungsbruecke/tmc/HAL.c **** 	STATE_LOW  = 1,
+  88:hal/Landungsbruecke/tmc/HAL.c **** 	STATE_HIGH = 2
+  89:hal/Landungsbruecke/tmc/HAL.c **** } Tristate;
+  90:hal/Landungsbruecke/tmc/HAL.c **** 
+  91:hal/Landungsbruecke/tmc/HAL.c **** // Helper for get_hwid()
+  92:hal/Landungsbruecke/tmc/HAL.c **** static Tristate getTristate(IOPinTypeDef *pin)
+  93:hal/Landungsbruecke/tmc/HAL.c **** {
+ 186              		.loc 1 93 1 is_stmt 1 view -0
+ 187              		.cfi_startproc
+ 188              		@ args = 0, pretend = 0, frame = 0
+ 189              		@ frame_needed = 0, uses_anonymous_args = 0
+  94:hal/Landungsbruecke/tmc/HAL.c **** 	// Input with pulldown
+  95:hal/Landungsbruecke/tmc/HAL.c **** 	pin->configuration.GPIO_Mode = GPIO_Mode_IN;
+ 190              		.loc 1 95 2 view .LVU63
+  93:hal/Landungsbruecke/tmc/HAL.c **** 	// Input with pulldown
+ 191              		.loc 1 93 1 is_stmt 0 view .LVU64
+ 192 0068 2DE9F041 		push	{r4, r5, r6, r7, r8, lr}
+ 193              	.LCFI0:
+ 194              		.cfi_def_cfa_offset 24
+ 195              		.cfi_offset 4, -24
+ 196              		.cfi_offset 5, -20
+ 197              		.cfi_offset 6, -16
+ 198              		.cfi_offset 7, -12
+ 199              		.cfi_offset 8, -8
+ 200              		.cfi_offset 14, -4
+  96:hal/Landungsbruecke/tmc/HAL.c **** 	pin->configuration.GPIO_OType = GPIO_OType_OD;
+  97:hal/Landungsbruecke/tmc/HAL.c **** 	pin->configuration.GPIO_PuPd = GPIO_PuPd_DOWN;
+  98:hal/Landungsbruecke/tmc/HAL.c **** 	HAL.IOs->config->set(pin);
+ 201              		.loc 1 98 17 view .LVU65
+ 202 006c 104E     		ldr	r6, .L15
+  95:hal/Landungsbruecke/tmc/HAL.c **** 	pin->configuration.GPIO_OType = GPIO_OType_OD;
+ 203              		.loc 1 95 31 view .LVU66
+ 204 006e 4FF00808 		mov	r8, #8
+  96:hal/Landungsbruecke/tmc/HAL.c **** 	pin->configuration.GPIO_OType = GPIO_OType_OD;
+ 205              		.loc 1 96 32 view .LVU67
+ 206 0072 0127     		movs	r7, #1
+  97:hal/Landungsbruecke/tmc/HAL.c **** 	HAL.IOs->config->set(pin);
+ 207              		.loc 1 97 31 view .LVU68
+ 208 0074 0225     		movs	r5, #2
+ 209              		.loc 1 98 2 view .LVU69
+ 210 0076 3368     		ldr	r3, [r6]
+  95:hal/Landungsbruecke/tmc/HAL.c **** 	pin->configuration.GPIO_OType = GPIO_OType_OD;
+ 211              		.loc 1 95 31 view .LVU70
+ 212 0078 80F81580 		strb	r8, [r0, #21]
+  96:hal/Landungsbruecke/tmc/HAL.c **** 	pin->configuration.GPIO_OType = GPIO_OType_OD;
+ 213              		.loc 1 96 2 is_stmt 1 view .LVU71
+  93:hal/Landungsbruecke/tmc/HAL.c **** 	// Input with pulldown
+ 214              		.loc 1 93 1 is_stmt 0 view .LVU72
+ 215 007c 0446     		mov	r4, r0
+  96:hal/Landungsbruecke/tmc/HAL.c **** 	pin->configuration.GPIO_PuPd = GPIO_PuPd_DOWN;
+ 216              		.loc 1 96 32 view .LVU73
+ 217 007e C775     		strb	r7, [r0, #23]
+  97:hal/Landungsbruecke/tmc/HAL.c **** 	HAL.IOs->config->set(pin);
+ 218              		.loc 1 97 2 is_stmt 1 view .LVU74
+  97:hal/Landungsbruecke/tmc/HAL.c **** 	HAL.IOs->config->set(pin);
+ 219              		.loc 1 97 31 is_stmt 0 view .LVU75
+ 220 0080 0576     		strb	r5, [r0, #24]
+ 221              		.loc 1 98 2 is_stmt 1 view .LVU76
+ 222 0082 9847     		blx	r3
+ 223              	.LVL13:
+  99:hal/Landungsbruecke/tmc/HAL.c **** 
+ 100:hal/Landungsbruecke/tmc/HAL.c **** 	if (HAL.IOs->config->isHigh(pin)) {
+ 224              		.loc 1 100 2 view .LVU77
+ 225              		.loc 1 100 6 is_stmt 0 view .LVU78
+ 226 0084 736A     		ldr	r3, [r6, #36]
+ 227 0086 2046     		mov	r0, r4
+ 228 0088 9847     		blx	r3
+ 229              	.LVL14:
+ 230              		.loc 1 100 5 view .LVU79
+ 231 008a 70B9     		cbnz	r0, .L14
+ 101:hal/Landungsbruecke/tmc/HAL.c **** 		// High despite pulldown -> High state
+ 102:hal/Landungsbruecke/tmc/HAL.c **** 		return STATE_HIGH;
+ 103:hal/Landungsbruecke/tmc/HAL.c **** 	}
+ 104:hal/Landungsbruecke/tmc/HAL.c **** 
+ 105:hal/Landungsbruecke/tmc/HAL.c **** 	// Input with pullup
+ 106:hal/Landungsbruecke/tmc/HAL.c **** 	pin->configuration.GPIO_Mode = GPIO_Mode_IN;
+ 232              		.loc 1 106 2 is_stmt 1 view .LVU80
+ 107:hal/Landungsbruecke/tmc/HAL.c **** 	pin->configuration.GPIO_OType = GPIO_OType_OD;
+ 108:hal/Landungsbruecke/tmc/HAL.c **** 	pin->configuration.GPIO_PuPd = GPIO_PuPd_UP;
+ 109:hal/Landungsbruecke/tmc/HAL.c **** 	HAL.IOs->config->set(pin);
+ 233              		.loc 1 109 2 is_stmt 0 view .LVU81
+ 234 008c 3368     		ldr	r3, [r6]
+ 106:hal/Landungsbruecke/tmc/HAL.c **** 	pin->configuration.GPIO_OType = GPIO_OType_OD;
+ 235              		.loc 1 106 31 view .LVU82
+ 236 008e 84F81580 		strb	r8, [r4, #21]
+ 107:hal/Landungsbruecke/tmc/HAL.c **** 	pin->configuration.GPIO_OType = GPIO_OType_OD;
+ 237              		.loc 1 107 2 is_stmt 1 view .LVU83
+ 238              		.loc 1 109 2 is_stmt 0 view .LVU84
+ 239 0092 2046     		mov	r0, r4
+ 107:hal/Landungsbruecke/tmc/HAL.c **** 	pin->configuration.GPIO_OType = GPIO_OType_OD;
+ 240              		.loc 1 107 32 view .LVU85
+ 241 0094 E775     		strb	r7, [r4, #23]
+ 108:hal/Landungsbruecke/tmc/HAL.c **** 	HAL.IOs->config->set(pin);
+ 242              		.loc 1 108 2 is_stmt 1 view .LVU86
+ 108:hal/Landungsbruecke/tmc/HAL.c **** 	HAL.IOs->config->set(pin);
+ 243              		.loc 1 108 31 is_stmt 0 view .LVU87
+ 244 0096 2776     		strb	r7, [r4, #24]
+ 245              		.loc 1 109 2 is_stmt 1 view .LVU88
+ 246 0098 9847     		blx	r3
+ 247              	.LVL15:
+ 110:hal/Landungsbruecke/tmc/HAL.c **** 
+ 111:hal/Landungsbruecke/tmc/HAL.c **** 	if (HAL.IOs->config->isHigh(pin)) {
+ 248              		.loc 1 111 2 view .LVU89
+ 249              		.loc 1 111 6 is_stmt 0 view .LVU90
+ 250 009a 736A     		ldr	r3, [r6, #36]
+ 251 009c 2046     		mov	r0, r4
+ 252 009e 9847     		blx	r3
+ 253              	.LVL16:
+ 102:hal/Landungsbruecke/tmc/HAL.c **** 	}
+ 254              		.loc 1 102 10 view .LVU91
+ 255 00a0 B0FA80F0 		clz	r0, r0
+ 256 00a4 4009     		lsrs	r0, r0, #5
+ 257              	.L13:
+ 112:hal/Landungsbruecke/tmc/HAL.c **** 		// High from pullup -> Z state
+ 113:hal/Landungsbruecke/tmc/HAL.c **** 		return STATE_Z;
+ 114:hal/Landungsbruecke/tmc/HAL.c **** 	} else {
+ 115:hal/Landungsbruecke/tmc/HAL.c **** 		// Low despite pullup -> Low state
+ 116:hal/Landungsbruecke/tmc/HAL.c **** 		return STATE_LOW;
+ 117:hal/Landungsbruecke/tmc/HAL.c **** 	}
+ 118:hal/Landungsbruecke/tmc/HAL.c **** }
+ 258              		.loc 1 118 1 view .LVU92
+ 259 00a6 BDE8F081 		pop	{r4, r5, r6, r7, r8, pc}
+ 260              	.LVL17:
+ 261              	.L14:
+ 102:hal/Landungsbruecke/tmc/HAL.c **** 	}
+ 262              		.loc 1 102 10 view .LVU93
+ 263 00aa 2846     		mov	r0, r5
+ 264 00ac FBE7     		b	.L13
+ 265              	.L16:
+ 266 00ae 00BF     		.align	2
+ 267              	.L15:
+ 268 00b0 00000000 		.word	IOs
+ 269              		.cfi_endproc
+ 270              	.LFE3:
+ 272              		.align	1
+ 273              		.syntax unified
+ 274              		.thumb
+ 275              		.thumb_func
+ 276              		.fpu softvfp
+ 278              	init:
+ 279              	.LFB0:
+  31:hal/Landungsbruecke/tmc/HAL.c **** 	Cpu.initClocks();
+ 280              		.loc 1 31 1 is_stmt 1 view -0
+ 281              		.cfi_startproc
+ 282              		@ args = 0, pretend = 0, frame = 0
+ 283              		@ frame_needed = 0, uses_anonymous_args = 0
+  32:hal/Landungsbruecke/tmc/HAL.c **** 	Cpu.initLowLevel();
+ 284              		.loc 1 32 2 view .LVU95
+  31:hal/Landungsbruecke/tmc/HAL.c **** 	Cpu.initClocks();
+ 285              		.loc 1 31 1 is_stmt 0 view .LVU96
+ 286 00b4 70B5     		push	{r4, r5, r6, lr}
+ 287              	.LCFI1:
+ 288              		.cfi_def_cfa_offset 16
+ 289              		.cfi_offset 4, -16
+ 290              		.cfi_offset 5, -12
+ 291              		.cfi_offset 6, -8
+ 292              		.cfi_offset 14, -4
+  32:hal/Landungsbruecke/tmc/HAL.c **** 	Cpu.initLowLevel();
+ 293              		.loc 1 32 5 view .LVU97
+ 294 00b6 1E4C     		ldr	r4, .L18
+  32:hal/Landungsbruecke/tmc/HAL.c **** 	Cpu.initLowLevel();
+ 295              		.loc 1 32 2 view .LVU98
+ 296 00b8 2368     		ldr	r3, [r4]
+ 297 00ba 9847     		blx	r3
+ 298              	.LVL18:
+  33:hal/Landungsbruecke/tmc/HAL.c **** 	EnableInterrupts;;
+ 299              		.loc 1 33 2 is_stmt 1 view .LVU99
+ 300 00bc 6368     		ldr	r3, [r4, #4]
+ 301 00be 9847     		blx	r3
+ 302              	.LVL19:
+  34:hal/Landungsbruecke/tmc/HAL.c **** 
+ 303              		.loc 1 34 2 view .LVU100
+ 304              		.syntax unified
+ 305              	@ 34 "hal/Landungsbruecke/tmc/HAL.c" 1
+ 306 00c0 62B6     		 CPSIE i
+ 307              	@ 0 "" 2
+  34:hal/Landungsbruecke/tmc/HAL.c **** 
+ 308              		.loc 1 34 19 view .LVU101
+  36:hal/Landungsbruecke/tmc/HAL.c **** 	wait(100);
+ 309              		.loc 1 36 2 view .LVU102
+ 310              		.thumb
+ 311              		.syntax unified
+ 312 00c2 FFF7FEFF 		bl	systick_init
+ 313              	.LVL20:
+  37:hal/Landungsbruecke/tmc/HAL.c **** 
+ 314              		.loc 1 37 2 view .LVU103
+ 315 00c6 6420     		movs	r0, #100
+ 316 00c8 FFF7FEFF 		bl	wait
+ 317              	.LVL21:
+  39:hal/Landungsbruecke/tmc/HAL.c **** 	IOMap.init();
+ 318              		.loc 1 39 2 view .LVU104
+  39:hal/Landungsbruecke/tmc/HAL.c **** 	IOMap.init();
+ 319              		.loc 1 39 5 is_stmt 0 view .LVU105
+ 320 00cc 194B     		ldr	r3, .L18+4
+  40:hal/Landungsbruecke/tmc/HAL.c **** 	LEDs.init();
+ 321              		.loc 1 40 7 view .LVU106
+ 322 00ce 1A4E     		ldr	r6, .L18+8
+  39:hal/Landungsbruecke/tmc/HAL.c **** 	IOMap.init();
+ 323              		.loc 1 39 2 view .LVU107
+ 324 00d0 9B6A     		ldr	r3, [r3, #40]
+ 325 00d2 9847     		blx	r3
+ 326              	.LVL22:
+  40:hal/Landungsbruecke/tmc/HAL.c **** 	LEDs.init();
+ 327              		.loc 1 40 2 is_stmt 1 view .LVU108
+ 328 00d4 3368     		ldr	r3, [r6]
+ 329 00d6 9847     		blx	r3
+ 330              	.LVL23:
+  41:hal/Landungsbruecke/tmc/HAL.c **** 	ADCs.init();
+ 331              		.loc 1 41 2 view .LVU109
+  41:hal/Landungsbruecke/tmc/HAL.c **** 	ADCs.init();
+ 332              		.loc 1 41 6 is_stmt 0 view .LVU110
+ 333 00d8 184B     		ldr	r3, .L18+12
+  41:hal/Landungsbruecke/tmc/HAL.c **** 	ADCs.init();
+ 334              		.loc 1 41 2 view .LVU111
+ 335 00da 1B68     		ldr	r3, [r3]
+ 336 00dc 9847     		blx	r3
+ 337              	.LVL24:
+  42:hal/Landungsbruecke/tmc/HAL.c **** 	SPI.init();
+ 338              		.loc 1 42 2 is_stmt 1 view .LVU112
+  42:hal/Landungsbruecke/tmc/HAL.c **** 	SPI.init();
+ 339              		.loc 1 42 6 is_stmt 0 view .LVU113
+ 340 00de 184B     		ldr	r3, .L18+16
+  42:hal/Landungsbruecke/tmc/HAL.c **** 	SPI.init();
+ 341              		.loc 1 42 2 view .LVU114
+ 342 00e0 9B69     		ldr	r3, [r3, #24]
+ 343 00e2 9847     		blx	r3
+ 344              	.LVL25:
+  43:hal/Landungsbruecke/tmc/HAL.c **** 	WLAN.init();
+ 345              		.loc 1 43 2 is_stmt 1 view .LVU115
+  43:hal/Landungsbruecke/tmc/HAL.c **** 	WLAN.init();
+ 346              		.loc 1 43 5 is_stmt 0 view .LVU116
+ 347 00e4 174B     		ldr	r3, .L18+20
+  43:hal/Landungsbruecke/tmc/HAL.c **** 	WLAN.init();
+ 348              		.loc 1 43 2 view .LVU117
+ 349 00e6 9B6A     		ldr	r3, [r3, #40]
+ 350 00e8 9847     		blx	r3
+ 351              	.LVL26:
+  44:hal/Landungsbruecke/tmc/HAL.c **** 	RS232.init();
+ 352              		.loc 1 44 2 is_stmt 1 view .LVU118
+  44:hal/Landungsbruecke/tmc/HAL.c **** 	RS232.init();
+ 353              		.loc 1 44 6 is_stmt 0 view .LVU119
+ 354 00ea 174B     		ldr	r3, .L18+24
+  44:hal/Landungsbruecke/tmc/HAL.c **** 	RS232.init();
+ 355              		.loc 1 44 2 view .LVU120
+ 356 00ec 1B68     		ldr	r3, [r3]
+ 357 00ee 9847     		blx	r3
+ 358              	.LVL27:
+  45:hal/Landungsbruecke/tmc/HAL.c **** 	USB.init();
+ 359              		.loc 1 45 2 is_stmt 1 view .LVU121
+  45:hal/Landungsbruecke/tmc/HAL.c **** 	USB.init();
+ 360              		.loc 1 45 7 is_stmt 0 view .LVU122
+ 361 00f0 164B     		ldr	r3, .L18+28
+  45:hal/Landungsbruecke/tmc/HAL.c **** 	USB.init();
+ 362              		.loc 1 45 2 view .LVU123
+ 363 00f2 1B68     		ldr	r3, [r3]
+ 364 00f4 9847     		blx	r3
+ 365              	.LVL28:
+  46:hal/Landungsbruecke/tmc/HAL.c **** 
+ 366              		.loc 1 46 2 is_stmt 1 view .LVU124
+  46:hal/Landungsbruecke/tmc/HAL.c **** 
+ 367              		.loc 1 46 5 is_stmt 0 view .LVU125
+ 368 00f6 164B     		ldr	r3, .L18+32
+  46:hal/Landungsbruecke/tmc/HAL.c **** 
+ 369              		.loc 1 46 2 view .LVU126
+ 370 00f8 1B68     		ldr	r3, [r3]
+ 371 00fa 9847     		blx	r3
+ 372              	.LVL29:
+  49:hal/Landungsbruecke/tmc/HAL.c **** }
+ 373              		.loc 1 49 2 is_stmt 1 view .LVU127
+ 374              	.LBB4:
+ 375              	.LBI4:
+ 119:hal/Landungsbruecke/tmc/HAL.c **** 
+ 120:hal/Landungsbruecke/tmc/HAL.c **** // Determines HW version of Landungsbruecke to distinct between 1.X and 2.0+
+ 121:hal/Landungsbruecke/tmc/HAL.c **** static void get_hwid(void)
+ 376              		.loc 1 121 13 view .LVU128
+ 377              	.LBB5:
+ 122:hal/Landungsbruecke/tmc/HAL.c **** {
+ 123:hal/Landungsbruecke/tmc/HAL.c **** 	static uint8_t hwid_map[27] = {
+ 378              		.loc 1 123 2 view .LVU129
+ 124:hal/Landungsbruecke/tmc/HAL.c **** 		//	 Z   Z   Z   L   L   L   H   H   H <- ID_HW_1
+ 125:hal/Landungsbruecke/tmc/HAL.c **** 		//	 Z   L   H   Z   L   H   Z   L   H <- ID_HW_0
+ 126:hal/Landungsbruecke/tmc/HAL.c **** 			 1,  0,  0,  0,  0,  0,  0,  0,  0, // Z
+ 127:hal/Landungsbruecke/tmc/HAL.c **** 			 0,  0,  0,  0,  0,  0,  0,  2,  0, // L <- ID_HW_2
+ 128:hal/Landungsbruecke/tmc/HAL.c **** 			 0,  0,  0,  0,  0,  0,  0,  0,  0  // H
+ 129:hal/Landungsbruecke/tmc/HAL.c **** 	};
+ 130:hal/Landungsbruecke/tmc/HAL.c **** 
+ 131:hal/Landungsbruecke/tmc/HAL.c **** 	uint8_t tmp;
+ 379              		.loc 1 131 2 view .LVU130
+ 132:hal/Landungsbruecke/tmc/HAL.c **** 	tmp = getTristate(&HAL.IOs->pins->ID_HW_0)
+ 380              		.loc 1 132 2 view .LVU131
+ 381              		.loc 1 132 8 is_stmt 0 view .LVU132
+ 382 00fc 06F5F560 		add	r0, r6, #1960
+ 383 0100 FFF7B2FF 		bl	getTristate
+ 384              	.LVL30:
+ 385 0104 0546     		mov	r5, r0
+ 133:hal/Landungsbruecke/tmc/HAL.c **** 	    + getTristate(&HAL.IOs->pins->ID_HW_1) * 3
+ 134:hal/Landungsbruecke/tmc/HAL.c **** 	    + getTristate(&HAL.IOs->pins->ID_HW_2) * (3*3);
+ 386              		.loc 1 134 8 view .LVU133
+ 387 0106 06F5FD60 		add	r0, r6, #2024
+ 388 010a FFF7ADFF 		bl	getTristate
+ 389              	.LVL31:
+ 390 010e 0446     		mov	r4, r0
+ 133:hal/Landungsbruecke/tmc/HAL.c **** 	    + getTristate(&HAL.IOs->pins->ID_HW_1) * 3
+ 391              		.loc 1 133 8 view .LVU134
+ 392 0110 06F5F960 		add	r0, r6, #1992
+ 393 0114 FFF7A8FF 		bl	getTristate
+ 394              	.LVL32:
+ 135:hal/Landungsbruecke/tmc/HAL.c **** 
+ 136:hal/Landungsbruecke/tmc/HAL.c **** 	hwid = hwid_map[tmp];
+ 395              		.loc 1 136 2 is_stmt 1 view .LVU135
+ 134:hal/Landungsbruecke/tmc/HAL.c **** 
+ 396              		.loc 1 134 6 is_stmt 0 view .LVU136
+ 397 0118 04EBC404 		add	r4, r4, r4, lsl #3
+ 398              	.LVL33:
+ 134:hal/Landungsbruecke/tmc/HAL.c **** 
+ 399              		.loc 1 134 6 view .LVU137
+ 400 011c 00EB4000 		add	r0, r0, r0, lsl #1
+ 401 0120 0444     		add	r4, r4, r0
+ 132:hal/Landungsbruecke/tmc/HAL.c **** 	    + getTristate(&HAL.IOs->pins->ID_HW_1) * 3
+ 402              		.loc 1 132 6 view .LVU138
+ 403 0122 2C44     		add	r4, r4, r5
+ 404              		.loc 1 136 7 view .LVU139
+ 405 0124 0B4B     		ldr	r3, .L18+36
+ 406              		.loc 1 136 17 view .LVU140
+ 407 0126 E4B2     		uxtb	r4, r4
+ 408              		.loc 1 136 7 view .LVU141
+ 409 0128 1A5D     		ldrb	r2, [r3, r4]	@ zero_extendqisi2
+ 410 012a 0B4B     		ldr	r3, .L18+40
+ 411 012c 1A70     		strb	r2, [r3]
+ 412              		.loc 1 136 7 view .LVU142
+ 413              	.LBE5:
+ 414              	.LBE4:
+  50:hal/Landungsbruecke/tmc/HAL.c **** 
+ 415              		.loc 1 50 1 view .LVU143
+ 416 012e 70BD     		pop	{r4, r5, r6, pc}
+ 417              	.L19:
+ 418              		.align	2
+ 419              	.L18:
+ 420 0130 00000000 		.word	Cpu
+ 421 0134 00000000 		.word	IOs
+ 422 0138 00000000 		.word	IOMap
+ 423 013c 00000000 		.word	LEDs
+ 424 0140 00000000 		.word	ADCs
+ 425 0144 00000000 		.word	SPI
+ 426 0148 00000000 		.word	WLAN
+ 427 014c 00000000 		.word	RS232
+ 428 0150 00000000 		.word	USB
+ 429 0154 00000000 		.word	.LANCHOR0
+ 430 0158 00000000 		.word	hwid
+ 431              		.cfi_endproc
+ 432              	.LFE0:
+ 434              		.align	1
+ 435              		.global	_exit
+ 436              		.syntax unified
+ 437              		.thumb
+ 438              		.thumb_func
+ 439              		.fpu softvfp
+ 441              	_exit:
+ 442              	.LFB5:
+ 137:hal/Landungsbruecke/tmc/HAL.c **** }
+ 138:hal/Landungsbruecke/tmc/HAL.c **** 
+ 139:hal/Landungsbruecke/tmc/HAL.c **** void _exit(int i)	// function has the attribute noreturn per default
+ 140:hal/Landungsbruecke/tmc/HAL.c **** {
+ 443              		.loc 1 140 1 is_stmt 1 view -0
+ 444              		.cfi_startproc
+ 445              		@ Volatile: function does not return.
+ 446              		@ args = 0, pretend = 0, frame = 0
+ 447              		@ frame_needed = 0, uses_anonymous_args = 0
+ 448              		@ link register save eliminated.
+ 449              	.LVL34:
+ 450              	.L21:
+ 141:hal/Landungsbruecke/tmc/HAL.c **** 	UNUSED(i);
+ 451              		.loc 1 141 2 discriminator 1 view .LVU145
+ 142:hal/Landungsbruecke/tmc/HAL.c **** 	while(1) {};
+ 452              		.loc 1 142 2 discriminator 1 view .LVU146
+ 453              		.loc 1 142 12 discriminator 1 view .LVU147
+ 454              		.loc 1 142 7 discriminator 1 view .LVU148
+ 455 015c FEE7     		b	.L21
+ 456              		.cfi_endproc
+ 457              	.LFE5:
+ 459              		.align	1
+ 460              		.global	_kill
+ 461              		.syntax unified
+ 462              		.thumb
+ 463              		.thumb_func
+ 464              		.fpu softvfp
+ 466              	_kill:
+ 467              	.LFB6:
+ 143:hal/Landungsbruecke/tmc/HAL.c **** }
+ 144:hal/Landungsbruecke/tmc/HAL.c **** 
+ 145:hal/Landungsbruecke/tmc/HAL.c **** void _kill(void)
+ 146:hal/Landungsbruecke/tmc/HAL.c **** {
+ 468              		.loc 1 146 1 view -0
+ 469              		.cfi_startproc
+ 470              		@ args = 0, pretend = 0, frame = 0
+ 471              		@ frame_needed = 0, uses_anonymous_args = 0
+ 472              		@ link register save eliminated.
+ 147:hal/Landungsbruecke/tmc/HAL.c **** }
+ 473              		.loc 1 147 1 view .LVU150
+ 474 015e 7047     		bx	lr
+ 475              		.cfi_endproc
+ 476              	.LFE6:
+ 478              		.align	1
+ 479              		.global	_getpid
+ 480              		.syntax unified
+ 481              		.thumb
+ 482              		.thumb_func
+ 483              		.fpu softvfp
+ 485              	_getpid:
+ 486              	.LFB9:
+ 487              		.cfi_startproc
+ 488              		@ args = 0, pretend = 0, frame = 0
+ 489              		@ frame_needed = 0, uses_anonymous_args = 0
+ 490              		@ link register save eliminated.
+ 491 0160 7047     		bx	lr
+ 492              		.cfi_endproc
+ 493              	.LFE9:
+ 495              		.comm	hwid,1,1
+ 496              		.global	HAL
+ 497              		.comm	UART,40,4
+ 498              		.comm	Timer,16,4
+ 499              		.comm	WLAN,36,4
+ 500              		.comm	RS232,36,4
+ 501              		.comm	LEDs,28,4
+ 502              		.comm	USB,36,4
+ 503              		.comm	uart0_interrupt,1,1
+ 504              		.comm	ADCs,32,4
+ 505              		.comm	SPI,44,4
+ 506              		.comm	IOMap,2088,4
+ 507              		.comm	IOs,52,4
+ 508              		.comm	Cpu,8,4
+ 509              		.section	.rodata
+ 510              		.align	2
+ 511              		.set	.LANCHOR0,. + 0
+ 514              	hwid_map.7364:
+ 515 0000 01000000 		.ascii	"\001\000\000\000\000\000\000\000\000\000\000\000\000"
+ 515      00000000 
+ 515      00000000 
+ 515      00
+ 516 000d 00000002 		.ascii	"\000\000\000\002\000\000\000\000\000\000\000\000\000"
+ 516      00000000 
+ 516      00000000 
+ 516      00
+ 517 001a 00       		.ascii	"\000"
+ 518 001b 00       		.space	1
+ 521              	IOFunctions:
+ 522 001c 00000000 		.word	IOs
+ 523 0020 00000000 		.word	IOMap
+ 526              	HAL:
+ 527 0024 00000000 		.word	init
+ 528 0028 00000000 		.word	reset
+ 529 002c 00000000 		.word	NVIC_DeInit
+ 530 0030 1C000000 		.word	IOFunctions
+ 531 0034 00000000 		.word	SPI
+ 532 0038 00000000 		.word	USB
+ 533 003c 00000000 		.word	LEDs
+ 534 0040 00000000 		.word	ADCs
+ 535 0044 00000000 		.word	RS232
+ 536 0048 00000000 		.word	WLAN
+ 537 004c 00000000 		.word	Timer
+ 538 0050 00000000 		.word	UART
+ 539              		.bss
+ 540              		.align	1
+ 543              	ADCValue:
+ 544 0000 00000000 		.space	12
+ 544      00000000 
+ 544      00000000 
+ 545              		.text
+ 546              	.Letext0:
+ 547              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 548              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 549              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 550              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 551              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 552              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 553              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 554              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 555              		.file 10 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 556              		.file 11 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 557              		.file 12 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 558              		.file 13 "./hal/IOs.h"
+ 559              		.file 14 "./hal/IOMap.h"
+ 560              		.file 15 "./hal/SPI.h"
+ 561              		.file 16 "./hal/ADCs.h"
+ 562              		.file 17 "./hal/RXTX.h"
+ 563              		.file 18 "./hal/USB.h"
+ 564              		.file 19 "./hal/LEDs.h"
+ 565              		.file 20 "./hal/RS232.h"
+ 566              		.file 21 "./hal/WLAN.h"
+ 567              		.file 22 "./hal/Timer.h"
+ 568              		.file 23 "./hal/UART.h"
+ 569              		.file 24 "./hal/HAL.h"
+ 570              		.file 25 "./hal/SysTick.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 HAL.c
+C:\Users\Shubham\AppData\Local\Temp\ccPiGeAS.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccPiGeAS.s:22     .text:00000000 reset
+C:\Users\Shubham\AppData\Local\Temp\ccPiGeAS.s:62     .text:00000018 $d
+C:\Users\Shubham\AppData\Local\Temp\ccPiGeAS.s:67     .text:00000020 $t
+C:\Users\Shubham\AppData\Local\Temp\ccPiGeAS.s:73     .text:00000020 NVIC_DeInit
+C:\Users\Shubham\AppData\Local\Temp\ccPiGeAS.s:172    .text:00000060 $d
+C:\Users\Shubham\AppData\Local\Temp\ccPiGeAS.s:177    .text:00000068 $t
+C:\Users\Shubham\AppData\Local\Temp\ccPiGeAS.s:183    .text:00000068 getTristate
+C:\Users\Shubham\AppData\Local\Temp\ccPiGeAS.s:268    .text:000000b0 $d
+                            *COM*:00000034 IOs
+C:\Users\Shubham\AppData\Local\Temp\ccPiGeAS.s:272    .text:000000b4 $t
+C:\Users\Shubham\AppData\Local\Temp\ccPiGeAS.s:278    .text:000000b4 init
+C:\Users\Shubham\AppData\Local\Temp\ccPiGeAS.s:420    .text:00000130 $d
+                            *COM*:00000008 Cpu
+                            *COM*:00000828 IOMap
+                            *COM*:0000001c LEDs
+                            *COM*:00000020 ADCs
+                            *COM*:0000002c SPI
+                            *COM*:00000024 WLAN
+                            *COM*:00000024 RS232
+                            *COM*:00000024 USB
+                            *COM*:00000001 hwid
+C:\Users\Shubham\AppData\Local\Temp\ccPiGeAS.s:434    .text:0000015c $t
+C:\Users\Shubham\AppData\Local\Temp\ccPiGeAS.s:441    .text:0000015c _exit
+C:\Users\Shubham\AppData\Local\Temp\ccPiGeAS.s:466    .text:0000015e _kill
+C:\Users\Shubham\AppData\Local\Temp\ccPiGeAS.s:485    .text:00000160 _getpid
+C:\Users\Shubham\AppData\Local\Temp\ccPiGeAS.s:526    .rodata:00000024 HAL
+                            *COM*:00000028 UART
+                            *COM*:00000010 Timer
+                            *COM*:00000001 uart0_interrupt
+C:\Users\Shubham\AppData\Local\Temp\ccPiGeAS.s:510    .rodata:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccPiGeAS.s:514    .rodata:00000000 hwid_map.7364
+C:\Users\Shubham\AppData\Local\Temp\ccPiGeAS.s:521    .rodata:0000001c IOFunctions
+C:\Users\Shubham\AppData\Local\Temp\ccPiGeAS.s:540    .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccPiGeAS.s:543    .bss:00000000 ADCValue
+
+UNDEFINED SYMBOLS
+systick_init
+wait

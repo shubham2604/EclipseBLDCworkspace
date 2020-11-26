@@ -1,0 +1,9 @@
+18:38:30 **** Incremental Build of configuration Release for project TMC-API ****
+cs-make all 
+Cannot run program "cs-make": Launching failed
+
+Error: Program "cs-make" not found in PATH
+PATH=[C:/Program Files/Java/jdk-14.0.2/bin/server;C:/Program Files/Java/jdk-14.0.2/bin;C:\Program Files (x86)\Intel\iCLS Client\;C:\Program Files\Intel\iCLS Client\;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files (x86)\GNU Arm Embedded Toolchain\9 2020-q2-update\bin;C:\Users\Shubham\AppData\Local\Microsoft\WindowsApps;C:\Windows\system32]
+
+18:38:30 Build Failed. 1 errors, 0 warnings. (took 127ms)
+

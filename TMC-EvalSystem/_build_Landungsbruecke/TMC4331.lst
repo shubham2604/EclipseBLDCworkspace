@@ -1,0 +1,1661 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"TMC4331.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.global	tmc4331_writeDatagram
+  17              		.arch armv7e-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	tmc4331_writeDatagram:
+  24              	.LVL0:
+  25              	.LFB0:
+  26              		.file 1 "TMC-API/tmc/ic/TMC4331/TMC4331.c"
+   1:TMC-API/tmc/ic/TMC4331/TMC4331.c **** /*
+   2:TMC-API/tmc/ic/TMC4331/TMC4331.c ****  * TMC4331.c
+   3:TMC-API/tmc/ic/TMC4331/TMC4331.c ****  *
+   4:TMC-API/tmc/ic/TMC4331/TMC4331.c ****  *  Created on: 18.07.2017
+   5:TMC-API/tmc/ic/TMC4331/TMC4331.c ****  *      Author: LK
+   6:TMC-API/tmc/ic/TMC4331/TMC4331.c ****  */
+   7:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+   8:TMC-API/tmc/ic/TMC4331/TMC4331.c **** #include "TMC4331.h"
+   9:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  10:TMC-API/tmc/ic/TMC4331/TMC4331.c **** // => SPI wrapper
+  11:TMC-API/tmc/ic/TMC4331/TMC4331.c **** // Send [length] bytes stored in the [data] array over SPI and overwrite [data]
+  12:TMC-API/tmc/ic/TMC4331/TMC4331.c **** // with the replies. data[0] is the first byte sent and received.
+  13:TMC-API/tmc/ic/TMC4331/TMC4331.c **** extern void tmc4331_readWriteArray(uint8_t channel, uint8_t *data, size_t length);
+  14:TMC-API/tmc/ic/TMC4331/TMC4331.c **** // <= SPI wrapper
+  15:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  16:TMC-API/tmc/ic/TMC4331/TMC4331.c **** // Writes (x1 << 24) | (x2 << 16) | (x3 << 8) | x4 to the given address
+  17:TMC-API/tmc/ic/TMC4331/TMC4331.c **** void tmc4331_writeDatagram(TMC4331TypeDef *tmc4331, uint8_t address, uint8_t x1, uint8_t x2, uint8_
+  18:TMC-API/tmc/ic/TMC4331/TMC4331.c **** {
+  27              		.loc 1 18 1 view -0
+  28              		.cfi_startproc
+  29              		@ args = 8, pretend = 0, frame = 8
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  19:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	int value;
+  31              		.loc 1 19 2 view .LVU1
+  20:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	uint8_t data[5] = { address | TMC4331_WRITE_BIT, x1, x2, x3, x4 };
+  32              		.loc 1 20 2 view .LVU2
+  18:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	int value;
+  33              		.loc 1 18 1 is_stmt 0 view .LVU3
+  34 0000 2DE9F743 		push	{r0, r1, r2, r4, r5, r6, r7, r8, r9, lr}
+  35              	.LCFI0:
+  36              		.cfi_def_cfa_offset 40
+  37              		.cfi_offset 4, -28
+  38              		.cfi_offset 5, -24
+  39              		.cfi_offset 6, -20
+  40              		.cfi_offset 7, -16
+  41              		.cfi_offset 8, -12
+  42              		.cfi_offset 9, -8
+  43              		.cfi_offset 14, -4
+  18:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	int value;
+  44              		.loc 1 18 1 view .LVU4
+  45 0004 9846     		mov	r8, r3
+  46              		.loc 1 20 10 view .LVU5
+  47 0006 61F07F03 		orn	r3, r1, #127
+  48              	.LVL1:
+  49              		.loc 1 20 10 view .LVU6
+  50 000a 8DF80030 		strb	r3, [sp]
+  21:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  22:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331_readWriteArray(tmc4331->config->channel, &data[0], 5);
+  51              		.loc 1 22 2 view .LVU7
+  52 000e 0368     		ldr	r3, [r0]
+  18:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	int value;
+  53              		.loc 1 18 1 view .LVU8
+  54 0010 9DF82890 		ldrb	r9, [sp, #40]	@ zero_extendqisi2
+  55 0014 9DF82C50 		ldrb	r5, [sp, #44]	@ zero_extendqisi2
+  20:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  56              		.loc 1 20 10 view .LVU9
+  57 0018 8DF80120 		strb	r2, [sp, #1]
+  18:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	int value;
+  58              		.loc 1 18 1 view .LVU10
+  59 001c 0446     		mov	r4, r0
+  60 001e 1746     		mov	r7, r2
+  61              		.loc 1 22 2 view .LVU11
+  62 0020 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+  63              	.LVL2:
+  20:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  64              		.loc 1 20 10 view .LVU12
+  65 0024 8DF80450 		strb	r5, [sp, #4]
+  66              		.loc 1 22 2 is_stmt 1 view .LVU13
+  18:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	int value;
+  67              		.loc 1 18 1 is_stmt 0 view .LVU14
+  68 0028 0E46     		mov	r6, r1
+  69              		.loc 1 22 2 view .LVU15
+  70 002a 0522     		movs	r2, #5
+  71              	.LVL3:
+  72              		.loc 1 22 2 view .LVU16
+  73 002c 6946     		mov	r1, sp
+  74              	.LVL4:
+  20:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  75              		.loc 1 20 10 view .LVU17
+  76 002e 8DF80280 		strb	r8, [sp, #2]
+  77 0032 8DF80390 		strb	r9, [sp, #3]
+  78              		.loc 1 22 2 view .LVU18
+  79 0036 FFF7FEFF 		bl	tmc4331_readWriteArray
+  80              	.LVL5:
+  23:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  24:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->status = data[0];
+  81              		.loc 1 24 2 is_stmt 1 view .LVU19
+  25:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  26:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	value = (x1 << 24) | (x2 << 16) | (x3 << 8) | x4;
+  27:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  28:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// Write to the shadow register and mark the register dirty
+  29:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	address = TMC_ADDRESS(address);
+  30:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->config->shadowRegister[address] = value;
+  82              		.loc 1 30 43 is_stmt 0 view .LVU20
+  83 003a 2268     		ldr	r2, [r4]
+  24:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  84              		.loc 1 24 18 view .LVU21
+  85 003c 9DF80030 		ldrb	r3, [sp]	@ zero_extendqisi2
+  86 0040 84F89032 		strb	r3, [r4, #656]
+  26:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  87              		.loc 1 26 2 is_stmt 1 view .LVU22
+  88              	.LVL6:
+  29:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->config->shadowRegister[address] = value;
+  89              		.loc 1 29 2 view .LVU23
+  90              		.loc 1 30 2 view .LVU24
+  91              		.loc 1 30 33 is_stmt 0 view .LVU25
+  92 0044 06F07F06 		and	r6, r6, #127
+  93              	.LVL7:
+  26:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  94              		.loc 1 26 8 view .LVU26
+  95 0048 45EA0925 		orr	r5, r5, r9, lsl #8
+  96              	.LVL8:
+  97              		.loc 1 30 43 view .LVU27
+  98 004c 02EB8601 		add	r1, r2, r6, lsl #2
+  26:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  99              		.loc 1 26 8 view .LVU28
+ 100 0050 45EA0843 		orr	r3, r5, r8, lsl #16
+ 101 0054 43EA0763 		orr	r3, r3, r7, lsl #24
+  31:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->registerAccess[address] |= TMC_ACCESS_DIRTY;
+ 102              		.loc 1 31 35 view .LVU29
+ 103 0058 3444     		add	r4, r4, r6
+ 104              	.LVL9:
+  30:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->registerAccess[address] |= TMC_ACCESS_DIRTY;
+ 105              		.loc 1 30 43 view .LVU30
+ 106 005a 4B60     		str	r3, [r1, #4]
+ 107              		.loc 1 31 2 is_stmt 1 view .LVU31
+ 108              		.loc 1 31 35 is_stmt 0 view .LVU32
+ 109 005c 94F81032 		ldrb	r3, [r4, #528]	@ zero_extendqisi2
+ 110 0060 43F00803 		orr	r3, r3, #8
+ 111 0064 84F81032 		strb	r3, [r4, #528]
+  32:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 112              		.loc 1 32 1 view .LVU33
+ 113 0068 03B0     		add	sp, sp, #12
+ 114              	.LCFI1:
+ 115              		.cfi_def_cfa_offset 28
+ 116              		@ sp needed
+ 117 006a BDE8F083 		pop	{r4, r5, r6, r7, r8, r9, pc}
+ 118              		.loc 1 32 1 view .LVU34
+ 119              		.cfi_endproc
+ 120              	.LFE0:
+ 122              		.align	1
+ 123              		.global	tmc4331_writeInt
+ 124              		.syntax unified
+ 125              		.thumb
+ 126              		.thumb_func
+ 127              		.fpu softvfp
+ 129              	tmc4331_writeInt:
+ 130              	.LVL10:
+ 131              	.LFB1:
+  33:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  34:TMC-API/tmc/ic/TMC4331/TMC4331.c **** void tmc4331_writeInt(TMC4331TypeDef *tmc4331, uint8_t address, int32_t value)
+  35:TMC-API/tmc/ic/TMC4331/TMC4331.c **** {
+ 132              		.loc 1 35 1 is_stmt 1 view -0
+ 133              		.cfi_startproc
+ 134              		@ args = 0, pretend = 0, frame = 0
+ 135              		@ frame_needed = 0, uses_anonymous_args = 0
+  36:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331_writeDatagram(tmc4331, address, BYTE(value, 3), BYTE(value, 2), BYTE(value, 1), BYTE(value
+ 136              		.loc 1 36 2 view .LVU36
+  35:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331_writeDatagram(tmc4331, address, BYTE(value, 3), BYTE(value, 2), BYTE(value, 1), BYTE(value
+ 137              		.loc 1 35 1 is_stmt 0 view .LVU37
+ 138 006e 07B5     		push	{r0, r1, r2, lr}
+ 139              	.LCFI2:
+ 140              		.cfi_def_cfa_offset 16
+ 141              		.cfi_offset 14, -4
+ 142              		.loc 1 36 2 view .LVU38
+ 143 0070 D3B2     		uxtb	r3, r2
+ 144 0072 0193     		str	r3, [sp, #4]
+ 145 0074 C2F30723 		ubfx	r3, r2, #8, #8
+ 146 0078 0093     		str	r3, [sp]
+ 147 007a C2F30743 		ubfx	r3, r2, #16, #8
+ 148 007e 120E     		lsrs	r2, r2, #24
+ 149              	.LVL11:
+ 150              		.loc 1 36 2 view .LVU39
+ 151 0080 FFF7FEFF 		bl	tmc4331_writeDatagram
+ 152              	.LVL12:
+  37:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 153              		.loc 1 37 1 view .LVU40
+ 154 0084 03B0     		add	sp, sp, #12
+ 155              	.LCFI3:
+ 156              		.cfi_def_cfa_offset 4
+ 157              		@ sp needed
+ 158 0086 5DF804FB 		ldr	pc, [sp], #4
+ 159              		.cfi_endproc
+ 160              	.LFE1:
+ 162              		.align	1
+ 163              		.global	tmc4331_readInt
+ 164              		.syntax unified
+ 165              		.thumb
+ 166              		.thumb_func
+ 167              		.fpu softvfp
+ 169              	tmc4331_readInt:
+ 170              	.LVL13:
+ 171              	.LFB2:
+  38:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  39:TMC-API/tmc/ic/TMC4331/TMC4331.c **** int32_t tmc4331_readInt(TMC4331TypeDef *tmc4331, uint8_t address)
+  40:TMC-API/tmc/ic/TMC4331/TMC4331.c **** {
+ 172              		.loc 1 40 1 is_stmt 1 view -0
+ 173              		.cfi_startproc
+ 174              		@ args = 0, pretend = 0, frame = 8
+ 175              		@ frame_needed = 0, uses_anonymous_args = 0
+  41:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	int value;
+ 176              		.loc 1 41 2 view .LVU42
+  42:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	uint8_t data[5];
+ 177              		.loc 1 42 2 view .LVU43
+  43:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  44:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	address = TMC_ADDRESS(address);
+ 178              		.loc 1 44 2 view .LVU44
+  40:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	int value;
+ 179              		.loc 1 40 1 is_stmt 0 view .LVU45
+ 180 008a 37B5     		push	{r0, r1, r2, r4, r5, lr}
+ 181              	.LCFI4:
+ 182              		.cfi_def_cfa_offset 24
+ 183              		.cfi_offset 4, -12
+ 184              		.cfi_offset 5, -8
+ 185              		.cfi_offset 14, -4
+ 186              		.loc 1 44 10 view .LVU46
+ 187 008c 01F07F05 		and	r5, r1, #127
+ 188              	.LVL14:
+  45:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  46:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	if(!TMC_IS_READABLE(tmc4331->registerAccess[address]))
+ 189              		.loc 1 46 2 is_stmt 1 view .LVU47
+ 190              		.loc 1 46 6 is_stmt 0 view .LVU48
+ 191 0090 4219     		adds	r2, r0, r5
+ 192 0092 0368     		ldr	r3, [r0]
+ 193              		.loc 1 46 4 view .LVU49
+ 194 0094 92F81022 		ldrb	r2, [r2, #528]	@ zero_extendqisi2
+ 195 0098 D207     		lsls	r2, r2, #31
+  40:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	int value;
+ 196              		.loc 1 40 1 view .LVU50
+ 197 009a 0446     		mov	r4, r0
+ 198              		.loc 1 46 4 view .LVU51
+ 199 009c 04D4     		bmi	.L4
+  47:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		return tmc4331->config->shadowRegister[address];
+ 200              		.loc 1 47 3 is_stmt 1 view .LVU52
+ 201              		.loc 1 47 41 is_stmt 0 view .LVU53
+ 202 009e 03EB8505 		add	r5, r3, r5, lsl #2
+ 203              	.LVL15:
+ 204              		.loc 1 47 41 view .LVU54
+ 205 00a2 6868     		ldr	r0, [r5, #4]
+ 206              	.LVL16:
+ 207              	.L3:
+  48:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  49:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	data[0] = address;
+  50:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331_readWriteArray(tmc4331->config->channel, &data[0], 5);
+  51:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  52:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	data[0] = address;
+  53:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331_readWriteArray(tmc4331->config->channel, &data[0], 5);
+  54:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  55:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->status = data[0];
+  56:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	value = (data[1] << 24) | (data[2] << 16) | (data[3] << 8) | data[4];
+  57:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  58:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	return value;
+  59:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 208              		.loc 1 59 1 view .LVU55
+ 209 00a4 03B0     		add	sp, sp, #12
+ 210              	.LCFI5:
+ 211              		.cfi_remember_state
+ 212              		.cfi_def_cfa_offset 12
+ 213              		@ sp needed
+ 214 00a6 30BD     		pop	{r4, r5, pc}
+ 215              	.LVL17:
+ 216              	.L4:
+ 217              	.LCFI6:
+ 218              		.cfi_restore_state
+  49:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331_readWriteArray(tmc4331->config->channel, &data[0], 5);
+ 219              		.loc 1 49 2 is_stmt 1 view .LVU56
+  50:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 220              		.loc 1 50 2 is_stmt 0 view .LVU57
+ 221 00a8 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+ 222              	.LVL18:
+  49:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331_readWriteArray(tmc4331->config->channel, &data[0], 5);
+ 223              		.loc 1 49 10 view .LVU58
+ 224 00ac 8DF80050 		strb	r5, [sp]
+  50:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 225              		.loc 1 50 2 is_stmt 1 view .LVU59
+ 226 00b0 0522     		movs	r2, #5
+ 227 00b2 6946     		mov	r1, sp
+ 228 00b4 FFF7FEFF 		bl	tmc4331_readWriteArray
+ 229              	.LVL19:
+  52:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331_readWriteArray(tmc4331->config->channel, &data[0], 5);
+ 230              		.loc 1 52 2 view .LVU60
+  53:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 231              		.loc 1 53 2 is_stmt 0 view .LVU61
+ 232 00b8 2368     		ldr	r3, [r4]
+  52:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331_readWriteArray(tmc4331->config->channel, &data[0], 5);
+ 233              		.loc 1 52 10 view .LVU62
+ 234 00ba 8DF80050 		strb	r5, [sp]
+  53:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 235              		.loc 1 53 2 is_stmt 1 view .LVU63
+ 236 00be 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+ 237 00c2 0522     		movs	r2, #5
+ 238 00c4 6946     		mov	r1, sp
+ 239 00c6 FFF7FEFF 		bl	tmc4331_readWriteArray
+ 240              	.LVL20:
+  55:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	value = (data[1] << 24) | (data[2] << 16) | (data[3] << 8) | data[4];
+ 241              		.loc 1 55 2 view .LVU64
+ 242 00ca DDF80100 		ldr	r0, [sp, #1]	@ unaligned
+  55:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	value = (data[1] << 24) | (data[2] << 16) | (data[3] << 8) | data[4];
+ 243              		.loc 1 55 18 is_stmt 0 view .LVU65
+ 244 00ce 9DF80030 		ldrb	r3, [sp]	@ zero_extendqisi2
+ 245 00d2 84F89032 		strb	r3, [r4, #656]
+  56:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 246              		.loc 1 56 2 is_stmt 1 view .LVU66
+ 247 00d6 00BA     		rev	r0, r0
+ 248              	.LVL21:
+  58:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 249              		.loc 1 58 2 view .LVU67
+  58:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 250              		.loc 1 58 9 is_stmt 0 view .LVU68
+ 251 00d8 E4E7     		b	.L3
+ 252              		.cfi_endproc
+ 253              	.LFE2:
+ 255              		.align	1
+ 256              		.global	tmc4331_readWriteCover
+ 257              		.syntax unified
+ 258              		.thumb
+ 259              		.thumb_func
+ 260              		.fpu softvfp
+ 262              	tmc4331_readWriteCover:
+ 263              	.LVL22:
+ 264              	.LFB3:
+  60:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  61:TMC-API/tmc/ic/TMC4331/TMC4331.c **** // Send [length] bytes stored in the [data] array to a driver attached to the TMC4331
+  62:TMC-API/tmc/ic/TMC4331/TMC4331.c **** // and overwrite [data] with the replies. data[0] is the first byte sent and received.
+  63:TMC-API/tmc/ic/TMC4331/TMC4331.c **** void tmc4331_readWriteCover(TMC4331TypeDef *tmc4331, uint8_t *data, size_t length)
+  64:TMC-API/tmc/ic/TMC4331/TMC4331.c **** {
+ 265              		.loc 1 64 1 is_stmt 1 view -0
+ 266              		.cfi_startproc
+ 267              		@ args = 0, pretend = 0, frame = 16
+ 268              		@ frame_needed = 0, uses_anonymous_args = 0
+  65:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// Buffering old values to not interrupt manual covering
+  66:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	int32_t old_high = tmc4331->config->shadowRegister[TMC4331_COVER_HIGH_WR];
+ 269              		.loc 1 66 2 view .LVU70
+  67:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	int32_t old_low = tmc4331->config->shadowRegister[TMC4331_COVER_LOW_WR];
+ 270              		.loc 1 67 2 view .LVU71
+  68:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  69:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// Check if datagram length is valid
+  70:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	if(length == 0 || length > 8)
+ 271              		.loc 1 70 2 view .LVU72
+  64:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// Buffering old values to not interrupt manual covering
+ 272              		.loc 1 64 1 is_stmt 0 view .LVU73
+ 273 00da 2DE9F047 		push	{r4, r5, r6, r7, r8, r9, r10, lr}
+ 274              	.LCFI7:
+ 275              		.cfi_def_cfa_offset 32
+ 276              		.cfi_offset 4, -32
+ 277              		.cfi_offset 5, -28
+ 278              		.cfi_offset 6, -24
+ 279              		.cfi_offset 7, -20
+ 280              		.cfi_offset 8, -16
+ 281              		.cfi_offset 9, -12
+ 282              		.cfi_offset 10, -8
+ 283              		.cfi_offset 14, -4
+ 284              		.loc 1 70 17 view .LVU74
+ 285 00de 531E     		subs	r3, r2, #1
+ 286              		.loc 1 70 4 view .LVU75
+ 287 00e0 072B     		cmp	r3, #7
+  64:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// Buffering old values to not interrupt manual covering
+ 288              		.loc 1 64 1 view .LVU76
+ 289 00e2 86B0     		sub	sp, sp, #24
+ 290              	.LCFI8:
+ 291              		.cfi_def_cfa_offset 56
+  64:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// Buffering old values to not interrupt manual covering
+ 292              		.loc 1 64 1 view .LVU77
+ 293 00e4 0446     		mov	r4, r0
+ 294 00e6 0E46     		mov	r6, r1
+ 295 00e8 1546     		mov	r5, r2
+ 296              		.loc 1 70 4 view .LVU78
+ 297 00ea 45D8     		bhi	.L6
+  66:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	int32_t old_low = tmc4331->config->shadowRegister[TMC4331_COVER_LOW_WR];
+ 298              		.loc 1 66 28 view .LVU79
+ 299 00ec 0368     		ldr	r3, [r0]
+ 300 00ee 8F18     		adds	r7, r1, r2
+  67:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 301              		.loc 1 67 10 view .LVU80
+ 302 00f0 D3E96D9A 		ldrd	r9, r10, [r3, #436]
+  71:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		return;
+  72:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  73:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	uint8_t bytes[8] = { 0 };
+ 303              		.loc 1 73 2 is_stmt 1 view .LVU81
+ 304 00f4 0DF11008 		add	r8, sp, #16
+ 305              		.loc 1 73 10 is_stmt 0 view .LVU82
+ 306 00f8 0023     		movs	r3, #0
+ 307 00fa CDE90433 		strd	r3, r3, [sp, #16]
+ 308              	.LVL23:
+  74:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	uint32_t tmp;
+ 309              		.loc 1 74 2 is_stmt 1 view .LVU83
+  75:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	size_t i;
+ 310              		.loc 1 75 2 view .LVU84
+  76:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  77:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// Copy data into buffer of maximum cover datagram length (8 bytes)
+  78:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	for(i = 0; i < length; i++)
+ 311              		.loc 1 78 2 view .LVU85
+ 312 00fe 4246     		mov	r2, r8
+ 313              	.LVL24:
+ 314              		.loc 1 78 2 is_stmt 0 view .LVU86
+ 315 0100 3B46     		mov	r3, r7
+ 316              	.LVL25:
+ 317              	.L9:
+ 318              		.loc 1 78 13 is_stmt 1 discriminator 1 view .LVU87
+ 319              		.loc 1 78 2 is_stmt 0 discriminator 1 view .LVU88
+ 320 0102 B342     		cmp	r3, r6
+ 321 0104 3BD1     		bne	.L10
+  79:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		bytes[i] = data[length-i-1];
+  80:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  81:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// Send the datagram
+  82:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	if(length > 4)
+ 322              		.loc 1 82 2 is_stmt 1 view .LVU89
+ 323              		.loc 1 82 4 is_stmt 0 view .LVU90
+ 324 0106 042D     		cmp	r5, #4
+ 325 0108 0DD9     		bls	.L11
+  83:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		tmc4331_writeDatagram(tmc4331, TMC4331_COVER_HIGH_WR, bytes[7], bytes[6], bytes[5], bytes[4]);
+ 326              		.loc 1 83 3 is_stmt 1 view .LVU91
+ 327 010a 9DF81430 		ldrb	r3, [sp, #20]	@ zero_extendqisi2
+ 328 010e 0193     		str	r3, [sp, #4]
+ 329 0110 9DF81530 		ldrb	r3, [sp, #21]	@ zero_extendqisi2
+ 330 0114 0093     		str	r3, [sp]
+ 331 0116 9DF81720 		ldrb	r2, [sp, #23]	@ zero_extendqisi2
+ 332 011a 9DF81630 		ldrb	r3, [sp, #22]	@ zero_extendqisi2
+ 333 011e 6D21     		movs	r1, #109
+ 334 0120 2046     		mov	r0, r4
+ 335              	.LVL26:
+ 336              		.loc 1 83 3 is_stmt 0 view .LVU92
+ 337 0122 FFF7FEFF 		bl	tmc4331_writeDatagram
+ 338              	.LVL27:
+ 339              	.L11:
+  84:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  85:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331_writeDatagram(tmc4331, TMC4331_COVER_LOW_WR, bytes[3], bytes[2], bytes[1], bytes[0]);
+ 340              		.loc 1 85 2 is_stmt 1 view .LVU93
+ 341 0126 9DF81030 		ldrb	r3, [sp, #16]	@ zero_extendqisi2
+ 342 012a 0193     		str	r3, [sp, #4]
+ 343 012c 9DF81130 		ldrb	r3, [sp, #17]	@ zero_extendqisi2
+ 344 0130 0093     		str	r3, [sp]
+ 345 0132 9DF81320 		ldrb	r2, [sp, #19]	@ zero_extendqisi2
+ 346 0136 9DF81230 		ldrb	r3, [sp, #18]	@ zero_extendqisi2
+ 347 013a 6C21     		movs	r1, #108
+ 348 013c 2046     		mov	r0, r4
+ 349 013e FFF7FEFF 		bl	tmc4331_writeDatagram
+ 350              	.LVL28:
+  86:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  87:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// Wait for datagram completion
+  88:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// TODO CHECK 3: Get the waiting for cover completion done properly (LH)
+  89:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	for(i = 0; i < 100; i++)
+ 351              		.loc 1 89 2 view .LVU94
+ 352              		.loc 1 89 8 is_stmt 0 view .LVU95
+ 353 0142 0023     		movs	r3, #0
+ 354              	.L17:
+ 355              		.loc 1 89 23 discriminator 3 view .LVU96
+ 356 0144 0393     		str	r3, [sp, #12]
+ 357              		.loc 1 89 13 is_stmt 1 discriminator 3 view .LVU97
+ 358              		.loc 1 89 15 is_stmt 0 discriminator 3 view .LVU98
+ 359 0146 039B     		ldr	r3, [sp, #12]
+ 360              		.loc 1 89 2 discriminator 3 view .LVU99
+ 361 0148 632B     		cmp	r3, #99
+ 362 014a 1DD9     		bls	.L13
+  90:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		tmp = ACCESS_ONCE(i);
+  91:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+  92:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// Read the reply
+  93:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	if(length > 4)
+ 363              		.loc 1 93 2 is_stmt 1 view .LVU100
+ 364              		.loc 1 93 4 is_stmt 0 view .LVU101
+ 365 014c 042D     		cmp	r5, #4
+ 366 014e 04D9     		bls	.L14
+  94:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	{
+  95:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		tmp = tmc4331_readInt(tmc4331, TMC4331_COVER_DRV_HIGH_RD);
+ 367              		.loc 1 95 3 is_stmt 1 view .LVU102
+ 368              		.loc 1 95 9 is_stmt 0 view .LVU103
+ 369 0150 6F21     		movs	r1, #111
+ 370 0152 2046     		mov	r0, r4
+ 371 0154 FFF7FEFF 		bl	tmc4331_readInt
+ 372              	.LVL29:
+  96:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		bytes[4] = BYTE(tmp, 0);
+ 373              		.loc 1 96 3 is_stmt 1 view .LVU104
+  97:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		bytes[5] = BYTE(tmp, 1);
+ 374              		.loc 1 97 3 view .LVU105
+  98:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		bytes[6] = BYTE(tmp, 2);
+ 375              		.loc 1 98 3 view .LVU106
+  99:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		bytes[7] = BYTE(tmp, 3);
+ 376              		.loc 1 99 3 view .LVU107
+  96:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		bytes[5] = BYTE(tmp, 1);
+ 377              		.loc 1 96 12 is_stmt 0 view .LVU108
+ 378 0158 0590     		str	r0, [sp, #20]
+ 379              	.LVL30:
+ 380              	.L14:
+ 100:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 101:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmp = tmc4331_readInt(tmc4331, TMC4331_COVER_DRV_LOW_RD);
+ 381              		.loc 1 101 2 is_stmt 1 view .LVU109
+ 382              		.loc 1 101 8 is_stmt 0 view .LVU110
+ 383 015a 6E21     		movs	r1, #110
+ 384 015c 2046     		mov	r0, r4
+ 385 015e FFF7FEFF 		bl	tmc4331_readInt
+ 386              	.LVL31:
+ 102:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	bytes[0] = BYTE(tmp, 0);
+ 387              		.loc 1 102 2 is_stmt 1 view .LVU111
+ 103:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	bytes[1] = BYTE(tmp, 1);
+ 388              		.loc 1 103 2 view .LVU112
+ 104:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	bytes[2] = BYTE(tmp, 2);
+ 389              		.loc 1 104 2 view .LVU113
+ 105:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	bytes[3] = BYTE(tmp, 3);
+ 390              		.loc 1 105 2 view .LVU114
+ 102:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	bytes[1] = BYTE(tmp, 1);
+ 391              		.loc 1 102 11 is_stmt 0 view .LVU115
+ 392 0162 0490     		str	r0, [sp, #16]
+ 106:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 107:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// Write the reply to the data array
+ 108:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	for(i = 0; i < length; i++)
+ 393              		.loc 1 108 2 is_stmt 1 view .LVU116
+ 394              	.L15:
+ 395              		.loc 1 108 13 discriminator 1 view .LVU117
+ 396              		.loc 1 108 2 is_stmt 0 discriminator 1 view .LVU118
+ 397 0164 B742     		cmp	r7, r6
+ 398 0166 12D1     		bne	.L16
+ 109:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	{
+ 110:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		data[length-i-1] = bytes[i];
+ 111:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 112:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 113:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// Rewriting old values to prevent interrupting manual covering. Imitating unchanged values and st
+ 114:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331_writeInt(tmc4331, TMC4331_COVER_HIGH_WR, old_high);
+ 399              		.loc 1 114 2 is_stmt 1 view .LVU119
+ 400 0168 5246     		mov	r2, r10
+ 401 016a 6D21     		movs	r1, #109
+ 402 016c 2046     		mov	r0, r4
+ 403              	.LVL32:
+ 404              		.loc 1 114 2 is_stmt 0 view .LVU120
+ 405 016e FFF7FEFF 		bl	tmc4331_writeInt
+ 406              	.LVL33:
+ 115:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->config->shadowRegister[TMC4331_COVER_LOW_WR] = old_low;
+ 407              		.loc 1 115 2 is_stmt 1 view .LVU121
+ 408              		.loc 1 115 56 is_stmt 0 view .LVU122
+ 409 0172 2368     		ldr	r3, [r4]
+ 410 0174 C3F8B491 		str	r9, [r3, #436]
+ 411              	.L6:
+ 116:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 412              		.loc 1 116 1 view .LVU123
+ 413 0178 06B0     		add	sp, sp, #24
+ 414              	.LCFI9:
+ 415              		.cfi_remember_state
+ 416              		.cfi_def_cfa_offset 32
+ 417              		@ sp needed
+ 418 017a BDE8F087 		pop	{r4, r5, r6, r7, r8, r9, r10, pc}
+ 419              	.LVL34:
+ 420              	.L10:
+ 421              	.LCFI10:
+ 422              		.cfi_restore_state
+  79:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 423              		.loc 1 79 3 is_stmt 1 discriminator 3 view .LVU124
+  79:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 424              		.loc 1 79 12 is_stmt 0 discriminator 3 view .LVU125
+ 425 017e 13F8011D 		ldrb	r1, [r3, #-1]!	@ zero_extendqisi2
+ 426 0182 02F8011B 		strb	r1, [r2], #1
+  78:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		bytes[i] = data[length-i-1];
+ 427              		.loc 1 78 25 is_stmt 1 discriminator 3 view .LVU126
+ 428 0186 BCE7     		b	.L9
+ 429              	.LVL35:
+ 430              	.L13:
+  90:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 431              		.loc 1 90 3 discriminator 3 view .LVU127
+  90:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 432              		.loc 1 90 7 is_stmt 0 discriminator 3 view .LVU128
+ 433 0188 039A     		ldr	r2, [sp, #12]
+  89:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		tmp = ACCESS_ONCE(i);
+ 434              		.loc 1 89 22 is_stmt 1 discriminator 3 view .LVU129
+  89:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		tmp = ACCESS_ONCE(i);
+ 435              		.loc 1 89 23 is_stmt 0 discriminator 3 view .LVU130
+ 436 018a 0133     		adds	r3, r3, #1
+ 437 018c DAE7     		b	.L17
+ 438              	.LVL36:
+ 439              	.L16:
+ 110:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 440              		.loc 1 110 3 is_stmt 1 discriminator 3 view .LVU131
+ 110:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 441              		.loc 1 110 27 is_stmt 0 discriminator 3 view .LVU132
+ 442 018e 18F8013B 		ldrb	r3, [r8], #1	@ zero_extendqisi2
+ 110:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 443              		.loc 1 110 20 discriminator 3 view .LVU133
+ 444 0192 07F8013D 		strb	r3, [r7, #-1]!
+ 108:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	{
+ 445              		.loc 1 108 25 is_stmt 1 discriminator 3 view .LVU134
+ 446 0196 E5E7     		b	.L15
+ 447              		.cfi_endproc
+ 448              	.LFE3:
+ 450              		.align	1
+ 451              		.global	tmc4331_init
+ 452              		.syntax unified
+ 453              		.thumb
+ 454              		.thumb_func
+ 455              		.fpu softvfp
+ 457              	tmc4331_init:
+ 458              	.LVL37:
+ 459              	.LFB4:
+ 117:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 118:TMC-API/tmc/ic/TMC4331/TMC4331.c **** // Provide the init function with a channel index (sent back in the SPI callback), a pointer to a C
+ 119:TMC-API/tmc/ic/TMC4331/TMC4331.c **** // and a pointer to a int32_t array (size 128) holding the reset values that shall be used.
+ 120:TMC-API/tmc/ic/TMC4331/TMC4331.c **** void tmc4331_init(TMC4331TypeDef *tmc4331, uint8_t channel, ConfigurationTypeDef *config, const int
+ 121:TMC-API/tmc/ic/TMC4331/TMC4331.c **** {
+ 460              		.loc 1 121 1 view -0
+ 461              		.cfi_startproc
+ 462              		@ args = 0, pretend = 0, frame = 0
+ 463              		@ frame_needed = 0, uses_anonymous_args = 0
+ 122:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->velocity  = 0;
+ 464              		.loc 1 122 2 view .LVU136
+ 121:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->velocity  = 0;
+ 465              		.loc 1 121 1 is_stmt 0 view .LVU137
+ 466 0198 30B5     		push	{r4, r5, lr}
+ 467              	.LCFI11:
+ 468              		.cfi_def_cfa_offset 12
+ 469              		.cfi_offset 4, -12
+ 470              		.cfi_offset 5, -8
+ 471              		.cfi_offset 14, -4
+ 472              		.loc 1 122 21 view .LVU138
+ 473 019a 0024     		movs	r4, #0
+ 123:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->oldTick   = 0;
+ 124:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->oldX      = 0;
+ 474              		.loc 1 124 21 view .LVU139
+ 475 019c C0E90244 		strd	r4, r4, [r0, #8]
+ 122:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->oldTick   = 0;
+ 476              		.loc 1 122 21 view .LVU140
+ 477 01a0 4460     		str	r4, [r0, #4]
+ 123:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->oldTick   = 0;
+ 478              		.loc 1 123 2 is_stmt 1 view .LVU141
+ 125:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->config    = config;
+ 479              		.loc 1 125 2 view .LVU142
+ 480              		.loc 1 125 21 is_stmt 0 view .LVU143
+ 481 01a2 0260     		str	r2, [r0]
+ 126:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 127:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->config->callback     = NULL;
+ 482              		.loc 1 127 2 is_stmt 1 view .LVU144
+ 483              		.loc 1 127 32 is_stmt 0 view .LVU145
+ 484 01a4 C2F80C42 		str	r4, [r2, #524]
+ 128:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->config->channel      = channel;
+ 485              		.loc 1 128 2 is_stmt 1 view .LVU146
+ 129:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->config->configIndex  = 0;
+ 130:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->config->state        = CONFIG_READY;
+ 486              		.loc 1 130 32 is_stmt 0 view .LVU147
+ 487 01a8 1480     		strh	r4, [r2]	@ movhi
+ 488 01aa 0A4C     		ldr	r4, .L21
+ 128:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->config->channel      = channel;
+ 489              		.loc 1 128 32 view .LVU148
+ 490 01ac 82F81012 		strb	r1, [r2, #528]
+ 129:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->config->configIndex  = 0;
+ 491              		.loc 1 129 2 is_stmt 1 view .LVU149
+ 492              		.loc 1 130 2 view .LVU150
+ 131:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 132:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	int i;
+ 493              		.loc 1 132 2 view .LVU151
+ 133:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	for(i = 0; i < TMC4331_REGISTER_COUNT; i++)
+ 494              		.loc 1 133 2 view .LVU152
+ 495              	.LVL38:
+ 496              		.loc 1 133 13 view .LVU153
+ 497 01b0 043B     		subs	r3, r3, #4
+ 498              	.LVL39:
+ 499              		.loc 1 133 13 is_stmt 0 view .LVU154
+ 500 01b2 00F50472 		add	r2, r0, #528
+ 501              	.LVL40:
+ 502              		.loc 1 133 13 view .LVU155
+ 503 01b6 00F11001 		add	r1, r0, #16
+ 504              	.LVL41:
+ 505              		.loc 1 133 13 view .LVU156
+ 506 01ba 00F52470 		add	r0, r0, #656
+ 507              	.LVL42:
+ 508              	.L19:
+ 134:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	{
+ 135:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		tmc4331->registerAccess[i]      = tmc4331_defaultRegisterAccess[i];
+ 509              		.loc 1 135 3 is_stmt 1 discriminator 3 view .LVU157
+ 510              		.loc 1 135 66 is_stmt 0 discriminator 3 view .LVU158
+ 511 01be 14F8015B 		ldrb	r5, [r4], #1	@ zero_extendqisi2
+ 512              	.LVL43:
+ 513              		.loc 1 135 35 discriminator 3 view .LVU159
+ 514 01c2 02F8015B 		strb	r5, [r2], #1
+ 136:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		tmc4331->registerResetState[i]  = registerResetState[i];
+ 515              		.loc 1 136 3 is_stmt 1 discriminator 3 view .LVU160
+ 516              		.loc 1 136 55 is_stmt 0 discriminator 3 view .LVU161
+ 517 01c6 53F8045F 		ldr	r5, [r3, #4]!
+ 518              		.loc 1 136 35 discriminator 3 view .LVU162
+ 519 01ca 41F8045B 		str	r5, [r1], #4
+ 133:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	for(i = 0; i < TMC4331_REGISTER_COUNT; i++)
+ 520              		.loc 1 133 41 is_stmt 1 discriminator 3 view .LVU163
+ 521              	.LVL44:
+ 133:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	for(i = 0; i < TMC4331_REGISTER_COUNT; i++)
+ 522              		.loc 1 133 13 discriminator 3 view .LVU164
+ 133:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	for(i = 0; i < TMC4331_REGISTER_COUNT; i++)
+ 523              		.loc 1 133 2 is_stmt 0 discriminator 3 view .LVU165
+ 524 01ce 8242     		cmp	r2, r0
+ 525 01d0 F5D1     		bne	.L19
+ 137:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 138:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 526              		.loc 1 138 1 view .LVU166
+ 527 01d2 30BD     		pop	{r4, r5, pc}
+ 528              	.LVL45:
+ 529              	.L22:
+ 530              		.loc 1 138 1 view .LVU167
+ 531              		.align	2
+ 532              	.L21:
+ 533 01d4 00000000 		.word	.LANCHOR0
+ 534              		.cfi_endproc
+ 535              	.LFE4:
+ 537              		.align	1
+ 538              		.global	tmc4331_reset
+ 539              		.syntax unified
+ 540              		.thumb
+ 541              		.thumb_func
+ 542              		.fpu softvfp
+ 544              	tmc4331_reset:
+ 545              	.LVL46:
+ 546              	.LFB5:
+ 139:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 140:TMC-API/tmc/ic/TMC4331/TMC4331.c **** uint8_t tmc4331_reset(TMC4331TypeDef *tmc4331)
+ 141:TMC-API/tmc/ic/TMC4331/TMC4331.c **** {
+ 547              		.loc 1 141 1 is_stmt 1 view -0
+ 548              		.cfi_startproc
+ 549              		@ args = 0, pretend = 0, frame = 0
+ 550              		@ frame_needed = 0, uses_anonymous_args = 0
+ 551              		@ link register save eliminated.
+ 142:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	if(tmc4331->config->state != CONFIG_READY)
+ 552              		.loc 1 142 2 view .LVU169
+ 553              		.loc 1 142 12 is_stmt 0 view .LVU170
+ 554 01d8 0168     		ldr	r1, [r0]
+ 555              		.loc 1 142 4 view .LVU171
+ 556 01da 0B78     		ldrb	r3, [r1]	@ zero_extendqisi2
+ 557 01dc 6BB9     		cbnz	r3, .L26
+ 558 01de 00F50473 		add	r3, r0, #528
+ 559 01e2 00F52470 		add	r0, r0, #656
+ 560              	.LVL47:
+ 561              	.L25:
+ 143:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		return 0;
+ 144:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 145:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	int i;
+ 146:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 147:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// Reset the dirty bits
+ 148:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	for(i = 0; i < TMC4331_REGISTER_COUNT; i++)
+ 149:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		tmc4331->registerAccess[i] &= ~TMC_ACCESS_DIRTY;
+ 562              		.loc 1 149 3 is_stmt 1 discriminator 3 view .LVU172
+ 563              		.loc 1 149 30 is_stmt 0 discriminator 3 view .LVU173
+ 564 01e6 1A78     		ldrb	r2, [r3]	@ zero_extendqisi2
+ 565 01e8 22F00802 		bic	r2, r2, #8
+ 566 01ec 03F8012B 		strb	r2, [r3], #1
+ 567              	.LVL48:
+ 148:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		tmc4331->registerAccess[i] &= ~TMC_ACCESS_DIRTY;
+ 568              		.loc 1 148 41 is_stmt 1 discriminator 3 view .LVU174
+ 148:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		tmc4331->registerAccess[i] &= ~TMC_ACCESS_DIRTY;
+ 569              		.loc 1 148 13 discriminator 3 view .LVU175
+ 148:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		tmc4331->registerAccess[i] &= ~TMC_ACCESS_DIRTY;
+ 570              		.loc 1 148 2 is_stmt 0 discriminator 3 view .LVU176
+ 571 01f0 8342     		cmp	r3, r0
+ 572 01f2 F8D1     		bne	.L25
+ 150:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 151:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->config->state        = CONFIG_RESET;
+ 573              		.loc 1 151 2 is_stmt 1 view .LVU177
+ 152:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->config->configIndex  = 0;
+ 574              		.loc 1 152 2 view .LVU178
+ 151:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->config->configIndex  = 0;
+ 575              		.loc 1 151 32 is_stmt 0 view .LVU179
+ 576 01f4 0120     		movs	r0, #1
+ 577              	.LVL49:
+ 151:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->config->configIndex  = 0;
+ 578              		.loc 1 151 32 view .LVU180
+ 579 01f6 0880     		strh	r0, [r1]	@ movhi
+ 153:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 154:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	return 1;
+ 580              		.loc 1 154 2 is_stmt 1 view .LVU181
+ 581              		.loc 1 154 9 is_stmt 0 view .LVU182
+ 582 01f8 7047     		bx	lr
+ 583              	.LVL50:
+ 584              	.L26:
+ 143:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 585              		.loc 1 143 10 view .LVU183
+ 586 01fa 0020     		movs	r0, #0
+ 587              	.LVL51:
+ 155:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 588              		.loc 1 155 1 view .LVU184
+ 589 01fc 7047     		bx	lr
+ 590              		.cfi_endproc
+ 591              	.LFE5:
+ 593              		.align	1
+ 594              		.global	tmc4331_restore
+ 595              		.syntax unified
+ 596              		.thumb
+ 597              		.thumb_func
+ 598              		.fpu softvfp
+ 600              	tmc4331_restore:
+ 601              	.LVL52:
+ 602              	.LFB6:
+ 156:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 157:TMC-API/tmc/ic/TMC4331/TMC4331.c **** uint8_t tmc4331_restore(TMC4331TypeDef *tmc4331)
+ 158:TMC-API/tmc/ic/TMC4331/TMC4331.c **** {
+ 603              		.loc 1 158 1 is_stmt 1 view -0
+ 604              		.cfi_startproc
+ 605              		@ args = 0, pretend = 0, frame = 0
+ 606              		@ frame_needed = 0, uses_anonymous_args = 0
+ 607              		@ link register save eliminated.
+ 159:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	if(tmc4331->config->state != CONFIG_READY)
+ 608              		.loc 1 159 2 view .LVU186
+ 609              		.loc 1 159 12 is_stmt 0 view .LVU187
+ 610 01fe 0368     		ldr	r3, [r0]
+ 611              		.loc 1 159 4 view .LVU188
+ 612 0200 1A78     		ldrb	r2, [r3]	@ zero_extendqisi2
+ 613 0202 1AB9     		cbnz	r2, .L30
+ 160:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		return 0;
+ 161:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 162:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->config->state        = CONFIG_RESTORE;
+ 614              		.loc 1 162 2 is_stmt 1 view .LVU189
+ 163:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->config->configIndex  = 0;
+ 615              		.loc 1 163 2 view .LVU190
+ 162:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->config->configIndex  = 0;
+ 616              		.loc 1 162 32 is_stmt 0 view .LVU191
+ 617 0204 0222     		movs	r2, #2
+ 618 0206 1A80     		strh	r2, [r3]	@ movhi
+ 164:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 165:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	return 1;
+ 619              		.loc 1 165 2 is_stmt 1 view .LVU192
+ 620              		.loc 1 165 9 is_stmt 0 view .LVU193
+ 621 0208 0120     		movs	r0, #1
+ 622              	.LVL53:
+ 623              		.loc 1 165 9 view .LVU194
+ 624 020a 7047     		bx	lr
+ 625              	.LVL54:
+ 626              	.L30:
+ 160:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 627              		.loc 1 160 10 view .LVU195
+ 628 020c 0020     		movs	r0, #0
+ 629              	.LVL55:
+ 166:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 630              		.loc 1 166 1 view .LVU196
+ 631 020e 7047     		bx	lr
+ 632              		.cfi_endproc
+ 633              	.LFE6:
+ 635              		.align	1
+ 636              		.global	tmc4331_setRegisterResetState
+ 637              		.syntax unified
+ 638              		.thumb
+ 639              		.thumb_func
+ 640              		.fpu softvfp
+ 642              	tmc4331_setRegisterResetState:
+ 643              	.LVL56:
+ 644              	.LFB7:
+ 167:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 168:TMC-API/tmc/ic/TMC4331/TMC4331.c **** void tmc4331_setRegisterResetState(TMC4331TypeDef *tmc4331, const int32_t *resetState)
+ 169:TMC-API/tmc/ic/TMC4331/TMC4331.c **** {
+ 645              		.loc 1 169 1 is_stmt 1 view -0
+ 646              		.cfi_startproc
+ 647              		@ args = 0, pretend = 0, frame = 0
+ 648              		@ frame_needed = 0, uses_anonymous_args = 0
+ 649              		@ link register save eliminated.
+ 170:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	uint32_t i;
+ 650              		.loc 1 170 2 view .LVU198
+ 171:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	for(i = 0; i < TMC4331_REGISTER_COUNT; i++)
+ 651              		.loc 1 171 2 view .LVU199
+ 652              		.loc 1 171 13 view .LVU200
+ 653 0210 0B1F     		subs	r3, r1, #4
+ 654 0212 1030     		adds	r0, r0, #16
+ 655              	.LVL57:
+ 656              		.loc 1 171 13 is_stmt 0 view .LVU201
+ 657 0214 01F5FE71 		add	r1, r1, #508
+ 658              	.LVL58:
+ 659              	.L32:
+ 172:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		tmc4331->registerResetState[i] = resetState[i];
+ 660              		.loc 1 172 3 is_stmt 1 discriminator 3 view .LVU202
+ 661              		.loc 1 172 46 is_stmt 0 discriminator 3 view .LVU203
+ 662 0218 53F8042F 		ldr	r2, [r3, #4]!
+ 663              		.loc 1 172 34 discriminator 3 view .LVU204
+ 664 021c 40F8042B 		str	r2, [r0], #4
+ 171:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	for(i = 0; i < TMC4331_REGISTER_COUNT; i++)
+ 665              		.loc 1 171 41 is_stmt 1 discriminator 3 view .LVU205
+ 171:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	for(i = 0; i < TMC4331_REGISTER_COUNT; i++)
+ 666              		.loc 1 171 13 discriminator 3 view .LVU206
+ 171:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	for(i = 0; i < TMC4331_REGISTER_COUNT; i++)
+ 667              		.loc 1 171 2 is_stmt 0 discriminator 3 view .LVU207
+ 668 0220 8B42     		cmp	r3, r1
+ 669 0222 F9D1     		bne	.L32
+ 173:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 670              		.loc 1 173 1 view .LVU208
+ 671 0224 7047     		bx	lr
+ 672              		.cfi_endproc
+ 673              	.LFE7:
+ 675              		.align	1
+ 676              		.global	tmc4331_setCallback
+ 677              		.syntax unified
+ 678              		.thumb
+ 679              		.thumb_func
+ 680              		.fpu softvfp
+ 682              	tmc4331_setCallback:
+ 683              	.LVL59:
+ 684              	.LFB8:
+ 174:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 175:TMC-API/tmc/ic/TMC4331/TMC4331.c **** void tmc4331_setCallback(TMC4331TypeDef *tmc4331, tmc4331_callback callback)
+ 176:TMC-API/tmc/ic/TMC4331/TMC4331.c **** {
+ 685              		.loc 1 176 1 is_stmt 1 view -0
+ 686              		.cfi_startproc
+ 687              		@ args = 0, pretend = 0, frame = 0
+ 688              		@ frame_needed = 0, uses_anonymous_args = 0
+ 689              		@ link register save eliminated.
+ 177:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331->config->callback = (tmc_callback_config) callback;
+ 690              		.loc 1 177 2 view .LVU210
+ 691              		.loc 1 177 28 is_stmt 0 view .LVU211
+ 692 0226 0368     		ldr	r3, [r0]
+ 693 0228 C3F80C12 		str	r1, [r3, #524]
+ 178:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 694              		.loc 1 178 1 view .LVU212
+ 695 022c 7047     		bx	lr
+ 696              		.cfi_endproc
+ 697              	.LFE8:
+ 699              		.align	1
+ 700              		.global	tmc4331_periodicJob
+ 701              		.syntax unified
+ 702              		.thumb
+ 703              		.thumb_func
+ 704              		.fpu softvfp
+ 706              	tmc4331_periodicJob:
+ 707              	.LVL60:
+ 708              	.LFB10:
+ 179:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 180:TMC-API/tmc/ic/TMC4331/TMC4331.c **** static void tmc4331_writeConfiguration(TMC4331TypeDef *tmc4331)
+ 181:TMC-API/tmc/ic/TMC4331/TMC4331.c **** {
+ 182:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	uint8_t *ptr = &tmc4331->config->configIndex;
+ 183:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	const int32_t *settings;
+ 184:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 185:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	if(tmc4331->config->state == CONFIG_RESTORE)
+ 186:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	{
+ 187:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		settings = &tmc4331->config->shadowRegister[0];
+ 188:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		// Find the next restorable register
+ 189:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		while((*ptr < TMC4331_REGISTER_COUNT) && !TMC_IS_RESTORABLE(tmc4331->registerAccess[*ptr]))
+ 190:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 			(*ptr)++;
+ 191:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 192:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	else
+ 193:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	{
+ 194:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		settings = &tmc4331->registerResetState[0];
+ 195:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		// Find the next resettable register
+ 196:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		while((*ptr < TMC4331_REGISTER_COUNT) && !TMC_IS_RESETTABLE(tmc4331->registerAccess[*ptr]))
+ 197:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 			(*ptr)++;
+ 198:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 199:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 200:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	if (*ptr < TMC4331_REGISTER_COUNT) {
+ 201:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		tmc4331_writeInt(tmc4331, *ptr, settings[*ptr]);
+ 202:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		(*ptr)++;
+ 203:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 204:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	else
+ 205:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	{
+ 206:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		if(tmc4331->config->callback)
+ 207:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		{
+ 208:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 			((tmc4331_callback)tmc4331->config->callback)(tmc4331, tmc4331->config->state);
+ 209:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		}
+ 210:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 211:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		tmc4331->config->state = CONFIG_READY;
+ 212:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 213:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 214:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 215:TMC-API/tmc/ic/TMC4331/TMC4331.c **** void tmc4331_periodicJob(TMC4331TypeDef *tmc4331, uint32_t tick)
+ 216:TMC-API/tmc/ic/TMC4331/TMC4331.c **** {
+ 709              		.loc 1 216 1 is_stmt 1 view -0
+ 710              		.cfi_startproc
+ 711              		@ args = 0, pretend = 0, frame = 0
+ 712              		@ frame_needed = 0, uses_anonymous_args = 0
+ 217:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	if(tmc4331->config->state != CONFIG_READY)
+ 713              		.loc 1 217 2 view .LVU214
+ 216:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	if(tmc4331->config->state != CONFIG_READY)
+ 714              		.loc 1 216 1 is_stmt 0 view .LVU215
+ 715 022e 38B5     		push	{r3, r4, r5, lr}
+ 716              	.LCFI12:
+ 717              		.cfi_def_cfa_offset 16
+ 718              		.cfi_offset 3, -16
+ 719              		.cfi_offset 4, -12
+ 720              		.cfi_offset 5, -8
+ 721              		.cfi_offset 14, -4
+ 722              		.loc 1 217 12 view .LVU216
+ 723 0230 0568     		ldr	r5, [r0]
+ 724              		.loc 1 217 20 view .LVU217
+ 725 0232 2B78     		ldrb	r3, [r5]	@ zero_extendqisi2
+ 216:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	if(tmc4331->config->state != CONFIG_READY)
+ 726              		.loc 1 216 1 view .LVU218
+ 727 0234 0446     		mov	r4, r0
+ 728              		.loc 1 217 4 view .LVU219
+ 729 0236 002B     		cmp	r3, #0
+ 730 0238 3CD0     		beq	.L36
+ 218:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	{
+ 219:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		tmc4331_writeConfiguration(tmc4331);
+ 731              		.loc 1 219 3 is_stmt 1 view .LVU220
+ 732              	.LVL61:
+ 733              	.LBB4:
+ 734              	.LBI4:
+ 180:TMC-API/tmc/ic/TMC4331/TMC4331.c **** {
+ 735              		.loc 1 180 13 view .LVU221
+ 736              	.LBB5:
+ 182:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	const int32_t *settings;
+ 737              		.loc 1 182 2 view .LVU222
+ 183:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 738              		.loc 1 183 2 view .LVU223
+ 185:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	{
+ 739              		.loc 1 185 2 view .LVU224
+ 185:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	{
+ 740              		.loc 1 185 4 is_stmt 0 view .LVU225
+ 741 023a 022B     		cmp	r3, #2
+ 742 023c 1FD1     		bne	.L37
+ 187:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		// Find the next restorable register
+ 743              		.loc 1 187 3 is_stmt 1 view .LVU226
+ 187:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		// Find the next restorable register
+ 744              		.loc 1 187 12 is_stmt 0 view .LVU227
+ 745 023e 281D     		adds	r0, r5, #4
+ 746              	.LVL62:
+ 189:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 			(*ptr)++;
+ 747              		.loc 1 189 3 is_stmt 1 view .LVU228
+ 748              	.L38:
+ 189:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 			(*ptr)++;
+ 749              		.loc 1 189 8 view .LVU229
+ 750 0240 95F90130 		ldrsb	r3, [r5, #1]
+ 189:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 			(*ptr)++;
+ 751              		.loc 1 189 10 is_stmt 0 view .LVU230
+ 752 0244 6A78     		ldrb	r2, [r5, #1]	@ zero_extendqisi2
+ 189:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 			(*ptr)++;
+ 753              		.loc 1 189 8 view .LVU231
+ 754 0246 002B     		cmp	r3, #0
+ 755 0248 08DB     		blt	.L39
+ 189:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 			(*ptr)++;
+ 756              		.loc 1 189 45 view .LVU232
+ 757 024a A318     		adds	r3, r4, r2
+ 758 024c 93F81032 		ldrb	r3, [r3, #528]	@ zero_extendqisi2
+ 189:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 			(*ptr)++;
+ 759              		.loc 1 189 41 view .LVU233
+ 760 0250 9907     		lsls	r1, r3, #30
+ 761 0252 11D5     		bpl	.L40
+ 189:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 			(*ptr)++;
+ 762              		.loc 1 189 44 view .LVU234
+ 763 0254 03F04803 		and	r3, r3, #72
+ 764 0258 402B     		cmp	r3, #64
+ 765 025a 0DD0     		beq	.L40
+ 766              	.L39:
+ 200:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		tmc4331_writeInt(tmc4331, *ptr, settings[*ptr]);
+ 767              		.loc 1 200 2 is_stmt 1 view .LVU235
+ 200:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		tmc4331_writeInt(tmc4331, *ptr, settings[*ptr]);
+ 768              		.loc 1 200 5 is_stmt 0 view .LVU236
+ 769 025c 95F90130 		ldrsb	r3, [r5, #1]
+ 200:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		tmc4331_writeInt(tmc4331, *ptr, settings[*ptr]);
+ 770              		.loc 1 200 6 view .LVU237
+ 771 0260 6978     		ldrb	r1, [r5, #1]	@ zero_extendqisi2
+ 200:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		tmc4331_writeInt(tmc4331, *ptr, settings[*ptr]);
+ 772              		.loc 1 200 5 view .LVU238
+ 773 0262 002B     		cmp	r3, #0
+ 774 0264 1BDB     		blt	.L43
+ 201:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		(*ptr)++;
+ 775              		.loc 1 201 3 is_stmt 1 view .LVU239
+ 776 0266 50F82120 		ldr	r2, [r0, r1, lsl #2]
+ 777 026a 2046     		mov	r0, r4
+ 778              	.LVL63:
+ 201:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		(*ptr)++;
+ 779              		.loc 1 201 3 is_stmt 0 view .LVU240
+ 780 026c FFF7FEFF 		bl	tmc4331_writeInt
+ 781              	.LVL64:
+ 202:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 782              		.loc 1 202 3 is_stmt 1 view .LVU241
+ 202:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 783              		.loc 1 202 9 is_stmt 0 view .LVU242
+ 784 0270 6B78     		ldrb	r3, [r5, #1]	@ zero_extendqisi2
+ 785 0272 0133     		adds	r3, r3, #1
+ 786 0274 6B70     		strb	r3, [r5, #1]
+ 787              	.LVL65:
+ 788              	.L35:
+ 202:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 789              		.loc 1 202 9 view .LVU243
+ 790              	.LBE5:
+ 791              	.LBE4:
+ 220:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		return;
+ 221:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 222:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 223:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	if((tick - tmc4331->oldTick) != 0)
+ 224:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	{
+ 225:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		tmc4331->oldTick = tick;
+ 226:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 227:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 792              		.loc 1 227 1 view .LVU244
+ 793 0276 38BD     		pop	{r3, r4, r5, pc}
+ 794              	.LVL66:
+ 795              	.L40:
+ 796              	.LBB7:
+ 797              	.LBB6:
+ 190:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 798              		.loc 1 190 4 is_stmt 1 view .LVU245
+ 190:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 799              		.loc 1 190 10 is_stmt 0 view .LVU246
+ 800 0278 0132     		adds	r2, r2, #1
+ 801 027a 6A70     		strb	r2, [r5, #1]
+ 802 027c E0E7     		b	.L38
+ 803              	.LVL67:
+ 804              	.L37:
+ 194:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		// Find the next resettable register
+ 805              		.loc 1 194 3 is_stmt 1 view .LVU247
+ 194:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		// Find the next resettable register
+ 806              		.loc 1 194 12 is_stmt 0 view .LVU248
+ 807 027e 1030     		adds	r0, r0, #16
+ 808              	.LVL68:
+ 196:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 			(*ptr)++;
+ 809              		.loc 1 196 3 is_stmt 1 view .LVU249
+ 810              	.L41:
+ 196:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 			(*ptr)++;
+ 811              		.loc 1 196 8 view .LVU250
+ 812 0280 95F90120 		ldrsb	r2, [r5, #1]
+ 196:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 			(*ptr)++;
+ 813              		.loc 1 196 10 is_stmt 0 view .LVU251
+ 814 0284 6B78     		ldrb	r3, [r5, #1]	@ zero_extendqisi2
+ 196:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 			(*ptr)++;
+ 815              		.loc 1 196 8 view .LVU252
+ 816 0286 002A     		cmp	r2, #0
+ 817 0288 E8DB     		blt	.L39
+ 196:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 			(*ptr)++;
+ 818              		.loc 1 196 45 view .LVU253
+ 819 028a E218     		adds	r2, r4, r3
+ 196:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 			(*ptr)++;
+ 820              		.loc 1 196 41 view .LVU254
+ 821 028c 92F81022 		ldrb	r2, [r2, #528]	@ zero_extendqisi2
+ 822 0290 02F04202 		and	r2, r2, #66
+ 823 0294 022A     		cmp	r2, #2
+ 824 0296 E1D0     		beq	.L39
+ 197:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 825              		.loc 1 197 4 is_stmt 1 view .LVU255
+ 197:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 826              		.loc 1 197 10 is_stmt 0 view .LVU256
+ 827 0298 0133     		adds	r3, r3, #1
+ 828 029a 6B70     		strb	r3, [r5, #1]
+ 829 029c F0E7     		b	.L41
+ 830              	.LVL69:
+ 831              	.L43:
+ 206:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		{
+ 832              		.loc 1 206 3 is_stmt 1 view .LVU257
+ 206:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		{
+ 833              		.loc 1 206 13 is_stmt 0 view .LVU258
+ 834 029e 2268     		ldr	r2, [r4]
+ 206:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		{
+ 835              		.loc 1 206 21 view .LVU259
+ 836 02a0 D2F80C32 		ldr	r3, [r2, #524]
+ 206:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		{
+ 837              		.loc 1 206 5 view .LVU260
+ 838 02a4 13B1     		cbz	r3, .L45
+ 208:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		}
+ 839              		.loc 1 208 4 is_stmt 1 view .LVU261
+ 208:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		}
+ 840              		.loc 1 208 5 is_stmt 0 view .LVU262
+ 841 02a6 1178     		ldrb	r1, [r2]	@ zero_extendqisi2
+ 842 02a8 2046     		mov	r0, r4
+ 843              	.LVL70:
+ 208:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		}
+ 844              		.loc 1 208 5 view .LVU263
+ 845 02aa 9847     		blx	r3
+ 846              	.LVL71:
+ 847              	.L45:
+ 211:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 848              		.loc 1 211 3 is_stmt 1 view .LVU264
+ 211:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 849              		.loc 1 211 26 is_stmt 0 view .LVU265
+ 850 02ac 2368     		ldr	r3, [r4]
+ 851 02ae 0022     		movs	r2, #0
+ 852 02b0 1A70     		strb	r2, [r3]
+ 853 02b2 E0E7     		b	.L35
+ 854              	.LVL72:
+ 855              	.L36:
+ 211:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 856              		.loc 1 211 26 view .LVU266
+ 857              	.LBE6:
+ 858              	.LBE7:
+ 223:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	{
+ 859              		.loc 1 223 2 is_stmt 1 view .LVU267
+ 223:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	{
+ 860              		.loc 1 223 4 is_stmt 0 view .LVU268
+ 861 02b4 C368     		ldr	r3, [r0, #12]
+ 862 02b6 8B42     		cmp	r3, r1
+ 225:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 863              		.loc 1 225 3 is_stmt 1 view .LVU269
+ 225:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 864              		.loc 1 225 20 is_stmt 0 view .LVU270
+ 865 02b8 18BF     		it	ne
+ 866 02ba C160     		strne	r1, [r0, #12]
+ 867 02bc DBE7     		b	.L35
+ 868              		.cfi_endproc
+ 869              	.LFE10:
+ 871              		.align	1
+ 872              		.global	tmc4331_discardVelocityDecimals
+ 873              		.syntax unified
+ 874              		.thumb
+ 875              		.thumb_func
+ 876              		.fpu softvfp
+ 878              	tmc4331_discardVelocityDecimals:
+ 879              	.LVL73:
+ 880              	.LFB17:
+ 228:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 229:TMC-API/tmc/ic/TMC4331/TMC4331.c **** void tmc4331_rotate(TMC4331TypeDef *tmc4331, int32_t velocity)
+ 230:TMC-API/tmc/ic/TMC4331/TMC4331.c **** {
+ 231:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// Disable Position Mode
+ 232:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	TMC4331_FIELD_UPDATE(tmc4331, TMC4331_RAMPMODE, TMC4331_OPERATION_MODE_MASK, TMC4331_OPERATION_MOD
+ 233:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 234:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331_writeInt(tmc4331, TMC4331_VMAX, tmc4331_discardVelocityDecimals(velocity));
+ 235:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 236:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 237:TMC-API/tmc/ic/TMC4331/TMC4331.c **** void tmc4331_right(TMC4331TypeDef *tmc4331, int32_t velocity)
+ 238:TMC-API/tmc/ic/TMC4331/TMC4331.c **** {
+ 239:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331_rotate(tmc4331, velocity);
+ 240:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 241:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 242:TMC-API/tmc/ic/TMC4331/TMC4331.c **** void tmc4331_left(TMC4331TypeDef *tmc4331, int32_t velocity)
+ 243:TMC-API/tmc/ic/TMC4331/TMC4331.c **** {
+ 244:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331_rotate(tmc4331, -velocity);
+ 245:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 246:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 247:TMC-API/tmc/ic/TMC4331/TMC4331.c **** void tmc4331_stop(TMC4331TypeDef *tmc4331)
+ 248:TMC-API/tmc/ic/TMC4331/TMC4331.c **** {
+ 249:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331_rotate(tmc4331, 0);
+ 250:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 251:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 252:TMC-API/tmc/ic/TMC4331/TMC4331.c **** void tmc4331_moveTo(TMC4331TypeDef *tmc4331, int32_t position, uint32_t velocityMax)
+ 253:TMC-API/tmc/ic/TMC4331/TMC4331.c **** {
+ 254:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// Enable Position Mode
+ 255:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	TMC4331_FIELD_UPDATE(tmc4331, TMC4331_RAMPMODE, TMC4331_OPERATION_MODE_MASK, TMC4331_OPERATION_MOD
+ 256:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 257:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331_writeInt(tmc4331, TMC4331_VMAX, tmc4331_discardVelocityDecimals(velocityMax));
+ 258:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 259:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331_writeInt(tmc4331, TMC4331_X_TARGET, position);
+ 260:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 261:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 262:TMC-API/tmc/ic/TMC4331/TMC4331.c **** // The function will write the absolute target position to *ticks
+ 263:TMC-API/tmc/ic/TMC4331/TMC4331.c **** void tmc4331_moveBy(TMC4331TypeDef *tmc4331, int32_t *ticks, uint32_t velocityMax)
+ 264:TMC-API/tmc/ic/TMC4331/TMC4331.c **** {
+ 265:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// determine actual position and add numbers of ticks to move
+ 266:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	*ticks += tmc4331_readInt(tmc4331, TMC4331_XACTUAL);
+ 267:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 268:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331_moveTo(tmc4331, *ticks, velocityMax);
+ 269:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 270:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 271:TMC-API/tmc/ic/TMC4331/TMC4331.c **** int32_t tmc4331_discardVelocityDecimals(int32_t value)
+ 272:TMC-API/tmc/ic/TMC4331/TMC4331.c **** {
+ 881              		.loc 1 272 1 is_stmt 1 view -0
+ 882              		.cfi_startproc
+ 883              		@ args = 0, pretend = 0, frame = 0
+ 884              		@ frame_needed = 0, uses_anonymous_args = 0
+ 885              		@ link register save eliminated.
+ 273:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	if(abs(value) > 8000000)
+ 886              		.loc 1 273 2 view .LVU272
+ 887              		.loc 1 273 4 is_stmt 0 view .LVU273
+ 888 02be 074B     		ldr	r3, .L58
+ 889              		.loc 1 273 5 view .LVU274
+ 890 02c0 80EAE072 		eor	r2, r0, r0, asr #31
+ 891 02c4 A2EBE072 		sub	r2, r2, r0, asr #31
+ 892              		.loc 1 273 4 view .LVU275
+ 893 02c8 9A42     		cmp	r2, r3
+ 894 02ca 04DD     		ble	.L56
+ 274:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	{
+ 275:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 		value = (value < 0) ? -8000000 : 8000000;
+ 895              		.loc 1 275 3 is_stmt 1 view .LVU276
+ 896              		.loc 1 275 34 is_stmt 0 view .LVU277
+ 897 02cc 044A     		ldr	r2, .L58+4
+ 898 02ce 12EA2000 		ands	r0, r2, r0, asr #32
+ 899 02d2 38BF     		it	cc
+ 900 02d4 1846     		movcc	r0, r3
+ 901              	.LVL74:
+ 902              	.L56:
+ 276:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	}
+ 277:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	return value << 8;
+ 903              		.loc 1 277 2 is_stmt 1 view .LVU278
+ 278:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 904              		.loc 1 278 1 is_stmt 0 view .LVU279
+ 905 02d6 0002     		lsls	r0, r0, #8
+ 906              	.LVL75:
+ 907              		.loc 1 278 1 view .LVU280
+ 908 02d8 7047     		bx	lr
+ 909              	.L59:
+ 910 02da 00BF     		.align	2
+ 911              	.L58:
+ 912 02dc 00127A00 		.word	8000000
+ 913 02e0 00EE85FF 		.word	-8000000
+ 914              		.cfi_endproc
+ 915              	.LFE17:
+ 917              		.align	1
+ 918              		.global	tmc4331_rotate
+ 919              		.syntax unified
+ 920              		.thumb
+ 921              		.thumb_func
+ 922              		.fpu softvfp
+ 924              	tmc4331_rotate:
+ 925              	.LVL76:
+ 926              	.LFB11:
+ 230:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// Disable Position Mode
+ 927              		.loc 1 230 1 is_stmt 1 view -0
+ 928              		.cfi_startproc
+ 929              		@ args = 0, pretend = 0, frame = 0
+ 930              		@ frame_needed = 0, uses_anonymous_args = 0
+ 232:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 931              		.loc 1 232 2 view .LVU282
+ 230:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// Disable Position Mode
+ 932              		.loc 1 230 1 is_stmt 0 view .LVU283
+ 933 02e4 38B5     		push	{r3, r4, r5, lr}
+ 934              	.LCFI13:
+ 935              		.cfi_def_cfa_offset 16
+ 936              		.cfi_offset 3, -16
+ 937              		.cfi_offset 4, -12
+ 938              		.cfi_offset 5, -8
+ 939              		.cfi_offset 14, -4
+ 230:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// Disable Position Mode
+ 940              		.loc 1 230 1 view .LVU284
+ 941 02e6 0D46     		mov	r5, r1
+ 232:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 942              		.loc 1 232 2 view .LVU285
+ 943 02e8 2021     		movs	r1, #32
+ 944              	.LVL77:
+ 230:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// Disable Position Mode
+ 945              		.loc 1 230 1 view .LVU286
+ 946 02ea 0446     		mov	r4, r0
+ 232:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 947              		.loc 1 232 2 view .LVU287
+ 948 02ec FFF7FEFF 		bl	tmc4331_readInt
+ 949              	.LVL78:
+ 232:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 950              		.loc 1 232 2 view .LVU288
+ 951 02f0 2021     		movs	r1, #32
+ 952 02f2 20F00402 		bic	r2, r0, #4
+ 953 02f6 2046     		mov	r0, r4
+ 954 02f8 FFF7FEFF 		bl	tmc4331_writeInt
+ 955              	.LVL79:
+ 234:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 956              		.loc 1 234 2 is_stmt 1 view .LVU289
+ 957 02fc 2846     		mov	r0, r5
+ 958 02fe FFF7FEFF 		bl	tmc4331_discardVelocityDecimals
+ 959              	.LVL80:
+ 960 0302 2421     		movs	r1, #36
+ 961 0304 0246     		mov	r2, r0
+ 962 0306 2046     		mov	r0, r4
+ 235:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 963              		.loc 1 235 1 is_stmt 0 view .LVU290
+ 964 0308 BDE83840 		pop	{r3, r4, r5, lr}
+ 965              	.LCFI14:
+ 966              		.cfi_restore 14
+ 967              		.cfi_restore 5
+ 968              		.cfi_restore 4
+ 969              		.cfi_restore 3
+ 970              		.cfi_def_cfa_offset 0
+ 971              	.LVL81:
+ 234:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 972              		.loc 1 234 2 view .LVU291
+ 973 030c FFF7FEBF 		b	tmc4331_writeInt
+ 974              	.LVL82:
+ 234:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 975              		.loc 1 234 2 view .LVU292
+ 976              		.cfi_endproc
+ 977              	.LFE11:
+ 979              		.align	1
+ 980              		.global	tmc4331_right
+ 981              		.syntax unified
+ 982              		.thumb
+ 983              		.thumb_func
+ 984              		.fpu softvfp
+ 986              	tmc4331_right:
+ 987              	.LVL83:
+ 988              	.LFB12:
+ 238:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331_rotate(tmc4331, velocity);
+ 989              		.loc 1 238 1 is_stmt 1 view -0
+ 990              		.cfi_startproc
+ 991              		@ args = 0, pretend = 0, frame = 0
+ 992              		@ frame_needed = 0, uses_anonymous_args = 0
+ 993              		@ link register save eliminated.
+ 239:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 994              		.loc 1 239 2 view .LVU294
+ 995 0310 FFF7FEBF 		b	tmc4331_rotate
+ 996              	.LVL84:
+ 239:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 997              		.loc 1 239 2 is_stmt 0 view .LVU295
+ 998              		.cfi_endproc
+ 999              	.LFE12:
+ 1001              		.align	1
+ 1002              		.global	tmc4331_left
+ 1003              		.syntax unified
+ 1004              		.thumb
+ 1005              		.thumb_func
+ 1006              		.fpu softvfp
+ 1008              	tmc4331_left:
+ 1009              	.LVL85:
+ 1010              	.LFB13:
+ 243:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331_rotate(tmc4331, -velocity);
+ 1011              		.loc 1 243 1 is_stmt 1 view -0
+ 1012              		.cfi_startproc
+ 1013              		@ args = 0, pretend = 0, frame = 0
+ 1014              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1015              		@ link register save eliminated.
+ 244:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 1016              		.loc 1 244 2 view .LVU297
+ 1017 0314 4942     		rsbs	r1, r1, #0
+ 1018              	.LVL86:
+ 244:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 1019              		.loc 1 244 2 is_stmt 0 view .LVU298
+ 1020 0316 FFF7FEBF 		b	tmc4331_rotate
+ 1021              	.LVL87:
+ 244:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 1022              		.loc 1 244 2 view .LVU299
+ 1023              		.cfi_endproc
+ 1024              	.LFE13:
+ 1026              		.align	1
+ 1027              		.global	tmc4331_stop
+ 1028              		.syntax unified
+ 1029              		.thumb
+ 1030              		.thumb_func
+ 1031              		.fpu softvfp
+ 1033              	tmc4331_stop:
+ 1034              	.LVL88:
+ 1035              	.LFB14:
+ 248:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	tmc4331_rotate(tmc4331, 0);
+ 1036              		.loc 1 248 1 is_stmt 1 view -0
+ 1037              		.cfi_startproc
+ 1038              		@ args = 0, pretend = 0, frame = 0
+ 1039              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1040              		@ link register save eliminated.
+ 249:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 1041              		.loc 1 249 2 view .LVU301
+ 1042 031a 0021     		movs	r1, #0
+ 1043 031c FFF7FEBF 		b	tmc4331_rotate
+ 1044              	.LVL89:
+ 249:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 1045              		.loc 1 249 2 is_stmt 0 view .LVU302
+ 1046              		.cfi_endproc
+ 1047              	.LFE14:
+ 1049              		.align	1
+ 1050              		.global	tmc4331_moveTo
+ 1051              		.syntax unified
+ 1052              		.thumb
+ 1053              		.thumb_func
+ 1054              		.fpu softvfp
+ 1056              	tmc4331_moveTo:
+ 1057              	.LVL90:
+ 1058              	.LFB15:
+ 253:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// Enable Position Mode
+ 1059              		.loc 1 253 1 is_stmt 1 view -0
+ 1060              		.cfi_startproc
+ 1061              		@ args = 0, pretend = 0, frame = 0
+ 1062              		@ frame_needed = 0, uses_anonymous_args = 0
+ 255:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 1063              		.loc 1 255 2 view .LVU304
+ 253:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// Enable Position Mode
+ 1064              		.loc 1 253 1 is_stmt 0 view .LVU305
+ 1065 0320 70B5     		push	{r4, r5, r6, lr}
+ 1066              	.LCFI15:
+ 1067              		.cfi_def_cfa_offset 16
+ 1068              		.cfi_offset 4, -16
+ 1069              		.cfi_offset 5, -12
+ 1070              		.cfi_offset 6, -8
+ 1071              		.cfi_offset 14, -4
+ 253:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// Enable Position Mode
+ 1072              		.loc 1 253 1 view .LVU306
+ 1073 0322 0D46     		mov	r5, r1
+ 255:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 1074              		.loc 1 255 2 view .LVU307
+ 1075 0324 2021     		movs	r1, #32
+ 1076              	.LVL91:
+ 253:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// Enable Position Mode
+ 1077              		.loc 1 253 1 view .LVU308
+ 1078 0326 0446     		mov	r4, r0
+ 1079 0328 1646     		mov	r6, r2
+ 255:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 1080              		.loc 1 255 2 view .LVU309
+ 1081 032a FFF7FEFF 		bl	tmc4331_readInt
+ 1082              	.LVL92:
+ 255:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 1083              		.loc 1 255 2 view .LVU310
+ 1084 032e 2021     		movs	r1, #32
+ 1085 0330 40F00402 		orr	r2, r0, #4
+ 1086 0334 2046     		mov	r0, r4
+ 1087 0336 FFF7FEFF 		bl	tmc4331_writeInt
+ 1088              	.LVL93:
+ 257:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 1089              		.loc 1 257 2 is_stmt 1 view .LVU311
+ 1090 033a 3046     		mov	r0, r6
+ 1091 033c FFF7FEFF 		bl	tmc4331_discardVelocityDecimals
+ 1092              	.LVL94:
+ 1093 0340 2421     		movs	r1, #36
+ 1094 0342 0246     		mov	r2, r0
+ 1095 0344 2046     		mov	r0, r4
+ 1096 0346 FFF7FEFF 		bl	tmc4331_writeInt
+ 1097              	.LVL95:
+ 259:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 1098              		.loc 1 259 2 view .LVU312
+ 1099 034a 2A46     		mov	r2, r5
+ 1100 034c 2046     		mov	r0, r4
+ 1101 034e 3721     		movs	r1, #55
+ 260:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 1102              		.loc 1 260 1 is_stmt 0 view .LVU313
+ 1103 0350 BDE87040 		pop	{r4, r5, r6, lr}
+ 1104              	.LCFI16:
+ 1105              		.cfi_restore 14
+ 1106              		.cfi_restore 6
+ 1107              		.cfi_restore 5
+ 1108              		.cfi_restore 4
+ 1109              		.cfi_def_cfa_offset 0
+ 1110              	.LVL96:
+ 259:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 1111              		.loc 1 259 2 view .LVU314
+ 1112 0354 FFF7FEBF 		b	tmc4331_writeInt
+ 1113              	.LVL97:
+ 259:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 1114              		.loc 1 259 2 view .LVU315
+ 1115              		.cfi_endproc
+ 1116              	.LFE15:
+ 1118              		.align	1
+ 1119              		.global	tmc4331_moveBy
+ 1120              		.syntax unified
+ 1121              		.thumb
+ 1122              		.thumb_func
+ 1123              		.fpu softvfp
+ 1125              	tmc4331_moveBy:
+ 1126              	.LVL98:
+ 1127              	.LFB16:
+ 264:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// determine actual position and add numbers of ticks to move
+ 1128              		.loc 1 264 1 is_stmt 1 view -0
+ 1129              		.cfi_startproc
+ 1130              		@ args = 0, pretend = 0, frame = 0
+ 1131              		@ frame_needed = 0, uses_anonymous_args = 0
+ 266:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 1132              		.loc 1 266 2 view .LVU317
+ 264:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// determine actual position and add numbers of ticks to move
+ 1133              		.loc 1 264 1 is_stmt 0 view .LVU318
+ 1134 0358 70B5     		push	{r4, r5, r6, lr}
+ 1135              	.LCFI17:
+ 1136              		.cfi_def_cfa_offset 16
+ 1137              		.cfi_offset 4, -16
+ 1138              		.cfi_offset 5, -12
+ 1139              		.cfi_offset 6, -8
+ 1140              		.cfi_offset 14, -4
+ 264:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// determine actual position and add numbers of ticks to move
+ 1141              		.loc 1 264 1 view .LVU319
+ 1142 035a 0C46     		mov	r4, r1
+ 266:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 1143              		.loc 1 266 12 view .LVU320
+ 1144 035c 2121     		movs	r1, #33
+ 1145              	.LVL99:
+ 264:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 	// determine actual position and add numbers of ticks to move
+ 1146              		.loc 1 264 1 view .LVU321
+ 1147 035e 0546     		mov	r5, r0
+ 1148 0360 1646     		mov	r6, r2
+ 266:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 1149              		.loc 1 266 12 view .LVU322
+ 1150 0362 FFF7FEFF 		bl	tmc4331_readInt
+ 1151              	.LVL100:
+ 266:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 1152              		.loc 1 266 9 view .LVU323
+ 1153 0366 2168     		ldr	r1, [r4]
+ 1154 0368 0144     		add	r1, r1, r0
+ 1155 036a 2160     		str	r1, [r4]
+ 268:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 1156              		.loc 1 268 2 is_stmt 1 view .LVU324
+ 1157 036c 3246     		mov	r2, r6
+ 1158 036e 2846     		mov	r0, r5
+ 269:TMC-API/tmc/ic/TMC4331/TMC4331.c **** 
+ 1159              		.loc 1 269 1 is_stmt 0 view .LVU325
+ 1160 0370 BDE87040 		pop	{r4, r5, r6, lr}
+ 1161              	.LCFI18:
+ 1162              		.cfi_restore 14
+ 1163              		.cfi_restore 6
+ 1164              		.cfi_restore 5
+ 1165              		.cfi_restore 4
+ 1166              		.cfi_def_cfa_offset 0
+ 1167              	.LVL101:
+ 268:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 1168              		.loc 1 268 2 view .LVU326
+ 1169 0374 FFF7FEBF 		b	tmc4331_moveTo
+ 1170              	.LVL102:
+ 268:TMC-API/tmc/ic/TMC4331/TMC4331.c **** }
+ 1171              		.loc 1 268 2 view .LVU327
+ 1172              		.cfi_endproc
+ 1173              	.LFE16:
+ 1175              		.section	.rodata
+ 1176              		.set	.LANCHOR0,. + 0
+ 1179              	tmc4331_defaultRegisterAccess:
+ 1180 0000 43030303 		.ascii	"C\003\003\003\003\003C\000\000\000CC\003\003\023\001"
+ 1180      03034300 
+ 1180      00004343 
+ 1180      03031301 
+ 1181 0010 03034303 		.ascii	"\003\003C\003\003\003\003C\003\003\003\003\000\003\003"
+ 1181      03030343 
+ 1181      03030303 
+ 1181      000303
+ 1182 001f 43030301 		.ascii	"C\003\003\001\001\003\003\003\003\003\003\003\003\003"
+ 1182      01030303 
+ 1182      03030303 
+ 1182      0303
+ 1183 002d 03030303 		.ascii	"\003\003\003\003C\003\003\003\003\023\003\003\003\003"
+ 1183      43030303 
+ 1183      03130303 
+ 1183      0303
+ 1184 003b 03030303 		.ascii	"\003\003\003\003\003\003\003\003\003\003\003\003\003"
+ 1184      03030303 
+ 1184      03030303 
+ 1184      03
+ 1185 0048 03030303 		.ascii	"\003\003\003\003\003\003\000\003\000\000\000\000\000"
+ 1185      03030003 
+ 1185      00000000 
+ 1185      00
+ 1186 0055 00000000 		.ascii	"\000\000\000\000\000\000\000\000\000\000\000\002\002"
+ 1186      00000000 
+ 1186      00000002 
+ 1186      02
+ 1187 0062 42000000 		.ascii	"B\000\000\000\000\002\000\000\000\000\023\023\001\001"
+ 1187      00020000 
+ 1187      00001313 
+ 1187      0101
+ 1188 0070 42424242 		.ascii	"BBBBBBBBB\001\001S\023\000B\001"
+ 1188      42424242 
+ 1188      42010153 
+ 1188      13004201 
+ 1189              		.text
+ 1190              	.Letext0:
+ 1191              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 1192              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1193              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1194              		.file 5 "TMC-API/tmc/helpers/Config.h"
+ 1195              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1196              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1197              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1198              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1199              		.file 10 "TMC-API/tmc/ic/TMC4331/TMC4331.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 TMC4331.c
+C:\Users\Shubham\AppData\Local\Temp\ccLgIeQk.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccLgIeQk.s:23     .text:00000000 tmc4331_writeDatagram
+C:\Users\Shubham\AppData\Local\Temp\ccLgIeQk.s:129    .text:0000006e tmc4331_writeInt
+C:\Users\Shubham\AppData\Local\Temp\ccLgIeQk.s:169    .text:0000008a tmc4331_readInt
+C:\Users\Shubham\AppData\Local\Temp\ccLgIeQk.s:262    .text:000000da tmc4331_readWriteCover
+C:\Users\Shubham\AppData\Local\Temp\ccLgIeQk.s:457    .text:00000198 tmc4331_init
+C:\Users\Shubham\AppData\Local\Temp\ccLgIeQk.s:533    .text:000001d4 $d
+C:\Users\Shubham\AppData\Local\Temp\ccLgIeQk.s:537    .text:000001d8 $t
+C:\Users\Shubham\AppData\Local\Temp\ccLgIeQk.s:544    .text:000001d8 tmc4331_reset
+C:\Users\Shubham\AppData\Local\Temp\ccLgIeQk.s:600    .text:000001fe tmc4331_restore
+C:\Users\Shubham\AppData\Local\Temp\ccLgIeQk.s:642    .text:00000210 tmc4331_setRegisterResetState
+C:\Users\Shubham\AppData\Local\Temp\ccLgIeQk.s:682    .text:00000226 tmc4331_setCallback
+C:\Users\Shubham\AppData\Local\Temp\ccLgIeQk.s:706    .text:0000022e tmc4331_periodicJob
+C:\Users\Shubham\AppData\Local\Temp\ccLgIeQk.s:878    .text:000002be tmc4331_discardVelocityDecimals
+C:\Users\Shubham\AppData\Local\Temp\ccLgIeQk.s:912    .text:000002dc $d
+C:\Users\Shubham\AppData\Local\Temp\ccLgIeQk.s:917    .text:000002e4 $t
+C:\Users\Shubham\AppData\Local\Temp\ccLgIeQk.s:924    .text:000002e4 tmc4331_rotate
+C:\Users\Shubham\AppData\Local\Temp\ccLgIeQk.s:986    .text:00000310 tmc4331_right
+C:\Users\Shubham\AppData\Local\Temp\ccLgIeQk.s:1008   .text:00000314 tmc4331_left
+C:\Users\Shubham\AppData\Local\Temp\ccLgIeQk.s:1033   .text:0000031a tmc4331_stop
+C:\Users\Shubham\AppData\Local\Temp\ccLgIeQk.s:1056   .text:00000320 tmc4331_moveTo
+C:\Users\Shubham\AppData\Local\Temp\ccLgIeQk.s:1125   .text:00000358 tmc4331_moveBy
+C:\Users\Shubham\AppData\Local\Temp\ccLgIeQk.s:1179   .rodata:00000000 tmc4331_defaultRegisterAccess
+
+UNDEFINED SYMBOLS
+tmc4331_readWriteArray

@@ -1,0 +1,633 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"LinearRamp.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.global	tmc_linearRamp_init
+  17              		.arch armv7e-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	tmc_linearRamp_init:
+  24              	.LVL0:
+  25              	.LFB0:
+  26              		.file 1 "TMC-API/tmc/ramp/LinearRamp.c"
+   1:TMC-API/tmc/ramp/LinearRamp.c **** /*
+   2:TMC-API/tmc/ramp/LinearRamp.c ****  * TMC_LinearRamp.c
+   3:TMC-API/tmc/ramp/LinearRamp.c ****  *
+   4:TMC-API/tmc/ramp/LinearRamp.c ****  *  Created on: 23.07.2018
+   5:TMC-API/tmc/ramp/LinearRamp.c ****  *      Author: ed
+   6:TMC-API/tmc/ramp/LinearRamp.c ****  *
+   7:TMC-API/tmc/ramp/LinearRamp.c ****  *  This is a basic proof-of-concept implementation of a linear motion ramp
+   8:TMC-API/tmc/ramp/LinearRamp.c ****  *  generator. It is designed to run with 1 calculation / ms.
+   9:TMC-API/tmc/ramp/LinearRamp.c ****  *
+  10:TMC-API/tmc/ramp/LinearRamp.c ****  *
+  11:TMC-API/tmc/ramp/LinearRamp.c ****  */
+  12:TMC-API/tmc/ramp/LinearRamp.c **** #include "LinearRamp.h"
+  13:TMC-API/tmc/ramp/LinearRamp.c **** 
+  14:TMC-API/tmc/ramp/LinearRamp.c **** void tmc_linearRamp_init(TMC_LinearRamp *linearRamp)
+  15:TMC-API/tmc/ramp/LinearRamp.c **** {
+  27              		.loc 1 15 1 view -0
+  28              		.cfi_startproc
+  29              		@ args = 0, pretend = 0, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  31              		@ link register save eliminated.
+  16:TMC-API/tmc/ramp/LinearRamp.c **** 	linearRamp->maxVelocity     = 0;
+  32              		.loc 1 16 2 view .LVU1
+  33              		.loc 1 16 30 is_stmt 0 view .LVU2
+  34 0000 0023     		movs	r3, #0
+  17:TMC-API/tmc/ramp/LinearRamp.c **** 	linearRamp->targetPosition  = 0;
+  18:TMC-API/tmc/ramp/LinearRamp.c **** 	linearRamp->targetVelocity  = 0;
+  19:TMC-API/tmc/ramp/LinearRamp.c **** 	linearRamp->rampVelocity    = 0;
+  20:TMC-API/tmc/ramp/LinearRamp.c **** 	linearRamp->acceleration    = 0;
+  21:TMC-API/tmc/ramp/LinearRamp.c **** 	linearRamp->encoderSteps	= u16_MAX;
+  35              		.loc 1 21 27 view .LVU3
+  36 0002 4FF6FF72 		movw	r2, #65535
+  17:TMC-API/tmc/ramp/LinearRamp.c **** 	linearRamp->targetPosition  = 0;
+  37              		.loc 1 17 30 view .LVU4
+  38 0006 C0E90033 		strd	r3, r3, [r0]
+  18:TMC-API/tmc/ramp/LinearRamp.c **** 	linearRamp->rampVelocity    = 0;
+  39              		.loc 1 18 2 is_stmt 1 view .LVU5
+  19:TMC-API/tmc/ramp/LinearRamp.c **** 	linearRamp->acceleration    = 0;
+  40              		.loc 1 19 30 is_stmt 0 view .LVU6
+  41 000a C0E90333 		strd	r3, r3, [r0, #12]
+  20:TMC-API/tmc/ramp/LinearRamp.c **** 	linearRamp->encoderSteps	= u16_MAX;
+  42              		.loc 1 20 2 is_stmt 1 view .LVU7
+  22:TMC-API/tmc/ramp/LinearRamp.c **** 	linearRamp->lastdVRest      = 0;
+  23:TMC-API/tmc/ramp/LinearRamp.c **** 	linearRamp->lastdXRest      = 0;
+  43              		.loc 1 23 30 is_stmt 0 view .LVU8
+  44 000e C0E90733 		strd	r3, r3, [r0, #28]
+  20:TMC-API/tmc/ramp/LinearRamp.c **** 	linearRamp->encoderSteps	= u16_MAX;
+  45              		.loc 1 20 30 view .LVU9
+  46 0012 4361     		str	r3, [r0, #20]
+  21:TMC-API/tmc/ramp/LinearRamp.c **** 	linearRamp->lastdVRest      = 0;
+  47              		.loc 1 21 2 is_stmt 1 view .LVU10
+  21:TMC-API/tmc/ramp/LinearRamp.c **** 	linearRamp->lastdVRest      = 0;
+  48              		.loc 1 21 27 is_stmt 0 view .LVU11
+  49 0014 0283     		strh	r2, [r0, #24]	@ movhi
+  22:TMC-API/tmc/ramp/LinearRamp.c **** 	linearRamp->lastdVRest      = 0;
+  50              		.loc 1 22 2 is_stmt 1 view .LVU12
+  24:TMC-API/tmc/ramp/LinearRamp.c **** 	linearRamp->rampEnabled     = false;
+  51              		.loc 1 24 2 view .LVU13
+  52              		.loc 1 24 30 is_stmt 0 view .LVU14
+  53 0016 80F82430 		strb	r3, [r0, #36]
+  25:TMC-API/tmc/ramp/LinearRamp.c **** }
+  54              		.loc 1 25 1 view .LVU15
+  55 001a 7047     		bx	lr
+  56              		.cfi_endproc
+  57              	.LFE0:
+  59              		.align	1
+  60              		.global	tmc_linearRamp_computeRampVelocity
+  61              		.syntax unified
+  62              		.thumb
+  63              		.thumb_func
+  64              		.fpu softvfp
+  66              	tmc_linearRamp_computeRampVelocity:
+  67              	.LVL1:
+  68              	.LFB1:
+  26:TMC-API/tmc/ramp/LinearRamp.c **** 
+  27:TMC-API/tmc/ramp/LinearRamp.c **** void tmc_linearRamp_computeRampVelocity(TMC_LinearRamp *linearRamp)
+  28:TMC-API/tmc/ramp/LinearRamp.c **** {
+  69              		.loc 1 28 1 is_stmt 1 view -0
+  70              		.cfi_startproc
+  71              		@ args = 0, pretend = 0, frame = 0
+  72              		@ frame_needed = 0, uses_anonymous_args = 0
+  29:TMC-API/tmc/ramp/LinearRamp.c **** 	if (linearRamp->rampEnabled)
+  73              		.loc 1 29 2 view .LVU17
+  28:TMC-API/tmc/ramp/LinearRamp.c **** 	if (linearRamp->rampEnabled)
+  74              		.loc 1 28 1 is_stmt 0 view .LVU18
+  75 001c 70B5     		push	{r4, r5, r6, lr}
+  76              	.LCFI0:
+  77              		.cfi_def_cfa_offset 16
+  78              		.cfi_offset 4, -16
+  79              		.cfi_offset 5, -12
+  80              		.cfi_offset 6, -8
+  81              		.cfi_offset 14, -4
+  82              		.loc 1 29 5 view .LVU19
+  83 001e 90F82430 		ldrb	r3, [r0, #36]	@ zero_extendqisi2
+  84 0022 C568     		ldr	r5, [r0, #12]
+  28:TMC-API/tmc/ramp/LinearRamp.c **** 	if (linearRamp->rampEnabled)
+  85              		.loc 1 28 1 view .LVU20
+  86 0024 0446     		mov	r4, r0
+  87              		.loc 1 29 5 view .LVU21
+  88 0026 33B3     		cbz	r3, .L3
+  89              	.LBB2:
+  30:TMC-API/tmc/ramp/LinearRamp.c **** 	{
+  31:TMC-API/tmc/ramp/LinearRamp.c **** 		// update target velocity according actual set acceleration
+  32:TMC-API/tmc/ramp/LinearRamp.c **** 		// (scaling pre-factor of 1000 used for 1ms velocity ramp handling)
+  33:TMC-API/tmc/ramp/LinearRamp.c **** 
+  34:TMC-API/tmc/ramp/LinearRamp.c **** 		int dV = linearRamp->acceleration;
+  90              		.loc 1 34 3 is_stmt 1 view .LVU22
+  35:TMC-API/tmc/ramp/LinearRamp.c **** 
+  36:TMC-API/tmc/ramp/LinearRamp.c **** 		// to ensure that small velocity changes at high set acceleration are also possible
+  37:TMC-API/tmc/ramp/LinearRamp.c **** 		int maxDTV = abs(linearRamp->targetVelocity - linearRamp->rampVelocity);
+  91              		.loc 1 37 59 is_stmt 0 view .LVU23
+  92 0028 D0E90413 		ldrd	r1, r3, [r0, #16]
+  93              		.loc 1 37 47 view .LVU24
+  94 002c 681A     		subs	r0, r5, r1
+  95              	.LVL2:
+  96              		.loc 1 37 7 view .LVU25
+  97 002e 0028     		cmp	r0, #0
+  98 0030 B8BF     		it	lt
+  99 0032 4042     		rsblt	r0, r0, #0
+ 100              	.LVL3:
+  38:TMC-API/tmc/ramp/LinearRamp.c **** 		if (maxDTV < (dV/1000))
+ 101              		.loc 1 38 3 is_stmt 1 view .LVU26
+ 102              		.loc 1 38 19 is_stmt 0 view .LVU27
+ 103 0034 4FF47A72 		mov	r2, #1000
+ 104 0038 93FBF2F6 		sdiv	r6, r3, r2
+ 105              		.loc 1 38 6 view .LVU28
+ 106 003c 8642     		cmp	r6, r0
+  39:TMC-API/tmc/ramp/LinearRamp.c **** 			dV = maxDTV*1000;
+ 107              		.loc 1 39 4 is_stmt 1 view .LVU29
+ 108              		.loc 1 39 7 is_stmt 0 view .LVU30
+ 109 003e C8BF     		it	gt
+ 110 0040 02FB00F3 		mulgt	r3, r2, r0
+ 111              	.LVL4:
+  40:TMC-API/tmc/ramp/LinearRamp.c **** 
+  41:TMC-API/tmc/ramp/LinearRamp.c **** 		dV += linearRamp->lastdVRest;
+ 112              		.loc 1 41 3 is_stmt 1 view .LVU31
+ 113              		.loc 1 41 6 is_stmt 0 view .LVU32
+ 114 0044 E069     		ldr	r0, [r4, #28]
+ 115              	.LVL5:
+ 116              		.loc 1 41 6 view .LVU33
+ 117 0046 0344     		add	r3, r3, r0
+ 118              	.LVL6:
+  42:TMC-API/tmc/ramp/LinearRamp.c **** 		linearRamp->lastdVRest = dV % 1000;
+ 119              		.loc 1 42 3 is_stmt 1 view .LVU34
+  43:TMC-API/tmc/ramp/LinearRamp.c **** 
+  44:TMC-API/tmc/ramp/LinearRamp.c **** 		if (linearRamp->rampVelocity < linearRamp->targetVelocity)
+ 120              		.loc 1 44 6 is_stmt 0 view .LVU35
+ 121 0048 A942     		cmp	r1, r5
+  42:TMC-API/tmc/ramp/LinearRamp.c **** 		linearRamp->lastdVRest = dV % 1000;
+ 122              		.loc 1 42 31 view .LVU36
+ 123 004a 93FBF2F0 		sdiv	r0, r3, r2
+ 124 004e 02FB1032 		mls	r2, r2, r0, r3
+  42:TMC-API/tmc/ramp/LinearRamp.c **** 		linearRamp->lastdVRest = dV % 1000;
+ 125              		.loc 1 42 26 view .LVU37
+ 126 0052 E261     		str	r2, [r4, #28]
+ 127              		.loc 1 44 3 is_stmt 1 view .LVU38
+ 128              		.loc 1 44 6 is_stmt 0 view .LVU39
+ 129 0054 08DA     		bge	.L5
+  45:TMC-API/tmc/ramp/LinearRamp.c **** 		{
+  46:TMC-API/tmc/ramp/LinearRamp.c **** 			// accelerate motor
+  47:TMC-API/tmc/ramp/LinearRamp.c **** 			linearRamp->rampVelocity += dV/1000;	// divide with pre-factor
+ 130              		.loc 1 47 4 is_stmt 1 view .LVU40
+ 131              		.loc 1 47 29 is_stmt 0 view .LVU41
+ 132 0056 0144     		add	r1, r1, r0
+ 133              	.LVL7:
+ 134              		.loc 1 47 29 view .LVU42
+ 135 0058 2161     		str	r1, [r4, #16]
+ 136              	.LVL8:
+ 137              	.L6:
+ 138              		.loc 1 47 29 view .LVU43
+ 139              	.LBE2:
+  48:TMC-API/tmc/ramp/LinearRamp.c **** 		}
+  49:TMC-API/tmc/ramp/LinearRamp.c **** 		else if (linearRamp->rampVelocity > linearRamp->targetVelocity)
+  50:TMC-API/tmc/ramp/LinearRamp.c **** 		{
+  51:TMC-API/tmc/ramp/LinearRamp.c **** 			// decelerate motor
+  52:TMC-API/tmc/ramp/LinearRamp.c **** 			linearRamp->rampVelocity -= dV/1000;	// divide with pre-factor
+  53:TMC-API/tmc/ramp/LinearRamp.c **** 		}
+  54:TMC-API/tmc/ramp/LinearRamp.c **** 	}
+  55:TMC-API/tmc/ramp/LinearRamp.c **** 	else
+  56:TMC-API/tmc/ramp/LinearRamp.c **** 	{
+  57:TMC-API/tmc/ramp/LinearRamp.c **** 		// use target velocity directly
+  58:TMC-API/tmc/ramp/LinearRamp.c **** 		linearRamp->rampVelocity = linearRamp->targetVelocity;
+  59:TMC-API/tmc/ramp/LinearRamp.c **** 	}
+  60:TMC-API/tmc/ramp/LinearRamp.c **** 
+  61:TMC-API/tmc/ramp/LinearRamp.c **** 	// limit ramp velocity
+  62:TMC-API/tmc/ramp/LinearRamp.c **** 	linearRamp->rampVelocity = tmc_limitInt(linearRamp->rampVelocity, -linearRamp->maxVelocity, linear
+ 140              		.loc 1 62 2 is_stmt 1 view .LVU44
+ 141              		.loc 1 62 29 is_stmt 0 view .LVU45
+ 142 005a 2268     		ldr	r2, [r4]
+ 143 005c 2069     		ldr	r0, [r4, #16]
+ 144 005e 5142     		rsbs	r1, r2, #0
+ 145 0060 FFF7FEFF 		bl	tmc_limitInt
+ 146              	.LVL9:
+ 147              		.loc 1 62 27 view .LVU46
+ 148 0064 2061     		str	r0, [r4, #16]
+  63:TMC-API/tmc/ramp/LinearRamp.c **** }
+ 149              		.loc 1 63 1 view .LVU47
+ 150 0066 70BD     		pop	{r4, r5, r6, pc}
+ 151              	.LVL10:
+ 152              	.L5:
+ 153              	.LBB3:
+  49:TMC-API/tmc/ramp/LinearRamp.c **** 		{
+ 154              		.loc 1 49 8 is_stmt 1 view .LVU48
+  49:TMC-API/tmc/ramp/LinearRamp.c **** 		{
+ 155              		.loc 1 49 11 is_stmt 0 view .LVU49
+ 156 0068 F7DD     		ble	.L6
+  52:TMC-API/tmc/ramp/LinearRamp.c **** 		}
+ 157              		.loc 1 52 4 is_stmt 1 view .LVU50
+  52:TMC-API/tmc/ramp/LinearRamp.c **** 		}
+ 158              		.loc 1 52 34 is_stmt 0 view .LVU51
+ 159 006a 044A     		ldr	r2, .L7
+ 160 006c 93FBF2F3 		sdiv	r3, r3, r2
+ 161              	.LVL11:
+  52:TMC-API/tmc/ramp/LinearRamp.c **** 		}
+ 162              		.loc 1 52 29 view .LVU52
+ 163 0070 0B44     		add	r3, r3, r1
+ 164 0072 2361     		str	r3, [r4, #16]
+ 165 0074 F1E7     		b	.L6
+ 166              	.LVL12:
+ 167              	.L3:
+  52:TMC-API/tmc/ramp/LinearRamp.c **** 		}
+ 168              		.loc 1 52 29 view .LVU53
+ 169              	.LBE3:
+  58:TMC-API/tmc/ramp/LinearRamp.c **** 	}
+ 170              		.loc 1 58 3 is_stmt 1 view .LVU54
+  58:TMC-API/tmc/ramp/LinearRamp.c **** 	}
+ 171              		.loc 1 58 28 is_stmt 0 view .LVU55
+ 172 0076 0561     		str	r5, [r0, #16]
+ 173 0078 EFE7     		b	.L6
+ 174              	.L8:
+ 175 007a 00BF     		.align	2
+ 176              	.L7:
+ 177 007c 18FCFFFF 		.word	-1000
+ 178              		.cfi_endproc
+ 179              	.LFE1:
+ 181              		.global	__aeabi_ldivmod
+ 182              		.align	1
+ 183              		.global	tmc_linearRamp_computeRampPosition
+ 184              		.syntax unified
+ 185              		.thumb
+ 186              		.thumb_func
+ 187              		.fpu softvfp
+ 189              	tmc_linearRamp_computeRampPosition:
+ 190              	.LVL13:
+ 191              	.LFB2:
+  64:TMC-API/tmc/ramp/LinearRamp.c **** 
+  65:TMC-API/tmc/ramp/LinearRamp.c **** void tmc_linearRamp_computeRampPosition(TMC_LinearRamp *linearRamp)
+  66:TMC-API/tmc/ramp/LinearRamp.c **** {
+ 192              		.loc 1 66 1 is_stmt 1 view -0
+ 193              		.cfi_startproc
+ 194              		@ args = 0, pretend = 0, frame = 0
+ 195              		@ frame_needed = 0, uses_anonymous_args = 0
+  67:TMC-API/tmc/ramp/LinearRamp.c **** 	if (linearRamp->rampEnabled)
+ 196              		.loc 1 67 2 view .LVU57
+  66:TMC-API/tmc/ramp/LinearRamp.c **** 	if (linearRamp->rampEnabled)
+ 197              		.loc 1 66 1 is_stmt 0 view .LVU58
+ 198 0080 F7B5     		push	{r0, r1, r2, r4, r5, r6, r7, lr}
+ 199              	.LCFI1:
+ 200              		.cfi_def_cfa_offset 32
+ 201              		.cfi_offset 4, -20
+ 202              		.cfi_offset 5, -16
+ 203              		.cfi_offset 6, -12
+ 204              		.cfi_offset 7, -8
+ 205              		.cfi_offset 14, -4
+ 206              		.loc 1 67 5 view .LVU59
+ 207 0082 90F82430 		ldrb	r3, [r0, #36]	@ zero_extendqisi2
+ 208 0086 4568     		ldr	r5, [r0, #4]
+  66:TMC-API/tmc/ramp/LinearRamp.c **** 	if (linearRamp->rampEnabled)
+ 209              		.loc 1 66 1 view .LVU60
+ 210 0088 0446     		mov	r4, r0
+ 211              		.loc 1 67 5 view .LVU61
+ 212 008a 002B     		cmp	r3, #0
+ 213 008c 78D0     		beq	.L10
+ 214              	.LBB4:
+  68:TMC-API/tmc/ramp/LinearRamp.c **** 	{
+  69:TMC-API/tmc/ramp/LinearRamp.c **** 		// update target position according actual set acceleration and max velocity
+  70:TMC-API/tmc/ramp/LinearRamp.c **** 		// (scaling pre-factor of 1000 used for 1ms position ramp handling)
+  71:TMC-API/tmc/ramp/LinearRamp.c **** 
+  72:TMC-API/tmc/ramp/LinearRamp.c **** 		// limit position difference for further computations
+  73:TMC-API/tmc/ramp/LinearRamp.c **** 		int32_t targetPositionsDifference = linearRamp->targetPosition-linearRamp->rampPosition;
+ 215              		.loc 1 73 3 is_stmt 1 view .LVU62
+ 216              		.loc 1 73 11 is_stmt 0 view .LVU63
+ 217 008e 8068     		ldr	r0, [r0, #8]
+ 218              	.LVL14:
+  74:TMC-API/tmc/ramp/LinearRamp.c **** 
+  75:TMC-API/tmc/ramp/LinearRamp.c **** 		// limit the sqrti value in case of high position differences
+  76:TMC-API/tmc/ramp/LinearRamp.c **** 		int64_t sqrtiValue = tmc_limitS64(((int64_t)120 * (int64_t)linearRamp->acceleration * (int64_t)(a
+ 219              		.loc 1 76 87 view .LVU64
+ 220 0090 6369     		ldr	r3, [r4, #20]
+ 221              		.loc 1 76 191 view .LVU65
+ 222 0092 2668     		ldr	r6, [r4]
+  73:TMC-API/tmc/ramp/LinearRamp.c **** 
+ 223              		.loc 1 73 11 view .LVU66
+ 224 0094 2D1A     		subs	r5, r5, r0
+ 225              	.LVL15:
+ 226              		.loc 1 76 3 is_stmt 1 view .LVU67
+ 227              		.loc 1 76 99 is_stmt 0 view .LVU68
+ 228 0096 85EAE572 		eor	r2, r5, r5, asr #31
+ 229 009a A2EBE572 		sub	r2, r2, r5, asr #31
+ 230              		.loc 1 76 87 view .LVU69
+ 231 009e 82FB0323 		smull	r2, r3, r2, r3
+ 232 00a2 7827     		movs	r7, #120
+ 233 00a4 A2FB0701 		umull	r0, r1, r2, r7
+ 234 00a8 07FB0311 		mla	r1, r7, r3, r1
+ 235              		.loc 1 76 24 view .LVU70
+ 236 00ac 228B     		ldrh	r2, [r4, #24]
+ 237 00ae 0023     		movs	r3, #0
+ 238 00b0 A6FB0667 		umull	r6, r7, r6, r6
+ 239 00b4 FFF7FEFF 		bl	__aeabi_ldivmod
+ 240              	.LVL16:
+ 241 00b8 0022     		movs	r2, #0
+ 242 00ba 0023     		movs	r3, #0
+ 243 00bc CDE90067 		strd	r6, [sp]
+ 244 00c0 FFF7FEFF 		bl	tmc_limitS64
+ 245              	.LVL17:
+  77:TMC-API/tmc/ramp/LinearRamp.c **** 
+  78:TMC-API/tmc/ramp/LinearRamp.c **** 		// compute max allowed ramp velocity to ramp down to target
+  79:TMC-API/tmc/ramp/LinearRamp.c **** 		int32_t maxRampStop = tmc_sqrti(sqrtiValue);
+ 246              		.loc 1 79 3 is_stmt 1 view .LVU71
+ 247              		.loc 1 79 25 is_stmt 0 view .LVU72
+ 248 00c4 FFF7FEFF 		bl	tmc_sqrti
+ 249              	.LVL18:
+  80:TMC-API/tmc/ramp/LinearRamp.c **** 
+  81:TMC-API/tmc/ramp/LinearRamp.c **** 		// compute max allowed ramp velocity
+  82:TMC-API/tmc/ramp/LinearRamp.c **** 		int32_t maxRampTargetVelocity = 0;
+ 250              		.loc 1 82 3 is_stmt 1 view .LVU73
+  83:TMC-API/tmc/ramp/LinearRamp.c **** 		if (targetPositionsDifference > 0)
+ 251              		.loc 1 83 3 view .LVU74
+ 252              		.loc 1 83 6 is_stmt 0 view .LVU75
+ 253 00c8 002D     		cmp	r5, #0
+ 254 00ca 4CDD     		ble	.L11
+  84:TMC-API/tmc/ramp/LinearRamp.c **** 		{
+  85:TMC-API/tmc/ramp/LinearRamp.c **** 			maxRampTargetVelocity = tmc_limitInt(maxRampStop, 0, (int32_t)linearRamp->maxVelocity);
+ 255              		.loc 1 85 4 is_stmt 1 view .LVU76
+ 256              		.loc 1 85 28 is_stmt 0 view .LVU77
+ 257 00cc 2268     		ldr	r2, [r4]
+ 258 00ce 0021     		movs	r1, #0
+ 259              	.LVL19:
+ 260              	.L18:
+  86:TMC-API/tmc/ramp/LinearRamp.c **** 		}
+  87:TMC-API/tmc/ramp/LinearRamp.c **** 		else if (targetPositionsDifference < 0)
+  88:TMC-API/tmc/ramp/LinearRamp.c **** 		{
+  89:TMC-API/tmc/ramp/LinearRamp.c **** 			maxRampTargetVelocity = tmc_limitInt(-maxRampStop, -(int32_t)linearRamp->maxVelocity, 0);
+ 261              		.loc 1 89 28 view .LVU78
+ 262 00d0 FFF7FEFF 		bl	tmc_limitInt
+ 263              	.LVL20:
+ 264 00d4 0546     		mov	r5, r0
+ 265              	.LVL21:
+ 266              	.L12:
+  90:TMC-API/tmc/ramp/LinearRamp.c **** 		}
+  91:TMC-API/tmc/ramp/LinearRamp.c **** 		else
+  92:TMC-API/tmc/ramp/LinearRamp.c **** 		{
+  93:TMC-API/tmc/ramp/LinearRamp.c **** 			//maxRampTargetVelocity = 0;
+  94:TMC-API/tmc/ramp/LinearRamp.c **** 		}
+ 267              		.loc 1 94 3 is_stmt 1 view .LVU79
+  95:TMC-API/tmc/ramp/LinearRamp.c **** 
+  96:TMC-API/tmc/ramp/LinearRamp.c **** 		int dV = linearRamp->acceleration;  // pre-factor ~ 1/1000
+ 268              		.loc 1 96 3 view .LVU80
+  97:TMC-API/tmc/ramp/LinearRamp.c **** 
+  98:TMC-API/tmc/ramp/LinearRamp.c **** 		// to ensure that small velocity changes at high set acceleration are also possible
+  99:TMC-API/tmc/ramp/LinearRamp.c **** 		int maxDTV = abs(maxRampTargetVelocity - linearRamp->rampVelocity);
+ 269              		.loc 1 99 54 is_stmt 0 view .LVU81
+ 270 00d6 D4E90413 		ldrd	r1, r3, [r4, #16]
+ 271              		.loc 1 99 42 view .LVU82
+ 272 00da 681A     		subs	r0, r5, r1
+ 273              		.loc 1 99 7 view .LVU83
+ 274 00dc 0028     		cmp	r0, #0
+ 275 00de B8BF     		it	lt
+ 276 00e0 4042     		rsblt	r0, r0, #0
+ 277              	.LVL22:
+ 100:TMC-API/tmc/ramp/LinearRamp.c **** 		if (maxDTV < (dV / 1000))
+ 278              		.loc 1 100 3 is_stmt 1 view .LVU84
+ 279              		.loc 1 100 20 is_stmt 0 view .LVU85
+ 280 00e2 4FF47A72 		mov	r2, #1000
+ 281 00e6 93FBF2F6 		sdiv	r6, r3, r2
+ 282              		.loc 1 100 6 view .LVU86
+ 283 00ea 8642     		cmp	r6, r0
+ 101:TMC-API/tmc/ramp/LinearRamp.c **** 			dV = maxDTV * 1000;
+ 284              		.loc 1 101 4 is_stmt 1 view .LVU87
+ 285              		.loc 1 101 7 is_stmt 0 view .LVU88
+ 286 00ec C8BF     		it	gt
+ 287 00ee 02FB00F3 		mulgt	r3, r2, r0
+ 288              	.LVL23:
+ 102:TMC-API/tmc/ramp/LinearRamp.c **** 
+ 103:TMC-API/tmc/ramp/LinearRamp.c **** 		dV += linearRamp->lastdVRest;
+ 289              		.loc 1 103 3 is_stmt 1 view .LVU89
+ 290              		.loc 1 103 6 is_stmt 0 view .LVU90
+ 291 00f2 E069     		ldr	r0, [r4, #28]
+ 292              	.LVL24:
+ 293              		.loc 1 103 6 view .LVU91
+ 294 00f4 0344     		add	r3, r3, r0
+ 295              	.LVL25:
+ 104:TMC-API/tmc/ramp/LinearRamp.c **** 		linearRamp->lastdVRest = dV % 1000;
+ 296              		.loc 1 104 3 is_stmt 1 view .LVU92
+ 105:TMC-API/tmc/ramp/LinearRamp.c **** 
+ 106:TMC-API/tmc/ramp/LinearRamp.c **** 		// do velocity ramping
+ 107:TMC-API/tmc/ramp/LinearRamp.c **** 		if (maxRampTargetVelocity > linearRamp->rampVelocity)
+ 297              		.loc 1 107 6 is_stmt 0 view .LVU93
+ 298 00f6 A942     		cmp	r1, r5
+ 104:TMC-API/tmc/ramp/LinearRamp.c **** 		linearRamp->lastdVRest = dV % 1000;
+ 299              		.loc 1 104 31 view .LVU94
+ 300 00f8 93FBF2F0 		sdiv	r0, r3, r2
+ 301 00fc 02FB1032 		mls	r2, r2, r0, r3
+ 104:TMC-API/tmc/ramp/LinearRamp.c **** 		linearRamp->lastdVRest = dV % 1000;
+ 302              		.loc 1 104 26 view .LVU95
+ 303 0100 E261     		str	r2, [r4, #28]
+ 304              		.loc 1 107 3 is_stmt 1 view .LVU96
+ 305              		.loc 1 107 6 is_stmt 0 view .LVU97
+ 306 0102 36DA     		bge	.L14
+ 108:TMC-API/tmc/ramp/LinearRamp.c **** 		{
+ 109:TMC-API/tmc/ramp/LinearRamp.c **** 			linearRamp->rampVelocity += dV / 1000;
+ 307              		.loc 1 109 4 is_stmt 1 view .LVU98
+ 308              		.loc 1 109 29 is_stmt 0 view .LVU99
+ 309 0104 0144     		add	r1, r1, r0
+ 310              	.LVL26:
+ 311              		.loc 1 109 29 view .LVU100
+ 312 0106 2161     		str	r1, [r4, #16]
+ 313              	.LVL27:
+ 314              	.L15:
+ 110:TMC-API/tmc/ramp/LinearRamp.c **** 		}
+ 111:TMC-API/tmc/ramp/LinearRamp.c **** 		else if (maxRampTargetVelocity < linearRamp->rampVelocity)
+ 112:TMC-API/tmc/ramp/LinearRamp.c **** 		{
+ 113:TMC-API/tmc/ramp/LinearRamp.c **** 			linearRamp->rampVelocity -= dV / 1000;
+ 114:TMC-API/tmc/ramp/LinearRamp.c **** 		}
+ 115:TMC-API/tmc/ramp/LinearRamp.c **** 
+ 116:TMC-API/tmc/ramp/LinearRamp.c **** 		// limit positionRampTargetVelocity to maxRampTargetVelocity
+ 117:TMC-API/tmc/ramp/LinearRamp.c **** 		linearRamp->rampVelocity = tmc_limitInt(linearRamp->rampVelocity, -abs(maxRampTargetVelocity), ab
+ 315              		.loc 1 117 3 is_stmt 1 view .LVU101
+ 316              		.loc 1 117 70 is_stmt 0 view .LVU102
+ 317 0108 85EAE572 		eor	r2, r5, r5, asr #31
+ 318 010c A2EBE572 		sub	r2, r2, r5, asr #31
+ 319              		.loc 1 117 30 view .LVU103
+ 320 0110 5142     		rsbs	r1, r2, #0
+ 321 0112 2069     		ldr	r0, [r4, #16]
+ 322 0114 FFF7FEFF 		bl	tmc_limitInt
+ 323              	.LVL28:
+ 118:TMC-API/tmc/ramp/LinearRamp.c **** 
+ 119:TMC-API/tmc/ramp/LinearRamp.c **** 		// do position ramping using actual ramp velocity to update dX
+ 120:TMC-API/tmc/ramp/LinearRamp.c **** 		int64_t dX = ((int64_t)linearRamp->rampVelocity * (int64_t)linearRamp->encoderSteps) / ((int64_t)
+ 324              		.loc 1 120 51 view .LVU104
+ 325 0118 218B     		ldrh	r1, [r4, #24]
+ 117:TMC-API/tmc/ramp/LinearRamp.c **** 
+ 326              		.loc 1 117 28 view .LVU105
+ 327 011a 2061     		str	r0, [r4, #16]
+ 328              		.loc 1 120 3 is_stmt 1 view .LVU106
+ 329              	.LVL29:
+ 121:TMC-API/tmc/ramp/LinearRamp.c **** 
+ 122:TMC-API/tmc/ramp/LinearRamp.c **** 		// scale actual target position
+ 123:TMC-API/tmc/ramp/LinearRamp.c **** 		int64_t tempActualTargetPosition = (int64_t)linearRamp->rampPosition * 1000;
+ 330              		.loc 1 123 3 view .LVU107
+ 124:TMC-API/tmc/ramp/LinearRamp.c **** 
+ 125:TMC-API/tmc/ramp/LinearRamp.c **** 		// update actual target position
+ 126:TMC-API/tmc/ramp/LinearRamp.c **** 		tempActualTargetPosition += dX;
+ 331              		.loc 1 126 3 view .LVU108
+ 120:TMC-API/tmc/ramp/LinearRamp.c **** 
+ 332              		.loc 1 120 88 is_stmt 0 view .LVU109
+ 333 011c 3C22     		movs	r2, #60
+ 334 011e 0023     		movs	r3, #0
+ 335 0120 81FB0001 		smull	r0, r1, r1, r0
+ 336              	.LVL30:
+ 120:TMC-API/tmc/ramp/LinearRamp.c **** 
+ 337              		.loc 1 120 88 view .LVU110
+ 338 0124 FFF7FEFF 		bl	__aeabi_ldivmod
+ 339              	.LVL31:
+ 120:TMC-API/tmc/ramp/LinearRamp.c **** 
+ 340              		.loc 1 120 116 view .LVU111
+ 341 0128 236A     		ldr	r3, [r4, #32]
+ 120:TMC-API/tmc/ramp/LinearRamp.c **** 
+ 342              		.loc 1 120 11 view .LVU112
+ 343 012a C018     		adds	r0, r0, r3
+ 344 012c 41EBE371 		adc	r1, r1, r3, asr #31
+ 345              		.loc 1 126 28 view .LVU113
+ 346 0130 A368     		ldr	r3, [r4, #8]
+ 347              	.LVL32:
+ 348              		.loc 1 126 28 view .LVU114
+ 349 0132 4FF47A72 		mov	r2, #1000
+ 350 0136 C2FB0301 		smlal	r0, r1, r2, r3
+ 351              	.LVL33:
+ 127:TMC-API/tmc/ramp/LinearRamp.c **** 
+ 128:TMC-API/tmc/ramp/LinearRamp.c **** 		if (tempActualTargetPosition >= 0)
+ 352              		.loc 1 128 3 is_stmt 1 view .LVU115
+ 353 013a 80EAE075 		eor	r5, r0, r0, asr #31
+ 354              	.LVL34:
+ 355              		.loc 1 128 3 is_stmt 0 view .LVU116
+ 356 013e A5EBE075 		sub	r5, r5, r0, asr #31
+ 357              		.loc 1 128 6 view .LVU117
+ 358 0142 0028     		cmp	r0, #0
+ 359 0144 B5FBF2F3 		udiv	r3, r5, r2
+ 360 0148 02FB1353 		mls	r3, r2, r3, r5
+ 361 014c 71F10002 		sbcs	r2, r1, #0
+ 129:TMC-API/tmc/ramp/LinearRamp.c **** 			linearRamp->lastdXRest = (abs(tempActualTargetPosition) % 1000);
+ 130:TMC-API/tmc/ramp/LinearRamp.c **** 		else if (tempActualTargetPosition < 0)
+ 362              		.loc 1 130 8 is_stmt 1 view .LVU118
+ 131:TMC-API/tmc/ramp/LinearRamp.c **** 			linearRamp->lastdXRest = -(abs(tempActualTargetPosition) % 1000);
+ 363              		.loc 1 131 4 view .LVU119
+ 364              		.loc 1 131 29 is_stmt 0 view .LVU120
+ 365 0150 B8BF     		it	lt
+ 366 0152 5B42     		rsblt	r3, r3, #0
+ 367 0154 2362     		str	r3, [r4, #32]
+ 132:TMC-API/tmc/ramp/LinearRamp.c **** 
+ 133:TMC-API/tmc/ramp/LinearRamp.c **** 		// scale actual target position back
+ 134:TMC-API/tmc/ramp/LinearRamp.c **** 		linearRamp->rampPosition = tempActualTargetPosition / 1000;
+ 368              		.loc 1 134 3 is_stmt 1 view .LVU121
+ 369              		.loc 1 134 55 is_stmt 0 view .LVU122
+ 370 0156 4FF47A72 		mov	r2, #1000
+ 371 015a 0023     		movs	r3, #0
+ 372 015c FFF7FEFF 		bl	__aeabi_ldivmod
+ 373              	.LVL35:
+ 374              		.loc 1 134 28 view .LVU123
+ 375 0160 A060     		str	r0, [r4, #8]
+ 376              	.L9:
+ 377              		.loc 1 134 28 view .LVU124
+ 378              	.LBE4:
+ 135:TMC-API/tmc/ramp/LinearRamp.c **** 	}
+ 136:TMC-API/tmc/ramp/LinearRamp.c **** 	else
+ 137:TMC-API/tmc/ramp/LinearRamp.c **** 	{
+ 138:TMC-API/tmc/ramp/LinearRamp.c **** 		// use target position directly
+ 139:TMC-API/tmc/ramp/LinearRamp.c **** 		linearRamp->rampPosition = linearRamp->targetPosition;
+ 140:TMC-API/tmc/ramp/LinearRamp.c **** 	}
+ 141:TMC-API/tmc/ramp/LinearRamp.c **** }
+ 379              		.loc 1 141 1 view .LVU125
+ 380 0162 03B0     		add	sp, sp, #12
+ 381              	.LCFI2:
+ 382              		.cfi_remember_state
+ 383              		.cfi_def_cfa_offset 20
+ 384              		@ sp needed
+ 385 0164 F0BD     		pop	{r4, r5, r6, r7, pc}
+ 386              	.LVL36:
+ 387              	.L11:
+ 388              	.LCFI3:
+ 389              		.cfi_restore_state
+ 390              	.LBB5:
+  87:TMC-API/tmc/ramp/LinearRamp.c **** 		{
+ 391              		.loc 1 87 8 is_stmt 1 view .LVU126
+  87:TMC-API/tmc/ramp/LinearRamp.c **** 		{
+ 392              		.loc 1 87 11 is_stmt 0 view .LVU127
+ 393 0166 B6D0     		beq	.L12
+  89:TMC-API/tmc/ramp/LinearRamp.c **** 		}
+ 394              		.loc 1 89 4 is_stmt 1 view .LVU128
+  89:TMC-API/tmc/ramp/LinearRamp.c **** 		}
+ 395              		.loc 1 89 28 is_stmt 0 view .LVU129
+ 396 0168 2168     		ldr	r1, [r4]
+ 397 016a 0022     		movs	r2, #0
+ 398 016c 4942     		rsbs	r1, r1, #0
+ 399 016e 4042     		rsbs	r0, r0, #0
+ 400              	.LVL37:
+  89:TMC-API/tmc/ramp/LinearRamp.c **** 		}
+ 401              		.loc 1 89 28 view .LVU130
+ 402 0170 AEE7     		b	.L18
+ 403              	.LVL38:
+ 404              	.L14:
+ 111:TMC-API/tmc/ramp/LinearRamp.c **** 		{
+ 405              		.loc 1 111 8 is_stmt 1 view .LVU131
+ 113:TMC-API/tmc/ramp/LinearRamp.c **** 		}
+ 406              		.loc 1 113 4 view .LVU132
+ 113:TMC-API/tmc/ramp/LinearRamp.c **** 		}
+ 407              		.loc 1 113 35 is_stmt 0 view .LVU133
+ 408 0172 C1BF     		itttt	gt
+ 409 0174 034A     		ldrgt	r2, .L19
+ 410 0176 93FBF2F3 		sdivgt	r3, r3, r2
+ 411              	.LVL39:
+ 113:TMC-API/tmc/ramp/LinearRamp.c **** 		}
+ 412              		.loc 1 113 29 view .LVU134
+ 413 017a 5B18     		addgt	r3, r3, r1
+ 414 017c 2361     		strgt	r3, [r4, #16]
+ 415 017e C3E7     		b	.L15
+ 416              	.LVL40:
+ 417              	.L10:
+ 113:TMC-API/tmc/ramp/LinearRamp.c **** 		}
+ 418              		.loc 1 113 29 view .LVU135
+ 419              	.LBE5:
+ 139:TMC-API/tmc/ramp/LinearRamp.c **** 	}
+ 420              		.loc 1 139 3 is_stmt 1 view .LVU136
+ 139:TMC-API/tmc/ramp/LinearRamp.c **** 	}
+ 421              		.loc 1 139 28 is_stmt 0 view .LVU137
+ 422 0180 8560     		str	r5, [r0, #8]
+ 423              		.loc 1 141 1 view .LVU138
+ 424 0182 EEE7     		b	.L9
+ 425              	.L20:
+ 426              		.align	2
+ 427              	.L19:
+ 428 0184 18FCFFFF 		.word	-1000
+ 429              		.cfi_endproc
+ 430              	.LFE2:
+ 432              	.Letext0:
+ 433              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 434              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 435              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 436              		.file 5 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 437              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 438              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 439              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 440              		.file 9 "TMC-API/tmc/ramp/LinearRamp.h"
+ 441              		.file 10 "TMC-API/tmc/helpers/Functions.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 LinearRamp.c
+C:\Users\Shubham\AppData\Local\Temp\cc7uUV3a.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\cc7uUV3a.s:23     .text:00000000 tmc_linearRamp_init
+C:\Users\Shubham\AppData\Local\Temp\cc7uUV3a.s:66     .text:0000001c tmc_linearRamp_computeRampVelocity
+C:\Users\Shubham\AppData\Local\Temp\cc7uUV3a.s:177    .text:0000007c $d
+C:\Users\Shubham\AppData\Local\Temp\cc7uUV3a.s:182    .text:00000080 $t
+C:\Users\Shubham\AppData\Local\Temp\cc7uUV3a.s:189    .text:00000080 tmc_linearRamp_computeRampPosition
+C:\Users\Shubham\AppData\Local\Temp\cc7uUV3a.s:428    .text:00000184 $d
+
+UNDEFINED SYMBOLS
+tmc_limitInt
+__aeabi_ldivmod
+tmc_limitS64
+tmc_sqrti

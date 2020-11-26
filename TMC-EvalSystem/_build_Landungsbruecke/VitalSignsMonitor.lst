@@ -1,0 +1,995 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"VitalSignsMonitor.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.global	heartBeat
+  17              		.arch armv7e-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	heartBeat:
+  24              	.LVL0:
+  25              	.LFB1:
+  26              		.file 1 "tmc/VitalSignsMonitor.c"
+   1:tmc/VitalSignsMonitor.c **** 
+   2:tmc/VitalSignsMonitor.c **** #include "VitalSignsMonitor.h"
+   3:tmc/VitalSignsMonitor.c **** 
+   4:tmc/VitalSignsMonitor.c **** #include "hal/derivative.h"
+   5:tmc/VitalSignsMonitor.c **** #include "boards/Board.h"
+   6:tmc/VitalSignsMonitor.c **** #include "hal/HAL.h"
+   7:tmc/VitalSignsMonitor.c **** 
+   8:tmc/VitalSignsMonitor.c **** #define VM_MIN_INTERFACE_BOARD  70   // minimum motor supply voltage for system in [100mV]
+   9:tmc/VitalSignsMonitor.c **** #define VM_MAX_INTERFACE_BOARD  700  // maximum motor supply voltage for system in [100mV]
+  10:tmc/VitalSignsMonitor.c **** #define VM_FACTOR               713  // ADC reaches limit at VM = 71.3V => VM Factor (in 100mV) = 7
+  11:tmc/VitalSignsMonitor.c **** 
+  12:tmc/VitalSignsMonitor.c **** // Status LED frequencies
+  13:tmc/VitalSignsMonitor.c **** // Values are time in ms between LED toggles
+  14:tmc/VitalSignsMonitor.c **** #define VSM_HEARTRATE_NORMAL  500  // Normal:   1 Hz
+  15:tmc/VitalSignsMonitor.c **** #define VSM_HEARTRATE_FAST    50   // Busy:    10 Hz
+  16:tmc/VitalSignsMonitor.c **** 
+  17:tmc/VitalSignsMonitor.c **** #define VSM_BROWNOUT_DELAY 100 // Delay (in 10ms) between voltage (re-)application and configuratio
+  18:tmc/VitalSignsMonitor.c **** 
+  19:tmc/VitalSignsMonitor.c **** VitalSignsMonitorTypeDef VitalSignsMonitor =
+  20:tmc/VitalSignsMonitor.c **** {
+  21:tmc/VitalSignsMonitor.c **** 	.brownOut   = 0,                     // motor supply to low
+  22:tmc/VitalSignsMonitor.c **** 	.VM         = 0,                     // actual measured motor supply VM
+  23:tmc/VitalSignsMonitor.c **** 	.heartRate  = VSM_HEARTRATE_NORMAL,  // status LED blinking frequency
+  24:tmc/VitalSignsMonitor.c **** 	.errorMask  = 0xFFFFFFFF,            // error mask, each bit stands for one error bit, 1 means err
+  25:tmc/VitalSignsMonitor.c **** 	.busy       = 0,                     // if module is busy, status LED is blinking fast
+  26:tmc/VitalSignsMonitor.c **** 	.debugMode  = 0,                     // debug mode e.g. releases error LED for debug purpose
+  27:tmc/VitalSignsMonitor.c **** 	.errors     = 0                      // actual error bits
+  28:tmc/VitalSignsMonitor.c **** };
+  29:tmc/VitalSignsMonitor.c **** 
+  30:tmc/VitalSignsMonitor.c **** #if defined(Startrampe)
+  31:tmc/VitalSignsMonitor.c **** 	#define ADC_VM_RES 4095
+  32:tmc/VitalSignsMonitor.c **** #elif defined(Landungsbruecke)
+  33:tmc/VitalSignsMonitor.c **** 	#define ADC_VM_RES 65535
+  34:tmc/VitalSignsMonitor.c **** #endif
+  35:tmc/VitalSignsMonitor.c **** 
+  36:tmc/VitalSignsMonitor.c **** // Make the status LED blink
+  37:tmc/VitalSignsMonitor.c **** // Frequency informs about normal operation or busy state
+  38:tmc/VitalSignsMonitor.c **** void heartBeat(uint32_t tick)
+  39:tmc/VitalSignsMonitor.c **** {
+  27              		.loc 1 39 1 view -0
+  28              		.cfi_startproc
+  29              		@ args = 0, pretend = 0, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  40:tmc/VitalSignsMonitor.c **** 	static uint32_t lastTick = 0;
+  31              		.loc 1 40 2 view .LVU1
+  41:tmc/VitalSignsMonitor.c **** 
+  42:tmc/VitalSignsMonitor.c **** 	if(VitalSignsMonitor.heartRate == 0)
+  32              		.loc 1 42 2 view .LVU2
+  33              		.loc 1 42 22 is_stmt 0 view .LVU3
+  34 0000 0A4B     		ldr	r3, .L6
+  35 0002 D968     		ldr	r1, [r3, #12]
+  39:tmc/VitalSignsMonitor.c **** 	static uint32_t lastTick = 0;
+  36              		.loc 1 39 1 view .LVU4
+  37 0004 10B5     		push	{r4, lr}
+  38              	.LCFI0:
+  39              		.cfi_def_cfa_offset 8
+  40              		.cfi_offset 4, -8
+  41              		.cfi_offset 14, -4
+  42              		.loc 1 42 4 view .LVU5
+  43 0006 79B1     		cbz	r1, .L1
+  43:tmc/VitalSignsMonitor.c **** 		return;
+  44:tmc/VitalSignsMonitor.c **** 
+  45:tmc/VitalSignsMonitor.c **** 	if((tick - lastTick) > VitalSignsMonitor.heartRate)
+  44              		.loc 1 45 2 is_stmt 1 view .LVU6
+  45              		.loc 1 45 11 is_stmt 0 view .LVU7
+  46 0008 094A     		ldr	r2, .L6+4
+  47 000a 1368     		ldr	r3, [r2]
+  48 000c C31A     		subs	r3, r0, r3
+  49              		.loc 1 45 4 view .LVU8
+  50 000e 9942     		cmp	r1, r3
+  51 0010 0AD2     		bcs	.L1
+  52              	.LVL1:
+  53              	.LBB4:
+  54              	.LBI4:
+  38:tmc/VitalSignsMonitor.c **** {
+  55              		.loc 1 38 6 is_stmt 1 view .LVU9
+  56              	.LBB5:
+  46:tmc/VitalSignsMonitor.c **** 	{
+  47:tmc/VitalSignsMonitor.c **** 		LED_TOGGLE();
+  57              		.loc 1 47 3 view .LVU10
+  58 0012 084B     		ldr	r3, .L6+8
+  48:tmc/VitalSignsMonitor.c **** 		lastTick = tick;
+  59              		.loc 1 48 12 is_stmt 0 view .LVU11
+  60 0014 1060     		str	r0, [r2]
+  47:tmc/VitalSignsMonitor.c **** 		lastTick = tick;
+  61              		.loc 1 47 3 view .LVU12
+  62 0016 DB68     		ldr	r3, [r3, #12]
+  63 0018 5C68     		ldr	r4, [r3, #4]
+  64 001a D4F84C15 		ldr	r1, [r4, #1356]
+  65 001e D4F85845 		ldr	r4, [r4, #1368]
+  66 0022 CB68     		ldr	r3, [r1, #12]
+  67 0024 6340     		eors	r3, r3, r4
+  68 0026 CB60     		str	r3, [r1, #12]
+  69              		.loc 1 48 3 is_stmt 1 view .LVU13
+  70              	.LVL2:
+  71              	.L1:
+  72              		.loc 1 48 3 is_stmt 0 view .LVU14
+  73              	.LBE5:
+  74              	.LBE4:
+  49:tmc/VitalSignsMonitor.c **** 	}
+  50:tmc/VitalSignsMonitor.c **** }
+  75              		.loc 1 50 1 view .LVU15
+  76 0028 10BD     		pop	{r4, pc}
+  77              	.L7:
+  78 002a 00BF     		.align	2
+  79              	.L6:
+  80 002c 00000000 		.word	.LANCHOR0
+  81 0030 00000000 		.word	.LANCHOR1
+  82 0034 00000000 		.word	HAL
+  83              		.cfi_endproc
+  84              	.LFE1:
+  86              		.align	1
+  87              		.global	checkVM
+  88              		.syntax unified
+  89              		.thumb
+  90              		.thumb_func
+  91              		.fpu softvfp
+  93              	checkVM:
+  94              	.LFB2:
+  51:tmc/VitalSignsMonitor.c **** 
+  52:tmc/VitalSignsMonitor.c **** // Check for over/undervoltage of motor supply VM
+  53:tmc/VitalSignsMonitor.c **** void checkVM()
+  54:tmc/VitalSignsMonitor.c **** {
+  95              		.loc 1 54 1 is_stmt 1 view -0
+  96              		.cfi_startproc
+  97              		@ args = 0, pretend = 0, frame = 0
+  98              		@ frame_needed = 0, uses_anonymous_args = 0
+  55:tmc/VitalSignsMonitor.c **** 	uint32_t VM;
+  99              		.loc 1 55 2 view .LVU17
+  56:tmc/VitalSignsMonitor.c **** 	static uint8_t stable = VSM_BROWNOUT_DELAY + 1; // delay value + 1 is the state during normal volt
+ 100              		.loc 1 56 2 view .LVU18
+  57:tmc/VitalSignsMonitor.c **** 	static uint8_t vio_state = 1;
+ 101              		.loc 1 57 2 view .LVU19
+  58:tmc/VitalSignsMonitor.c **** 
+  59:tmc/VitalSignsMonitor.c **** 	VM = *HAL.ADCs->VM;              // read ADC value for motor supply VM
+ 102              		.loc 1 59 2 view .LVU20
+  54:tmc/VitalSignsMonitor.c **** 	uint32_t VM;
+ 103              		.loc 1 54 1 is_stmt 0 view .LVU21
+ 104 0038 38B5     		push	{r3, r4, r5, lr}
+ 105              	.LCFI1:
+ 106              		.cfi_def_cfa_offset 16
+ 107              		.cfi_offset 3, -16
+ 108              		.cfi_offset 4, -12
+ 109              		.cfi_offset 5, -8
+ 110              		.cfi_offset 14, -4
+ 111              		.loc 1 59 11 view .LVU22
+ 112 003a 394B     		ldr	r3, .L32
+  60:tmc/VitalSignsMonitor.c **** 	VM = (VM*VM_FACTOR)/ADC_VM_RES;  // calculate voltage from ADC value
+  61:tmc/VitalSignsMonitor.c **** 
+  62:tmc/VitalSignsMonitor.c **** 	VitalSignsMonitor.VM           = VM;  // write to interface
+ 113              		.loc 1 62 33 view .LVU23
+ 114 003c 394C     		ldr	r4, .L32+4
+  59:tmc/VitalSignsMonitor.c **** 	VM = (VM*VM_FACTOR)/ADC_VM_RES;  // calculate voltage from ADC value
+ 115              		.loc 1 59 16 view .LVU24
+ 116 003e DB69     		ldr	r3, [r3, #28]
+  63:tmc/VitalSignsMonitor.c **** 	VitalSignsMonitor.overVoltage  = 0;   // reset overvoltage status
+  64:tmc/VitalSignsMonitor.c **** 	VitalSignsMonitor.brownOut     = 0;   // reset undervoltage status
+  65:tmc/VitalSignsMonitor.c **** 
+  66:tmc/VitalSignsMonitor.c **** 	// check for over/undervoltage and set according status if necessary
+  67:tmc/VitalSignsMonitor.c **** 	if(VM > VM_MAX_INTERFACE_BOARD)  VitalSignsMonitor.overVoltage  |= VSM_CHX;
+  68:tmc/VitalSignsMonitor.c **** 	if(VM >	Evalboards.ch1.VMMax)    VitalSignsMonitor.overVoltage  |= VSM_CHX | VSM_CH1;
+ 117              		.loc 1 68 24 view .LVU25
+ 118 0040 394D     		ldr	r5, .L32+8
+  59:tmc/VitalSignsMonitor.c **** 	VM = (VM*VM_FACTOR)/ADC_VM_RES;  // calculate voltage from ADC value
+ 119              		.loc 1 59 16 view .LVU26
+ 120 0042 5B69     		ldr	r3, [r3, #20]
+  59:tmc/VitalSignsMonitor.c **** 	VM = (VM*VM_FACTOR)/ADC_VM_RES;  // calculate voltage from ADC value
+ 121              		.loc 1 59 7 view .LVU27
+ 122 0044 1A88     		ldrh	r2, [r3]
+  64:tmc/VitalSignsMonitor.c **** 
+ 123              		.loc 1 64 33 view .LVU28
+ 124 0046 0021     		movs	r1, #0
+ 125 0048 6180     		strh	r1, [r4, #2]	@ movhi
+  59:tmc/VitalSignsMonitor.c **** 	VM = (VM*VM_FACTOR)/ADC_VM_RES;  // calculate voltage from ADC value
+ 126              		.loc 1 59 7 view .LVU29
+ 127 004a 93B2     		uxth	r3, r2
+ 128              	.LVL3:
+  60:tmc/VitalSignsMonitor.c **** 
+ 129              		.loc 1 60 2 is_stmt 1 view .LVU30
+  67:tmc/VitalSignsMonitor.c **** 	if(VM >	Evalboards.ch1.VMMax)    VitalSignsMonitor.overVoltage  |= VSM_CHX | VSM_CH1;
+ 130              		.loc 1 67 4 is_stmt 0 view .LVU31
+ 131 004c 3749     		ldr	r1, .L32+12
+  60:tmc/VitalSignsMonitor.c **** 
+ 132              		.loc 1 60 10 view .LVU32
+ 133 004e 40F2C922 		movw	r2, #713
+ 134 0052 5A43     		muls	r2, r3, r2
+  67:tmc/VitalSignsMonitor.c **** 	if(VM >	Evalboards.ch1.VMMax)    VitalSignsMonitor.overVoltage  |= VSM_CHX | VSM_CH1;
+ 135              		.loc 1 67 4 view .LVU33
+ 136 0054 8A42     		cmp	r2, r1
+  67:tmc/VitalSignsMonitor.c **** 	if(VM >	Evalboards.ch1.VMMax)    VitalSignsMonitor.overVoltage  |= VSM_CHX | VSM_CH1;
+ 137              		.loc 1 67 66 view .LVU34
+ 138 0056 84BF     		itt	hi
+ 139 0058 0121     		movhi	r1, #1
+ 140 005a E170     		strbhi	r1, [r4, #3]
+ 141              		.loc 1 68 4 view .LVU35
+ 142 005c E968     		ldr	r1, [r5, #12]
+  60:tmc/VitalSignsMonitor.c **** 
+ 143              		.loc 1 60 5 view .LVU36
+ 144 005e 4FF6FF73 		movw	r3, #65535
+ 145              	.LVL4:
+  60:tmc/VitalSignsMonitor.c **** 
+ 146              		.loc 1 60 5 view .LVU37
+ 147 0062 B2FBF3F3 		udiv	r3, r2, r3
+ 148              	.LVL5:
+  62:tmc/VitalSignsMonitor.c **** 	VitalSignsMonitor.overVoltage  = 0;   // reset overvoltage status
+ 149              		.loc 1 62 2 is_stmt 1 view .LVU38
+ 150              		.loc 1 68 4 is_stmt 0 view .LVU39
+ 151 0066 9942     		cmp	r1, r3
+ 152              		.loc 1 68 66 view .LVU40
+ 153 0068 38BF     		it	cc
+ 154 006a E178     		ldrbcc	r1, [r4, #3]	@ zero_extendqisi2
+  62:tmc/VitalSignsMonitor.c **** 	VitalSignsMonitor.overVoltage  = 0;   // reset overvoltage status
+ 155              		.loc 1 62 33 view .LVU41
+ 156 006c 2361     		str	r3, [r4, #16]
+  63:tmc/VitalSignsMonitor.c **** 	VitalSignsMonitor.brownOut     = 0;   // reset undervoltage status
+ 157              		.loc 1 63 2 is_stmt 1 view .LVU42
+  64:tmc/VitalSignsMonitor.c **** 
+ 158              		.loc 1 64 2 view .LVU43
+  67:tmc/VitalSignsMonitor.c **** 	if(VM >	Evalboards.ch1.VMMax)    VitalSignsMonitor.overVoltage  |= VSM_CHX | VSM_CH1;
+ 159              		.loc 1 67 2 view .LVU44
+  67:tmc/VitalSignsMonitor.c **** 	if(VM >	Evalboards.ch1.VMMax)    VitalSignsMonitor.overVoltage  |= VSM_CHX | VSM_CH1;
+ 160              		.loc 1 67 35 view .LVU45
+ 161              		.loc 1 68 2 view .LVU46
+ 162              		.loc 1 68 35 view .LVU47
+ 163              		.loc 1 68 66 is_stmt 0 view .LVU48
+ 164 006e 3CBF     		itt	cc
+ 165 0070 41F00301 		orrcc	r1, r1, #3
+ 166 0074 E170     		strbcc	r1, [r4, #3]
+  69:tmc/VitalSignsMonitor.c **** 	if(VM >	Evalboards.ch2.VMMax)    VitalSignsMonitor.overVoltage  |= VSM_CHX | VSM_CH2;
+ 167              		.loc 1 69 2 is_stmt 1 view .LVU49
+ 168              		.loc 1 69 4 is_stmt 0 view .LVU50
+ 169 0076 D5F88410 		ldr	r1, [r5, #132]
+ 170 007a 9942     		cmp	r1, r3
+ 171              		.loc 1 69 35 is_stmt 1 view .LVU51
+ 172              		.loc 1 69 66 is_stmt 0 view .LVU52
+ 173 007c 3EBF     		ittt	cc
+ 174 007e E178     		ldrbcc	r1, [r4, #3]	@ zero_extendqisi2
+ 175 0080 41F00501 		orrcc	r1, r1, #5
+ 176 0084 E170     		strbcc	r1, [r4, #3]
+  70:tmc/VitalSignsMonitor.c **** 
+  71:tmc/VitalSignsMonitor.c **** 	// check for over/undervoltage and set according status if necessary
+  72:tmc/VitalSignsMonitor.c **** 	if(VM <	Evalboards.ch1.VMMin)    VitalSignsMonitor.brownOut  |= VSM_CHX | VSM_CH1;
+ 177              		.loc 1 72 2 is_stmt 1 view .LVU53
+ 178              		.loc 1 72 24 is_stmt 0 view .LVU54
+ 179 0086 2969     		ldr	r1, [r5, #16]
+ 180              		.loc 1 72 4 view .LVU55
+ 181 0088 9942     		cmp	r1, r3
+ 182              		.loc 1 72 35 is_stmt 1 view .LVU56
+ 183              		.loc 1 72 63 is_stmt 0 view .LVU57
+ 184 008a 84BF     		itt	hi
+ 185 008c 0320     		movhi	r0, #3
+ 186 008e A070     		strbhi	r0, [r4, #2]
+  73:tmc/VitalSignsMonitor.c **** 	if(VM <	Evalboards.ch2.VMMin)    VitalSignsMonitor.brownOut  |= VSM_CHX | VSM_CH2;
+ 187              		.loc 1 73 2 is_stmt 1 view .LVU58
+ 188              		.loc 1 73 24 is_stmt 0 view .LVU59
+ 189 0090 D5F88800 		ldr	r0, [r5, #136]
+ 190              		.loc 1 73 4 view .LVU60
+ 191 0094 9842     		cmp	r0, r3
+ 192 0096 18D9     		bls	.L13
+ 193              		.loc 1 73 35 is_stmt 1 discriminator 1 view .LVU61
+ 194              		.loc 1 73 63 is_stmt 0 discriminator 1 view .LVU62
+ 195 0098 A378     		ldrb	r3, [r4, #2]	@ zero_extendqisi2
+ 196              	.LVL6:
+ 197              		.loc 1 73 63 discriminator 1 view .LVU63
+ 198 009a 43F00503 		orr	r3, r3, #5
+ 199 009e A370     		strb	r3, [r4, #2]
+  74:tmc/VitalSignsMonitor.c **** 	// Global minimum voltage check (skipped if a minimum voltage of 0 is set by a board)
+  75:tmc/VitalSignsMonitor.c **** 	if(Evalboards.ch1.VMMin && Evalboards.ch2.VMMin)
+ 200              		.loc 1 75 2 is_stmt 1 discriminator 1 view .LVU64
+ 201              		.loc 1 75 4 is_stmt 0 discriminator 1 view .LVU65
+ 202 00a0 11B1     		cbz	r1, .L15
+ 203              	.L14:
+  76:tmc/VitalSignsMonitor.c **** 		if(VM <	VM_MIN_INTERFACE_BOARD)  VitalSignsMonitor.brownOut  |= VSM_CHX;
+ 204              		.loc 1 76 3 is_stmt 1 view .LVU66
+ 205              		.loc 1 76 5 is_stmt 0 view .LVU67
+ 206 00a2 234B     		ldr	r3, .L32+16
+ 207 00a4 9A42     		cmp	r2, r3
+ 208 00a6 15D9     		bls	.L16
+ 209              	.L15:
+  77:tmc/VitalSignsMonitor.c **** 
+  78:tmc/VitalSignsMonitor.c **** 	if((VitalSignsMonitor.errors & VSM_ERRORS_CH1) || (VitalSignsMonitor.errors & VSM_ERRORS_CH2)) // 
+ 210              		.loc 1 78 2 is_stmt 1 view .LVU68
+ 211              		.loc 1 78 49 is_stmt 0 view .LVU69
+ 212 00a8 A368     		ldr	r3, [r4, #8]
+ 213              		.loc 1 78 4 view .LVU70
+ 214 00aa 13F0060F 		tst	r3, #6
+ 215 00ae 16D0     		beq	.L18
+  79:tmc/VitalSignsMonitor.c **** 	{
+  80:tmc/VitalSignsMonitor.c **** 		if((Evalboards.ch1.errors & VSM_ERRORS_VIO_LOW) || (Evalboards.ch2.errors & VSM_ERRORS_VIO_LOW))
+ 216              		.loc 1 80 3 is_stmt 1 view .LVU71
+ 217              		.loc 1 80 51 is_stmt 0 view .LVU72
+ 218 00b0 AB68     		ldr	r3, [r5, #8]
+ 219 00b2 D5F88020 		ldr	r2, [r5, #128]
+ 220 00b6 1343     		orrs	r3, r3, r2
+ 221 00b8 9B07     		lsls	r3, r3, #30
+ 222 00ba 01D5     		bpl	.L19
+  81:tmc/VitalSignsMonitor.c **** 		{
+  82:tmc/VitalSignsMonitor.c **** 			vio_state = 0;
+ 223              		.loc 1 82 4 is_stmt 1 view .LVU73
+ 224              		.loc 1 82 14 is_stmt 0 view .LVU74
+ 225 00bc 0023     		movs	r3, #0
+ 226              	.LVL7:
+ 227              	.L29:
+  83:tmc/VitalSignsMonitor.c **** 		}
+  84:tmc/VitalSignsMonitor.c **** 	}
+  85:tmc/VitalSignsMonitor.c **** 	else if(vio_state == 0) // VIO high
+  86:tmc/VitalSignsMonitor.c **** 	{
+  87:tmc/VitalSignsMonitor.c **** 		Evalboards.ch2.config->reset();
+  88:tmc/VitalSignsMonitor.c **** 		Evalboards.ch1.config->reset();
+  89:tmc/VitalSignsMonitor.c **** 		vio_state = 1;
+ 228              		.loc 1 89 13 view .LVU75
+ 229 00be 2375     		strb	r3, [r4, #20]
+ 230              	.L19:
+  90:tmc/VitalSignsMonitor.c **** 	}
+  91:tmc/VitalSignsMonitor.c **** 
+  92:tmc/VitalSignsMonitor.c **** 	// after brownout all settings are restored to the boards
+  93:tmc/VitalSignsMonitor.c **** 	// this happens after supply was stable for a set delay (checkVM() is called every 10 ms/systicks)
+  94:tmc/VitalSignsMonitor.c **** 	if(VitalSignsMonitor.brownOut)
+ 231              		.loc 1 94 2 is_stmt 1 view .LVU76
+ 232              		.loc 1 94 4 is_stmt 0 view .LVU77
+ 233 00c0 A378     		ldrb	r3, [r4, #2]	@ zero_extendqisi2
+ 234 00c2 D3B1     		cbz	r3, .L20
+  95:tmc/VitalSignsMonitor.c **** 	{
+  96:tmc/VitalSignsMonitor.c **** 		stable = 0;
+ 235              		.loc 1 96 3 is_stmt 1 view .LVU78
+ 236              		.loc 1 96 10 is_stmt 0 view .LVU79
+ 237 00c4 0023     		movs	r3, #0
+ 238              	.L30:
+  97:tmc/VitalSignsMonitor.c **** 	}
+  98:tmc/VitalSignsMonitor.c **** 	else
+  99:tmc/VitalSignsMonitor.c **** 	{
+ 100:tmc/VitalSignsMonitor.c **** 		if(stable < VSM_BROWNOUT_DELAY)
+ 101:tmc/VitalSignsMonitor.c **** 		{
+ 102:tmc/VitalSignsMonitor.c **** 			stable++;
+ 103:tmc/VitalSignsMonitor.c **** 		}
+ 104:tmc/VitalSignsMonitor.c **** 		else if(stable == VSM_BROWNOUT_DELAY)
+ 105:tmc/VitalSignsMonitor.c **** 		{
+ 106:tmc/VitalSignsMonitor.c **** 			Evalboards.ch2.config->restore();
+ 107:tmc/VitalSignsMonitor.c **** 			Evalboards.ch1.config->restore();
+ 108:tmc/VitalSignsMonitor.c **** 
+ 109:tmc/VitalSignsMonitor.c **** 			stable++;
+ 239              		.loc 1 109 10 view .LVU80
+ 240 00c6 6375     		strb	r3, [r4, #21]
+ 241              	.L8:
+ 110:tmc/VitalSignsMonitor.c **** 		}
+ 111:tmc/VitalSignsMonitor.c **** 	}
+ 112:tmc/VitalSignsMonitor.c **** }
+ 242              		.loc 1 112 1 view .LVU81
+ 243 00c8 38BD     		pop	{r3, r4, r5, pc}
+ 244              	.LVL8:
+ 245              	.L13:
+  75:tmc/VitalSignsMonitor.c **** 		if(VM <	VM_MIN_INTERFACE_BOARD)  VitalSignsMonitor.brownOut  |= VSM_CHX;
+ 246              		.loc 1 75 2 is_stmt 1 view .LVU82
+  75:tmc/VitalSignsMonitor.c **** 		if(VM <	VM_MIN_INTERFACE_BOARD)  VitalSignsMonitor.brownOut  |= VSM_CHX;
+ 247              		.loc 1 75 4 is_stmt 0 view .LVU83
+ 248 00ca 0029     		cmp	r1, #0
+ 249 00cc ECD0     		beq	.L15
+  75:tmc/VitalSignsMonitor.c **** 		if(VM <	VM_MIN_INTERFACE_BOARD)  VitalSignsMonitor.brownOut  |= VSM_CHX;
+ 250              		.loc 1 75 26 discriminator 1 view .LVU84
+ 251 00ce 0028     		cmp	r0, #0
+ 252 00d0 EAD0     		beq	.L15
+ 253 00d2 E6E7     		b	.L14
+ 254              	.LVL9:
+ 255              	.L16:
+  76:tmc/VitalSignsMonitor.c **** 
+ 256              		.loc 1 76 36 is_stmt 1 discriminator 1 view .LVU85
+  76:tmc/VitalSignsMonitor.c **** 
+ 257              		.loc 1 76 64 is_stmt 0 discriminator 1 view .LVU86
+ 258 00d4 A378     		ldrb	r3, [r4, #2]	@ zero_extendqisi2
+ 259 00d6 43F00103 		orr	r3, r3, #1
+ 260 00da A370     		strb	r3, [r4, #2]
+ 261 00dc E4E7     		b	.L15
+ 262              	.L18:
+  85:tmc/VitalSignsMonitor.c **** 	{
+ 263              		.loc 1 85 7 is_stmt 1 view .LVU87
+  85:tmc/VitalSignsMonitor.c **** 	{
+ 264              		.loc 1 85 9 is_stmt 0 view .LVU88
+ 265 00de 237D     		ldrb	r3, [r4, #20]	@ zero_extendqisi2
+ 266 00e0 002B     		cmp	r3, #0
+ 267 00e2 EDD1     		bne	.L19
+  87:tmc/VitalSignsMonitor.c **** 		Evalboards.ch1.config->reset();
+ 268              		.loc 1 87 3 is_stmt 1 view .LVU89
+  87:tmc/VitalSignsMonitor.c **** 		Evalboards.ch1.config->reset();
+ 269              		.loc 1 87 24 is_stmt 0 view .LVU90
+ 270 00e4 D5F89030 		ldr	r3, [r5, #144]
+  87:tmc/VitalSignsMonitor.c **** 		Evalboards.ch1.config->reset();
+ 271              		.loc 1 87 3 view .LVU91
+ 272 00e8 D3F80432 		ldr	r3, [r3, #516]
+ 273 00ec 9847     		blx	r3
+ 274              	.LVL10:
+  88:tmc/VitalSignsMonitor.c **** 		vio_state = 1;
+ 275              		.loc 1 88 3 is_stmt 1 view .LVU92
+  88:tmc/VitalSignsMonitor.c **** 		vio_state = 1;
+ 276              		.loc 1 88 24 is_stmt 0 view .LVU93
+ 277 00ee AB69     		ldr	r3, [r5, #24]
+  88:tmc/VitalSignsMonitor.c **** 		vio_state = 1;
+ 278              		.loc 1 88 3 view .LVU94
+ 279 00f0 D3F80432 		ldr	r3, [r3, #516]
+ 280 00f4 9847     		blx	r3
+ 281              	.LVL11:
+  89:tmc/VitalSignsMonitor.c **** 	}
+ 282              		.loc 1 89 3 is_stmt 1 view .LVU95
+  89:tmc/VitalSignsMonitor.c **** 	}
+ 283              		.loc 1 89 13 is_stmt 0 view .LVU96
+ 284 00f6 0123     		movs	r3, #1
+ 285 00f8 E1E7     		b	.L29
+ 286              	.L20:
+ 100:tmc/VitalSignsMonitor.c **** 		{
+ 287              		.loc 1 100 3 is_stmt 1 view .LVU97
+ 100:tmc/VitalSignsMonitor.c **** 		{
+ 288              		.loc 1 100 13 is_stmt 0 view .LVU98
+ 289 00fa 637D     		ldrb	r3, [r4, #21]	@ zero_extendqisi2
+ 100:tmc/VitalSignsMonitor.c **** 		{
+ 290              		.loc 1 100 5 view .LVU99
+ 291 00fc 632B     		cmp	r3, #99
+ 292 00fe 01D8     		bhi	.L22
+ 293              	.L31:
+ 109:tmc/VitalSignsMonitor.c **** 		}
+ 294              		.loc 1 109 10 view .LVU100
+ 295 0100 0133     		adds	r3, r3, #1
+ 296 0102 E0E7     		b	.L30
+ 297              	.L22:
+ 104:tmc/VitalSignsMonitor.c **** 		{
+ 298              		.loc 1 104 8 is_stmt 1 view .LVU101
+ 104:tmc/VitalSignsMonitor.c **** 		{
+ 299              		.loc 1 104 10 is_stmt 0 view .LVU102
+ 300 0104 642B     		cmp	r3, #100
+ 301 0106 DFD1     		bne	.L8
+ 106:tmc/VitalSignsMonitor.c **** 			Evalboards.ch1.config->restore();
+ 302              		.loc 1 106 4 is_stmt 1 view .LVU103
+ 106:tmc/VitalSignsMonitor.c **** 			Evalboards.ch1.config->restore();
+ 303              		.loc 1 106 25 is_stmt 0 view .LVU104
+ 304 0108 D5F89030 		ldr	r3, [r5, #144]
+ 106:tmc/VitalSignsMonitor.c **** 			Evalboards.ch1.config->restore();
+ 305              		.loc 1 106 4 view .LVU105
+ 306 010c D3F80832 		ldr	r3, [r3, #520]
+ 307 0110 9847     		blx	r3
+ 308              	.LVL12:
+ 107:tmc/VitalSignsMonitor.c **** 
+ 309              		.loc 1 107 4 is_stmt 1 view .LVU106
+ 107:tmc/VitalSignsMonitor.c **** 
+ 310              		.loc 1 107 25 is_stmt 0 view .LVU107
+ 311 0112 AB69     		ldr	r3, [r5, #24]
+ 107:tmc/VitalSignsMonitor.c **** 
+ 312              		.loc 1 107 4 view .LVU108
+ 313 0114 D3F80832 		ldr	r3, [r3, #520]
+ 314 0118 9847     		blx	r3
+ 315              	.LVL13:
+ 109:tmc/VitalSignsMonitor.c **** 		}
+ 316              		.loc 1 109 4 is_stmt 1 view .LVU109
+ 109:tmc/VitalSignsMonitor.c **** 		}
+ 317              		.loc 1 109 10 is_stmt 0 view .LVU110
+ 318 011a 637D     		ldrb	r3, [r4, #21]	@ zero_extendqisi2
+ 319 011c F0E7     		b	.L31
+ 320              	.L33:
+ 321 011e 00BF     		.align	2
+ 322              	.L32:
+ 323 0120 00000000 		.word	HAL
+ 324 0124 00000000 		.word	.LANCHOR0
+ 325 0128 00000000 		.word	Evalboards
+ 326 012c 42FDBC02 		.word	45940034
+ 327 0130 B9FF4500 		.word	4587449
+ 328              		.cfi_endproc
+ 329              	.LFE2:
+ 331              		.align	1
+ 332              		.global	vitalsignsmonitor_checkVitalSigns
+ 333              		.syntax unified
+ 334              		.thumb
+ 335              		.thumb_func
+ 336              		.fpu softvfp
+ 338              	vitalsignsmonitor_checkVitalSigns:
+ 339              	.LFB3:
+ 113:tmc/VitalSignsMonitor.c **** 
+ 114:tmc/VitalSignsMonitor.c **** /* Routine to frequently check system for errors */
+ 115:tmc/VitalSignsMonitor.c **** void vitalsignsmonitor_checkVitalSigns()
+ 116:tmc/VitalSignsMonitor.c **** {
+ 340              		.loc 1 116 1 is_stmt 1 view -0
+ 341              		.cfi_startproc
+ 342              		@ args = 0, pretend = 0, frame = 0
+ 343              		@ frame_needed = 0, uses_anonymous_args = 0
+ 117:tmc/VitalSignsMonitor.c **** 	int errors = 0;
+ 344              		.loc 1 117 2 view .LVU112
+ 345              	.LVL14:
+ 118:tmc/VitalSignsMonitor.c **** 	static uint32_t lastTick = 0;
+ 346              		.loc 1 118 2 view .LVU113
+ 119:tmc/VitalSignsMonitor.c **** 	uint32_t tick;
+ 347              		.loc 1 119 2 view .LVU114
+ 120:tmc/VitalSignsMonitor.c **** 
+ 121:tmc/VitalSignsMonitor.c **** 	tick = systick_getTick();
+ 348              		.loc 1 121 2 view .LVU115
+ 116:tmc/VitalSignsMonitor.c **** 	int errors = 0;
+ 349              		.loc 1 116 1 is_stmt 0 view .LVU116
+ 350 0134 70B5     		push	{r4, r5, r6, lr}
+ 351              	.LCFI2:
+ 352              		.cfi_def_cfa_offset 16
+ 353              		.cfi_offset 4, -16
+ 354              		.cfi_offset 5, -12
+ 355              		.cfi_offset 6, -8
+ 356              		.cfi_offset 14, -4
+ 122:tmc/VitalSignsMonitor.c **** 
+ 123:tmc/VitalSignsMonitor.c **** 	// Check motor supply VM every 10ms
+ 124:tmc/VitalSignsMonitor.c **** 	if((tick - lastTick) >= 10)
+ 357              		.loc 1 124 11 view .LVU117
+ 358 0136 3B4D     		ldr	r5, .L85
+ 121:tmc/VitalSignsMonitor.c **** 
+ 359              		.loc 1 121 9 view .LVU118
+ 360 0138 FFF7FEFF 		bl	systick_getTick
+ 361              	.LVL15:
+ 362              		.loc 1 124 11 view .LVU119
+ 363 013c 6B68     		ldr	r3, [r5, #4]
+ 364 013e C31A     		subs	r3, r0, r3
+ 365              		.loc 1 124 4 view .LVU120
+ 366 0140 092B     		cmp	r3, #9
+ 121:tmc/VitalSignsMonitor.c **** 
+ 367              		.loc 1 121 9 view .LVU121
+ 368 0142 0446     		mov	r4, r0
+ 369              	.LVL16:
+ 370              		.loc 1 124 2 is_stmt 1 view .LVU122
+ 371              		.loc 1 124 4 is_stmt 0 view .LVU123
+ 372 0144 02D9     		bls	.L35
+ 125:tmc/VitalSignsMonitor.c **** 	{
+ 126:tmc/VitalSignsMonitor.c **** 		checkVM();
+ 373              		.loc 1 126 3 is_stmt 1 view .LVU124
+ 374 0146 FFF7FEFF 		bl	checkVM
+ 375              	.LVL17:
+ 127:tmc/VitalSignsMonitor.c **** 		lastTick = tick;
+ 376              		.loc 1 127 3 view .LVU125
+ 377              		.loc 1 127 12 is_stmt 0 view .LVU126
+ 378 014a 6C60     		str	r4, [r5, #4]
+ 379              	.L35:
+ 128:tmc/VitalSignsMonitor.c **** 	}
+ 129:tmc/VitalSignsMonitor.c **** 
+ 130:tmc/VitalSignsMonitor.c **** 	// Check for board errors
+ 131:tmc/VitalSignsMonitor.c **** 	Evalboards.ch2.checkErrors(tick);
+ 380              		.loc 1 131 2 is_stmt 1 view .LVU127
+ 381              		.loc 1 131 16 is_stmt 0 view .LVU128
+ 382 014c 364D     		ldr	r5, .L85+4
+ 383              		.loc 1 131 2 view .LVU129
+ 384 014e 2046     		mov	r0, r4
+ 385 0150 D5F8D830 		ldr	r3, [r5, #216]
+ 386 0154 9847     		blx	r3
+ 387              	.LVL18:
+ 132:tmc/VitalSignsMonitor.c **** 	Evalboards.ch1.checkErrors(tick);
+ 388              		.loc 1 132 2 is_stmt 1 view .LVU130
+ 389 0156 2B6E     		ldr	r3, [r5, #96]
+ 390 0158 2046     		mov	r0, r4
+ 391 015a 9847     		blx	r3
+ 392              	.LVL19:
+ 133:tmc/VitalSignsMonitor.c **** 
+ 134:tmc/VitalSignsMonitor.c **** 	// Status LED
+ 135:tmc/VitalSignsMonitor.c **** 	heartBeat(tick);
+ 393              		.loc 1 135 2 view .LVU131
+ 394 015c 2046     		mov	r0, r4
+ 136:tmc/VitalSignsMonitor.c **** 
+ 137:tmc/VitalSignsMonitor.c **** 	// reset all error bits but not the voltage errors
+ 138:tmc/VitalSignsMonitor.c **** 	errors = VitalSignsMonitor.errors & (VSM_ERRORS_OVERVOLTAGE | VSM_ERRORS_OVERVOLTAGE_CH1 | VSM_ERR
+ 395              		.loc 1 138 28 is_stmt 0 view .LVU132
+ 396 015e 334C     		ldr	r4, .L85+8
+ 397              	.LVL20:
+ 135:tmc/VitalSignsMonitor.c **** 
+ 398              		.loc 1 135 2 view .LVU133
+ 399 0160 FFF7FEFF 		bl	heartBeat
+ 400              	.LVL21:
+ 401              		.loc 1 138 2 is_stmt 1 view .LVU134
+ 402              		.loc 1 138 9 is_stmt 0 view .LVU135
+ 403 0164 A368     		ldr	r3, [r4, #8]
+ 139:tmc/VitalSignsMonitor.c **** 
+ 140:tmc/VitalSignsMonitor.c **** 	// collect errors from board channels
+ 141:tmc/VitalSignsMonitor.c **** 	if(Evalboards.ch1.errors)
+ 404              		.loc 1 141 4 view .LVU136
+ 405 0166 AA68     		ldr	r2, [r5, #8]
+ 138:tmc/VitalSignsMonitor.c **** 
+ 406              		.loc 1 138 9 view .LVU137
+ 407 0168 03F46063 		and	r3, r3, #3584
+ 408              	.LVL22:
+ 409              		.loc 1 141 2 is_stmt 1 view .LVU138
+ 410              		.loc 1 141 4 is_stmt 0 view .LVU139
+ 411 016c 0AB1     		cbz	r2, .L36
+ 142:tmc/VitalSignsMonitor.c **** 		errors |= VSM_ERRORS_CH1;
+ 412              		.loc 1 142 3 is_stmt 1 view .LVU140
+ 413              	.LVL23:
+ 414              		.loc 1 142 10 is_stmt 0 view .LVU141
+ 415 016e 43F00203 		orr	r3, r3, #2
+ 416              	.LVL24:
+ 417              	.L36:
+ 143:tmc/VitalSignsMonitor.c **** 	if(Evalboards.ch2.errors)
+ 418              		.loc 1 143 2 is_stmt 1 view .LVU142
+ 419              		.loc 1 143 4 is_stmt 0 view .LVU143
+ 420 0172 D5F88020 		ldr	r2, [r5, #128]
+ 421 0176 0AB1     		cbz	r2, .L37
+ 144:tmc/VitalSignsMonitor.c **** 		errors |= VSM_ERRORS_CH2;
+ 422              		.loc 1 144 3 is_stmt 1 view .LVU144
+ 423              	.LVL25:
+ 424              		.loc 1 144 10 is_stmt 0 view .LVU145
+ 425 0178 43F00403 		orr	r3, r3, #4
+ 426              	.LVL26:
+ 427              	.L37:
+ 145:tmc/VitalSignsMonitor.c **** 
+ 146:tmc/VitalSignsMonitor.c **** 	if(VitalSignsMonitor.busy)
+ 428              		.loc 1 146 2 is_stmt 1 view .LVU146
+ 429              		.loc 1 146 4 is_stmt 0 view .LVU147
+ 430 017c 94F90120 		ldrsb	r2, [r4, #1]
+ 431 0180 0AB1     		cbz	r2, .L38
+ 147:tmc/VitalSignsMonitor.c **** 		errors |= VSM_BUSY;
+ 432              		.loc 1 147 3 is_stmt 1 view .LVU148
+ 433              	.LVL27:
+ 434              		.loc 1 147 10 is_stmt 0 view .LVU149
+ 435 0182 43F00803 		orr	r3, r3, #8
+ 436              	.LVL28:
+ 437              	.L38:
+ 148:tmc/VitalSignsMonitor.c **** 	if(Evalboards.ch1.config->state != CONFIG_READY)
+ 438              		.loc 1 148 2 is_stmt 1 view .LVU150
+ 439              		.loc 1 148 26 is_stmt 0 view .LVU151
+ 440 0186 AA69     		ldr	r2, [r5, #24]
+ 441              		.loc 1 148 4 view .LVU152
+ 442 0188 1278     		ldrb	r2, [r2]	@ zero_extendqisi2
+ 443 018a 0AB1     		cbz	r2, .L39
+ 149:tmc/VitalSignsMonitor.c **** 		errors |= VSM_BUSY | VSM_BUSY_CH1;
+ 444              		.loc 1 149 3 is_stmt 1 view .LVU153
+ 445              	.LVL29:
+ 446              		.loc 1 149 10 is_stmt 0 view .LVU154
+ 447 018c 43F01803 		orr	r3, r3, #24
+ 448              	.LVL30:
+ 449              	.L39:
+ 150:tmc/VitalSignsMonitor.c **** 	if(Evalboards.ch2.config->state != CONFIG_READY)
+ 450              		.loc 1 150 2 is_stmt 1 view .LVU155
+ 451              		.loc 1 150 26 is_stmt 0 view .LVU156
+ 452 0190 D5F89020 		ldr	r2, [r5, #144]
+ 453              		.loc 1 150 4 view .LVU157
+ 454 0194 1278     		ldrb	r2, [r2]	@ zero_extendqisi2
+ 455 0196 0AB1     		cbz	r2, .L40
+ 151:tmc/VitalSignsMonitor.c **** 		errors |= VSM_BUSY | VSM_BUSY_CH2;
+ 456              		.loc 1 151 3 is_stmt 1 view .LVU158
+ 457              	.LVL31:
+ 458              		.loc 1 151 10 is_stmt 0 view .LVU159
+ 459 0198 43F02803 		orr	r3, r3, #40
+ 460              	.LVL32:
+ 461              	.L40:
+ 152:tmc/VitalSignsMonitor.c **** 
+ 153:tmc/VitalSignsMonitor.c **** 	if(VitalSignsMonitor.brownOut)
+ 462              		.loc 1 153 2 is_stmt 1 view .LVU160
+ 463              		.loc 1 153 22 is_stmt 0 view .LVU161
+ 464 019c A278     		ldrb	r2, [r4, #2]	@ zero_extendqisi2
+ 465              		.loc 1 153 4 view .LVU162
+ 466 019e 2AB1     		cbz	r2, .L41
+ 154:tmc/VitalSignsMonitor.c **** 		errors |= VSM_WARNING_CPU_SUPPLY_LOW;
+ 467              		.loc 1 154 3 is_stmt 1 view .LVU163
+ 468              	.LVL33:
+ 155:tmc/VitalSignsMonitor.c **** 	if(VitalSignsMonitor.brownOut & VSM_CH1	)
+ 469              		.loc 1 155 2 view .LVU164
+ 470              		.loc 1 155 4 is_stmt 0 view .LVU165
+ 471 01a0 9607     		lsls	r6, r2, #30
+ 154:tmc/VitalSignsMonitor.c **** 		errors |= VSM_WARNING_CPU_SUPPLY_LOW;
+ 472              		.loc 1 154 10 view .LVU166
+ 473 01a2 54BF     		ite	pl
+ 474 01a4 43F04003 		orrpl	r3, r3, #64
+ 475              	.LVL34:
+ 156:tmc/VitalSignsMonitor.c **** 		errors |= VSM_ERRORS_VM | VSM_ERRORS_BROWNOUT_CH1;
+ 476              		.loc 1 156 3 is_stmt 1 view .LVU167
+ 477              		.loc 1 156 10 is_stmt 0 view .LVU168
+ 478 01a8 43F0C103 		orrmi	r3, r3, #193
+ 479              	.LVL35:
+ 480              	.L41:
+ 157:tmc/VitalSignsMonitor.c **** 	if(VitalSignsMonitor.brownOut & VSM_CH2	)
+ 481              		.loc 1 157 2 is_stmt 1 view .LVU169
+ 482              		.loc 1 157 4 is_stmt 0 view .LVU170
+ 483 01ac 5007     		lsls	r0, r2, #29
+ 484              	.LVL36:
+ 158:tmc/VitalSignsMonitor.c **** 		errors |= VSM_ERRORS_VM | VSM_ERRORS_BROWNOUT_CH2;
+ 485              		.loc 1 158 3 is_stmt 1 view .LVU171
+ 159:tmc/VitalSignsMonitor.c **** 
+ 160:tmc/VitalSignsMonitor.c **** 	if(VitalSignsMonitor.overVoltage)
+ 486              		.loc 1 160 22 is_stmt 0 view .LVU172
+ 487 01ae E278     		ldrb	r2, [r4, #3]	@ zero_extendqisi2
+ 158:tmc/VitalSignsMonitor.c **** 		errors |= VSM_ERRORS_VM | VSM_ERRORS_BROWNOUT_CH2;
+ 488              		.loc 1 158 10 view .LVU173
+ 489 01b0 44BF     		itt	mi
+ 490 01b2 43F48073 		orrmi	r3, r3, #256
+ 491              	.LVL37:
+ 158:tmc/VitalSignsMonitor.c **** 		errors |= VSM_ERRORS_VM | VSM_ERRORS_BROWNOUT_CH2;
+ 492              		.loc 1 158 10 view .LVU174
+ 493 01b6 43F00103 		orrmi	r3, r3, #1
+ 494              		.loc 1 160 2 is_stmt 1 view .LVU175
+ 495              		.loc 1 160 4 is_stmt 0 view .LVU176
+ 496 01ba 3AB1     		cbz	r2, .L44
+ 161:tmc/VitalSignsMonitor.c **** 		errors |= VSM_ERRORS_VM | VSM_ERRORS_OVERVOLTAGE;
+ 497              		.loc 1 161 3 is_stmt 1 view .LVU177
+ 162:tmc/VitalSignsMonitor.c **** 	if(VitalSignsMonitor.overVoltage & VSM_CH1)
+ 498              		.loc 1 162 2 view .LVU178
+ 499              	.LVL38:
+ 500              		.loc 1 162 4 is_stmt 0 view .LVU179
+ 501 01bc 9107     		lsls	r1, r2, #30
+ 161:tmc/VitalSignsMonitor.c **** 		errors |= VSM_ERRORS_VM | VSM_ERRORS_OVERVOLTAGE;
+ 502              		.loc 1 161 10 view .LVU180
+ 503 01be 54BF     		ite	pl
+ 504 01c0 43F40073 		orrpl	r3, r3, #512
+ 505              	.LVL39:
+ 163:tmc/VitalSignsMonitor.c **** 		errors |= VSM_ERRORS_VM | VSM_ERRORS_OVERVOLTAGE | VSM_ERRORS_OVERVOLTAGE_CH1;
+ 506              		.loc 1 163 3 is_stmt 1 view .LVU181
+ 507              		.loc 1 163 10 is_stmt 0 view .LVU182
+ 508 01c4 43F4C063 		orrmi	r3, r3, #1536
+ 509              	.LVL40:
+ 510              		.loc 1 163 10 view .LVU183
+ 511 01c8 43F00103 		orr	r3, r3, #1
+ 512              	.L44:
+ 164:tmc/VitalSignsMonitor.c **** 	if(VitalSignsMonitor.overVoltage & VSM_CH2)
+ 513              		.loc 1 164 2 is_stmt 1 view .LVU184
+ 514              		.loc 1 164 4 is_stmt 0 view .LVU185
+ 515 01cc 5207     		lsls	r2, r2, #29
+ 165:tmc/VitalSignsMonitor.c **** 		errors |= VSM_ERRORS_VM | VSM_ERRORS_OVERVOLTAGE | VSM_ERRORS_OVERVOLTAGE_CH2;
+ 516              		.loc 1 165 3 is_stmt 1 view .LVU186
+ 517              	.LVL41:
+ 518              		.loc 1 165 10 is_stmt 0 view .LVU187
+ 519 01ce 48BF     		it	mi
+ 520 01d0 43F42063 		orrmi	r3, r3, #2560
+ 521              	.LVL42:
+ 166:tmc/VitalSignsMonitor.c **** 
+ 167:tmc/VitalSignsMonitor.c **** 	VitalSignsMonitor.errors = errors & VitalSignsMonitor.errorMask; // write collected errors to inte
+ 522              		.loc 1 167 36 view .LVU188
+ 523 01d4 6268     		ldr	r2, [r4, #4]
+ 165:tmc/VitalSignsMonitor.c **** 		errors |= VSM_ERRORS_VM | VSM_ERRORS_OVERVOLTAGE | VSM_ERRORS_OVERVOLTAGE_CH2;
+ 524              		.loc 1 165 10 view .LVU189
+ 525 01d6 48BF     		it	mi
+ 526 01d8 43F00103 		orrmi	r3, r3, #1
+ 527              		.loc 1 167 2 is_stmt 1 view .LVU190
+ 528              		.loc 1 167 36 is_stmt 0 view .LVU191
+ 529 01dc 1A40     		ands	r2, r2, r3
+ 168:tmc/VitalSignsMonitor.c **** 
+ 169:tmc/VitalSignsMonitor.c **** 	// disable drivers on overvoltage
+ 170:tmc/VitalSignsMonitor.c **** 	if(errors & (VSM_ERRORS_OVERVOLTAGE | VSM_ERRORS_OVERVOLTAGE_CH1 | VSM_ERRORS_OVERVOLTAGE_CH2))
+ 530              		.loc 1 170 4 view .LVU192
+ 531 01de 13F4606F 		tst	r3, #3584
+ 167:tmc/VitalSignsMonitor.c **** 
+ 532              		.loc 1 167 27 view .LVU193
+ 533 01e2 A260     		str	r2, [r4, #8]
+ 534              		.loc 1 170 2 is_stmt 1 view .LVU194
+ 535              		.loc 1 170 4 is_stmt 0 view .LVU195
+ 536 01e4 09D0     		beq	.L47
+ 171:tmc/VitalSignsMonitor.c **** 	{
+ 172:tmc/VitalSignsMonitor.c **** 		Evalboards.driverEnable = DRIVER_DISABLE;     // set global driver enable to disabled
+ 537              		.loc 1 172 3 is_stmt 1 view .LVU196
+ 538              		.loc 1 172 27 is_stmt 0 view .LVU197
+ 539 01e6 0026     		movs	r6, #0
+ 173:tmc/VitalSignsMonitor.c **** 		Evalboards.ch1.enableDriver(DRIVER_DISABLE);  // disable driver for motion controller board
+ 540              		.loc 1 173 3 view .LVU198
+ 541 01e8 6B6E     		ldr	r3, [r5, #100]
+ 172:tmc/VitalSignsMonitor.c **** 		Evalboards.ch1.enableDriver(DRIVER_DISABLE);  // disable driver for motion controller board
+ 542              		.loc 1 172 27 view .LVU199
+ 543 01ea 85F8F060 		strb	r6, [r5, #240]
+ 544              		.loc 1 173 3 is_stmt 1 view .LVU200
+ 545 01ee 3046     		mov	r0, r6
+ 546 01f0 9847     		blx	r3
+ 547              	.LVL43:
+ 174:tmc/VitalSignsMonitor.c **** 		Evalboards.ch2.enableDriver(DRIVER_DISABLE);  // disable driver for driver
+ 548              		.loc 1 174 3 view .LVU201
+ 549 01f2 D5F8DC30 		ldr	r3, [r5, #220]
+ 550 01f6 3046     		mov	r0, r6
+ 551 01f8 9847     		blx	r3
+ 552              	.LVL44:
+ 553              	.L47:
+ 175:tmc/VitalSignsMonitor.c **** 	}
+ 176:tmc/VitalSignsMonitor.c **** 
+ 177:tmc/VitalSignsMonitor.c **** 	// set debug LED if not in debug mode
+ 178:tmc/VitalSignsMonitor.c **** 	// set status LED if not in debug mode
+ 179:tmc/VitalSignsMonitor.c **** 	if(!VitalSignsMonitor.debugMode)
+ 554              		.loc 1 179 2 view .LVU202
+ 555              		.loc 1 179 4 is_stmt 0 view .LVU203
+ 556 01fa 94F90030 		ldrsb	r3, [r4]
+ 557 01fe 83B9     		cbnz	r3, .L34
+ 180:tmc/VitalSignsMonitor.c **** 	{
+ 181:tmc/VitalSignsMonitor.c **** 		if(VitalSignsMonitor.errors & (~(VSM_BUSY | VSM_BUSY_CH1 | VSM_BUSY_CH2 | VSM_WARNING_CPU_SUPPLY_
+ 558              		.loc 1 181 3 is_stmt 1 view .LVU204
+ 559 0200 0B4B     		ldr	r3, .L85+12
+ 560              		.loc 1 181 31 is_stmt 0 view .LVU205
+ 561 0202 A268     		ldr	r2, [r4, #8]
+ 562 0204 9B69     		ldr	r3, [r3, #24]
+ 563              		.loc 1 181 5 view .LVU206
+ 564 0206 32F07802 		bics	r2, r2, #120
+ 182:tmc/VitalSignsMonitor.c **** 			HAL.LEDs->error.on();
+ 565              		.loc 1 182 4 is_stmt 1 view .LVU207
+ 566 020a 14BF     		ite	ne
+ 567 020c 1B69     		ldrne	r3, [r3, #16]
+ 183:tmc/VitalSignsMonitor.c **** 		else
+ 184:tmc/VitalSignsMonitor.c **** 			HAL.LEDs->error.off();
+ 568              		.loc 1 184 4 view .LVU208
+ 569 020e 5B69     		ldreq	r3, [r3, #20]
+ 570 0210 9847     		blx	r3
+ 571              	.LVL45:
+ 185:tmc/VitalSignsMonitor.c **** 
+ 186:tmc/VitalSignsMonitor.c **** 		if(VitalSignsMonitor.errors & (VSM_BUSY | VSM_BUSY_CH1 | VSM_BUSY_CH2))
+ 572              		.loc 1 186 3 view .LVU209
+ 573              		.loc 1 186 31 is_stmt 0 view .LVU210
+ 574 0212 A368     		ldr	r3, [r4, #8]
+ 575              		.loc 1 186 5 view .LVU211
+ 576 0214 13F0380F 		tst	r3, #56
+ 187:tmc/VitalSignsMonitor.c **** 			VitalSignsMonitor.heartRate = VSM_HEARTRATE_FAST;
+ 577              		.loc 1 187 4 is_stmt 1 view .LVU212
+ 578              		.loc 1 187 32 is_stmt 0 view .LVU213
+ 579 0218 14BF     		ite	ne
+ 580 021a 3223     		movne	r3, #50
+ 188:tmc/VitalSignsMonitor.c **** 		else
+ 189:tmc/VitalSignsMonitor.c **** 			VitalSignsMonitor.heartRate = VSM_HEARTRATE_NORMAL;
+ 581              		.loc 1 189 4 is_stmt 1 view .LVU214
+ 582              		.loc 1 189 32 is_stmt 0 view .LVU215
+ 583 021c 4FF4FA73 		moveq	r3, #500
+ 584 0220 E360     		str	r3, [r4, #12]
+ 585              	.L34:
+ 190:tmc/VitalSignsMonitor.c **** 	}
+ 191:tmc/VitalSignsMonitor.c **** }
+ 586              		.loc 1 191 1 view .LVU216
+ 587 0222 70BD     		pop	{r4, r5, r6, pc}
+ 588              	.L86:
+ 589              		.align	2
+ 590              	.L85:
+ 591 0224 00000000 		.word	.LANCHOR1
+ 592 0228 00000000 		.word	Evalboards
+ 593 022c 00000000 		.word	.LANCHOR0
+ 594 0230 00000000 		.word	HAL
+ 595              		.cfi_endproc
+ 596              	.LFE3:
+ 598              		.align	1
+ 599              		.global	vitalsignsmonitor_clearOvervoltageErrors
+ 600              		.syntax unified
+ 601              		.thumb
+ 602              		.thumb_func
+ 603              		.fpu softvfp
+ 605              	vitalsignsmonitor_clearOvervoltageErrors:
+ 606              	.LFB4:
+ 192:tmc/VitalSignsMonitor.c **** 
+ 193:tmc/VitalSignsMonitor.c **** void vitalsignsmonitor_clearOvervoltageErrors()
+ 194:tmc/VitalSignsMonitor.c **** {
+ 607              		.loc 1 194 1 is_stmt 1 view -0
+ 608              		.cfi_startproc
+ 609              		@ args = 0, pretend = 0, frame = 0
+ 610              		@ frame_needed = 0, uses_anonymous_args = 0
+ 611              		@ link register save eliminated.
+ 195:tmc/VitalSignsMonitor.c **** 	VitalSignsMonitor.errors &= ~(VSM_ERRORS_OVERVOLTAGE | VSM_ERRORS_OVERVOLTAGE_CH1 | VSM_ERRORS_OVE
+ 612              		.loc 1 195 2 view .LVU218
+ 613              		.loc 1 195 27 is_stmt 0 view .LVU219
+ 614 0234 024A     		ldr	r2, .L88
+ 615 0236 9368     		ldr	r3, [r2, #8]
+ 616 0238 23F46063 		bic	r3, r3, #3584
+ 617 023c 9360     		str	r3, [r2, #8]
+ 196:tmc/VitalSignsMonitor.c **** }
+ 618              		.loc 1 196 1 view .LVU220
+ 619 023e 7047     		bx	lr
+ 620              	.L89:
+ 621              		.align	2
+ 622              	.L88:
+ 623 0240 00000000 		.word	.LANCHOR0
+ 624              		.cfi_endproc
+ 625              	.LFE4:
+ 627              		.comm	TMCMotionController,532,4
+ 628              		.comm	TMCDriver,532,4
+ 629              		.comm	Evalboards,244,4
+ 630              		.comm	hwid,1,1
+ 631              		.comm	HAL,48,4
+ 632              		.comm	UART,40,4
+ 633              		.comm	Timer,16,4
+ 634              		.comm	WLAN,36,4
+ 635              		.comm	RS232,36,4
+ 636              		.comm	LEDs,28,4
+ 637              		.comm	USB,36,4
+ 638              		.comm	uart0_interrupt,1,1
+ 639              		.comm	ADCs,32,4
+ 640              		.comm	SPI,44,4
+ 641              		.comm	IOMap,2088,4
+ 642              		.comm	IOs,52,4
+ 643              		.comm	Cpu,8,4
+ 644              		.global	VitalSignsMonitor
+ 645              		.data
+ 646              		.align	2
+ 647              		.set	.LANCHOR0,. + 0
+ 650              	VitalSignsMonitor:
+ 651 0000 00       		.byte	0
+ 652 0001 00       		.byte	0
+ 653 0002 00       		.byte	0
+ 654 0003 00       		.space	1
+ 655 0004 FFFFFFFF 		.word	-1
+ 656 0008 00000000 		.word	0
+ 657 000c F4010000 		.word	500
+ 658 0010 00000000 		.word	0
+ 661              	vio_state.7477:
+ 662 0014 01       		.byte	1
+ 665              	stable.7476:
+ 666 0015 65       		.byte	101
+ 667              		.bss
+ 668              		.align	2
+ 669              		.set	.LANCHOR1,. + 0
+ 672              	lastTick.7472:
+ 673 0000 00000000 		.space	4
+ 676              	lastTick.7481:
+ 677 0004 00000000 		.space	4
+ 680              	ADCValue:
+ 681 0008 00000000 		.space	12
+ 681      00000000 
+ 681      00000000 
+ 682              		.text
+ 683              	.Letext0:
+ 684              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 685              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 686              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 687              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 688              		.file 6 "TMC-API/tmc/helpers/Config.h"
+ 689              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 690              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 691              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 692              		.file 10 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\in
+ 693              		.file 11 "tmc/VitalSignsMonitor.h"
+ 694              		.file 12 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 695              		.file 13 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 696              		.file 14 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 697              		.file 15 "./hal/IOs.h"
+ 698              		.file 16 "./hal/IOMap.h"
+ 699              		.file 17 "./hal/SPI.h"
+ 700              		.file 18 "./hal/ADCs.h"
+ 701              		.file 19 "./hal/RXTX.h"
+ 702              		.file 20 "./hal/USB.h"
+ 703              		.file 21 "./hal/LEDs.h"
+ 704              		.file 22 "./hal/RS232.h"
+ 705              		.file 23 "./hal/WLAN.h"
+ 706              		.file 24 "./hal/Timer.h"
+ 707              		.file 25 "./hal/UART.h"
+ 708              		.file 26 "./hal/HAL.h"
+ 709              		.file 27 "./boards/Board.h"
+ 710              		.file 28 "./boards/TMCDriver.h"
+ 711              		.file 29 "./boards/TMCMotionController.h"
+ 712              		.file 30 "./hal/SysTick.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 VitalSignsMonitor.c
+C:\Users\Shubham\AppData\Local\Temp\ccRmZpfp.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccRmZpfp.s:23     .text:00000000 heartBeat
+C:\Users\Shubham\AppData\Local\Temp\ccRmZpfp.s:80     .text:0000002c $d
+                            *COM*:00000030 HAL
+C:\Users\Shubham\AppData\Local\Temp\ccRmZpfp.s:86     .text:00000038 $t
+C:\Users\Shubham\AppData\Local\Temp\ccRmZpfp.s:93     .text:00000038 checkVM
+C:\Users\Shubham\AppData\Local\Temp\ccRmZpfp.s:323    .text:00000120 $d
+                            *COM*:000000f4 Evalboards
+C:\Users\Shubham\AppData\Local\Temp\ccRmZpfp.s:331    .text:00000134 $t
+C:\Users\Shubham\AppData\Local\Temp\ccRmZpfp.s:338    .text:00000134 vitalsignsmonitor_checkVitalSigns
+C:\Users\Shubham\AppData\Local\Temp\ccRmZpfp.s:591    .text:00000224 $d
+C:\Users\Shubham\AppData\Local\Temp\ccRmZpfp.s:598    .text:00000234 $t
+C:\Users\Shubham\AppData\Local\Temp\ccRmZpfp.s:605    .text:00000234 vitalsignsmonitor_clearOvervoltageErrors
+C:\Users\Shubham\AppData\Local\Temp\ccRmZpfp.s:623    .text:00000240 $d
+                            *COM*:00000214 TMCMotionController
+                            *COM*:00000214 TMCDriver
+                            *COM*:00000001 hwid
+                            *COM*:00000028 UART
+                            *COM*:00000010 Timer
+                            *COM*:00000024 WLAN
+                            *COM*:00000024 RS232
+                            *COM*:0000001c LEDs
+                            *COM*:00000024 USB
+                            *COM*:00000001 uart0_interrupt
+                            *COM*:00000020 ADCs
+                            *COM*:0000002c SPI
+                            *COM*:00000828 IOMap
+                            *COM*:00000034 IOs
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\ccRmZpfp.s:650    .data:00000000 VitalSignsMonitor
+C:\Users\Shubham\AppData\Local\Temp\ccRmZpfp.s:646    .data:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccRmZpfp.s:661    .data:00000014 vio_state.7477
+C:\Users\Shubham\AppData\Local\Temp\ccRmZpfp.s:665    .data:00000015 stable.7476
+C:\Users\Shubham\AppData\Local\Temp\ccRmZpfp.s:668    .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccRmZpfp.s:672    .bss:00000000 lastTick.7472
+C:\Users\Shubham\AppData\Local\Temp\ccRmZpfp.s:676    .bss:00000004 lastTick.7481
+C:\Users\Shubham\AppData\Local\Temp\ccRmZpfp.s:680    .bss:00000008 ADCValue
+
+UNDEFINED SYMBOLS
+systick_getTick

@@ -1,0 +1,195 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"TMCMotionController.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.global	tmcmotioncontroller_init
+  17              		.arch armv7e-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	tmcmotioncontroller_init:
+  24              	.LFB1:
+  25              		.file 1 "boards/TMCMotionController.c"
+   1:boards/TMCMotionController.c **** #include "TMCMotionController.h"
+   2:boards/TMCMotionController.c **** 
+   3:boards/TMCMotionController.c **** EvalBoardMotionControllerTypeDef TMCMotionController =
+   4:boards/TMCMotionController.c **** {
+   5:boards/TMCMotionController.c **** 	.config	=
+   6:boards/TMCMotionController.c **** 	{
+   7:boards/TMCMotionController.c **** 		.state           = CONFIG_READY,
+   8:boards/TMCMotionController.c **** 		.configIndex     = 0,
+   9:boards/TMCMotionController.c **** 		.shadowRegister  = { 0 }
+  10:boards/TMCMotionController.c **** 	}
+  11:boards/TMCMotionController.c **** };
+  12:boards/TMCMotionController.c **** 
+  13:boards/TMCMotionController.c **** void tmcmotioncontroller_init()
+  14:boards/TMCMotionController.c **** {
+  26              		.loc 1 14 1 view -0
+  27              		.cfi_startproc
+  28              		@ args = 0, pretend = 0, frame = 0
+  29              		@ frame_needed = 0, uses_anonymous_args = 0
+  30              		@ link register save eliminated.
+  15:boards/TMCMotionController.c **** 	Evalboards.ch1.config               = &TMCMotionController.config;
+  31              		.loc 1 15 2 view .LVU1
+  32              		.loc 1 15 38 is_stmt 0 view .LVU2
+  33 0000 084A     		ldr	r2, .L2
+  34 0002 0948     		ldr	r0, .L2+4
+  16:boards/TMCMotionController.c **** 	Evalboards.ch1.config->state        = CONFIG_READY;
+  35              		.loc 1 16 38 view .LVU3
+  36 0004 0023     		movs	r3, #0
+  17:boards/TMCMotionController.c **** 	Evalboards.ch1.config->configIndex  = 0;
+  18:boards/TMCMotionController.c **** 
+  19:boards/TMCMotionController.c **** 	// Set the minimum required voltage to 0.1V here.
+  20:boards/TMCMotionController.c **** 	// A value of 0 indicates the Evalboard not connecting the VM line,
+  21:boards/TMCMotionController.c **** 	// resulting in skipped global minimum voltage checks.
+  22:boards/TMCMotionController.c **** 	Evalboards.ch1.VMMin                = 1;
+  23:boards/TMCMotionController.c **** 	Evalboards.ch1.VMMax                = -1;
+  37              		.loc 1 23 38 view .LVU4
+  38 0006 4FF0FF31 		mov	r1, #-1
+  39 000a 4FF0010C 		mov	ip, #1
+  16:boards/TMCMotionController.c **** 	Evalboards.ch1.config->state        = CONFIG_READY;
+  40              		.loc 1 16 38 view .LVU5
+  41 000e 1380     		strh	r3, [r2]	@ movhi
+  24:boards/TMCMotionController.c **** 
+  25:boards/TMCMotionController.c **** 	Evalboards.ch1.numberOfMotors       = 0;
+  26:boards/TMCMotionController.c **** 	Evalboards.ch1.errors               = 0;
+  27:boards/TMCMotionController.c **** 
+  28:boards/TMCMotionController.c **** 	Evalboards.ch1.config->channel      = CHANNEL_1;
+  42              		.loc 1 28 38 view .LVU6
+  43 0010 82F81032 		strb	r3, [r2, #528]
+  23:boards/TMCMotionController.c **** 
+  44              		.loc 1 23 38 view .LVU7
+  45 0014 C0E9031C 		strd	r1, ip, [r0, #12]
+  15:boards/TMCMotionController.c **** 	Evalboards.ch1.config->state        = CONFIG_READY;
+  46              		.loc 1 15 38 view .LVU8
+  47 0018 8261     		str	r2, [r0, #24]
+  16:boards/TMCMotionController.c **** 	Evalboards.ch1.config->configIndex  = 0;
+  48              		.loc 1 16 2 is_stmt 1 view .LVU9
+  17:boards/TMCMotionController.c **** 
+  49              		.loc 1 17 2 view .LVU10
+  22:boards/TMCMotionController.c **** 	Evalboards.ch1.VMMax                = -1;
+  50              		.loc 1 22 2 view .LVU11
+  25:boards/TMCMotionController.c **** 	Evalboards.ch1.errors               = 0;
+  51              		.loc 1 25 2 view .LVU12
+  25:boards/TMCMotionController.c **** 	Evalboards.ch1.errors               = 0;
+  52              		.loc 1 25 38 is_stmt 0 view .LVU13
+  53 001a 0375     		strb	r3, [r0, #20]
+  26:boards/TMCMotionController.c **** 
+  54              		.loc 1 26 2 is_stmt 1 view .LVU14
+  26:boards/TMCMotionController.c **** 
+  55              		.loc 1 26 38 is_stmt 0 view .LVU15
+  56 001c 8360     		str	r3, [r0, #8]
+  57              		.loc 1 28 2 is_stmt 1 view .LVU16
+  29:boards/TMCMotionController.c **** 
+  30:boards/TMCMotionController.c **** 	board_setDummyFunctions(&Evalboards.ch1);
+  58              		.loc 1 30 2 view .LVU17
+  59 001e FFF7FEBF 		b	board_setDummyFunctions
+  60              	.LVL0:
+  61              	.L3:
+  62 0022 00BF     		.align	2
+  63              	.L2:
+  64 0024 00000000 		.word	.LANCHOR0
+  65 0028 00000000 		.word	Evalboards
+  66              		.cfi_endproc
+  67              	.LFE1:
+  69              		.global	TMCMotionController
+  70              		.comm	TMCDriver,532,4
+  71              		.comm	Evalboards,244,4
+  72              		.comm	VitalSignsMonitor,20,4
+  73              		.comm	hwid,1,1
+  74              		.comm	HAL,48,4
+  75              		.comm	UART,40,4
+  76              		.comm	Timer,16,4
+  77              		.comm	WLAN,36,4
+  78              		.comm	RS232,36,4
+  79              		.comm	LEDs,28,4
+  80              		.comm	USB,36,4
+  81              		.comm	uart0_interrupt,1,1
+  82              		.comm	ADCs,32,4
+  83              		.comm	SPI,44,4
+  84              		.comm	IOMap,2088,4
+  85              		.comm	IOs,52,4
+  86              		.comm	Cpu,8,4
+  87              		.bss
+  88              		.align	2
+  89              		.set	.LANCHOR0,. + 0
+  92              	TMCMotionController:
+  93 0000 00000000 		.space	532
+  93      00000000 
+  93      00000000 
+  93      00000000 
+  93      00000000 
+  96              	ADCValue:
+  97 0214 00000000 		.space	12
+  97      00000000 
+  97      00000000 
+  98              		.text
+  99              	.Letext0:
+ 100              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 101              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 102              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 103              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 104              		.file 6 "TMC-API/tmc/helpers/Config.h"
+ 105              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 106              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 107              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 108              		.file 10 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\in
+ 109              		.file 11 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 110              		.file 12 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 111              		.file 13 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 112              		.file 14 "./hal/IOs.h"
+ 113              		.file 15 "./hal/IOMap.h"
+ 114              		.file 16 "./hal/SPI.h"
+ 115              		.file 17 "./hal/ADCs.h"
+ 116              		.file 18 "./hal/RXTX.h"
+ 117              		.file 19 "./hal/USB.h"
+ 118              		.file 20 "./hal/LEDs.h"
+ 119              		.file 21 "./hal/RS232.h"
+ 120              		.file 22 "./hal/WLAN.h"
+ 121              		.file 23 "./hal/Timer.h"
+ 122              		.file 24 "./hal/UART.h"
+ 123              		.file 25 "./hal/HAL.h"
+ 124              		.file 26 "./tmc/VitalSignsMonitor.h"
+ 125              		.file 27 "boards/Board.h"
+ 126              		.file 28 "boards/TMCDriver.h"
+ 127              		.file 29 "boards/TMCMotionController.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 TMCMotionController.c
+C:\Users\Shubham\AppData\Local\Temp\cckpTwC5.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\cckpTwC5.s:23     .text:00000000 tmcmotioncontroller_init
+C:\Users\Shubham\AppData\Local\Temp\cckpTwC5.s:64     .text:00000024 $d
+                            *COM*:000000f4 Evalboards
+C:\Users\Shubham\AppData\Local\Temp\cckpTwC5.s:92     .bss:00000000 TMCMotionController
+                            *COM*:00000214 TMCDriver
+                            *COM*:00000014 VitalSignsMonitor
+                            *COM*:00000001 hwid
+                            *COM*:00000030 HAL
+                            *COM*:00000028 UART
+                            *COM*:00000010 Timer
+                            *COM*:00000024 WLAN
+                            *COM*:00000024 RS232
+                            *COM*:0000001c LEDs
+                            *COM*:00000024 USB
+                            *COM*:00000001 uart0_interrupt
+                            *COM*:00000020 ADCs
+                            *COM*:0000002c SPI
+                            *COM*:00000828 IOMap
+                            *COM*:00000034 IOs
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\cckpTwC5.s:88     .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\cckpTwC5.s:96     .bss:00000214 ADCValue
+
+UNDEFINED SYMBOLS
+board_setDummyFunctions

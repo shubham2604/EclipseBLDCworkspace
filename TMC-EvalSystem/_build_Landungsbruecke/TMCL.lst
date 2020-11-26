@@ -1,0 +1,4165 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"TMCL.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.arch armv7e-m
+  17              		.syntax unified
+  18              		.thumb
+  19              		.thumb_func
+  20              		.fpu softvfp
+  22              	setDriversEnable:
+  23              	.LFB16:
+  24              		.file 1 "tmc/TMCL.c"
+   1:tmc/TMCL.c    **** 
+   2:tmc/TMCL.c    **** #include "TMCL.h"
+   3:tmc/TMCL.c    **** 
+   4:tmc/TMCL.c    **** #include "BoardAssignment.h"
+   5:tmc/TMCL.c    **** #include "hal/derivative.h"
+   6:tmc/TMCL.c    **** #include "IdDetection.h"
+   7:tmc/TMCL.c    **** #include "VitalSignsMonitor.h"
+   8:tmc/TMCL.c    **** #include "tmc/StepDir.h"
+   9:tmc/TMCL.c    **** #include "EEPROM.h"
+  10:tmc/TMCL.c    **** 
+  11:tmc/TMCL.c    **** // these addresses are fixed
+  12:tmc/TMCL.c    **** #define SERIAL_MODULE_ADDRESS  1
+  13:tmc/TMCL.c    **** #define SERIAL_HOST_ADDRESS    2
+  14:tmc/TMCL.c    **** 
+  15:tmc/TMCL.c    **** // todo CHECK 2: these are unused - delete? (LH) #11
+  16:tmc/TMCL.c    **** // tmcl interpreter states
+  17:tmc/TMCL.c    **** #define TM_IDLE      0
+  18:tmc/TMCL.c    **** #define TM_RUN       1
+  19:tmc/TMCL.c    **** #define TM_STEP      2
+  20:tmc/TMCL.c    **** #define TM_RESET     3 // unused
+  21:tmc/TMCL.c    **** #define TM_DOWNLOAD  4
+  22:tmc/TMCL.c    **** #define TM_DEBUG     5 // wie TM_IDLE, es wird jedoch der Akku nicht modifiziert bei GAP etc.
+  23:tmc/TMCL.c    **** 
+  24:tmc/TMCL.c    **** // todo CHECK 2: these are unused - delete? (LH) #12
+  25:tmc/TMCL.c    **** #define TCS_IDLE           0
+  26:tmc/TMCL.c    **** #define TCS_CAN7           1
+  27:tmc/TMCL.c    **** #define TCS_CAN8           2
+  28:tmc/TMCL.c    **** #define TCS_UART           3
+  29:tmc/TMCL.c    **** #define TCS_UART_ERROR     4
+  30:tmc/TMCL.c    **** #define TCS_UART_II        5
+  31:tmc/TMCL.c    **** #define TCS_UART_II_ERROR  6
+  32:tmc/TMCL.c    **** #define TCS_USB            7
+  33:tmc/TMCL.c    **** #define TCS_USB_ERROR      8
+  34:tmc/TMCL.c    **** #define TCS_MEM            9
+  35:tmc/TMCL.c    **** 
+  36:tmc/TMCL.c    **** // TMCL commands
+  37:tmc/TMCL.c    **** #define TMCL_ROR                     1
+  38:tmc/TMCL.c    **** #define TMCL_ROL                     2
+  39:tmc/TMCL.c    **** #define TMCL_MST                     3
+  40:tmc/TMCL.c    **** #define TMCL_MVP                     4
+  41:tmc/TMCL.c    **** #define TMCL_SAP                     5
+  42:tmc/TMCL.c    **** #define TMCL_GAP                     6
+  43:tmc/TMCL.c    **** #define TMCL_STAP                    7
+  44:tmc/TMCL.c    **** #define TMCL_RSAP                    8
+  45:tmc/TMCL.c    **** #define TMCL_SGP                     9
+  46:tmc/TMCL.c    **** #define TMCL_GGP                     10
+  47:tmc/TMCL.c    **** #define TMCL_STGP                    11
+  48:tmc/TMCL.c    **** #define TMCL_RSGP                    12
+  49:tmc/TMCL.c    **** #define TMCL_RFS                     13
+  50:tmc/TMCL.c    **** #define TMCL_SIO                     14
+  51:tmc/TMCL.c    **** #define TMCL_GIO                     15
+  52:tmc/TMCL.c    **** #define TMCL_CALC                    19
+  53:tmc/TMCL.c    **** #define TMCL_COMP                    20
+  54:tmc/TMCL.c    **** #define TMCL_JC                      21
+  55:tmc/TMCL.c    **** #define TMCL_JA                      22
+  56:tmc/TMCL.c    **** #define TMCL_CSUB                    23
+  57:tmc/TMCL.c    **** #define TMCL_RSUB                    24
+  58:tmc/TMCL.c    **** #define TMCL_EI                      25
+  59:tmc/TMCL.c    **** #define TMCL_DI                      26
+  60:tmc/TMCL.c    **** #define TMCL_WAIT                    27
+  61:tmc/TMCL.c    **** #define TMCL_STOP                    28
+  62:tmc/TMCL.c    **** #define TMCL_SAC                     29
+  63:tmc/TMCL.c    **** #define TMCL_SCO                     30
+  64:tmc/TMCL.c    **** #define TMCL_GCO                     31
+  65:tmc/TMCL.c    **** #define TMCL_CCO                     32
+  66:tmc/TMCL.c    **** #define TMCL_CALCX                   33
+  67:tmc/TMCL.c    **** #define TMCL_AAP                     34
+  68:tmc/TMCL.c    **** #define TMCL_AGP                     35
+  69:tmc/TMCL.c    **** #define TMCL_CLE                     36
+  70:tmc/TMCL.c    **** #define TMCL_VECT                    37
+  71:tmc/TMCL.c    **** #define TMCL_RETI                    38
+  72:tmc/TMCL.c    **** #define TMCL_ACO                     39
+  73:tmc/TMCL.c    **** 
+  74:tmc/TMCL.c    **** #define TMCL_UF0                     64
+  75:tmc/TMCL.c    **** #define TMCL_UF1                     65
+  76:tmc/TMCL.c    **** #define TMCL_UF2                     66
+  77:tmc/TMCL.c    **** #define TMCL_UF3                     67
+  78:tmc/TMCL.c    **** #define TMCL_UF4                     68
+  79:tmc/TMCL.c    **** #define TMCL_UF5                     69
+  80:tmc/TMCL.c    **** #define TMCL_UF6                     70
+  81:tmc/TMCL.c    **** #define TMCL_UF7                     71
+  82:tmc/TMCL.c    **** 
+  83:tmc/TMCL.c    **** #define TMCL_ApplStop                128
+  84:tmc/TMCL.c    **** #define TMCL_ApplRun                 129
+  85:tmc/TMCL.c    **** #define TMCL_ApplStep                130
+  86:tmc/TMCL.c    **** #define TMCL_ApplReset               131
+  87:tmc/TMCL.c    **** #define TMCL_DownloadStart           132
+  88:tmc/TMCL.c    **** #define TMCL_DownloadEnd             133
+  89:tmc/TMCL.c    **** #define TMCL_ReadMem                 134
+  90:tmc/TMCL.c    **** #define TMCL_GetStatus               135
+  91:tmc/TMCL.c    **** #define TMCL_GetVersion              136
+  92:tmc/TMCL.c    **** #define TMCL_FactoryDefault          137
+  93:tmc/TMCL.c    **** #define TMCL_SetEvent                138
+  94:tmc/TMCL.c    **** #define TMCL_SetASCII                139
+  95:tmc/TMCL.c    **** #define TMCL_SecurityCode            140
+  96:tmc/TMCL.c    **** #define TMCL_Breakpoint              141
+  97:tmc/TMCL.c    **** #define TMCL_RamDebug                142
+  98:tmc/TMCL.c    **** #define TMCL_GetIds                  143
+  99:tmc/TMCL.c    **** #define TMCL_UF_CH1                  144
+ 100:tmc/TMCL.c    **** #define TMCL_UF_CH2                  145
+ 101:tmc/TMCL.c    **** #define TMCL_writeRegisterChannel_1  146
+ 102:tmc/TMCL.c    **** #define TMCL_writeRegisterChannel_2  147
+ 103:tmc/TMCL.c    **** #define TMCL_readRegisterChannel_1   148
+ 104:tmc/TMCL.c    **** #define TMCL_readRegisterChannel_2   149
+ 105:tmc/TMCL.c    **** 
+ 106:tmc/TMCL.c    **** #define TMCL_BoardMeasuredSpeed      150
+ 107:tmc/TMCL.c    **** #define TMCL_BoardError              151
+ 108:tmc/TMCL.c    **** #define TMCL_BoardReset              152
+ 109:tmc/TMCL.c    **** 
+ 110:tmc/TMCL.c    **** #define TMCL_WLAN                    160
+ 111:tmc/TMCL.c    **** #define TMCL_WLAN_CMD                160
+ 112:tmc/TMCL.c    **** #define TMCL_WLAN_IS_RTS             161
+ 113:tmc/TMCL.c    **** #define TMCL_WLAN_CMDMODE_EN         162
+ 114:tmc/TMCL.c    **** #define TMCL_WLAN_IS_CMDMODE         163
+ 115:tmc/TMCL.c    **** 
+ 116:tmc/TMCL.c    **** #define TMCL_MIN                     170
+ 117:tmc/TMCL.c    **** #define TMCL_MAX                     171
+ 118:tmc/TMCL.c    **** 
+ 119:tmc/TMCL.c    **** #define TMCL_Boot                    242
+ 120:tmc/TMCL.c    **** #define TMCL_SoftwareReset           255
+ 121:tmc/TMCL.c    **** 
+ 122:tmc/TMCL.c    **** // Command type variants
+ 123:tmc/TMCL.c    **** #define MVP_ABS  0
+ 124:tmc/TMCL.c    **** #define MVP_REL  1
+ 125:tmc/TMCL.c    **** #define MVP_PRF  2
+ 126:tmc/TMCL.c    **** 
+ 127:tmc/TMCL.c    **** // GetVersion() Format types
+ 128:tmc/TMCL.c    **** #define VERSION_FORMAT_ASCII      0
+ 129:tmc/TMCL.c    **** #define VERSION_FORMAT_BINARY     1
+ 130:tmc/TMCL.c    **** #define VERSION_BOOTLOADER        2 // todo CHECK 2: implemented this way in IDE - probably means g
+ 131:tmc/TMCL.c    **** #define VERSION_SIGNATURE         3 // todo CHECK 2: implemented under "Signature" in IDE. Not sure
+ 132:tmc/TMCL.c    **** #define VERSION_BOARD_DETECT_SRC  4 // todo CHECK 2: This doesn't really fit under GetVersion, but 
+ 133:tmc/TMCL.c    **** #define VERSION_BUILD             5
+ 134:tmc/TMCL.c    **** 
+ 135:tmc/TMCL.c    **** //Statuscodes
+ 136:tmc/TMCL.c    **** #define REPLY_OK                     100
+ 137:tmc/TMCL.c    **** #define REPLY_CMD_LOADED             101
+ 138:tmc/TMCL.c    **** #define REPLY_CHKERR                 1
+ 139:tmc/TMCL.c    **** #define REPLY_INVALID_CMD            2
+ 140:tmc/TMCL.c    **** #define REPLY_INVALID_TYPE           3
+ 141:tmc/TMCL.c    **** #define REPLY_INVALID_VALUE          4
+ 142:tmc/TMCL.c    **** #define REPLY_EEPROM_LOCKED          5
+ 143:tmc/TMCL.c    **** #define REPLY_CMD_NOT_AVAILABLE      6
+ 144:tmc/TMCL.c    **** #define REPLY_CMD_LOAD_ERROR         7
+ 145:tmc/TMCL.c    **** #define REPLY_WRITE_PROTECTED        8
+ 146:tmc/TMCL.c    **** #define REPLY_MAX_EXCEEDED           9
+ 147:tmc/TMCL.c    **** #define REPLY_DOWNLOAD_NOT_POSSIBLE  10
+ 148:tmc/TMCL.c    **** #define REPLY_CHIP_READ_FAILED       11
+ 149:tmc/TMCL.c    **** #define REPLY_DELAYED                128
+ 150:tmc/TMCL.c    **** #define REPLY_ACTIVE_COMM            129
+ 151:tmc/TMCL.c    **** 
+ 152:tmc/TMCL.c    **** // TMCL communication status
+ 153:tmc/TMCL.c    **** #define TMCL_RX_ERROR_NONE      0
+ 154:tmc/TMCL.c    **** #define TMCL_RX_ERROR_NODATA    1
+ 155:tmc/TMCL.c    **** #define TMCL_RX_ERROR_CHECKSUM  2
+ 156:tmc/TMCL.c    **** 
+ 157:tmc/TMCL.c    **** extern const char *VersionString;
+ 158:tmc/TMCL.c    **** 
+ 159:tmc/TMCL.c    **** // TMCL request
+ 160:tmc/TMCL.c    **** typedef struct
+ 161:tmc/TMCL.c    **** {
+ 162:tmc/TMCL.c    **** 	uint8_t   Opcode;
+ 163:tmc/TMCL.c    **** 	uint8_t   Type;
+ 164:tmc/TMCL.c    **** 	uint8_t   Motor;
+ 165:tmc/TMCL.c    **** 	uint32_t  Error;
+ 166:tmc/TMCL.c    **** 	union
+ 167:tmc/TMCL.c    **** 	{
+ 168:tmc/TMCL.c    **** 		uint8_t Byte[4];
+ 169:tmc/TMCL.c    **** 		uint32_t UInt32;
+ 170:tmc/TMCL.c    **** 		int32_t Int32;
+ 171:tmc/TMCL.c    **** 		float32_t Float32;
+ 172:tmc/TMCL.c    **** 	} Value;
+ 173:tmc/TMCL.c    **** } TMCLCommandTypeDef;
+ 174:tmc/TMCL.c    **** 
+ 175:tmc/TMCL.c    **** // TMCL reply
+ 176:tmc/TMCL.c    **** typedef struct
+ 177:tmc/TMCL.c    **** {
+ 178:tmc/TMCL.c    **** 	uint8_t Status;
+ 179:tmc/TMCL.c    **** 	uint8_t Opcode;
+ 180:tmc/TMCL.c    **** 	union
+ 181:tmc/TMCL.c    **** 	{
+ 182:tmc/TMCL.c    **** 		uint8_t Byte[4];
+ 183:tmc/TMCL.c    **** 		uint32_t UInt32;
+ 184:tmc/TMCL.c    **** 		int32_t Int32;
+ 185:tmc/TMCL.c    **** 		float32_t Float32;
+ 186:tmc/TMCL.c    **** 	} Value;
+ 187:tmc/TMCL.c    **** 
+ 188:tmc/TMCL.c    **** 	uint8_t Special[9];
+ 189:tmc/TMCL.c    **** 	uint8_t IsSpecial;  // next transfer will not use the serial address and the checksum bytes - inst
+ 190:tmc/TMCL.c    **** } TMCLReplyTypeDef;
+ 191:tmc/TMCL.c    **** 
+ 192:tmc/TMCL.c    **** void ExecuteActualCommand();
+ 193:tmc/TMCL.c    **** uint8_t setTMCLStatus(uint8_t evalError);
+ 194:tmc/TMCL.c    **** void rx(RXTXTypeDef *RXTX);
+ 195:tmc/TMCL.c    **** void tx(RXTXTypeDef *RXTX);
+ 196:tmc/TMCL.c    **** 
+ 197:tmc/TMCL.c    **** // Helper functions - used to prevent ExecuteActualCommand() from getting too big.
+ 198:tmc/TMCL.c    **** // No parameters or return value are used.
+ 199:tmc/TMCL.c    **** static void readIdEeprom(void);
+ 200:tmc/TMCL.c    **** static void writeIdEeprom(void);
+ 201:tmc/TMCL.c    **** static void SetGlobalParameter(void);
+ 202:tmc/TMCL.c    **** static void GetGlobalParameter(void);
+ 203:tmc/TMCL.c    **** static void boardAssignment(void);
+ 204:tmc/TMCL.c    **** static void boardsErrors(void);
+ 205:tmc/TMCL.c    **** static void boardsReset(void);
+ 206:tmc/TMCL.c    **** static void boardsMeasuredSpeed(void);
+ 207:tmc/TMCL.c    **** static void setDriversEnable(void);
+ 208:tmc/TMCL.c    **** static void checkIDs(void);
+ 209:tmc/TMCL.c    **** static void SoftwareReset(void);
+ 210:tmc/TMCL.c    **** static void GetVersion(void);
+ 211:tmc/TMCL.c    **** static void GetInput(void);
+ 212:tmc/TMCL.c    **** static void HandleWlanCommand(void);
+ 213:tmc/TMCL.c    **** 
+ 214:tmc/TMCL.c    **** TMCLCommandTypeDef ActualCommand;
+ 215:tmc/TMCL.c    **** TMCLReplyTypeDef ActualReply;
+ 216:tmc/TMCL.c    **** RXTXTypeDef interfaces[4];
+ 217:tmc/TMCL.c    **** uint32_t numberOfInterfaces;
+ 218:tmc/TMCL.c    **** uint32_t resetRequest = 0;
+ 219:tmc/TMCL.c    **** 
+ 220:tmc/TMCL.c    **** #if defined(Landungsbruecke)
+ 221:tmc/TMCL.c    **** 	// ToDo: Remove the duplicate declaration of the struct here and in main.c
+ 222:tmc/TMCL.c    **** 	struct BootloaderConfig {
+ 223:tmc/TMCL.c    **** 		uint32_t BLMagic;
+ 224:tmc/TMCL.c    **** 		uint32_t drvEnableResetValue;
+ 225:tmc/TMCL.c    **** 	};
+ 226:tmc/TMCL.c    **** 
+ 227:tmc/TMCL.c    **** 	extern struct BootloaderConfig BLConfig;
+ 228:tmc/TMCL.c    **** #endif
+ 229:tmc/TMCL.c    **** 
+ 230:tmc/TMCL.c    **** // Sets TMCL status from Evalboard error. Returns the parameter given to allow for compact error ha
+ 231:tmc/TMCL.c    **** uint8_t setTMCLStatus(uint8_t evalError)
+ 232:tmc/TMCL.c    **** {
+ 233:tmc/TMCL.c    **** 	if(evalError == TMC_ERROR_NONE)          ActualReply.Status = REPLY_OK;
+ 234:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_FUNCTION)  ActualReply.Status = REPLY_INVALID_CMD;
+ 235:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_TYPE)      ActualReply.Status = REPLY_INVALID_TYPE;
+ 236:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_MOTOR)     ActualReply.Status = REPLY_INVALID_TYPE; // todo CHECK AD
+ 237:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_VALUE)     ActualReply.Status = REPLY_INVALID_VALUE;
+ 238:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_NOT_DONE)  ActualReply.Status = REPLY_DELAYED;
+ 239:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_CHIP)      ActualReply.Status = REPLY_EEPROM_LOCKED;
+ 240:tmc/TMCL.c    **** 	return evalError;
+ 241:tmc/TMCL.c    **** }
+ 242:tmc/TMCL.c    **** 
+ 243:tmc/TMCL.c    **** void ExecuteActualCommand()
+ 244:tmc/TMCL.c    **** {
+ 245:tmc/TMCL.c    **** 	ActualReply.Opcode = ActualCommand.Opcode;
+ 246:tmc/TMCL.c    **** 	ActualReply.Status = REPLY_OK;
+ 247:tmc/TMCL.c    **** 	ActualReply.Value.Int32 = ActualCommand.Value.Int32;
+ 248:tmc/TMCL.c    **** 
+ 249:tmc/TMCL.c    **** 	if(ActualCommand.Error == TMCL_RX_ERROR_CHECKSUM)
+ 250:tmc/TMCL.c    **** 	{
+ 251:tmc/TMCL.c    **** 		ActualReply.Value.Int32  = 0;
+ 252:tmc/TMCL.c    **** 		ActualReply.Status       = REPLY_CHKERR;
+ 253:tmc/TMCL.c    **** 		return;
+ 254:tmc/TMCL.c    **** 	}
+ 255:tmc/TMCL.c    **** 
+ 256:tmc/TMCL.c    **** 	switch(ActualCommand.Opcode)
+ 257:tmc/TMCL.c    **** 	{
+ 258:tmc/TMCL.c    **** 	case TMCL_ROR:
+ 259:tmc/TMCL.c    **** 		// if function doesn't exist for ch1 try ch2
+ 260:tmc/TMCL.c    **** 		if(setTMCLStatus(Evalboards.ch1.right(ActualCommand.Motor, ActualCommand.Value.Int32)) & TMC_ERRO
+ 261:tmc/TMCL.c    **** 		{
+ 262:tmc/TMCL.c    **** 			setTMCLStatus(Evalboards.ch2.right(ActualCommand.Motor, ActualCommand.Value.Int32));
+ 263:tmc/TMCL.c    **** 		}
+ 264:tmc/TMCL.c    **** 		break;
+ 265:tmc/TMCL.c    **** 	case TMCL_ROL:
+ 266:tmc/TMCL.c    **** 		// if function doesn't exist for ch1 try ch2
+ 267:tmc/TMCL.c    **** 		if(setTMCLStatus(Evalboards.ch1.left(ActualCommand.Motor, ActualCommand.Value.Int32)) & TMC_ERROR
+ 268:tmc/TMCL.c    **** 		{
+ 269:tmc/TMCL.c    **** 			setTMCLStatus(Evalboards.ch2.left(ActualCommand.Motor, ActualCommand.Value.Int32));
+ 270:tmc/TMCL.c    **** 		}
+ 271:tmc/TMCL.c    **** 		break;
+ 272:tmc/TMCL.c    **** 	case TMCL_MST:
+ 273:tmc/TMCL.c    **** 		// if function doesn't exist for ch1 try ch2
+ 274:tmc/TMCL.c    **** 		if(setTMCLStatus(Evalboards.ch1.stop(ActualCommand.Motor)) & TMC_ERROR_FUNCTION)
+ 275:tmc/TMCL.c    **** 		{
+ 276:tmc/TMCL.c    **** 			setTMCLStatus(Evalboards.ch2.stop(ActualCommand.Motor));
+ 277:tmc/TMCL.c    **** 		}
+ 278:tmc/TMCL.c    **** 		break;
+ 279:tmc/TMCL.c    **** 	case TMCL_MVP:
+ 280:tmc/TMCL.c    **** 		// if function doesn't exist for ch1 try ch2
+ 281:tmc/TMCL.c    **** 		switch(ActualCommand.Type)
+ 282:tmc/TMCL.c    **** 		{
+ 283:tmc/TMCL.c    **** 		case MVP_ABS: // move absolute
+ 284:tmc/TMCL.c    **** 			if(setTMCLStatus(Evalboards.ch1.moveTo(ActualCommand.Motor, ActualCommand.Value.Int32)) & TMC_ER
+ 285:tmc/TMCL.c    **** 			{
+ 286:tmc/TMCL.c    **** 				setTMCLStatus(Evalboards.ch2.moveTo(ActualCommand.Motor, ActualCommand.Value.Int32));
+ 287:tmc/TMCL.c    **** 			}
+ 288:tmc/TMCL.c    **** 			break;
+ 289:tmc/TMCL.c    **** 		case MVP_REL: // move relative
+ 290:tmc/TMCL.c    **** 			if(setTMCLStatus(Evalboards.ch1.moveBy(ActualCommand.Motor, &ActualCommand.Value.Int32)) & TMC_E
+ 291:tmc/TMCL.c    **** 			{
+ 292:tmc/TMCL.c    **** 				setTMCLStatus(Evalboards.ch2.moveBy(ActualCommand.Motor, &ActualCommand.Value.Int32));
+ 293:tmc/TMCL.c    **** 			}
+ 294:tmc/TMCL.c    **** 			ActualReply.Value.Int32 = ActualCommand.Value.Int32;
+ 295:tmc/TMCL.c    **** 			break;
+ 296:tmc/TMCL.c    **** 		case MVP_PRF:
+ 297:tmc/TMCL.c    **** 			if(setTMCLStatus(Evalboards.ch1.moveProfile(ActualCommand.Motor, ActualCommand.Value.Int32)) & T
+ 298:tmc/TMCL.c    **** 			{
+ 299:tmc/TMCL.c    **** 				setTMCLStatus(Evalboards.ch2.moveProfile(ActualCommand.Motor, ActualCommand.Value.Int32));
+ 300:tmc/TMCL.c    **** 			}
+ 301:tmc/TMCL.c    **** 			break;
+ 302:tmc/TMCL.c    **** 		default:
+ 303:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_INVALID_TYPE;
+ 304:tmc/TMCL.c    **** 			break;
+ 305:tmc/TMCL.c    **** 		}
+ 306:tmc/TMCL.c    **** 		break;
+ 307:tmc/TMCL.c    **** 	case TMCL_SAP:
+ 308:tmc/TMCL.c    **** 		// if function doesn't exist for ch1 try ch2
+ 309:tmc/TMCL.c    **** 		if(setTMCLStatus(Evalboards.ch1.SAP(ActualCommand.Type, ActualCommand.Motor, ActualCommand.Value.
+ 310:tmc/TMCL.c    **** 		{
+ 311:tmc/TMCL.c    **** 			setTMCLStatus(Evalboards.ch2.SAP(ActualCommand.Type, ActualCommand.Motor, ActualCommand.Value.In
+ 312:tmc/TMCL.c    **** 		}
+ 313:tmc/TMCL.c    **** 		break;
+ 314:tmc/TMCL.c    **** 	case TMCL_GAP:
+ 315:tmc/TMCL.c    **** 		// if function doesn't exist for ch1 try ch2
+ 316:tmc/TMCL.c    **** 		if(setTMCLStatus(Evalboards.ch1.GAP(ActualCommand.Type, ActualCommand.Motor, &ActualReply.Value.I
+ 317:tmc/TMCL.c    **** 		{
+ 318:tmc/TMCL.c    **** 			setTMCLStatus(Evalboards.ch2.GAP(ActualCommand.Type, ActualCommand.Motor, &ActualReply.Value.Int
+ 319:tmc/TMCL.c    **** 		}
+ 320:tmc/TMCL.c    **** 		break;
+ 321:tmc/TMCL.c    **** 	case TMCL_SGP:
+ 322:tmc/TMCL.c    **** 		SetGlobalParameter();
+ 323:tmc/TMCL.c    **** 		break;
+ 324:tmc/TMCL.c    **** 	case TMCL_GGP:
+ 325:tmc/TMCL.c    **** 		GetGlobalParameter();
+ 326:tmc/TMCL.c    **** 		break;
+ 327:tmc/TMCL.c    **** 	case TMCL_GIO:
+ 328:tmc/TMCL.c    **** 		GetInput();
+ 329:tmc/TMCL.c    **** 		break;
+ 330:tmc/TMCL.c    **** 	case TMCL_UF0:
+ 331:tmc/TMCL.c    **** 		setDriversEnable();
+ 332:tmc/TMCL.c    **** 		break;
+ 333:tmc/TMCL.c    **** 	case TMCL_UF1:
+ 334:tmc/TMCL.c    **** 		readIdEeprom();
+ 335:tmc/TMCL.c    **** 		break;
+ 336:tmc/TMCL.c    **** 	case TMCL_UF2:
+ 337:tmc/TMCL.c    **** 		writeIdEeprom();
+ 338:tmc/TMCL.c    **** 		break;
+ 339:tmc/TMCL.c    **** 	case TMCL_UF4:
+ 340:tmc/TMCL.c    **** 		// if function doesn't exist for ch1 try ch2
+ 341:tmc/TMCL.c    **** 		if(setTMCLStatus(Evalboards.ch1.getMeasuredSpeed(ActualCommand.Motor, &ActualReply.Value.Int32)) 
+ 342:tmc/TMCL.c    **** 		{
+ 343:tmc/TMCL.c    **** 			setTMCLStatus(Evalboards.ch2.getMeasuredSpeed(ActualCommand.Motor, &ActualReply.Value.Int32));
+ 344:tmc/TMCL.c    **** 		}
+ 345:tmc/TMCL.c    **** 		break;
+ 346:tmc/TMCL.c    **** 	case TMCL_UF5:
+ 347:tmc/TMCL.c    **** 		// if function doesn't exist for ch1 try ch2 // todo CHECK REM 2: We have TMCL_writeRegisterChann
+ 348:tmc/TMCL.c    **** 		Evalboards.ch1.writeRegister(ActualCommand.Motor, ActualCommand.Type, ActualCommand.Value.Int32);
+ 349:tmc/TMCL.c    **** 		break;
+ 350:tmc/TMCL.c    **** 	case TMCL_UF6:
+ 351:tmc/TMCL.c    **** 		// if function doesn't exist for ch1 try ch2 // todo CHECK REM 2: We have TMCL_readRegisterChanne
+ 352:tmc/TMCL.c    **** 		Evalboards.ch1.readRegister(ActualCommand.Motor, ActualCommand.Type, &ActualReply.Value.Int32);
+ 353:tmc/TMCL.c    **** 		break;
+ 354:tmc/TMCL.c    **** 	case TMCL_GetVersion:
+ 355:tmc/TMCL.c    **** 		GetVersion();
+ 356:tmc/TMCL.c    **** 		break;
+ 357:tmc/TMCL.c    **** 	case TMCL_GetIds:
+ 358:tmc/TMCL.c    **** 		boardAssignment();
+ 359:tmc/TMCL.c    **** 		break;
+ 360:tmc/TMCL.c    **** 	case TMCL_UF_CH1:
+ 361:tmc/TMCL.c    **** 		// user function for motionController board
+ 362:tmc/TMCL.c    **** 		setTMCLStatus(Evalboards.ch1.userFunction(ActualCommand.Type, ActualCommand.Motor, &ActualCommand
+ 363:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = ActualCommand.Value.Int32;
+ 364:tmc/TMCL.c    **** 		break;
+ 365:tmc/TMCL.c    **** 	case TMCL_UF_CH2:
+ 366:tmc/TMCL.c    **** 		// user function for driver board
+ 367:tmc/TMCL.c    **** 		setTMCLStatus(Evalboards.ch2.userFunction(ActualCommand.Type, ActualCommand.Motor, &ActualCommand
+ 368:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = ActualCommand.Value.Int32;
+ 369:tmc/TMCL.c    **** 		break;
+ 370:tmc/TMCL.c    **** 	case TMCL_writeRegisterChannel_1:
+ 371:tmc/TMCL.c    **** 		Evalboards.ch1.writeRegister(ActualCommand.Motor, ActualCommand.Type, ActualCommand.Value.Int32);
+ 372:tmc/TMCL.c    **** 		break;
+ 373:tmc/TMCL.c    **** 	case TMCL_writeRegisterChannel_2:
+ 374:tmc/TMCL.c    **** 		Evalboards.ch2.writeRegister(ActualCommand.Motor, ActualCommand.Type, ActualCommand.Value.Int32);
+ 375:tmc/TMCL.c    **** 		break;
+ 376:tmc/TMCL.c    **** 	case TMCL_readRegisterChannel_1:
+ 377:tmc/TMCL.c    **** 		// Do not allow reads during brownout to prevent garbage data being used
+ 378:tmc/TMCL.c    **** 		// in read-modify-write operations. Bypass this safety with motor = 255
+ 379:tmc/TMCL.c    **** 		if ((VitalSignsMonitor.brownOut & VSM_ERRORS_BROWNOUT_CH1) && ActualCommand.Motor != 255)
+ 380:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_CHIP_READ_FAILED;
+ 381:tmc/TMCL.c    **** 		else
+ 382:tmc/TMCL.c    **** 			Evalboards.ch1.readRegister(ActualCommand.Motor, ActualCommand.Type, &ActualReply.Value.Int32);
+ 383:tmc/TMCL.c    **** 		break;
+ 384:tmc/TMCL.c    **** 	case TMCL_readRegisterChannel_2:
+ 385:tmc/TMCL.c    **** 		// Do not allow reads during brownout to prevent garbage data being used
+ 386:tmc/TMCL.c    **** 		// in read-modify-write operations. Bypass this safety with motor = 255
+ 387:tmc/TMCL.c    **** 		if ((VitalSignsMonitor.brownOut & VSM_ERRORS_BROWNOUT_CH2) && ActualCommand.Motor != 255)
+ 388:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_CHIP_READ_FAILED;
+ 389:tmc/TMCL.c    **** 		else
+ 390:tmc/TMCL.c    **** 			Evalboards.ch2.readRegister(ActualCommand.Motor, ActualCommand.Type, &ActualReply.Value.Int32);
+ 391:tmc/TMCL.c    **** 		break;
+ 392:tmc/TMCL.c    **** 	case TMCL_BoardMeasuredSpeed:
+ 393:tmc/TMCL.c    **** 		// measured speed from motionController board or driver board depending on type
+ 394:tmc/TMCL.c    **** 		boardsMeasuredSpeed();
+ 395:tmc/TMCL.c    **** 		break;
+ 396:tmc/TMCL.c    **** 	case TMCL_BoardError:
+ 397:tmc/TMCL.c    **** 		// errors of motionController board or driver board depending on type
+ 398:tmc/TMCL.c    **** 		boardsErrors();
+ 399:tmc/TMCL.c    **** 		break;
+ 400:tmc/TMCL.c    **** 	case TMCL_BoardReset:
+ 401:tmc/TMCL.c    **** 		// reset of motionController board or driver board depending on type
+ 402:tmc/TMCL.c    **** 		boardsReset();
+ 403:tmc/TMCL.c    **** 		break;
+ 404:tmc/TMCL.c    **** 	case TMCL_WLAN:
+ 405:tmc/TMCL.c    **** 		HandleWlanCommand();
+ 406:tmc/TMCL.c    **** 		break;
+ 407:tmc/TMCL.c    **** 	case TMCL_MIN:
+ 408:tmc/TMCL.c    **** 		if(setTMCLStatus(Evalboards.ch1.getMin(ActualCommand.Type, ActualCommand.Motor, &ActualReply.Valu
+ 409:tmc/TMCL.c    **** 		{
+ 410:tmc/TMCL.c    **** 			setTMCLStatus(Evalboards.ch2.getMin(ActualCommand.Type, ActualCommand.Motor, &ActualReply.Value.
+ 411:tmc/TMCL.c    **** 		}
+ 412:tmc/TMCL.c    **** 		break;
+ 413:tmc/TMCL.c    **** 	case TMCL_MAX:
+ 414:tmc/TMCL.c    **** 		if(setTMCLStatus(Evalboards.ch1.getMax(ActualCommand.Type, ActualCommand.Motor, &ActualReply.Valu
+ 415:tmc/TMCL.c    **** 		{
+ 416:tmc/TMCL.c    **** 			setTMCLStatus(Evalboards.ch2.getMax(ActualCommand.Type, ActualCommand.Motor, &ActualReply.Value.
+ 417:tmc/TMCL.c    **** 		}
+ 418:tmc/TMCL.c    **** 		break;
+ 419:tmc/TMCL.c    **** 	case TMCL_Boot:
+ 420:tmc/TMCL.c    **** 		if(ActualCommand.Type           != 0x81)  break;
+ 421:tmc/TMCL.c    **** 		if(ActualCommand.Motor          != 0x92)  break;
+ 422:tmc/TMCL.c    **** 		if(ActualCommand.Value.Byte[3]  != 0xA3)  break;
+ 423:tmc/TMCL.c    **** 		if(ActualCommand.Value.Byte[2]  != 0xB4)  break;
+ 424:tmc/TMCL.c    **** 		if(ActualCommand.Value.Byte[1]  != 0xC5)  break;
+ 425:tmc/TMCL.c    **** 		if(ActualCommand.Value.Byte[0]  != 0xD6)  break;
+ 426:tmc/TMCL.c    **** 		tmcl_boot();
+ 427:tmc/TMCL.c    **** 		break;
+ 428:tmc/TMCL.c    **** 	case TMCL_SoftwareReset:
+ 429:tmc/TMCL.c    **** 		SoftwareReset();
+ 430:tmc/TMCL.c    **** 		break;
+ 431:tmc/TMCL.c    **** 	default:
+ 432:tmc/TMCL.c    **** 		ActualReply.Status = REPLY_INVALID_CMD;
+ 433:tmc/TMCL.c    **** 		break;
+ 434:tmc/TMCL.c    **** 	}
+ 435:tmc/TMCL.c    **** }
+ 436:tmc/TMCL.c    **** 
+ 437:tmc/TMCL.c    **** void tmcl_init()
+ 438:tmc/TMCL.c    **** {
+ 439:tmc/TMCL.c    **** 	ActualCommand.Error  = TMCL_RX_ERROR_NODATA;
+ 440:tmc/TMCL.c    **** 	interfaces[0]        = *HAL.USB;
+ 441:tmc/TMCL.c    **** 	interfaces[1]        = *HAL.RS232;
+ 442:tmc/TMCL.c    **** 	interfaces[2]        = *HAL.WLAN;
+ 443:tmc/TMCL.c    **** 	numberOfInterfaces   = 3;
+ 444:tmc/TMCL.c    **** }
+ 445:tmc/TMCL.c    **** 
+ 446:tmc/TMCL.c    **** void tmcl_process()
+ 447:tmc/TMCL.c    **** {
+ 448:tmc/TMCL.c    **** 	static int currentInterface = 0;
+ 449:tmc/TMCL.c    **** 
+ 450:tmc/TMCL.c    **** 	if(ActualCommand.Error != TMCL_RX_ERROR_NODATA)
+ 451:tmc/TMCL.c    **** 		tx(&interfaces[currentInterface]);
+ 452:tmc/TMCL.c    **** 
+ 453:tmc/TMCL.c    **** 	if(resetRequest)
+ 454:tmc/TMCL.c    **** 		HAL.reset(true);
+ 455:tmc/TMCL.c    **** 
+ 456:tmc/TMCL.c    **** 	ActualReply.IsSpecial = 0;
+ 457:tmc/TMCL.c    **** 
+ 458:tmc/TMCL.c    **** 	for(uint32_t i = 0; i < numberOfInterfaces; i++)
+ 459:tmc/TMCL.c    **** 	{
+ 460:tmc/TMCL.c    **** 		rx(&interfaces[i]);
+ 461:tmc/TMCL.c    **** 		if(ActualCommand.Error != TMCL_RX_ERROR_NODATA)
+ 462:tmc/TMCL.c    **** 		{
+ 463:tmc/TMCL.c    **** 			currentInterface = i;
+ 464:tmc/TMCL.c    **** 			ExecuteActualCommand();
+ 465:tmc/TMCL.c    **** 			return;
+ 466:tmc/TMCL.c    **** 		}
+ 467:tmc/TMCL.c    **** 	}
+ 468:tmc/TMCL.c    **** }
+ 469:tmc/TMCL.c    **** 
+ 470:tmc/TMCL.c    **** void tx(RXTXTypeDef *RXTX)
+ 471:tmc/TMCL.c    **** {
+ 472:tmc/TMCL.c    **** 	uint8_t checkSum = 0;
+ 473:tmc/TMCL.c    **** 
+ 474:tmc/TMCL.c    **** 	uint8_t reply[9];
+ 475:tmc/TMCL.c    **** 
+ 476:tmc/TMCL.c    **** 	if(ActualReply.IsSpecial)
+ 477:tmc/TMCL.c    **** 	{
+ 478:tmc/TMCL.c    **** 		for(int i = 0; i < 9; i++)
+ 479:tmc/TMCL.c    **** 			reply[i] = ActualReply.Special[i];
+ 480:tmc/TMCL.c    **** 	}
+ 481:tmc/TMCL.c    **** 	else
+ 482:tmc/TMCL.c    **** 	{
+ 483:tmc/TMCL.c    **** 		checkSum += SERIAL_HOST_ADDRESS;
+ 484:tmc/TMCL.c    **** 		checkSum += SERIAL_MODULE_ADDRESS;
+ 485:tmc/TMCL.c    **** 		checkSum += ActualReply.Status;
+ 486:tmc/TMCL.c    **** 		checkSum += ActualReply.Opcode;
+ 487:tmc/TMCL.c    **** 		checkSum += ActualReply.Value.Byte[3];
+ 488:tmc/TMCL.c    **** 		checkSum += ActualReply.Value.Byte[2];
+ 489:tmc/TMCL.c    **** 		checkSum += ActualReply.Value.Byte[1];
+ 490:tmc/TMCL.c    **** 		checkSum += ActualReply.Value.Byte[0];
+ 491:tmc/TMCL.c    **** 
+ 492:tmc/TMCL.c    **** 		reply[0] = SERIAL_HOST_ADDRESS;
+ 493:tmc/TMCL.c    **** 		reply[1] = SERIAL_MODULE_ADDRESS;
+ 494:tmc/TMCL.c    **** 		reply[2] = ActualReply.Status;
+ 495:tmc/TMCL.c    **** 		reply[3] = ActualReply.Opcode;
+ 496:tmc/TMCL.c    **** 		reply[4] = ActualReply.Value.Byte[3];
+ 497:tmc/TMCL.c    **** 		reply[5] = ActualReply.Value.Byte[2];
+ 498:tmc/TMCL.c    **** 		reply[6] = ActualReply.Value.Byte[1];
+ 499:tmc/TMCL.c    **** 		reply[7] = ActualReply.Value.Byte[0];
+ 500:tmc/TMCL.c    **** 		reply[8] = checkSum;
+ 501:tmc/TMCL.c    **** 	}
+ 502:tmc/TMCL.c    **** 
+ 503:tmc/TMCL.c    **** 	RXTX->txN(reply, 9);
+ 504:tmc/TMCL.c    **** }
+ 505:tmc/TMCL.c    **** 
+ 506:tmc/TMCL.c    **** void rx(RXTXTypeDef *RXTX)
+ 507:tmc/TMCL.c    **** {
+ 508:tmc/TMCL.c    **** 	uint8_t checkSum = 0;
+ 509:tmc/TMCL.c    **** 	uint8_t cmd[9];
+ 510:tmc/TMCL.c    **** 
+ 511:tmc/TMCL.c    **** 	if(!RXTX->rxN(cmd, 9))
+ 512:tmc/TMCL.c    **** 	{
+ 513:tmc/TMCL.c    **** 		ActualCommand.Error = TMCL_RX_ERROR_NODATA;
+ 514:tmc/TMCL.c    **** 		return;
+ 515:tmc/TMCL.c    **** 	}
+ 516:tmc/TMCL.c    **** 
+ 517:tmc/TMCL.c    **** 	// todo ADD CHECK 2: check for SERIAL_MODULE_ADDRESS byte ( cmd[0] ) ? (LH)
+ 518:tmc/TMCL.c    **** 
+ 519:tmc/TMCL.c    **** 	for(int i = 0; i < 8; i++)
+ 520:tmc/TMCL.c    **** 		checkSum += cmd[i];
+ 521:tmc/TMCL.c    **** 
+ 522:tmc/TMCL.c    **** 	if(checkSum != cmd[8])
+ 523:tmc/TMCL.c    **** 	{
+ 524:tmc/TMCL.c    **** 		ActualCommand.Error	= TMCL_RX_ERROR_CHECKSUM;
+ 525:tmc/TMCL.c    **** 		return;
+ 526:tmc/TMCL.c    **** 	}
+ 527:tmc/TMCL.c    **** 
+ 528:tmc/TMCL.c    **** 	ActualCommand.Opcode         = cmd[1];
+ 529:tmc/TMCL.c    **** 	ActualCommand.Type           = cmd[2];
+ 530:tmc/TMCL.c    **** 	ActualCommand.Motor          = cmd[3];
+ 531:tmc/TMCL.c    **** 	ActualCommand.Value.Byte[3]  = cmd[4];
+ 532:tmc/TMCL.c    **** 	ActualCommand.Value.Byte[2]  = cmd[5];
+ 533:tmc/TMCL.c    **** 	ActualCommand.Value.Byte[1]  = cmd[6];
+ 534:tmc/TMCL.c    **** 	ActualCommand.Value.Byte[0]  = cmd[7];
+ 535:tmc/TMCL.c    **** 	ActualCommand.Error          = TMCL_RX_ERROR_NONE;
+ 536:tmc/TMCL.c    **** }
+ 537:tmc/TMCL.c    **** 
+ 538:tmc/TMCL.c    **** void tmcl_boot()
+ 539:tmc/TMCL.c    **** {
+ 540:tmc/TMCL.c    **** #if defined(Landungsbruecke)
+ 541:tmc/TMCL.c    **** 	if(Evalboards.ch1.id == ID_TMC4670 || Evalboards.ch1.id == ID_TMC4671)
+ 542:tmc/TMCL.c    **** 	{
+ 543:tmc/TMCL.c    **** 		// Driver Enable has to be set low by the bootloader for these ICs
+ 544:tmc/TMCL.c    **** 		BLConfig.drvEnableResetValue = 0;
+ 545:tmc/TMCL.c    **** 	}
+ 546:tmc/TMCL.c    **** 	else
+ 547:tmc/TMCL.c    **** 	{
+ 548:tmc/TMCL.c    **** 		// Default: Driver Enable is set to high
+ 549:tmc/TMCL.c    **** 		BLConfig.drvEnableResetValue = 1;
+ 550:tmc/TMCL.c    **** 	}
+ 551:tmc/TMCL.c    **** #endif
+ 552:tmc/TMCL.c    **** 	Evalboards.driverEnable = DRIVER_DISABLE;
+ 553:tmc/TMCL.c    **** 	Evalboards.ch1.enableDriver(DRIVER_DISABLE); // todo CHECK 2: the ch1/2 deInit() calls should alre
+ 554:tmc/TMCL.c    **** 	Evalboards.ch2.enableDriver(DRIVER_DISABLE);
+ 555:tmc/TMCL.c    **** 
+ 556:tmc/TMCL.c    **** 	Evalboards.ch1.deInit();
+ 557:tmc/TMCL.c    **** 	Evalboards.ch2.deInit();
+ 558:tmc/TMCL.c    **** 
+ 559:tmc/TMCL.c    **** 	HAL.USB->deInit();
+ 560:tmc/TMCL.c    **** 
+ 561:tmc/TMCL.c    **** 	wait(500);
+ 562:tmc/TMCL.c    **** 
+ 563:tmc/TMCL.c    **** 	HAL.Timer->deInit();
+ 564:tmc/TMCL.c    **** 	HAL.RS232->deInit();
+ 565:tmc/TMCL.c    **** 	HAL.WLAN->deInit();
+ 566:tmc/TMCL.c    **** 	HAL.ADCs->deInit();
+ 567:tmc/TMCL.c    **** 
+ 568:tmc/TMCL.c    **** 	// todo: CHECK 2: Muss api_deInit hier dazu? (ED)
+ 569:tmc/TMCL.c    **** 	StepDir_deInit();
+ 570:tmc/TMCL.c    **** 
+ 571:tmc/TMCL.c    **** 	IDDetection_deInit();
+ 572:tmc/TMCL.c    **** 
+ 573:tmc/TMCL.c    **** 	HAL.NVIC_DeInit();
+ 574:tmc/TMCL.c    **** 
+ 575:tmc/TMCL.c    **** #if defined(Startrampe)
+ 576:tmc/TMCL.c    **** 	__disable_irq();
+ 577:tmc/TMCL.c    **** 	TIM_DeInit(TIM1);
+ 578:tmc/TMCL.c    **** 	TIM_DeInit(TIM2);
+ 579:tmc/TMCL.c    **** 	TIM_DeInit(TIM5);
+ 580:tmc/TMCL.c    **** 	DMA_Cmd(DMA2_Stream0, DISABLE);
+ 581:tmc/TMCL.c    **** 	DMA_DeInit(DMA2_Stream0);
+ 582:tmc/TMCL.c    **** 	ADC_DeInit();
+ 583:tmc/TMCL.c    **** 	EXTI_DeInit();
+ 584:tmc/TMCL.c    **** 	SysTick->CTRL=0;
+ 585:tmc/TMCL.c    **** 	HAL.reset(false);
+ 586:tmc/TMCL.c    **** #elif defined(Landungsbruecke)
+ 587:tmc/TMCL.c    **** 	BLConfig.BLMagic = 0x12345678;
+ 588:tmc/TMCL.c    **** 	HAL.reset(true);
+ 589:tmc/TMCL.c    **** #endif
+ 590:tmc/TMCL.c    **** }
+ 591:tmc/TMCL.c    **** 
+ 592:tmc/TMCL.c    **** /*
+ 593:tmc/TMCL.c    ****  * Reads four bytes from the eeprom.
+ 594:tmc/TMCL.c    ****  *
+ 595:tmc/TMCL.c    ****  * @param channel Id of SPI channel to be used with 1 = SPI.ch1 and 2 = SPI.ch2
+ 596:tmc/TMCL.c    ****  * @param address Address the byte should be read from.
+ 597:tmc/TMCL.c    ****  *
+ 598:tmc/TMCL.c    ****  * @return The bytes read with byte0 = lowest byte or 0 if reading went unsuccessful
+ 599:tmc/TMCL.c    ****  */
+ 600:tmc/TMCL.c    **** static void readIdEeprom(void)
+ 601:tmc/TMCL.c    **** {
+ 602:tmc/TMCL.c    **** 	SPIChannelTypeDef *spi;
+ 603:tmc/TMCL.c    **** 	if(ActualCommand.Type == 1)
+ 604:tmc/TMCL.c    **** 		spi = &SPI.ch1;
+ 605:tmc/TMCL.c    **** 	else if(ActualCommand.Type == 2)
+ 606:tmc/TMCL.c    **** 		spi = &SPI.ch2;
+ 607:tmc/TMCL.c    **** 	else
+ 608:tmc/TMCL.c    **** 	{
+ 609:tmc/TMCL.c    **** 		ActualReply.Status = REPLY_INVALID_TYPE;
+ 610:tmc/TMCL.c    **** 		return;
+ 611:tmc/TMCL.c    **** 	}
+ 612:tmc/TMCL.c    **** 
+ 613:tmc/TMCL.c    **** 	uint8_t array[4];
+ 614:tmc/TMCL.c    **** 	eeprom_read_array(spi, ActualCommand.Value.Int32, array, 4);
+ 615:tmc/TMCL.c    **** 	ActualReply.Value.Int32 = array[3] << 24 | array[2] << 16 | array[1] << 8 | array[0];
+ 616:tmc/TMCL.c    **** }
+ 617:tmc/TMCL.c    **** 
+ 618:tmc/TMCL.c    **** /*
+ 619:tmc/TMCL.c    ****  * Writes one byte into the eeprom for id detection.
+ 620:tmc/TMCL.c    ****  *
+ 621:tmc/TMCL.c    ****  * @param channel Id of SPI channel to be used with 1 = SPI.ch1 and 2 = SPI.ch2
+ 622:tmc/TMCL.c    ****  * @param address Address the byte should be written to.
+ 623:tmc/TMCL.c    ****  * @param bytes Pointer to byte array that are to be written. The first byte is always written
+ 624:tmc/TMCL.c    ****  * 				following bytes are written as long as they are not null.
+ 625:tmc/TMCL.c    ****  *
+ 626:tmc/TMCL.c    ****  * @return false if everything went successful
+ 627:tmc/TMCL.c    ****  * 		   1 if selected channel is not available
+ 628:tmc/TMCL.c    ****  * 		   the status bits of the eeprom if eeprom is not ready
+ 629:tmc/TMCL.c    ****  */
+ 630:tmc/TMCL.c    **** static void writeIdEeprom(void)
+ 631:tmc/TMCL.c    **** {
+ 632:tmc/TMCL.c    **** 	SPIChannelTypeDef *spi;
+ 633:tmc/TMCL.c    **** 	if(ActualCommand.Type == 1)
+ 634:tmc/TMCL.c    **** 		spi = &SPI.ch1;
+ 635:tmc/TMCL.c    **** 	else if(ActualCommand.Type == 2)
+ 636:tmc/TMCL.c    **** 		spi = &SPI.ch2;
+ 637:tmc/TMCL.c    **** 	else
+ 638:tmc/TMCL.c    **** 	{
+ 639:tmc/TMCL.c    **** 		ActualReply.Status = REPLY_INVALID_TYPE;
+ 640:tmc/TMCL.c    **** 		return;
+ 641:tmc/TMCL.c    **** 	}
+ 642:tmc/TMCL.c    **** 
+ 643:tmc/TMCL.c    **** 	uint8_t out = eeprom_check(spi);
+ 644:tmc/TMCL.c    **** 	// ignore when check did not find magic number, quit on other errors
+ 645:tmc/TMCL.c    **** 	if(out != ID_CHECKERROR_MAGICNUMBER && out != 0)
+ 646:tmc/TMCL.c    **** 	{
+ 647:tmc/TMCL.c    **** 		ActualReply.Status = REPLY_EEPROM_LOCKED; // todo CHECK 2: Not sure which error to send here, thi
+ 648:tmc/TMCL.c    **** 		return;
+ 649:tmc/TMCL.c    **** 	}
+ 650:tmc/TMCL.c    **** 
+ 651:tmc/TMCL.c    **** 	eeprom_write_byte(spi, ActualCommand.Value.Int32, ActualCommand.Motor);
+ 652:tmc/TMCL.c    **** 
+ 653:tmc/TMCL.c    **** 	return;
+ 654:tmc/TMCL.c    **** }
+ 655:tmc/TMCL.c    **** 
+ 656:tmc/TMCL.c    **** static void SetGlobalParameter()
+ 657:tmc/TMCL.c    **** {
+ 658:tmc/TMCL.c    **** 	switch(ActualCommand.Type)
+ 659:tmc/TMCL.c    **** 	{
+ 660:tmc/TMCL.c    **** 	case 1:
+ 661:tmc/TMCL.c    **** 		VitalSignsMonitor.errorMask = ActualCommand.Value.Int32;
+ 662:tmc/TMCL.c    **** 		break;
+ 663:tmc/TMCL.c    **** 	case 2:
+ 664:tmc/TMCL.c    **** 		setDriversEnable();
+ 665:tmc/TMCL.c    **** 		break;
+ 666:tmc/TMCL.c    **** 	case 3:
+ 667:tmc/TMCL.c    **** 		switch(ActualCommand.Value.Int32)
+ 668:tmc/TMCL.c    **** 		{
+ 669:tmc/TMCL.c    **** 		case 0: // normal operation
+ 670:tmc/TMCL.c    **** 			VitalSignsMonitor.debugMode = 0;
+ 671:tmc/TMCL.c    **** 			break;
+ 672:tmc/TMCL.c    **** 		case 1: // FREE ERROR LED
+ 673:tmc/TMCL.c    **** 			VitalSignsMonitor.debugMode = 1;
+ 674:tmc/TMCL.c    **** 			HAL.LEDs->error.off();
+ 675:tmc/TMCL.c    **** 			break;
+ 676:tmc/TMCL.c    **** 		default:
+ 677:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_INVALID_TYPE;
+ 678:tmc/TMCL.c    **** 			break;
+ 679:tmc/TMCL.c    **** 		}
+ 680:tmc/TMCL.c    **** 		break;
+ 681:tmc/TMCL.c    **** 	case 4: // War schon so. Kann weg?
+ 682:tmc/TMCL.c    **** 		break;
+ 683:tmc/TMCL.c    **** 	case 6:
+ 684:tmc/TMCL.c    **** 		HAL.IOs->config->setToState(HAL.IOs->pins->pins[ActualCommand.Motor], ActualCommand.Value.UInt32)
+ 685:tmc/TMCL.c    **** 		break;
+ 686:tmc/TMCL.c    **** 	default:
+ 687:tmc/TMCL.c    **** 		ActualReply.Status = REPLY_INVALID_TYPE;
+ 688:tmc/TMCL.c    **** 		break;
+ 689:tmc/TMCL.c    **** 	}
+ 690:tmc/TMCL.c    **** }
+ 691:tmc/TMCL.c    **** 
+ 692:tmc/TMCL.c    **** static void GetGlobalParameter()
+ 693:tmc/TMCL.c    **** {
+ 694:tmc/TMCL.c    **** 	switch(ActualCommand.Type)
+ 695:tmc/TMCL.c    **** 	{
+ 696:tmc/TMCL.c    **** 		case 1:
+ 697:tmc/TMCL.c    **** 			ActualReply.Value.Int32 = VitalSignsMonitor.errors;
+ 698:tmc/TMCL.c    **** 			break;
+ 699:tmc/TMCL.c    **** 		case 2:
+ 700:tmc/TMCL.c    **** 			ActualReply.Value.Int32 = (Evalboards.driverEnable == DRIVER_ENABLE)? 1:0;
+ 701:tmc/TMCL.c    **** 			break;
+ 702:tmc/TMCL.c    **** 		case 3:
+ 703:tmc/TMCL.c    **** 			ActualReply.Value.Int32 = VitalSignsMonitor.debugMode;
+ 704:tmc/TMCL.c    **** 			break;
+ 705:tmc/TMCL.c    **** 		case 4:
+ 706:tmc/TMCL.c    **** 			{
+ 707:tmc/TMCL.c    **** 				IdAssignmentTypeDef ids;
+ 708:tmc/TMCL.c    **** 				ids.ch1.id = Evalboards.ch1.id;
+ 709:tmc/TMCL.c    **** 				ids.ch2.id = Evalboards.ch2.id;
+ 710:tmc/TMCL.c    **** 				ActualReply.Value.Int32 = Board_supported(&ids);
+ 711:tmc/TMCL.c    **** 			}
+ 712:tmc/TMCL.c    **** 			break;
+ 713:tmc/TMCL.c    **** 		case 5: // Get hardware ID
+ 714:tmc/TMCL.c    **** 			ActualReply.Value.Int32 = hwid;
+ 715:tmc/TMCL.c    **** 			break;
+ 716:tmc/TMCL.c    **** 		case 6:
+ 717:tmc/TMCL.c    **** 			ActualReply.Value.UInt32 = HAL.IOs->config->getState(HAL.IOs->pins->pins[ActualCommand.Motor]);
+ 718:tmc/TMCL.c    **** 			break;
+ 719:tmc/TMCL.c    **** 		default:
+ 720:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_INVALID_TYPE;
+ 721:tmc/TMCL.c    **** 			break;
+ 722:tmc/TMCL.c    **** 	}
+ 723:tmc/TMCL.c    **** }
+ 724:tmc/TMCL.c    **** 
+ 725:tmc/TMCL.c    **** static void boardAssignment(void)
+ 726:tmc/TMCL.c    **** {
+ 727:tmc/TMCL.c    **** 	uint8_t testOnly = 0;
+ 728:tmc/TMCL.c    **** 
+ 729:tmc/TMCL.c    **** 	IdAssignmentTypeDef ids;
+ 730:tmc/TMCL.c    **** 	ids.ch1.id     = (ActualCommand.Value.Int32 >> 0)   & 0xFF;
+ 731:tmc/TMCL.c    **** 	ids.ch1.state  = (ActualCommand.Value.Int32 >> 8)   & 0xFF;
+ 732:tmc/TMCL.c    **** 	ids.ch2.id     = (ActualCommand.Value.Int32 >> 16)  & 0xFF;
+ 733:tmc/TMCL.c    **** 	ids.ch2.state  = (ActualCommand.Value.Int32 >> 24)  & 0xFF;
+ 734:tmc/TMCL.c    **** 
+ 735:tmc/TMCL.c    **** 	switch(ActualCommand.Type)
+ 736:tmc/TMCL.c    **** 	{
+ 737:tmc/TMCL.c    **** 	case 0:  // auto detect and assign
+ 738:tmc/TMCL.c    **** 		checkIDs();
+ 739:tmc/TMCL.c    **** 		return;
+ 740:tmc/TMCL.c    **** 		break;
+ 741:tmc/TMCL.c    **** 	case 1:  // id for channel 2 not changed, reset maybe
+ 742:tmc/TMCL.c    **** 		ids.ch2.id     = Evalboards.ch2.id;
+ 743:tmc/TMCL.c    **** 		ids.ch2.state  = ID_STATE_WAIT_LOW;
+ 744:tmc/TMCL.c    **** 		break;
+ 745:tmc/TMCL.c    **** 	case 2:  // id for channel 1 not changed, reset maybe
+ 746:tmc/TMCL.c    **** 		ids.ch2.id     = (ActualCommand.Value.Int32 >> 0)  & 0xFF;
+ 747:tmc/TMCL.c    **** 		ids.ch2.state  = (ActualCommand.Value.Int32 >> 8)  & 0xFF;
+ 748:tmc/TMCL.c    **** 		ids.ch1.id     = Evalboards.ch1.id;
+ 749:tmc/TMCL.c    **** 		ids.ch1.state  = ID_STATE_WAIT_LOW;
+ 750:tmc/TMCL.c    **** 		break;
+ 751:tmc/TMCL.c    **** 	case 3:  // id for both channels
+ 752:tmc/TMCL.c    **** 		break;
+ 753:tmc/TMCL.c    **** 	case 4:  // test if ids are in firmware
+ 754:tmc/TMCL.c    **** 		testOnly = 1;
+ 755:tmc/TMCL.c    **** 		if(ActualReply.Value.Int32 == 0)
+ 756:tmc/TMCL.c    **** 		{
+ 757:tmc/TMCL.c    **** 			ids.ch1.id = Evalboards.ch1.id;
+ 758:tmc/TMCL.c    **** 			ids.ch2.id = Evalboards.ch2.id;
+ 759:tmc/TMCL.c    **** 		}
+ 760:tmc/TMCL.c    **** 		break;
+ 761:tmc/TMCL.c    **** 	default:
+ 762:tmc/TMCL.c    **** 		ActualReply.Status = REPLY_INVALID_TYPE;
+ 763:tmc/TMCL.c    **** 		return;
+ 764:tmc/TMCL.c    **** 		break;
+ 765:tmc/TMCL.c    **** 	}
+ 766:tmc/TMCL.c    **** 
+ 767:tmc/TMCL.c    **** 	IdAssignmentTypeDef ids_buff;
+ 768:tmc/TMCL.c    **** 	ids_buff.ch1.id     = ids.ch1.id;
+ 769:tmc/TMCL.c    **** 	ids_buff.ch1.state  = ID_STATE_DONE;
+ 770:tmc/TMCL.c    **** 	ids_buff.ch2.id     = ids.ch2.id;
+ 771:tmc/TMCL.c    **** 	ids_buff.ch2.state  = ID_STATE_DONE;
+ 772:tmc/TMCL.c    **** 
+ 773:tmc/TMCL.c    **** 	if(!testOnly)
+ 774:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = Board_assign(&ids_buff);
+ 775:tmc/TMCL.c    **** 	else
+ 776:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = Board_supported(&ids_buff);
+ 777:tmc/TMCL.c    **** }
+ 778:tmc/TMCL.c    **** 
+ 779:tmc/TMCL.c    **** static void boardsErrors(void)
+ 780:tmc/TMCL.c    **** {
+ 781:tmc/TMCL.c    **** 	switch(ActualCommand.Type)
+ 782:tmc/TMCL.c    **** 	{
+ 783:tmc/TMCL.c    **** 	case 0:
+ 784:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = Evalboards.ch1.errors;
+ 785:tmc/TMCL.c    **** 		break;
+ 786:tmc/TMCL.c    **** 	case 1:
+ 787:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = Evalboards.ch2.errors;
+ 788:tmc/TMCL.c    **** 		break;
+ 789:tmc/TMCL.c    **** 	default:
+ 790:tmc/TMCL.c    **** 		ActualReply.Status = REPLY_INVALID_TYPE;
+ 791:tmc/TMCL.c    **** 		break;
+ 792:tmc/TMCL.c    **** 	}
+ 793:tmc/TMCL.c    **** }
+ 794:tmc/TMCL.c    **** 
+ 795:tmc/TMCL.c    **** static void boardsReset(void)
+ 796:tmc/TMCL.c    **** {
+ 797:tmc/TMCL.c    **** 	switch(ActualCommand.Type)
+ 798:tmc/TMCL.c    **** 	{
+ 799:tmc/TMCL.c    **** 	case 0:
+ 800:tmc/TMCL.c    **** 		if(!Evalboards.ch1.config->reset())
+ 801:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_WRITE_PROTECTED;
+ 802:tmc/TMCL.c    **** 		break;
+ 803:tmc/TMCL.c    **** 	case 1:
+ 804:tmc/TMCL.c    **** 		if(!Evalboards.ch2.config->reset())
+ 805:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_WRITE_PROTECTED;
+ 806:tmc/TMCL.c    **** 		break;
+ 807:tmc/TMCL.c    **** 	case 2:
+ 808:tmc/TMCL.c    **** 		if(!Evalboards.ch1.config->reset())
+ 809:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_WRITE_PROTECTED;
+ 810:tmc/TMCL.c    **** 		if(!Evalboards.ch2.config->reset())
+ 811:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_WRITE_PROTECTED;
+ 812:tmc/TMCL.c    **** 		break;
+ 813:tmc/TMCL.c    **** 	default:
+ 814:tmc/TMCL.c    **** 		ActualReply.Status = REPLY_INVALID_TYPE;
+ 815:tmc/TMCL.c    **** 		break;
+ 816:tmc/TMCL.c    **** 	}
+ 817:tmc/TMCL.c    **** }
+ 818:tmc/TMCL.c    **** 
+ 819:tmc/TMCL.c    **** static void boardsMeasuredSpeed(void)
+ 820:tmc/TMCL.c    **** {
+ 821:tmc/TMCL.c    **** 	switch(ActualCommand.Type)
+ 822:tmc/TMCL.c    **** 	{
+ 823:tmc/TMCL.c    **** 	case 0:
+ 824:tmc/TMCL.c    **** 		ActualReply.Status = Evalboards.ch1.getMeasuredSpeed(ActualCommand.Motor, &ActualReply.Value.Int3
+ 825:tmc/TMCL.c    **** 		break;
+ 826:tmc/TMCL.c    **** 	case 1:
+ 827:tmc/TMCL.c    **** 		ActualReply.Status = Evalboards.ch2.getMeasuredSpeed(ActualCommand.Motor, &ActualReply.Value.Int3
+ 828:tmc/TMCL.c    **** 		break;
+ 829:tmc/TMCL.c    **** 	default:
+ 830:tmc/TMCL.c    **** 		ActualReply.Status = REPLY_INVALID_TYPE;
+ 831:tmc/TMCL.c    **** 		break;
+ 832:tmc/TMCL.c    **** 	}
+ 833:tmc/TMCL.c    **** }
+ 834:tmc/TMCL.c    **** 
+ 835:tmc/TMCL.c    **** static void setDriversEnable()
+ 836:tmc/TMCL.c    **** {
+  25              		.loc 1 836 1 view -0
+  26              		.cfi_startproc
+  27              		@ args = 0, pretend = 0, frame = 0
+  28              		@ frame_needed = 0, uses_anonymous_args = 0
+ 837:tmc/TMCL.c    **** 	vitalsignsmonitor_clearOvervoltageErrors();
+  29              		.loc 1 837 2 view .LVU1
+ 836:tmc/TMCL.c    **** 	vitalsignsmonitor_clearOvervoltageErrors();
+  30              		.loc 1 836 1 is_stmt 0 view .LVU2
+  31 0000 10B5     		push	{r4, lr}
+  32              	.LCFI0:
+  33              		.cfi_def_cfa_offset 8
+  34              		.cfi_offset 4, -8
+  35              		.cfi_offset 14, -4
+  36              		.loc 1 837 2 view .LVU3
+  37 0002 FFF7FEFF 		bl	vitalsignsmonitor_clearOvervoltageErrors
+  38              	.LVL0:
+ 838:tmc/TMCL.c    **** 
+ 839:tmc/TMCL.c    **** 	Evalboards.driverEnable = (ActualCommand.Value.Int32) ? DRIVER_ENABLE : DRIVER_DISABLE;
+  39              		.loc 1 839 2 is_stmt 1 view .LVU4
+  40              		.loc 1 839 48 is_stmt 0 view .LVU5
+  41 0006 084B     		ldr	r3, .L2
+  42              		.loc 1 839 26 view .LVU6
+  43 0008 084C     		ldr	r4, .L2+4
+  44              		.loc 1 839 72 view .LVU7
+  45 000a 9B68     		ldr	r3, [r3, #8]
+  46 000c 003B     		subs	r3, r3, #0
+  47 000e 18BF     		it	ne
+  48 0010 0123     		movne	r3, #1
+  49 0012 84F8F030 		strb	r3, [r4, #240]
+ 840:tmc/TMCL.c    **** 	Evalboards.ch1.enableDriver(DRIVER_USE_GLOBAL_ENABLE);
+  50              		.loc 1 840 2 is_stmt 1 view .LVU8
+  51 0016 0220     		movs	r0, #2
+  52 0018 636E     		ldr	r3, [r4, #100]
+  53 001a 9847     		blx	r3
+  54              	.LVL1:
+ 841:tmc/TMCL.c    **** 	Evalboards.ch2.enableDriver(DRIVER_USE_GLOBAL_ENABLE);
+  55              		.loc 1 841 2 view .LVU9
+  56 001c D4F8DC30 		ldr	r3, [r4, #220]
+  57 0020 0220     		movs	r0, #2
+ 842:tmc/TMCL.c    **** }
+  58              		.loc 1 842 1 is_stmt 0 view .LVU10
+  59 0022 BDE81040 		pop	{r4, lr}
+  60              	.LCFI1:
+  61              		.cfi_restore 14
+  62              		.cfi_restore 4
+  63              		.cfi_def_cfa_offset 0
+ 841:tmc/TMCL.c    **** 	Evalboards.ch2.enableDriver(DRIVER_USE_GLOBAL_ENABLE);
+  64              		.loc 1 841 2 view .LVU11
+  65 0026 1847     		bx	r3	@ indirect register sibling call
+  66              	.LVL2:
+  67              	.L3:
+  68              		.align	2
+  69              	.L2:
+  70 0028 00000000 		.word	ActualCommand
+  71 002c 00000000 		.word	Evalboards
+  72              		.cfi_endproc
+  73              	.LFE16:
+  75              		.align	1
+  76              		.global	setTMCLStatus
+  77              		.syntax unified
+  78              		.thumb
+  79              		.thumb_func
+  80              		.fpu softvfp
+  82              	setTMCLStatus:
+  83              	.LVL3:
+  84              	.LFB1:
+ 232:tmc/TMCL.c    **** 	if(evalError == TMC_ERROR_NONE)          ActualReply.Status = REPLY_OK;
+  85              		.loc 1 232 1 is_stmt 1 view -0
+  86              		.cfi_startproc
+  87              		@ args = 0, pretend = 0, frame = 0
+  88              		@ frame_needed = 0, uses_anonymous_args = 0
+  89              		@ link register save eliminated.
+ 233:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_FUNCTION)  ActualReply.Status = REPLY_INVALID_CMD;
+  90              		.loc 1 233 2 view .LVU13
+ 233:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_FUNCTION)  ActualReply.Status = REPLY_INVALID_CMD;
+  91              		.loc 1 233 4 is_stmt 0 view .LVU14
+  92 0030 18B9     		cbnz	r0, .L5
+ 233:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_FUNCTION)  ActualReply.Status = REPLY_INVALID_CMD;
+  93              		.loc 1 233 43 is_stmt 1 discriminator 1 view .LVU15
+ 233:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_FUNCTION)  ActualReply.Status = REPLY_INVALID_CMD;
+  94              		.loc 1 233 62 is_stmt 0 discriminator 1 view .LVU16
+  95 0032 0F4B     		ldr	r3, .L15
+  96 0034 6422     		movs	r2, #100
+  97              	.L14:
+  98              	.LBB4:
+  99              	.LBB5:
+ 239:tmc/TMCL.c    **** 	return evalError;
+ 100              		.loc 1 239 62 view .LVU17
+ 101 0036 1A70     		strb	r2, [r3]
+ 102              	.L6:
+ 103              	.LBE5:
+ 104              	.LBE4:
+ 240:tmc/TMCL.c    **** }
+ 105              		.loc 1 240 2 is_stmt 1 view .LVU18
+ 241:tmc/TMCL.c    **** 
+ 106              		.loc 1 241 1 is_stmt 0 view .LVU19
+ 107 0038 7047     		bx	lr
+ 108              	.L5:
+ 234:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_TYPE)      ActualReply.Status = REPLY_INVALID_TYPE;
+ 109              		.loc 1 234 7 is_stmt 1 view .LVU20
+ 234:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_TYPE)      ActualReply.Status = REPLY_INVALID_TYPE;
+ 110              		.loc 1 234 9 is_stmt 0 view .LVU21
+ 111 003a 8307     		lsls	r3, r0, #30
+ 112 003c 02D5     		bpl	.L7
+ 234:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_TYPE)      ActualReply.Status = REPLY_INVALID_TYPE;
+ 113              		.loc 1 234 43 is_stmt 1 discriminator 1 view .LVU22
+ 234:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_TYPE)      ActualReply.Status = REPLY_INVALID_TYPE;
+ 114              		.loc 1 234 62 is_stmt 0 discriminator 1 view .LVU23
+ 115 003e 0C4B     		ldr	r3, .L15
+ 116 0040 0222     		movs	r2, #2
+ 117 0042 F8E7     		b	.L14
+ 118              	.L7:
+ 235:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_MOTOR)     ActualReply.Status = REPLY_INVALID_TYPE; // todo CHECK AD
+ 119              		.loc 1 235 7 is_stmt 1 view .LVU24
+ 236:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_VALUE)     ActualReply.Status = REPLY_INVALID_VALUE;
+ 120              		.loc 1 236 7 view .LVU25
+ 236:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_VALUE)     ActualReply.Status = REPLY_INVALID_VALUE;
+ 121              		.loc 1 236 9 is_stmt 0 view .LVU26
+ 122 0044 10F00C0F 		tst	r0, #12
+ 123 0048 02D0     		beq	.L8
+ 235:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_MOTOR)     ActualReply.Status = REPLY_INVALID_TYPE; // todo CHECK AD
+ 124              		.loc 1 235 43 is_stmt 1 discriminator 1 view .LVU27
+ 235:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_MOTOR)     ActualReply.Status = REPLY_INVALID_TYPE; // todo CHECK AD
+ 125              		.loc 1 235 62 is_stmt 0 discriminator 1 view .LVU28
+ 126 004a 094B     		ldr	r3, .L15
+ 127 004c 0322     		movs	r2, #3
+ 128 004e F2E7     		b	.L14
+ 129              	.L8:
+ 237:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_NOT_DONE)  ActualReply.Status = REPLY_DELAYED;
+ 130              		.loc 1 237 7 is_stmt 1 view .LVU29
+ 237:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_NOT_DONE)  ActualReply.Status = REPLY_DELAYED;
+ 131              		.loc 1 237 9 is_stmt 0 view .LVU30
+ 132 0050 C106     		lsls	r1, r0, #27
+ 133 0052 02D5     		bpl	.L9
+ 237:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_NOT_DONE)  ActualReply.Status = REPLY_DELAYED;
+ 134              		.loc 1 237 43 is_stmt 1 discriminator 1 view .LVU31
+ 237:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_NOT_DONE)  ActualReply.Status = REPLY_DELAYED;
+ 135              		.loc 1 237 62 is_stmt 0 discriminator 1 view .LVU32
+ 136 0054 064B     		ldr	r3, .L15
+ 137 0056 0422     		movs	r2, #4
+ 138 0058 EDE7     		b	.L14
+ 139              	.L9:
+ 238:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_CHIP)      ActualReply.Status = REPLY_EEPROM_LOCKED;
+ 140              		.loc 1 238 7 is_stmt 1 view .LVU33
+ 238:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_CHIP)      ActualReply.Status = REPLY_EEPROM_LOCKED;
+ 141              		.loc 1 238 9 is_stmt 0 view .LVU34
+ 142 005a 8206     		lsls	r2, r0, #26
+ 143 005c 02D5     		bpl	.L10
+ 238:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_CHIP)      ActualReply.Status = REPLY_EEPROM_LOCKED;
+ 144              		.loc 1 238 43 is_stmt 1 discriminator 1 view .LVU35
+ 238:tmc/TMCL.c    **** 	else if(evalError & TMC_ERROR_CHIP)      ActualReply.Status = REPLY_EEPROM_LOCKED;
+ 145              		.loc 1 238 62 is_stmt 0 discriminator 1 view .LVU36
+ 146 005e 044B     		ldr	r3, .L15
+ 147 0060 8022     		movs	r2, #128
+ 148 0062 E8E7     		b	.L14
+ 149              	.L10:
+ 150              	.LVL4:
+ 151              	.LBB7:
+ 152              	.LBI4:
+ 231:tmc/TMCL.c    **** {
+ 153              		.loc 1 231 9 is_stmt 1 view .LVU37
+ 154              	.LBB6:
+ 239:tmc/TMCL.c    **** 	return evalError;
+ 155              		.loc 1 239 7 view .LVU38
+ 239:tmc/TMCL.c    **** 	return evalError;
+ 156              		.loc 1 239 9 is_stmt 0 view .LVU39
+ 157 0064 4306     		lsls	r3, r0, #25
+ 158 0066 E7D5     		bpl	.L6
+ 239:tmc/TMCL.c    **** 	return evalError;
+ 159              		.loc 1 239 43 is_stmt 1 view .LVU40
+ 239:tmc/TMCL.c    **** 	return evalError;
+ 160              		.loc 1 239 62 is_stmt 0 view .LVU41
+ 161 0068 014B     		ldr	r3, .L15
+ 162 006a 0522     		movs	r2, #5
+ 163 006c E3E7     		b	.L14
+ 164              	.L16:
+ 165 006e 00BF     		.align	2
+ 166              	.L15:
+ 167 0070 00000000 		.word	ActualReply
+ 168              	.LBE6:
+ 169              	.LBE7:
+ 170              		.cfi_endproc
+ 171              	.LFE1:
+ 173              		.align	1
+ 174              		.global	tmcl_init
+ 175              		.syntax unified
+ 176              		.thumb
+ 177              		.thumb_func
+ 178              		.fpu softvfp
+ 180              	tmcl_init:
+ 181              	.LFB3:
+ 438:tmc/TMCL.c    **** 	ActualCommand.Error  = TMCL_RX_ERROR_NODATA;
+ 182              		.loc 1 438 1 is_stmt 1 view -0
+ 183              		.cfi_startproc
+ 184              		@ args = 0, pretend = 0, frame = 0
+ 185              		@ frame_needed = 0, uses_anonymous_args = 0
+ 439:tmc/TMCL.c    **** 	interfaces[0]        = *HAL.USB;
+ 186              		.loc 1 439 2 view .LVU43
+ 438:tmc/TMCL.c    **** 	ActualCommand.Error  = TMCL_RX_ERROR_NODATA;
+ 187              		.loc 1 438 1 is_stmt 0 view .LVU44
+ 188 0074 F0B5     		push	{r4, r5, r6, r7, lr}
+ 189              	.LCFI2:
+ 190              		.cfi_def_cfa_offset 20
+ 191              		.cfi_offset 4, -20
+ 192              		.cfi_offset 5, -16
+ 193              		.cfi_offset 6, -12
+ 194              		.cfi_offset 7, -8
+ 195              		.cfi_offset 14, -4
+ 440:tmc/TMCL.c    **** 	interfaces[1]        = *HAL.RS232;
+ 196              		.loc 1 440 29 view .LVU45
+ 197 0076 114F     		ldr	r7, .L18
+ 439:tmc/TMCL.c    **** 	interfaces[0]        = *HAL.USB;
+ 198              		.loc 1 439 23 view .LVU46
+ 199 0078 114B     		ldr	r3, .L18+4
+ 440:tmc/TMCL.c    **** 	interfaces[1]        = *HAL.RS232;
+ 200              		.loc 1 440 23 view .LVU47
+ 201 007a 7E69     		ldr	r6, [r7, #20]
+ 202 007c 114C     		ldr	r4, .L18+8
+ 439:tmc/TMCL.c    **** 	interfaces[0]        = *HAL.USB;
+ 203              		.loc 1 439 23 view .LVU48
+ 204 007e 0122     		movs	r2, #1
+ 205 0080 5A60     		str	r2, [r3, #4]
+ 440:tmc/TMCL.c    **** 	interfaces[1]        = *HAL.RS232;
+ 206              		.loc 1 440 2 is_stmt 1 view .LVU49
+ 440:tmc/TMCL.c    **** 	interfaces[1]        = *HAL.RS232;
+ 207              		.loc 1 440 23 is_stmt 0 view .LVU50
+ 208 0082 0FCE     		ldmia	r6!, {r0, r1, r2, r3}
+ 209 0084 2546     		mov	r5, r4
+ 210 0086 0FC5     		stmia	r5!, {r0, r1, r2, r3}
+ 211 0088 0FCE     		ldmia	r6!, {r0, r1, r2, r3}
+ 212 008a 0FC5     		stmia	r5!, {r0, r1, r2, r3}
+ 213 008c 3368     		ldr	r3, [r6]
+ 441:tmc/TMCL.c    **** 	interfaces[2]        = *HAL.WLAN;
+ 214              		.loc 1 441 23 view .LVU51
+ 215 008e 3E6A     		ldr	r6, [r7, #32]
+ 440:tmc/TMCL.c    **** 	interfaces[1]        = *HAL.RS232;
+ 216              		.loc 1 440 23 view .LVU52
+ 217 0090 2B60     		str	r3, [r5]
+ 441:tmc/TMCL.c    **** 	interfaces[2]        = *HAL.WLAN;
+ 218              		.loc 1 441 2 is_stmt 1 view .LVU53
+ 441:tmc/TMCL.c    **** 	interfaces[2]        = *HAL.WLAN;
+ 219              		.loc 1 441 23 is_stmt 0 view .LVU54
+ 220 0092 0FCE     		ldmia	r6!, {r0, r1, r2, r3}
+ 221 0094 04F12405 		add	r5, r4, #36
+ 222 0098 0FC5     		stmia	r5!, {r0, r1, r2, r3}
+ 223 009a 0FCE     		ldmia	r6!, {r0, r1, r2, r3}
+ 224 009c 0FC5     		stmia	r5!, {r0, r1, r2, r3}
+ 225 009e 3368     		ldr	r3, [r6]
+ 226 00a0 2B60     		str	r3, [r5]
+ 442:tmc/TMCL.c    **** 	numberOfInterfaces   = 3;
+ 227              		.loc 1 442 2 is_stmt 1 view .LVU55
+ 442:tmc/TMCL.c    **** 	numberOfInterfaces   = 3;
+ 228              		.loc 1 442 23 is_stmt 0 view .LVU56
+ 229 00a2 7D6A     		ldr	r5, [r7, #36]
+ 230 00a4 0FCD     		ldmia	r5!, {r0, r1, r2, r3}
+ 231 00a6 4834     		adds	r4, r4, #72
+ 232 00a8 0FC4     		stmia	r4!, {r0, r1, r2, r3}
+ 233 00aa 0FCD     		ldmia	r5!, {r0, r1, r2, r3}
+ 234 00ac 0FC4     		stmia	r4!, {r0, r1, r2, r3}
+ 235 00ae 2B68     		ldr	r3, [r5]
+ 236 00b0 2360     		str	r3, [r4]
+ 443:tmc/TMCL.c    **** }
+ 237              		.loc 1 443 2 is_stmt 1 view .LVU57
+ 443:tmc/TMCL.c    **** }
+ 238              		.loc 1 443 23 is_stmt 0 view .LVU58
+ 239 00b2 054B     		ldr	r3, .L18+12
+ 240 00b4 0322     		movs	r2, #3
+ 241 00b6 1A60     		str	r2, [r3]
+ 444:tmc/TMCL.c    **** 
+ 242              		.loc 1 444 1 view .LVU59
+ 243 00b8 F0BD     		pop	{r4, r5, r6, r7, pc}
+ 244              	.L19:
+ 245 00ba 00BF     		.align	2
+ 246              	.L18:
+ 247 00bc 00000000 		.word	HAL
+ 248 00c0 00000000 		.word	ActualCommand
+ 249 00c4 00000000 		.word	interfaces
+ 250 00c8 00000000 		.word	numberOfInterfaces
+ 251              		.cfi_endproc
+ 252              	.LFE3:
+ 254              		.align	1
+ 255              		.global	tx
+ 256              		.syntax unified
+ 257              		.thumb
+ 258              		.thumb_func
+ 259              		.fpu softvfp
+ 261              	tx:
+ 262              	.LVL5:
+ 263              	.LFB5:
+ 471:tmc/TMCL.c    **** 	uint8_t checkSum = 0;
+ 264              		.loc 1 471 1 is_stmt 1 view -0
+ 265              		.cfi_startproc
+ 266              		@ args = 0, pretend = 0, frame = 16
+ 267              		@ frame_needed = 0, uses_anonymous_args = 0
+ 472:tmc/TMCL.c    **** 
+ 268              		.loc 1 472 2 view .LVU61
+ 474:tmc/TMCL.c    **** 
+ 269              		.loc 1 474 2 view .LVU62
+ 476:tmc/TMCL.c    **** 	{
+ 270              		.loc 1 476 2 view .LVU63
+ 471:tmc/TMCL.c    **** 	uint8_t checkSum = 0;
+ 271              		.loc 1 471 1 is_stmt 0 view .LVU64
+ 272 00cc 7FB5     		push	{r0, r1, r2, r3, r4, r5, r6, lr}
+ 273              	.LCFI3:
+ 274              		.cfi_def_cfa_offset 32
+ 275              		.cfi_offset 4, -16
+ 276              		.cfi_offset 5, -12
+ 277              		.cfi_offset 6, -8
+ 278              		.cfi_offset 14, -4
+ 476:tmc/TMCL.c    **** 	{
+ 279              		.loc 1 476 16 view .LVU65
+ 280 00ce 184B     		ldr	r3, .L25
+ 476:tmc/TMCL.c    **** 	{
+ 281              		.loc 1 476 4 view .LVU66
+ 282 00d0 5A7C     		ldrb	r2, [r3, #17]	@ zero_extendqisi2
+ 283 00d2 72B1     		cbz	r2, .L21
+ 284 00d4 0833     		adds	r3, r3, #8
+ 285 00d6 01A9     		add	r1, sp, #4
+ 286 00d8 0922     		movs	r2, #9
+ 287              	.L22:
+ 288              	.LVL6:
+ 289              	.LBB8:
+ 479:tmc/TMCL.c    **** 	}
+ 290              		.loc 1 479 4 is_stmt 1 discriminator 3 view .LVU67
+ 479:tmc/TMCL.c    **** 	}
+ 291              		.loc 1 479 34 is_stmt 0 discriminator 3 view .LVU68
+ 292 00da 13F8014B 		ldrb	r4, [r3], #1	@ zero_extendqisi2
+ 293              	.LVL7:
+ 479:tmc/TMCL.c    **** 	}
+ 294              		.loc 1 479 13 discriminator 3 view .LVU69
+ 295 00de 01F8014B 		strb	r4, [r1], #1
+ 478:tmc/TMCL.c    **** 			reply[i] = ActualReply.Special[i];
+ 296              		.loc 1 478 25 is_stmt 1 discriminator 3 view .LVU70
+ 297              	.LVL8:
+ 478:tmc/TMCL.c    **** 			reply[i] = ActualReply.Special[i];
+ 298              		.loc 1 478 18 discriminator 3 view .LVU71
+ 478:tmc/TMCL.c    **** 			reply[i] = ActualReply.Special[i];
+ 299              		.loc 1 478 3 is_stmt 0 discriminator 3 view .LVU72
+ 300 00e2 013A     		subs	r2, r2, #1
+ 301 00e4 F9D1     		bne	.L22
+ 302              	.LVL9:
+ 303              	.L23:
+ 478:tmc/TMCL.c    **** 			reply[i] = ActualReply.Special[i];
+ 304              		.loc 1 478 3 discriminator 3 view .LVU73
+ 305              	.LBE8:
+ 503:tmc/TMCL.c    **** }
+ 306              		.loc 1 503 2 is_stmt 1 view .LVU74
+ 307 00e6 0369     		ldr	r3, [r0, #16]
+ 308 00e8 0921     		movs	r1, #9
+ 309 00ea 01A8     		add	r0, sp, #4
+ 310              	.LVL10:
+ 503:tmc/TMCL.c    **** }
+ 311              		.loc 1 503 2 is_stmt 0 view .LVU75
+ 312 00ec 9847     		blx	r3
+ 313              	.LVL11:
+ 504:tmc/TMCL.c    **** 
+ 314              		.loc 1 504 1 view .LVU76
+ 315 00ee 04B0     		add	sp, sp, #16
+ 316              	.LCFI4:
+ 317              		.cfi_remember_state
+ 318              		.cfi_def_cfa_offset 16
+ 319              		@ sp needed
+ 320 00f0 70BD     		pop	{r4, r5, r6, pc}
+ 321              	.LVL12:
+ 322              	.L21:
+ 323              	.LCFI5:
+ 324              		.cfi_restore_state
+ 483:tmc/TMCL.c    **** 		checkSum += SERIAL_MODULE_ADDRESS;
+ 325              		.loc 1 483 3 is_stmt 1 view .LVU77
+ 484:tmc/TMCL.c    **** 		checkSum += ActualReply.Status;
+ 326              		.loc 1 484 3 view .LVU78
+ 485:tmc/TMCL.c    **** 		checkSum += ActualReply.Opcode;
+ 327              		.loc 1 485 3 view .LVU79
+ 485:tmc/TMCL.c    **** 		checkSum += ActualReply.Opcode;
+ 328              		.loc 1 485 26 is_stmt 0 view .LVU80
+ 329 00f2 1D78     		ldrb	r5, [r3]	@ zero_extendqisi2
+ 330              	.LVL13:
+ 486:tmc/TMCL.c    **** 		checkSum += ActualReply.Value.Byte[3];
+ 331              		.loc 1 486 3 is_stmt 1 view .LVU81
+ 486:tmc/TMCL.c    **** 		checkSum += ActualReply.Value.Byte[3];
+ 332              		.loc 1 486 26 is_stmt 0 view .LVU82
+ 333 00f4 5C78     		ldrb	r4, [r3, #1]	@ zero_extendqisi2
+ 487:tmc/TMCL.c    **** 		checkSum += ActualReply.Value.Byte[2];
+ 334              		.loc 1 487 12 view .LVU83
+ 335 00f6 DE79     		ldrb	r6, [r3, #7]	@ zero_extendqisi2
+ 336 00f8 5968     		ldr	r1, [r3, #4]
+ 494:tmc/TMCL.c    **** 		reply[3] = ActualReply.Opcode;
+ 337              		.loc 1 494 12 view .LVU84
+ 338 00fa 8DF80650 		strb	r5, [sp, #6]
+ 486:tmc/TMCL.c    **** 		checkSum += ActualReply.Value.Byte[3];
+ 339              		.loc 1 486 12 view .LVU85
+ 340 00fe 2A19     		adds	r2, r5, r4
+ 341 0100 0332     		adds	r2, r2, #3
+ 342              	.LVL14:
+ 487:tmc/TMCL.c    **** 		checkSum += ActualReply.Value.Byte[2];
+ 343              		.loc 1 487 3 is_stmt 1 view .LVU86
+ 487:tmc/TMCL.c    **** 		checkSum += ActualReply.Value.Byte[2];
+ 344              		.loc 1 487 12 is_stmt 0 view .LVU87
+ 345 0102 56FA82F2 		uxtab	r2, r6, r2
+ 346              	.LVL15:
+ 488:tmc/TMCL.c    **** 		checkSum += ActualReply.Value.Byte[1];
+ 347              		.loc 1 488 3 is_stmt 1 view .LVU88
+ 488:tmc/TMCL.c    **** 		checkSum += ActualReply.Value.Byte[1];
+ 348              		.loc 1 488 12 is_stmt 0 view .LVU89
+ 349 0106 9E79     		ldrb	r6, [r3, #6]	@ zero_extendqisi2
+ 495:tmc/TMCL.c    **** 		reply[4] = ActualReply.Value.Byte[3];
+ 350              		.loc 1 495 12 view .LVU90
+ 351 0108 8DF80740 		strb	r4, [sp, #7]
+ 488:tmc/TMCL.c    **** 		checkSum += ActualReply.Value.Byte[1];
+ 352              		.loc 1 488 12 view .LVU91
+ 353 010c 56FA82F2 		uxtab	r2, r6, r2
+ 354              	.LVL16:
+ 489:tmc/TMCL.c    **** 		checkSum += ActualReply.Value.Byte[0];
+ 355              		.loc 1 489 3 is_stmt 1 view .LVU92
+ 489:tmc/TMCL.c    **** 		checkSum += ActualReply.Value.Byte[0];
+ 356              		.loc 1 489 12 is_stmt 0 view .LVU93
+ 357 0110 5E79     		ldrb	r6, [r3, #5]	@ zero_extendqisi2
+ 490:tmc/TMCL.c    **** 
+ 358              		.loc 1 490 12 view .LVU94
+ 359 0112 1B79     		ldrb	r3, [r3, #4]	@ zero_extendqisi2
+ 489:tmc/TMCL.c    **** 		checkSum += ActualReply.Value.Byte[0];
+ 360              		.loc 1 489 12 view .LVU95
+ 361 0114 56FA82F2 		uxtab	r2, r6, r2
+ 362              	.LVL17:
+ 490:tmc/TMCL.c    **** 
+ 363              		.loc 1 490 3 is_stmt 1 view .LVU96
+ 490:tmc/TMCL.c    **** 
+ 364              		.loc 1 490 12 is_stmt 0 view .LVU97
+ 365 0118 53FA82F3 		uxtab	r3, r3, r2
+ 366              	.LVL18:
+ 492:tmc/TMCL.c    **** 		reply[1] = SERIAL_MODULE_ADDRESS;
+ 367              		.loc 1 492 3 is_stmt 1 view .LVU98
+ 493:tmc/TMCL.c    **** 		reply[2] = ActualReply.Status;
+ 368              		.loc 1 493 3 view .LVU99
+ 369 011c 09BA     		rev	r1, r1
+ 492:tmc/TMCL.c    **** 		reply[1] = SERIAL_MODULE_ADDRESS;
+ 370              		.loc 1 492 12 is_stmt 0 view .LVU100
+ 371 011e 4FF48172 		mov	r2, #258
+ 372 0122 ADF80420 		strh	r2, [sp, #4]	@ movhi
+ 494:tmc/TMCL.c    **** 		reply[3] = ActualReply.Opcode;
+ 373              		.loc 1 494 3 is_stmt 1 view .LVU101
+ 495:tmc/TMCL.c    **** 		reply[4] = ActualReply.Value.Byte[3];
+ 374              		.loc 1 495 3 view .LVU102
+ 496:tmc/TMCL.c    **** 		reply[5] = ActualReply.Value.Byte[2];
+ 375              		.loc 1 496 3 view .LVU103
+ 497:tmc/TMCL.c    **** 		reply[6] = ActualReply.Value.Byte[1];
+ 376              		.loc 1 497 3 view .LVU104
+ 498:tmc/TMCL.c    **** 		reply[7] = ActualReply.Value.Byte[0];
+ 377              		.loc 1 498 3 view .LVU105
+ 499:tmc/TMCL.c    **** 		reply[8] = checkSum;
+ 378              		.loc 1 499 3 view .LVU106
+ 496:tmc/TMCL.c    **** 		reply[5] = ActualReply.Value.Byte[2];
+ 379              		.loc 1 496 12 is_stmt 0 view .LVU107
+ 380 0126 0291     		str	r1, [sp, #8]
+ 500:tmc/TMCL.c    **** 	}
+ 381              		.loc 1 500 3 is_stmt 1 view .LVU108
+ 500:tmc/TMCL.c    **** 	}
+ 382              		.loc 1 500 12 is_stmt 0 view .LVU109
+ 383 0128 8DF80C30 		strb	r3, [sp, #12]
+ 384 012c DBE7     		b	.L23
+ 385              	.L26:
+ 386 012e 00BF     		.align	2
+ 387              	.L25:
+ 388 0130 00000000 		.word	ActualReply
+ 389              		.cfi_endproc
+ 390              	.LFE5:
+ 392              		.align	1
+ 393              		.global	rx
+ 394              		.syntax unified
+ 395              		.thumb
+ 396              		.thumb_func
+ 397              		.fpu softvfp
+ 399              	rx:
+ 400              	.LVL19:
+ 401              	.LFB6:
+ 507:tmc/TMCL.c    **** 	uint8_t checkSum = 0;
+ 402              		.loc 1 507 1 is_stmt 1 view -0
+ 403              		.cfi_startproc
+ 404              		@ args = 0, pretend = 0, frame = 16
+ 405              		@ frame_needed = 0, uses_anonymous_args = 0
+ 508:tmc/TMCL.c    **** 	uint8_t cmd[9];
+ 406              		.loc 1 508 2 view .LVU111
+ 509:tmc/TMCL.c    **** 
+ 407              		.loc 1 509 2 view .LVU112
+ 511:tmc/TMCL.c    **** 	{
+ 408              		.loc 1 511 2 view .LVU113
+ 507:tmc/TMCL.c    **** 	uint8_t checkSum = 0;
+ 409              		.loc 1 507 1 is_stmt 0 view .LVU114
+ 410 0134 1FB5     		push	{r0, r1, r2, r3, r4, lr}
+ 411              	.LCFI6:
+ 412              		.cfi_def_cfa_offset 24
+ 413              		.cfi_offset 14, -4
+ 511:tmc/TMCL.c    **** 	{
+ 414              		.loc 1 511 6 view .LVU115
+ 415 0136 4369     		ldr	r3, [r0, #20]
+ 416 0138 0921     		movs	r1, #9
+ 417 013a 01A8     		add	r0, sp, #4
+ 418              	.LVL20:
+ 511:tmc/TMCL.c    **** 	{
+ 419              		.loc 1 511 6 view .LVU116
+ 420 013c 9847     		blx	r3
+ 421              	.LVL21:
+ 511:tmc/TMCL.c    **** 	{
+ 422              		.loc 1 511 4 view .LVU117
+ 423 013e 28B9     		cbnz	r0, .L28
+ 513:tmc/TMCL.c    **** 		return;
+ 424              		.loc 1 513 3 is_stmt 1 view .LVU118
+ 513:tmc/TMCL.c    **** 		return;
+ 425              		.loc 1 513 23 is_stmt 0 view .LVU119
+ 426 0140 124B     		ldr	r3, .L35
+ 427 0142 0122     		movs	r2, #1
+ 428              	.LVL22:
+ 429              	.L34:
+ 535:tmc/TMCL.c    **** }
+ 430              		.loc 1 535 31 view .LVU120
+ 431 0144 5A60     		str	r2, [r3, #4]
+ 536:tmc/TMCL.c    **** 
+ 432              		.loc 1 536 1 view .LVU121
+ 433 0146 05B0     		add	sp, sp, #20
+ 434              	.LCFI7:
+ 435              		.cfi_remember_state
+ 436              		.cfi_def_cfa_offset 4
+ 437              		@ sp needed
+ 438 0148 5DF804FB 		ldr	pc, [sp], #4
+ 439              	.LVL23:
+ 440              	.L28:
+ 441              	.LCFI8:
+ 442              		.cfi_restore_state
+ 443              	.LBB9:
+ 519:tmc/TMCL.c    **** 		checkSum += cmd[i];
+ 444              		.loc 1 519 10 view .LVU122
+ 445 014c 0021     		movs	r1, #0
+ 446 014e 01AA     		add	r2, sp, #4
+ 447              	.LBE9:
+ 508:tmc/TMCL.c    **** 	uint8_t cmd[9];
+ 448              		.loc 1 508 10 view .LVU123
+ 449 0150 0B46     		mov	r3, r1
+ 450              	.LVL24:
+ 451              	.L30:
+ 452              	.LBB10:
+ 520:tmc/TMCL.c    **** 
+ 453              		.loc 1 520 3 is_stmt 1 discriminator 3 view .LVU124
+ 520:tmc/TMCL.c    **** 
+ 454              		.loc 1 520 18 is_stmt 0 discriminator 3 view .LVU125
+ 455 0152 12F8010B 		ldrb	r0, [r2], #1	@ zero_extendqisi2
+ 519:tmc/TMCL.c    **** 		checkSum += cmd[i];
+ 456              		.loc 1 519 25 discriminator 3 view .LVU126
+ 457 0156 0131     		adds	r1, r1, #1
+ 458              	.LVL25:
+ 520:tmc/TMCL.c    **** 
+ 459              		.loc 1 520 12 discriminator 3 view .LVU127
+ 460 0158 0344     		add	r3, r3, r0
+ 461              	.LVL26:
+ 519:tmc/TMCL.c    **** 		checkSum += cmd[i];
+ 462              		.loc 1 519 2 discriminator 3 view .LVU128
+ 463 015a 0829     		cmp	r1, #8
+ 520:tmc/TMCL.c    **** 
+ 464              		.loc 1 520 12 discriminator 3 view .LVU129
+ 465 015c DBB2     		uxtb	r3, r3
+ 466              	.LVL27:
+ 519:tmc/TMCL.c    **** 		checkSum += cmd[i];
+ 467              		.loc 1 519 24 is_stmt 1 discriminator 3 view .LVU130
+ 519:tmc/TMCL.c    **** 		checkSum += cmd[i];
+ 468              		.loc 1 519 17 discriminator 3 view .LVU131
+ 519:tmc/TMCL.c    **** 		checkSum += cmd[i];
+ 469              		.loc 1 519 2 is_stmt 0 discriminator 3 view .LVU132
+ 470 015e F8D1     		bne	.L30
+ 471              	.LBE10:
+ 522:tmc/TMCL.c    **** 	{
+ 472              		.loc 1 522 2 is_stmt 1 view .LVU133
+ 522:tmc/TMCL.c    **** 	{
+ 473              		.loc 1 522 4 is_stmt 0 view .LVU134
+ 474 0160 9DF80C20 		ldrb	r2, [sp, #12]	@ zero_extendqisi2
+ 475 0164 9A42     		cmp	r2, r3
+ 476 0166 094B     		ldr	r3, .L35
+ 477              	.LVL28:
+ 522:tmc/TMCL.c    **** 	{
+ 478              		.loc 1 522 4 view .LVU135
+ 479 0168 01D0     		beq	.L31
+ 524:tmc/TMCL.c    **** 		return;
+ 480              		.loc 1 524 3 is_stmt 1 view .LVU136
+ 524:tmc/TMCL.c    **** 		return;
+ 481              		.loc 1 524 23 is_stmt 0 view .LVU137
+ 482 016a 0222     		movs	r2, #2
+ 483 016c EAE7     		b	.L34
+ 484              	.L31:
+ 528:tmc/TMCL.c    **** 	ActualCommand.Type           = cmd[2];
+ 485              		.loc 1 528 2 is_stmt 1 view .LVU138
+ 528:tmc/TMCL.c    **** 	ActualCommand.Type           = cmd[2];
+ 486              		.loc 1 528 31 is_stmt 0 view .LVU139
+ 487 016e 9DF80520 		ldrb	r2, [sp, #5]	@ zero_extendqisi2
+ 488 0172 1A70     		strb	r2, [r3]
+ 529:tmc/TMCL.c    **** 	ActualCommand.Motor          = cmd[3];
+ 489              		.loc 1 529 2 is_stmt 1 view .LVU140
+ 529:tmc/TMCL.c    **** 	ActualCommand.Motor          = cmd[3];
+ 490              		.loc 1 529 31 is_stmt 0 view .LVU141
+ 491 0174 9DF80620 		ldrb	r2, [sp, #6]	@ zero_extendqisi2
+ 492 0178 5A70     		strb	r2, [r3, #1]
+ 530:tmc/TMCL.c    **** 	ActualCommand.Value.Byte[3]  = cmd[4];
+ 493              		.loc 1 530 2 is_stmt 1 view .LVU142
+ 530:tmc/TMCL.c    **** 	ActualCommand.Value.Byte[3]  = cmd[4];
+ 494              		.loc 1 530 31 is_stmt 0 view .LVU143
+ 495 017a 9DF80720 		ldrb	r2, [sp, #7]	@ zero_extendqisi2
+ 496 017e 9A70     		strb	r2, [r3, #2]
+ 531:tmc/TMCL.c    **** 	ActualCommand.Value.Byte[2]  = cmd[5];
+ 497              		.loc 1 531 2 is_stmt 1 view .LVU144
+ 532:tmc/TMCL.c    **** 	ActualCommand.Value.Byte[1]  = cmd[6];
+ 498              		.loc 1 532 2 view .LVU145
+ 533:tmc/TMCL.c    **** 	ActualCommand.Value.Byte[0]  = cmd[7];
+ 499              		.loc 1 533 2 view .LVU146
+ 534:tmc/TMCL.c    **** 	ActualCommand.Error          = TMCL_RX_ERROR_NONE;
+ 500              		.loc 1 534 2 view .LVU147
+ 501 0180 029A     		ldr	r2, [sp, #8]
+ 502 0182 12BA     		rev	r2, r2
+ 534:tmc/TMCL.c    **** 	ActualCommand.Error          = TMCL_RX_ERROR_NONE;
+ 503              		.loc 1 534 31 is_stmt 0 view .LVU148
+ 504 0184 9A60     		str	r2, [r3, #8]
+ 535:tmc/TMCL.c    **** }
+ 505              		.loc 1 535 2 is_stmt 1 view .LVU149
+ 535:tmc/TMCL.c    **** }
+ 506              		.loc 1 535 31 is_stmt 0 view .LVU150
+ 507 0186 0022     		movs	r2, #0
+ 508 0188 DCE7     		b	.L34
+ 509              	.L36:
+ 510 018a 00BF     		.align	2
+ 511              	.L35:
+ 512 018c 00000000 		.word	ActualCommand
+ 513              		.cfi_endproc
+ 514              	.LFE6:
+ 516              		.align	1
+ 517              		.global	tmcl_boot
+ 518              		.syntax unified
+ 519              		.thumb
+ 520              		.thumb_func
+ 521              		.fpu softvfp
+ 523              	tmcl_boot:
+ 524              	.LFB7:
+ 539:tmc/TMCL.c    **** #if defined(Landungsbruecke)
+ 525              		.loc 1 539 1 is_stmt 1 view -0
+ 526              		.cfi_startproc
+ 527              		@ args = 0, pretend = 0, frame = 0
+ 528              		@ frame_needed = 0, uses_anonymous_args = 0
+ 541:tmc/TMCL.c    **** 	{
+ 529              		.loc 1 541 2 view .LVU152
+ 539:tmc/TMCL.c    **** #if defined(Landungsbruecke)
+ 530              		.loc 1 539 1 is_stmt 0 view .LVU153
+ 531 0190 70B5     		push	{r4, r5, r6, lr}
+ 532              	.LCFI9:
+ 533              		.cfi_def_cfa_offset 16
+ 534              		.cfi_offset 4, -16
+ 535              		.cfi_offset 5, -12
+ 536              		.cfi_offset 6, -8
+ 537              		.cfi_offset 14, -4
+ 541:tmc/TMCL.c    **** 	{
+ 538              		.loc 1 541 19 view .LVU154
+ 539 0192 1C4C     		ldr	r4, .L38
+ 540 0194 1C4E     		ldr	r6, .L38+4
+ 541:tmc/TMCL.c    **** 	{
+ 541              		.loc 1 541 4 view .LVU155
+ 542 0196 2379     		ldrb	r3, [r4, #4]	@ zero_extendqisi2
+ 543 0198 03F0FB03 		and	r3, r3, #251
+ 544 019c 093B     		subs	r3, r3, #9
+ 545 019e 18BF     		it	ne
+ 546 01a0 0123     		movne	r3, #1
+ 552:tmc/TMCL.c    **** 	Evalboards.ch1.enableDriver(DRIVER_DISABLE); // todo CHECK 2: the ch1/2 deInit() calls should alre
+ 547              		.loc 1 552 26 view .LVU156
+ 548 01a2 0025     		movs	r5, #0
+ 549 01a4 7360     		str	r3, [r6, #4]
+ 552:tmc/TMCL.c    **** 	Evalboards.ch1.enableDriver(DRIVER_DISABLE); // todo CHECK 2: the ch1/2 deInit() calls should alre
+ 550              		.loc 1 552 2 is_stmt 1 view .LVU157
+ 552:tmc/TMCL.c    **** 	Evalboards.ch1.enableDriver(DRIVER_DISABLE); // todo CHECK 2: the ch1/2 deInit() calls should alre
+ 551              		.loc 1 552 26 is_stmt 0 view .LVU158
+ 552 01a6 84F8F050 		strb	r5, [r4, #240]
+ 553:tmc/TMCL.c    **** 	Evalboards.ch2.enableDriver(DRIVER_DISABLE);
+ 553              		.loc 1 553 2 is_stmt 1 view .LVU159
+ 554 01aa 636E     		ldr	r3, [r4, #100]
+ 555 01ac 2846     		mov	r0, r5
+ 556 01ae 9847     		blx	r3
+ 557              	.LVL29:
+ 554:tmc/TMCL.c    **** 
+ 558              		.loc 1 554 2 view .LVU160
+ 559 01b0 2846     		mov	r0, r5
+ 560 01b2 D4F8DC30 		ldr	r3, [r4, #220]
+ 561 01b6 9847     		blx	r3
+ 562              	.LVL30:
+ 556:tmc/TMCL.c    **** 	Evalboards.ch2.deInit();
+ 563              		.loc 1 556 2 view .LVU161
+ 564 01b8 E36D     		ldr	r3, [r4, #92]
+ 565 01ba 9847     		blx	r3
+ 566              	.LVL31:
+ 557:tmc/TMCL.c    **** 
+ 567              		.loc 1 557 2 view .LVU162
+ 568 01bc D4F8D430 		ldr	r3, [r4, #212]
+ 559:tmc/TMCL.c    **** 
+ 569              		.loc 1 559 5 is_stmt 0 view .LVU163
+ 570 01c0 124C     		ldr	r4, .L38+8
+ 557:tmc/TMCL.c    **** 
+ 571              		.loc 1 557 2 view .LVU164
+ 572 01c2 9847     		blx	r3
+ 573              	.LVL32:
+ 559:tmc/TMCL.c    **** 
+ 574              		.loc 1 559 2 is_stmt 1 view .LVU165
+ 559:tmc/TMCL.c    **** 
+ 575              		.loc 1 559 9 is_stmt 0 view .LVU166
+ 576 01c4 6369     		ldr	r3, [r4, #20]
+ 559:tmc/TMCL.c    **** 
+ 577              		.loc 1 559 2 view .LVU167
+ 578 01c6 5B68     		ldr	r3, [r3, #4]
+ 579 01c8 9847     		blx	r3
+ 580              	.LVL33:
+ 561:tmc/TMCL.c    **** 
+ 581              		.loc 1 561 2 is_stmt 1 view .LVU168
+ 582 01ca 4FF4FA70 		mov	r0, #500
+ 583 01ce FFF7FEFF 		bl	wait
+ 584              	.LVL34:
+ 563:tmc/TMCL.c    **** 	HAL.RS232->deInit();
+ 585              		.loc 1 563 2 view .LVU169
+ 563:tmc/TMCL.c    **** 	HAL.RS232->deInit();
+ 586              		.loc 1 563 11 is_stmt 0 view .LVU170
+ 587 01d2 A36A     		ldr	r3, [r4, #40]
+ 563:tmc/TMCL.c    **** 	HAL.RS232->deInit();
+ 588              		.loc 1 563 2 view .LVU171
+ 589 01d4 5B68     		ldr	r3, [r3, #4]
+ 590 01d6 9847     		blx	r3
+ 591              	.LVL35:
+ 564:tmc/TMCL.c    **** 	HAL.WLAN->deInit();
+ 592              		.loc 1 564 2 is_stmt 1 view .LVU172
+ 564:tmc/TMCL.c    **** 	HAL.WLAN->deInit();
+ 593              		.loc 1 564 11 is_stmt 0 view .LVU173
+ 594 01d8 236A     		ldr	r3, [r4, #32]
+ 564:tmc/TMCL.c    **** 	HAL.WLAN->deInit();
+ 595              		.loc 1 564 2 view .LVU174
+ 596 01da 5B68     		ldr	r3, [r3, #4]
+ 597 01dc 9847     		blx	r3
+ 598              	.LVL36:
+ 565:tmc/TMCL.c    **** 	HAL.ADCs->deInit();
+ 599              		.loc 1 565 2 is_stmt 1 view .LVU175
+ 565:tmc/TMCL.c    **** 	HAL.ADCs->deInit();
+ 600              		.loc 1 565 10 is_stmt 0 view .LVU176
+ 601 01de 636A     		ldr	r3, [r4, #36]
+ 565:tmc/TMCL.c    **** 	HAL.ADCs->deInit();
+ 602              		.loc 1 565 2 view .LVU177
+ 603 01e0 5B68     		ldr	r3, [r3, #4]
+ 604 01e2 9847     		blx	r3
+ 605              	.LVL37:
+ 566:tmc/TMCL.c    **** 
+ 606              		.loc 1 566 2 is_stmt 1 view .LVU178
+ 566:tmc/TMCL.c    **** 
+ 607              		.loc 1 566 10 is_stmt 0 view .LVU179
+ 608 01e4 E369     		ldr	r3, [r4, #28]
+ 566:tmc/TMCL.c    **** 
+ 609              		.loc 1 566 2 view .LVU180
+ 610 01e6 DB69     		ldr	r3, [r3, #28]
+ 611 01e8 9847     		blx	r3
+ 612              	.LVL38:
+ 569:tmc/TMCL.c    **** 
+ 613              		.loc 1 569 2 is_stmt 1 view .LVU181
+ 614 01ea FFF7FEFF 		bl	StepDir_deInit
+ 615              	.LVL39:
+ 571:tmc/TMCL.c    **** 
+ 616              		.loc 1 571 2 view .LVU182
+ 617 01ee FFF7FEFF 		bl	IDDetection_deInit
+ 618              	.LVL40:
+ 573:tmc/TMCL.c    **** 
+ 619              		.loc 1 573 2 view .LVU183
+ 620 01f2 A368     		ldr	r3, [r4, #8]
+ 621 01f4 9847     		blx	r3
+ 622              	.LVL41:
+ 587:tmc/TMCL.c    **** 	HAL.reset(true);
+ 623              		.loc 1 587 2 view .LVU184
+ 587:tmc/TMCL.c    **** 	HAL.reset(true);
+ 624              		.loc 1 587 19 is_stmt 0 view .LVU185
+ 625 01f6 064B     		ldr	r3, .L38+12
+ 626 01f8 3360     		str	r3, [r6]
+ 588:tmc/TMCL.c    **** #endif
+ 627              		.loc 1 588 2 is_stmt 1 view .LVU186
+ 628 01fa 0120     		movs	r0, #1
+ 629 01fc 6368     		ldr	r3, [r4, #4]
+ 590:tmc/TMCL.c    **** 
+ 630              		.loc 1 590 1 is_stmt 0 view .LVU187
+ 631 01fe BDE87040 		pop	{r4, r5, r6, lr}
+ 632              	.LCFI10:
+ 633              		.cfi_restore 14
+ 634              		.cfi_restore 6
+ 635              		.cfi_restore 5
+ 636              		.cfi_restore 4
+ 637              		.cfi_def_cfa_offset 0
+ 588:tmc/TMCL.c    **** #endif
+ 638              		.loc 1 588 2 view .LVU188
+ 639 0202 1847     		bx	r3	@ indirect register sibling call
+ 640              	.LVL42:
+ 641              	.L39:
+ 642              		.align	2
+ 643              	.L38:
+ 644 0204 00000000 		.word	Evalboards
+ 645 0208 00000000 		.word	BLConfig
+ 646 020c 00000000 		.word	HAL
+ 647 0210 78563412 		.word	305419896
+ 648              		.cfi_endproc
+ 649              	.LFE7:
+ 651              		.align	1
+ 652              		.global	ExecuteActualCommand
+ 653              		.syntax unified
+ 654              		.thumb
+ 655              		.thumb_func
+ 656              		.fpu softvfp
+ 658              	ExecuteActualCommand:
+ 659              	.LFB2:
+ 244:tmc/TMCL.c    **** 	ActualReply.Opcode = ActualCommand.Opcode;
+ 660              		.loc 1 244 1 is_stmt 1 view -0
+ 661              		.cfi_startproc
+ 662              		@ args = 0, pretend = 0, frame = 40
+ 663              		@ frame_needed = 0, uses_anonymous_args = 0
+ 245:tmc/TMCL.c    **** 	ActualReply.Status = REPLY_OK;
+ 664              		.loc 1 245 2 view .LVU190
+ 244:tmc/TMCL.c    **** 	ActualReply.Opcode = ActualCommand.Opcode;
+ 665              		.loc 1 244 1 is_stmt 0 view .LVU191
+ 666 0214 70B5     		push	{r4, r5, r6, lr}
+ 667              	.LCFI11:
+ 668              		.cfi_def_cfa_offset 16
+ 669              		.cfi_offset 4, -16
+ 670              		.cfi_offset 5, -12
+ 671              		.cfi_offset 6, -8
+ 672              		.cfi_offset 14, -4
+ 245:tmc/TMCL.c    **** 	ActualReply.Status = REPLY_OK;
+ 673              		.loc 1 245 36 view .LVU192
+ 674 0216 B54A     		ldr	r2, .L207
+ 245:tmc/TMCL.c    **** 	ActualReply.Status = REPLY_OK;
+ 675              		.loc 1 245 21 view .LVU193
+ 676 0218 B548     		ldr	r0, .L207+4
+ 249:tmc/TMCL.c    **** 	{
+ 677              		.loc 1 249 4 view .LVU194
+ 678 021a 5468     		ldr	r4, [r2, #4]
+ 245:tmc/TMCL.c    **** 	ActualReply.Status = REPLY_OK;
+ 679              		.loc 1 245 36 view .LVU195
+ 680 021c 1378     		ldrb	r3, [r2]	@ zero_extendqisi2
+ 245:tmc/TMCL.c    **** 	ActualReply.Status = REPLY_OK;
+ 681              		.loc 1 245 21 view .LVU196
+ 682 021e 4370     		strb	r3, [r0, #1]
+ 246:tmc/TMCL.c    **** 	ActualReply.Value.Int32 = ActualCommand.Value.Int32;
+ 683              		.loc 1 246 2 is_stmt 1 view .LVU197
+ 246:tmc/TMCL.c    **** 	ActualReply.Value.Int32 = ActualCommand.Value.Int32;
+ 684              		.loc 1 246 21 is_stmt 0 view .LVU198
+ 685 0220 6421     		movs	r1, #100
+ 686 0222 0170     		strb	r1, [r0]
+ 247:tmc/TMCL.c    **** 
+ 687              		.loc 1 247 2 is_stmt 1 view .LVU199
+ 249:tmc/TMCL.c    **** 	{
+ 688              		.loc 1 249 4 is_stmt 0 view .LVU200
+ 689 0224 022C     		cmp	r4, #2
+ 247:tmc/TMCL.c    **** 
+ 690              		.loc 1 247 47 view .LVU201
+ 691 0226 9168     		ldr	r1, [r2, #8]
+ 247:tmc/TMCL.c    **** 
+ 692              		.loc 1 247 26 view .LVU202
+ 693 0228 4160     		str	r1, [r0, #4]
+ 249:tmc/TMCL.c    **** 	{
+ 694              		.loc 1 249 2 is_stmt 1 view .LVU203
+ 244:tmc/TMCL.c    **** 	ActualReply.Opcode = ActualCommand.Opcode;
+ 695              		.loc 1 244 1 is_stmt 0 view .LVU204
+ 696 022a 8AB0     		sub	sp, sp, #40
+ 697              	.LCFI12:
+ 698              		.cfi_def_cfa_offset 56
+ 699 022c 1446     		mov	r4, r2
+ 700 022e 0546     		mov	r5, r0
+ 249:tmc/TMCL.c    **** 	{
+ 701              		.loc 1 249 4 view .LVU205
+ 702 0230 05D1     		bne	.L41
+ 251:tmc/TMCL.c    **** 		ActualReply.Status       = REPLY_CHKERR;
+ 703              		.loc 1 251 3 is_stmt 1 view .LVU206
+ 251:tmc/TMCL.c    **** 		ActualReply.Status       = REPLY_CHKERR;
+ 704              		.loc 1 251 28 is_stmt 0 view .LVU207
+ 705 0232 0023     		movs	r3, #0
+ 706 0234 4360     		str	r3, [r0, #4]
+ 252:tmc/TMCL.c    **** 		return;
+ 707              		.loc 1 252 3 is_stmt 1 view .LVU208
+ 252:tmc/TMCL.c    **** 		return;
+ 708              		.loc 1 252 28 is_stmt 0 view .LVU209
+ 709 0236 0123     		movs	r3, #1
+ 710 0238 0370     		strb	r3, [r0]
+ 253:tmc/TMCL.c    **** 	}
+ 711              		.loc 1 253 3 is_stmt 1 view .LVU210
+ 712              	.L40:
+ 435:tmc/TMCL.c    **** 
+ 713              		.loc 1 435 1 is_stmt 0 view .LVU211
+ 714 023a 0AB0     		add	sp, sp, #40
+ 715              	.LCFI13:
+ 716              		.cfi_remember_state
+ 717              		.cfi_def_cfa_offset 16
+ 718              		@ sp needed
+ 719 023c 70BD     		pop	{r4, r5, r6, pc}
+ 720              	.L41:
+ 721              	.LCFI14:
+ 722              		.cfi_restore_state
+ 256:tmc/TMCL.c    **** 	{
+ 723              		.loc 1 256 2 is_stmt 1 view .LVU212
+ 724 023e AB2B     		cmp	r3, #171
+ 725 0240 00F29280 		bhi	.L43
+ 726 0244 872B     		cmp	r3, #135
+ 727 0246 05D8     		bhi	.L44
+ 728 0248 0F2B     		cmp	r3, #15
+ 729 024a 75D8     		bhi	.L45
+ 730 024c 002B     		cmp	r3, #0
+ 731 024e 4FD1     		bne	.L46
+ 732              	.L47:
+ 432:tmc/TMCL.c    **** 		break;
+ 733              		.loc 1 432 3 view .LVU213
+ 432:tmc/TMCL.c    **** 		break;
+ 734              		.loc 1 432 22 is_stmt 0 view .LVU214
+ 735 0250 0223     		movs	r3, #2
+ 736 0252 DFE1     		b	.L193
+ 737              	.L44:
+ 738 0254 883B     		subs	r3, r3, #136
+ 739 0256 232B     		cmp	r3, #35
+ 740 0258 FAD8     		bhi	.L47
+ 741 025a 01A2     		adr	r2, .L49
+ 742 025c 52F823F0 		ldr	pc, [r2, r3, lsl #2]
+ 743              		.p2align 2
+ 744              	.L49:
+ 745 0260 4B060000 		.word	.L62+1
+ 746 0264 51020000 		.word	.L47+1
+ 747 0268 51020000 		.word	.L47+1
+ 748 026c 51020000 		.word	.L47+1
+ 749 0270 51020000 		.word	.L47+1
+ 750 0274 51020000 		.word	.L47+1
+ 751 0278 51020000 		.word	.L47+1
+ 752 027c D7060000 		.word	.L61+1
+ 753 0280 5F070000 		.word	.L60+1
+ 754 0284 6D070000 		.word	.L59+1
+ 755 0288 A1070000 		.word	.L58+1
+ 756 028c AD070000 		.word	.L57+1
+ 757 0290 B5070000 		.word	.L56+1
+ 758 0294 D5070000 		.word	.L55+1
+ 759 0298 DD070000 		.word	.L54+1
+ 760 029c 03080000 		.word	.L53+1
+ 761 02a0 19080000 		.word	.L52+1
+ 762 02a4 51020000 		.word	.L47+1
+ 763 02a8 51020000 		.word	.L47+1
+ 764 02ac 51020000 		.word	.L47+1
+ 765 02b0 51020000 		.word	.L47+1
+ 766 02b4 51020000 		.word	.L47+1
+ 767 02b8 51020000 		.word	.L47+1
+ 768 02bc 51020000 		.word	.L47+1
+ 769 02c0 5B080000 		.word	.L51+1
+ 770 02c4 51020000 		.word	.L47+1
+ 771 02c8 51020000 		.word	.L47+1
+ 772 02cc 51020000 		.word	.L47+1
+ 773 02d0 51020000 		.word	.L47+1
+ 774 02d4 51020000 		.word	.L47+1
+ 775 02d8 51020000 		.word	.L47+1
+ 776 02dc 51020000 		.word	.L47+1
+ 777 02e0 51020000 		.word	.L47+1
+ 778 02e4 51020000 		.word	.L47+1
+ 779 02e8 8D080000 		.word	.L50+1
+ 780 02ec AD080000 		.word	.L48+1
+ 781              		.p2align 1
+ 782              	.L46:
+ 783 02f0 013B     		subs	r3, r3, #1
+ 784 02f2 0E2B     		cmp	r3, #14
+ 785 02f4 ACD8     		bhi	.L47
+ 786 02f6 01A2     		adr	r2, .L71
+ 787 02f8 52F823F0 		ldr	pc, [r2, r3, lsl #2]
+ 788              		.p2align 2
+ 789              	.L71:
+ 790 02fc 87030000 		.word	.L79+1
+ 791 0300 AD030000 		.word	.L78+1
+ 792 0304 C7030000 		.word	.L77+1
+ 793 0308 E5030000 		.word	.L76+1
+ 794 030c 51040000 		.word	.L75+1
+ 795 0310 79040000 		.word	.L74+1
+ 796 0314 51020000 		.word	.L47+1
+ 797 0318 51020000 		.word	.L47+1
+ 798 031c 9B040000 		.word	.L73+1
+ 799 0320 25050000 		.word	.L72+1
+ 800 0324 51020000 		.word	.L47+1
+ 801 0328 51020000 		.word	.L47+1
+ 802 032c 51020000 		.word	.L47+1
+ 803 0330 51020000 		.word	.L47+1
+ 804 0334 89050000 		.word	.L70+1
+ 805              		.p2align 1
+ 806              	.L45:
+ 256:tmc/TMCL.c    **** 	{
+ 807              		.loc 1 256 2 view .LVU215
+ 808 0338 403B     		subs	r3, r3, #64
+ 809 033a DAB2     		uxtb	r2, r3
+ 810 033c 062A     		cmp	r2, #6
+ 811 033e 87D8     		bhi	.L47
+ 812 0340 062B     		cmp	r3, #6
+ 813 0342 85D8     		bhi	.L47
+ 814 0344 01A2     		adr	r2, .L64
+ 815 0346 52F823F0 		ldr	pc, [r2, r3, lsl #2]
+ 816 034a 00BF     		.p2align 2
+ 817              	.L64:
+ 818 034c C7040000 		.word	.L69+1
+ 819 0350 D5050000 		.word	.L68+1
+ 820 0354 F5050000 		.word	.L67+1
+ 821 0358 51020000 		.word	.L47+1
+ 822 035c 25060000 		.word	.L66+1
+ 823 0360 A1070000 		.word	.L58+1
+ 824 0364 43060000 		.word	.L63+1
+ 825              		.p2align 1
+ 826              	.L43:
+ 827 0368 F22B     		cmp	r3, #242
+ 828 036a 00F0AF82 		beq	.L81
+ 829 036e FF2B     		cmp	r3, #255
+ 830 0370 7FF46EAF 		bne	.L47
+ 429:tmc/TMCL.c    **** 		break;
+ 831              		.loc 1 429 3 is_stmt 1 view .LVU216
+ 832              	.LBB40:
+ 833              	.LBI40:
+ 843:tmc/TMCL.c    **** 
+ 844:tmc/TMCL.c    **** static void checkIDs(void)
+ 845:tmc/TMCL.c    **** {
+ 846:tmc/TMCL.c    **** 	IdAssignmentTypeDef ids;
+ 847:tmc/TMCL.c    **** 
+ 848:tmc/TMCL.c    **** 	if(IDDetection_detect(&ids))
+ 849:tmc/TMCL.c    **** 	{
+ 850:tmc/TMCL.c    **** 		ActualReply.Value.Int32	= (uint32_t)
+ 851:tmc/TMCL.c    **** 		(
+ 852:tmc/TMCL.c    **** 			(ids.ch1.id)
+ 853:tmc/TMCL.c    **** 			| (ids.ch1.state << 8)
+ 854:tmc/TMCL.c    **** 			| (ids.ch2.id    << 16)
+ 855:tmc/TMCL.c    **** 			| (ids.ch2.state << 24)
+ 856:tmc/TMCL.c    **** 		);
+ 857:tmc/TMCL.c    **** 
+ 858:tmc/TMCL.c    **** 		Board_assign(&ids);
+ 859:tmc/TMCL.c    **** 	}
+ 860:tmc/TMCL.c    **** 	else
+ 861:tmc/TMCL.c    **** 	{
+ 862:tmc/TMCL.c    **** 		ActualReply.Status = REPLY_DELAYED;
+ 863:tmc/TMCL.c    **** 	}
+ 864:tmc/TMCL.c    **** }
+ 865:tmc/TMCL.c    **** 
+ 866:tmc/TMCL.c    **** static void SoftwareReset(void)
+ 834              		.loc 1 866 13 view .LVU217
+ 835              	.LBB41:
+ 867:tmc/TMCL.c    **** {
+ 868:tmc/TMCL.c    **** 	if(ActualCommand.Value.Int32 == 1234)
+ 836              		.loc 1 868 2 view .LVU218
+ 837              		.loc 1 868 4 is_stmt 0 view .LVU219
+ 838 0374 40F2D243 		movw	r3, #1234
+ 839 0378 9942     		cmp	r1, r3
+ 840 037a 7FF45EAF 		bne	.L40
+ 869:tmc/TMCL.c    **** 		resetRequest = true;
+ 841              		.loc 1 869 3 is_stmt 1 view .LVU220
+ 842              		.loc 1 869 16 is_stmt 0 view .LVU221
+ 843 037e 5D4B     		ldr	r3, .L207+8
+ 844 0380 0122     		movs	r2, #1
+ 845 0382 1A60     		str	r2, [r3]
+ 846 0384 59E7     		b	.L40
+ 847              	.L79:
+ 848              	.LBE41:
+ 849              	.LBE40:
+ 260:tmc/TMCL.c    **** 		{
+ 850              		.loc 1 260 3 is_stmt 1 view .LVU222
+ 260:tmc/TMCL.c    **** 		{
+ 851              		.loc 1 260 34 is_stmt 0 view .LVU223
+ 852 0386 5C4D     		ldr	r5, .L207+12
+ 260:tmc/TMCL.c    **** 		{
+ 853              		.loc 1 260 20 view .LVU224
+ 854 0388 A078     		ldrb	r0, [r4, #2]	@ zero_extendqisi2
+ 855 038a 2B6A     		ldr	r3, [r5, #32]
+ 856 038c 9847     		blx	r3
+ 857              	.LVL43:
+ 260:tmc/TMCL.c    **** 		{
+ 858              		.loc 1 260 6 view .LVU225
+ 859 038e C0B2     		uxtb	r0, r0
+ 860 0390 FFF7FEFF 		bl	setTMCLStatus
+ 861              	.LVL44:
+ 260:tmc/TMCL.c    **** 		{
+ 862              		.loc 1 260 5 view .LVU226
+ 863 0394 8107     		lsls	r1, r0, #30
+ 864 0396 7FF550AF 		bpl	.L40
+ 262:tmc/TMCL.c    **** 		}
+ 865              		.loc 1 262 4 is_stmt 1 view .LVU227
+ 262:tmc/TMCL.c    **** 		}
+ 866              		.loc 1 262 18 is_stmt 0 view .LVU228
+ 867 039a D5F89830 		ldr	r3, [r5, #152]
+ 868              	.L190:
+ 269:tmc/TMCL.c    **** 		}
+ 869              		.loc 1 269 18 view .LVU229
+ 870 039e A168     		ldr	r1, [r4, #8]
+ 871              	.L200:
+ 872 03a0 A078     		ldrb	r0, [r4, #2]	@ zero_extendqisi2
+ 873 03a2 9847     		blx	r3
+ 874              	.LVL45:
+ 875              	.L191:
+ 269:tmc/TMCL.c    **** 		}
+ 876              		.loc 1 269 4 view .LVU230
+ 877 03a4 C0B2     		uxtb	r0, r0
+ 878 03a6 FFF7FEFF 		bl	setTMCLStatus
+ 879              	.LVL46:
+ 880 03aa 46E7     		b	.L40
+ 881              	.L78:
+ 267:tmc/TMCL.c    **** 		{
+ 882              		.loc 1 267 3 is_stmt 1 view .LVU231
+ 267:tmc/TMCL.c    **** 		{
+ 883              		.loc 1 267 34 is_stmt 0 view .LVU232
+ 884 03ac 524D     		ldr	r5, .L207+12
+ 267:tmc/TMCL.c    **** 		{
+ 885              		.loc 1 267 20 view .LVU233
+ 886 03ae A078     		ldrb	r0, [r4, #2]	@ zero_extendqisi2
+ 887 03b0 EB69     		ldr	r3, [r5, #28]
+ 888 03b2 9847     		blx	r3
+ 889              	.LVL47:
+ 267:tmc/TMCL.c    **** 		{
+ 890              		.loc 1 267 6 view .LVU234
+ 891 03b4 C0B2     		uxtb	r0, r0
+ 892 03b6 FFF7FEFF 		bl	setTMCLStatus
+ 893              	.LVL48:
+ 267:tmc/TMCL.c    **** 		{
+ 894              		.loc 1 267 5 view .LVU235
+ 895 03ba 8207     		lsls	r2, r0, #30
+ 896 03bc 7FF53DAF 		bpl	.L40
+ 269:tmc/TMCL.c    **** 		}
+ 897              		.loc 1 269 4 is_stmt 1 view .LVU236
+ 269:tmc/TMCL.c    **** 		}
+ 898              		.loc 1 269 18 is_stmt 0 view .LVU237
+ 899 03c0 D5F89430 		ldr	r3, [r5, #148]
+ 900 03c4 EBE7     		b	.L190
+ 901              	.L77:
+ 274:tmc/TMCL.c    **** 		{
+ 902              		.loc 1 274 3 is_stmt 1 view .LVU238
+ 274:tmc/TMCL.c    **** 		{
+ 903              		.loc 1 274 34 is_stmt 0 view .LVU239
+ 904 03c6 4C4D     		ldr	r5, .L207+12
+ 274:tmc/TMCL.c    **** 		{
+ 905              		.loc 1 274 20 view .LVU240
+ 906 03c8 A078     		ldrb	r0, [r4, #2]	@ zero_extendqisi2
+ 907 03ca AB6A     		ldr	r3, [r5, #40]
+ 908 03cc 9847     		blx	r3
+ 909              	.LVL49:
+ 274:tmc/TMCL.c    **** 		{
+ 910              		.loc 1 274 6 view .LVU241
+ 911 03ce C0B2     		uxtb	r0, r0
+ 912 03d0 FFF7FEFF 		bl	setTMCLStatus
+ 913              	.LVL50:
+ 274:tmc/TMCL.c    **** 		{
+ 914              		.loc 1 274 5 view .LVU242
+ 915 03d4 8307     		lsls	r3, r0, #30
+ 916 03d6 7FF530AF 		bpl	.L40
+ 276:tmc/TMCL.c    **** 		}
+ 917              		.loc 1 276 4 is_stmt 1 view .LVU243
+ 276:tmc/TMCL.c    **** 		}
+ 918              		.loc 1 276 18 is_stmt 0 view .LVU244
+ 919 03da D5F8A030 		ldr	r3, [r5, #160]
+ 920 03de A078     		ldrb	r0, [r4, #2]	@ zero_extendqisi2
+ 921 03e0 9847     		blx	r3
+ 922              	.LVL51:
+ 923 03e2 DFE7     		b	.L191
+ 924              	.L76:
+ 281:tmc/TMCL.c    **** 		{
+ 925              		.loc 1 281 3 is_stmt 1 view .LVU245
+ 281:tmc/TMCL.c    **** 		{
+ 926              		.loc 1 281 23 is_stmt 0 view .LVU246
+ 927 03e4 6378     		ldrb	r3, [r4, #1]	@ zero_extendqisi2
+ 928 03e6 012B     		cmp	r3, #1
+ 929 03e8 10D0     		beq	.L85
+ 930 03ea 022B     		cmp	r3, #2
+ 931 03ec 23D0     		beq	.L86
+ 932 03ee 002B     		cmp	r3, #0
+ 933 03f0 6FD1     		bne	.L117
+ 284:tmc/TMCL.c    **** 			{
+ 934              		.loc 1 284 4 is_stmt 1 view .LVU247
+ 284:tmc/TMCL.c    **** 			{
+ 935              		.loc 1 284 35 is_stmt 0 view .LVU248
+ 936 03f2 414D     		ldr	r5, .L207+12
+ 284:tmc/TMCL.c    **** 			{
+ 937              		.loc 1 284 21 view .LVU249
+ 938 03f4 A078     		ldrb	r0, [r4, #2]	@ zero_extendqisi2
+ 939 03f6 EB6A     		ldr	r3, [r5, #44]
+ 940 03f8 9847     		blx	r3
+ 941              	.LVL52:
+ 284:tmc/TMCL.c    **** 			{
+ 942              		.loc 1 284 7 view .LVU250
+ 943 03fa C0B2     		uxtb	r0, r0
+ 944 03fc FFF7FEFF 		bl	setTMCLStatus
+ 945              	.LVL53:
+ 284:tmc/TMCL.c    **** 			{
+ 946              		.loc 1 284 6 view .LVU251
+ 947 0400 8607     		lsls	r6, r0, #30
+ 948 0402 7FF51AAF 		bpl	.L40
+ 286:tmc/TMCL.c    **** 			}
+ 949              		.loc 1 286 5 is_stmt 1 view .LVU252
+ 286:tmc/TMCL.c    **** 			}
+ 950              		.loc 1 286 19 is_stmt 0 view .LVU253
+ 951 0406 D5F8A430 		ldr	r3, [r5, #164]
+ 952 040a C8E7     		b	.L190
+ 953              	.L85:
+ 290:tmc/TMCL.c    **** 			{
+ 954              		.loc 1 290 4 is_stmt 1 view .LVU254
+ 290:tmc/TMCL.c    **** 			{
+ 955              		.loc 1 290 35 is_stmt 0 view .LVU255
+ 956 040c 3A4E     		ldr	r6, .L207+12
+ 290:tmc/TMCL.c    **** 			{
+ 957              		.loc 1 290 21 view .LVU256
+ 958 040e 3B49     		ldr	r1, .L207+16
+ 959 0410 336B     		ldr	r3, [r6, #48]
+ 960 0412 A078     		ldrb	r0, [r4, #2]	@ zero_extendqisi2
+ 961 0414 9847     		blx	r3
+ 962              	.LVL54:
+ 290:tmc/TMCL.c    **** 			{
+ 963              		.loc 1 290 7 view .LVU257
+ 964 0416 C0B2     		uxtb	r0, r0
+ 965 0418 FFF7FEFF 		bl	setTMCLStatus
+ 966              	.LVL55:
+ 290:tmc/TMCL.c    **** 			{
+ 967              		.loc 1 290 6 view .LVU258
+ 968 041c 8007     		lsls	r0, r0, #30
+ 969 041e 07D5     		bpl	.L88
+ 292:tmc/TMCL.c    **** 			}
+ 970              		.loc 1 292 5 is_stmt 1 view .LVU259
+ 292:tmc/TMCL.c    **** 			}
+ 971              		.loc 1 292 19 is_stmt 0 view .LVU260
+ 972 0420 D6F8A830 		ldr	r3, [r6, #168]
+ 973 0424 3549     		ldr	r1, .L207+16
+ 974 0426 A078     		ldrb	r0, [r4, #2]	@ zero_extendqisi2
+ 975 0428 9847     		blx	r3
+ 976              	.LVL56:
+ 977              	.L203:
+ 292:tmc/TMCL.c    **** 			}
+ 978              		.loc 1 292 5 view .LVU261
+ 979 042a C0B2     		uxtb	r0, r0
+ 980 042c FFF7FEFF 		bl	setTMCLStatus
+ 981              	.LVL57:
+ 982              	.L88:
+ 294:tmc/TMCL.c    **** 			break;
+ 983              		.loc 1 294 4 is_stmt 1 view .LVU262
+ 294:tmc/TMCL.c    **** 			break;
+ 984              		.loc 1 294 28 is_stmt 0 view .LVU263
+ 985 0430 A368     		ldr	r3, [r4, #8]
+ 986              	.L192:
+ 987              	.LBB42:
+ 988              	.LBB43:
+ 697:tmc/TMCL.c    **** 			break;
+ 989              		.loc 1 697 28 view .LVU264
+ 990 0432 6B60     		str	r3, [r5, #4]
+ 698:tmc/TMCL.c    **** 		case 2:
+ 991              		.loc 1 698 4 is_stmt 1 view .LVU265
+ 992 0434 01E7     		b	.L40
+ 993              	.L86:
+ 994              	.LBE43:
+ 995              	.LBE42:
+ 297:tmc/TMCL.c    **** 			{
+ 996              		.loc 1 297 4 view .LVU266
+ 297:tmc/TMCL.c    **** 			{
+ 997              		.loc 1 297 35 is_stmt 0 view .LVU267
+ 998 0436 304D     		ldr	r5, .L207+12
+ 297:tmc/TMCL.c    **** 			{
+ 999              		.loc 1 297 21 view .LVU268
+ 1000 0438 A078     		ldrb	r0, [r4, #2]	@ zero_extendqisi2
+ 1001 043a 6B6B     		ldr	r3, [r5, #52]
+ 1002 043c 9847     		blx	r3
+ 1003              	.LVL58:
+ 297:tmc/TMCL.c    **** 			{
+ 1004              		.loc 1 297 7 view .LVU269
+ 1005 043e C0B2     		uxtb	r0, r0
+ 1006 0440 FFF7FEFF 		bl	setTMCLStatus
+ 1007              	.LVL59:
+ 297:tmc/TMCL.c    **** 			{
+ 1008              		.loc 1 297 6 view .LVU270
+ 1009 0444 8107     		lsls	r1, r0, #30
+ 1010 0446 7FF5F8AE 		bpl	.L40
+ 299:tmc/TMCL.c    **** 			}
+ 1011              		.loc 1 299 5 is_stmt 1 view .LVU271
+ 299:tmc/TMCL.c    **** 			}
+ 1012              		.loc 1 299 19 is_stmt 0 view .LVU272
+ 1013 044a D5F8AC30 		ldr	r3, [r5, #172]
+ 1014 044e A6E7     		b	.L190
+ 1015              	.L75:
+ 309:tmc/TMCL.c    **** 		{
+ 1016              		.loc 1 309 3 is_stmt 1 view .LVU273
+ 309:tmc/TMCL.c    **** 		{
+ 1017              		.loc 1 309 34 is_stmt 0 view .LVU274
+ 1018 0450 294D     		ldr	r5, .L207+12
+ 309:tmc/TMCL.c    **** 		{
+ 1019              		.loc 1 309 20 view .LVU275
+ 1020 0452 6078     		ldrb	r0, [r4, #1]	@ zero_extendqisi2
+ 1021 0454 AB6B     		ldr	r3, [r5, #56]
+ 1022 0456 0A46     		mov	r2, r1
+ 1023 0458 A178     		ldrb	r1, [r4, #2]	@ zero_extendqisi2
+ 1024 045a 9847     		blx	r3
+ 1025              	.LVL60:
+ 309:tmc/TMCL.c    **** 		{
+ 1026              		.loc 1 309 6 view .LVU276
+ 1027 045c C0B2     		uxtb	r0, r0
+ 1028 045e FFF7FEFF 		bl	setTMCLStatus
+ 1029              	.LVL61:
+ 309:tmc/TMCL.c    **** 		{
+ 1030              		.loc 1 309 5 view .LVU277
+ 1031 0462 10F0060F 		tst	r0, #6
+ 1032 0466 3FF4E8AE 		beq	.L40
+ 311:tmc/TMCL.c    **** 		}
+ 1033              		.loc 1 311 4 is_stmt 1 view .LVU278
+ 311:tmc/TMCL.c    **** 		}
+ 1034              		.loc 1 311 18 is_stmt 0 view .LVU279
+ 1035 046a D5F8B030 		ldr	r3, [r5, #176]
+ 1036 046e A268     		ldr	r2, [r4, #8]
+ 1037              	.L201:
+ 416:tmc/TMCL.c    **** 		}
+ 1038              		.loc 1 416 18 view .LVU280
+ 1039 0470 A178     		ldrb	r1, [r4, #2]	@ zero_extendqisi2
+ 1040 0472 6078     		ldrb	r0, [r4, #1]	@ zero_extendqisi2
+ 1041 0474 9847     		blx	r3
+ 1042              	.LVL62:
+ 1043 0476 95E7     		b	.L191
+ 1044              	.L74:
+ 316:tmc/TMCL.c    **** 		{
+ 1045              		.loc 1 316 3 is_stmt 1 view .LVU281
+ 316:tmc/TMCL.c    **** 		{
+ 1046              		.loc 1 316 34 is_stmt 0 view .LVU282
+ 1047 0478 1F4D     		ldr	r5, .L207+12
+ 316:tmc/TMCL.c    **** 		{
+ 1048              		.loc 1 316 20 view .LVU283
+ 1049 047a 214A     		ldr	r2, .L207+20
+ 1050 047c EB6B     		ldr	r3, [r5, #60]
+ 1051 047e A178     		ldrb	r1, [r4, #2]	@ zero_extendqisi2
+ 1052 0480 6078     		ldrb	r0, [r4, #1]	@ zero_extendqisi2
+ 1053 0482 9847     		blx	r3
+ 1054              	.LVL63:
+ 316:tmc/TMCL.c    **** 		{
+ 1055              		.loc 1 316 6 view .LVU284
+ 1056 0484 C0B2     		uxtb	r0, r0
+ 1057 0486 FFF7FEFF 		bl	setTMCLStatus
+ 1058              	.LVL64:
+ 316:tmc/TMCL.c    **** 		{
+ 1059              		.loc 1 316 5 view .LVU285
+ 1060 048a 10F0060F 		tst	r0, #6
+ 1061 048e 3FF4D4AE 		beq	.L40
+ 318:tmc/TMCL.c    **** 		}
+ 1062              		.loc 1 318 4 is_stmt 1 view .LVU286
+ 318:tmc/TMCL.c    **** 		}
+ 1063              		.loc 1 318 18 is_stmt 0 view .LVU287
+ 1064 0492 D5F8B430 		ldr	r3, [r5, #180]
+ 1065              	.L202:
+ 416:tmc/TMCL.c    **** 		}
+ 1066              		.loc 1 416 18 view .LVU288
+ 1067 0496 1A4A     		ldr	r2, .L207+20
+ 1068 0498 EAE7     		b	.L201
+ 1069              	.L73:
+ 322:tmc/TMCL.c    **** 		break;
+ 1070              		.loc 1 322 3 is_stmt 1 view .LVU289
+ 1071              	.LBB47:
+ 1072              	.LBI47:
+ 656:tmc/TMCL.c    **** {
+ 1073              		.loc 1 656 13 view .LVU290
+ 1074              	.LBB48:
+ 658:tmc/TMCL.c    **** 	{
+ 1075              		.loc 1 658 2 view .LVU291
+ 1076 049a 6378     		ldrb	r3, [r4, #1]	@ zero_extendqisi2
+ 1077 049c 013B     		subs	r3, r3, #1
+ 1078 049e 052B     		cmp	r3, #5
+ 1079 04a0 17D8     		bhi	.L117
+ 1080 04a2 01A2     		adr	r2, .L90
+ 1081 04a4 52F823F0 		ldr	pc, [r2, r3, lsl #2]
+ 1082              		.p2align 2
+ 1083              	.L90:
+ 1084 04a8 C1040000 		.word	.L92+1
+ 1085 04ac C7040000 		.word	.L69+1
+ 1086 04b0 CD040000 		.word	.L91+1
+ 1087 04b4 3B020000 		.word	.L40+1
+ 1088 04b8 D3040000 		.word	.L117+1
+ 1089 04bc 0D050000 		.word	.L89+1
+ 1090              		.p2align 1
+ 1091              	.L92:
+ 661:tmc/TMCL.c    **** 		break;
+ 1092              		.loc 1 661 3 view .LVU292
+ 661:tmc/TMCL.c    **** 		break;
+ 1093              		.loc 1 661 31 is_stmt 0 view .LVU293
+ 1094 04c0 104B     		ldr	r3, .L207+24
+ 1095 04c2 5960     		str	r1, [r3, #4]
+ 662:tmc/TMCL.c    **** 	case 2:
+ 1096              		.loc 1 662 3 is_stmt 1 view .LVU294
+ 1097 04c4 B9E6     		b	.L40
+ 1098              	.L69:
+ 664:tmc/TMCL.c    **** 		break;
+ 1099              		.loc 1 664 3 view .LVU295
+ 1100 04c6 FFF79BFD 		bl	setDriversEnable
+ 1101              	.LVL65:
+ 665:tmc/TMCL.c    **** 	case 3:
+ 1102              		.loc 1 665 3 view .LVU296
+ 1103 04ca B6E6     		b	.L40
+ 1104              	.L91:
+ 667:tmc/TMCL.c    **** 		{
+ 1105              		.loc 1 667 3 view .LVU297
+ 1106 04cc 19B1     		cbz	r1, .L93
+ 1107 04ce 0129     		cmp	r1, #1
+ 1108 04d0 04D0     		beq	.L94
+ 1109              	.L117:
+ 1110              	.LBE48:
+ 1111              	.LBE47:
+ 1112              	.LBB50:
+ 1113              	.LBB51:
+ 762:tmc/TMCL.c    **** 		return;
+ 1114              		.loc 1 762 3 view .LVU298
+ 762:tmc/TMCL.c    **** 		return;
+ 1115              		.loc 1 762 22 is_stmt 0 view .LVU299
+ 1116 04d2 0323     		movs	r3, #3
+ 1117 04d4 9EE0     		b	.L193
+ 1118              	.L93:
+ 1119              	.LBE51:
+ 1120              	.LBE50:
+ 1121              	.LBB56:
+ 1122              	.LBB49:
+ 670:tmc/TMCL.c    **** 			break;
+ 1123              		.loc 1 670 4 is_stmt 1 view .LVU300
+ 670:tmc/TMCL.c    **** 			break;
+ 1124              		.loc 1 670 32 is_stmt 0 view .LVU301
+ 1125 04d6 0B4B     		ldr	r3, .L207+24
+ 1126 04d8 1970     		strb	r1, [r3]
+ 671:tmc/TMCL.c    **** 		case 1: // FREE ERROR LED
+ 1127              		.loc 1 671 4 is_stmt 1 view .LVU302
+ 1128 04da AEE6     		b	.L40
+ 1129              	.L94:
+ 673:tmc/TMCL.c    **** 			HAL.LEDs->error.off();
+ 1130              		.loc 1 673 4 view .LVU303
+ 673:tmc/TMCL.c    **** 			HAL.LEDs->error.off();
+ 1131              		.loc 1 673 32 is_stmt 0 view .LVU304
+ 1132 04dc 094B     		ldr	r3, .L207+24
+ 1133 04de 1970     		strb	r1, [r3]
+ 674:tmc/TMCL.c    **** 			break;
+ 1134              		.loc 1 674 4 is_stmt 1 view .LVU305
+ 674:tmc/TMCL.c    **** 			break;
+ 1135              		.loc 1 674 7 is_stmt 0 view .LVU306
+ 1136 04e0 094B     		ldr	r3, .L207+28
+ 674:tmc/TMCL.c    **** 			break;
+ 1137              		.loc 1 674 19 view .LVU307
+ 1138 04e2 9B69     		ldr	r3, [r3, #24]
+ 674:tmc/TMCL.c    **** 			break;
+ 1139              		.loc 1 674 4 view .LVU308
+ 1140 04e4 5B69     		ldr	r3, [r3, #20]
+ 1141 04e6 9847     		blx	r3
+ 1142              	.LVL66:
+ 675:tmc/TMCL.c    **** 		default:
+ 1143              		.loc 1 675 4 is_stmt 1 view .LVU309
+ 1144 04e8 A7E6     		b	.L40
+ 1145              	.L208:
+ 1146 04ea 00BF     		.align	2
+ 1147              	.L207:
+ 1148 04ec 00000000 		.word	ActualCommand
+ 1149 04f0 00000000 		.word	ActualReply
+ 1150 04f4 00000000 		.word	.LANCHOR0
+ 1151 04f8 00000000 		.word	Evalboards
+ 1152 04fc 08000000 		.word	ActualCommand+8
+ 1153 0500 04000000 		.word	ActualReply+4
+ 1154 0504 00000000 		.word	VitalSignsMonitor
+ 1155 0508 00000000 		.word	HAL
+ 1156              	.L89:
+ 684:tmc/TMCL.c    **** 		break;
+ 1157              		.loc 1 684 3 view .LVU310
+ 684:tmc/TMCL.c    **** 		break;
+ 1158              		.loc 1 684 6 is_stmt 0 view .LVU311
+ 1159 050c 994B     		ldr	r3, .L209
+ 684:tmc/TMCL.c    **** 		break;
+ 1160              		.loc 1 684 50 view .LVU312
+ 1161 050e A078     		ldrb	r0, [r4, #2]	@ zero_extendqisi2
+ 684:tmc/TMCL.c    **** 		break;
+ 1162              		.loc 1 684 6 view .LVU313
+ 1163 0510 DB68     		ldr	r3, [r3, #12]
+ 684:tmc/TMCL.c    **** 		break;
+ 1164              		.loc 1 684 3 view .LVU314
+ 1165 0512 217A     		ldrb	r1, [r4, #8]	@ zero_extendqisi2
+ 684:tmc/TMCL.c    **** 		break;
+ 1166              		.loc 1 684 44 view .LVU315
+ 1167 0514 5A68     		ldr	r2, [r3, #4]
+ 684:tmc/TMCL.c    **** 		break;
+ 1168              		.loc 1 684 18 view .LVU316
+ 1169 0516 1B68     		ldr	r3, [r3]
+ 684:tmc/TMCL.c    **** 		break;
+ 1170              		.loc 1 684 3 view .LVU317
+ 1171 0518 5268     		ldr	r2, [r2, #4]
+ 1172 051a DB69     		ldr	r3, [r3, #28]
+ 1173 051c 52F82000 		ldr	r0, [r2, r0, lsl #2]
+ 1174 0520 9847     		blx	r3
+ 1175              	.LVL67:
+ 685:tmc/TMCL.c    **** 	default:
+ 1176              		.loc 1 685 3 is_stmt 1 view .LVU318
+ 1177 0522 8AE6     		b	.L40
+ 1178              	.L72:
+ 1179              	.LBE49:
+ 1180              	.LBE56:
+ 325:tmc/TMCL.c    **** 		break;
+ 1181              		.loc 1 325 3 view .LVU319
+ 1182              	.LBB57:
+ 1183              	.LBI42:
+ 692:tmc/TMCL.c    **** {
+ 1184              		.loc 1 692 13 view .LVU320
+ 1185              	.LBB45:
+ 694:tmc/TMCL.c    **** 	{
+ 1186              		.loc 1 694 2 view .LVU321
+ 1187 0524 6378     		ldrb	r3, [r4, #1]	@ zero_extendqisi2
+ 1188 0526 013B     		subs	r3, r3, #1
+ 1189 0528 052B     		cmp	r3, #5
+ 1190 052a D2D8     		bhi	.L117
+ 1191 052c DFE803F0 		tbb	[pc, r3]
+ 1192              	.L96:
+ 1193 0530 03       		.byte	(.L101-.L96)/2
+ 1194 0531 06       		.byte	(.L100-.L96)/2
+ 1195 0532 0D       		.byte	(.L99-.L96)/2
+ 1196 0533 11       		.byte	(.L98-.L96)/2
+ 1197 0534 1D       		.byte	(.L97-.L96)/2
+ 1198 0535 20       		.byte	(.L95-.L96)/2
+ 1199              		.p2align 1
+ 1200              	.L101:
+ 697:tmc/TMCL.c    **** 			break;
+ 1201              		.loc 1 697 4 view .LVU322
+ 697:tmc/TMCL.c    **** 			break;
+ 1202              		.loc 1 697 47 is_stmt 0 view .LVU323
+ 1203 0536 904B     		ldr	r3, .L209+4
+ 1204              	.L195:
+ 697:tmc/TMCL.c    **** 			break;
+ 1205              		.loc 1 697 28 view .LVU324
+ 1206 0538 9B68     		ldr	r3, [r3, #8]
+ 1207 053a 7AE7     		b	.L192
+ 1208              	.L100:
+ 700:tmc/TMCL.c    **** 			break;
+ 1209              		.loc 1 700 4 is_stmt 1 view .LVU325
+ 700:tmc/TMCL.c    **** 			break;
+ 1210              		.loc 1 700 41 is_stmt 0 view .LVU326
+ 1211 053c 8F4B     		ldr	r3, .L209+8
+ 700:tmc/TMCL.c    **** 			break;
+ 1212              		.loc 1 700 75 view .LVU327
+ 1213 053e 93F8F030 		ldrb	r3, [r3, #240]	@ zero_extendqisi2
+ 1214 0542 5A1E     		subs	r2, r3, #1
+ 1215 0544 5342     		rsbs	r3, r2, #0
+ 1216 0546 5341     		adcs	r3, r3, r2
+ 1217 0548 73E7     		b	.L192
+ 1218              	.L99:
+ 703:tmc/TMCL.c    **** 			break;
+ 1219              		.loc 1 703 4 is_stmt 1 view .LVU328
+ 703:tmc/TMCL.c    **** 			break;
+ 1220              		.loc 1 703 47 is_stmt 0 view .LVU329
+ 1221 054a 8B4B     		ldr	r3, .L209+4
+ 1222 054c 93F90030 		ldrsb	r3, [r3]
+ 1223 0550 6FE7     		b	.L192
+ 1224              	.L98:
+ 1225              	.LBB44:
+ 707:tmc/TMCL.c    **** 				ids.ch1.id = Evalboards.ch1.id;
+ 1226              		.loc 1 707 5 is_stmt 1 view .LVU330
+ 708:tmc/TMCL.c    **** 				ids.ch2.id = Evalboards.ch2.id;
+ 1227              		.loc 1 708 5 view .LVU331
+ 708:tmc/TMCL.c    **** 				ids.ch2.id = Evalboards.ch2.id;
+ 1228              		.loc 1 708 32 is_stmt 0 view .LVU332
+ 1229 0552 8A4B     		ldr	r3, .L209+8
+ 708:tmc/TMCL.c    **** 				ids.ch2.id = Evalboards.ch2.id;
+ 1230              		.loc 1 708 16 view .LVU333
+ 1231 0554 1A79     		ldrb	r2, [r3, #4]	@ zero_extendqisi2
+ 709:tmc/TMCL.c    **** 				ActualReply.Value.Int32 = Board_supported(&ids);
+ 1232              		.loc 1 709 16 view .LVU334
+ 1233 0556 93F87C30 		ldrb	r3, [r3, #124]	@ zero_extendqisi2
+ 708:tmc/TMCL.c    **** 				ids.ch2.id = Evalboards.ch2.id;
+ 1234              		.loc 1 708 16 view .LVU335
+ 1235 055a 8DF80120 		strb	r2, [sp, #1]
+ 709:tmc/TMCL.c    **** 				ActualReply.Value.Int32 = Board_supported(&ids);
+ 1236              		.loc 1 709 5 is_stmt 1 view .LVU336
+ 709:tmc/TMCL.c    **** 				ActualReply.Value.Int32 = Board_supported(&ids);
+ 1237              		.loc 1 709 16 is_stmt 0 view .LVU337
+ 1238 055e 8DF81530 		strb	r3, [sp, #21]
+ 710:tmc/TMCL.c    **** 			}
+ 1239              		.loc 1 710 5 is_stmt 1 view .LVU338
+ 710:tmc/TMCL.c    **** 			}
+ 1240              		.loc 1 710 31 is_stmt 0 view .LVU339
+ 1241 0562 6846     		mov	r0, sp
+ 1242              	.L127:
+ 1243              	.LVL68:
+ 710:tmc/TMCL.c    **** 			}
+ 1244              		.loc 1 710 31 view .LVU340
+ 1245              	.LBE44:
+ 1246              	.LBE45:
+ 1247              	.LBE57:
+ 1248              	.LBB58:
+ 1249              	.LBB54:
+ 776:tmc/TMCL.c    **** }
+ 1250              		.loc 1 776 3 is_stmt 1 view .LVU341
+ 776:tmc/TMCL.c    **** }
+ 1251              		.loc 1 776 29 is_stmt 0 view .LVU342
+ 1252 0564 FFF7FEFF 		bl	Board_supported
+ 1253              	.LVL69:
+ 1254 0568 0CE0     		b	.L194
+ 1255              	.LVL70:
+ 1256              	.L97:
+ 776:tmc/TMCL.c    **** }
+ 1257              		.loc 1 776 29 view .LVU343
+ 1258              	.LBE54:
+ 1259              	.LBE58:
+ 1260              	.LBB59:
+ 1261              	.LBB46:
+ 714:tmc/TMCL.c    **** 			break;
+ 1262              		.loc 1 714 4 is_stmt 1 view .LVU344
+ 714:tmc/TMCL.c    **** 			break;
+ 1263              		.loc 1 714 28 is_stmt 0 view .LVU345
+ 1264 056a 854B     		ldr	r3, .L209+12
+ 1265 056c 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 1266 056e 60E7     		b	.L192
+ 1267              	.L95:
+ 717:tmc/TMCL.c    **** 			break;
+ 1268              		.loc 1 717 4 is_stmt 1 view .LVU346
+ 717:tmc/TMCL.c    **** 			break;
+ 1269              		.loc 1 717 34 is_stmt 0 view .LVU347
+ 1270 0570 804B     		ldr	r3, .L209
+ 717:tmc/TMCL.c    **** 			break;
+ 1271              		.loc 1 717 76 view .LVU348
+ 1272 0572 A178     		ldrb	r1, [r4, #2]	@ zero_extendqisi2
+ 717:tmc/TMCL.c    **** 			break;
+ 1273              		.loc 1 717 34 view .LVU349
+ 1274 0574 DB68     		ldr	r3, [r3, #12]
+ 717:tmc/TMCL.c    **** 			break;
+ 1275              		.loc 1 717 70 view .LVU350
+ 1276 0576 5A68     		ldr	r2, [r3, #4]
+ 717:tmc/TMCL.c    **** 			break;
+ 1277              		.loc 1 717 46 view .LVU351
+ 1278 0578 1B68     		ldr	r3, [r3]
+ 717:tmc/TMCL.c    **** 			break;
+ 1279              		.loc 1 717 31 view .LVU352
+ 1280 057a 5268     		ldr	r2, [r2, #4]
+ 1281 057c 1B6A     		ldr	r3, [r3, #32]
+ 1282 057e 52F82100 		ldr	r0, [r2, r1, lsl #2]
+ 1283 0582 9847     		blx	r3
+ 1284              	.LVL71:
+ 1285              	.L194:
+ 1286              	.LBE46:
+ 1287              	.LBE59:
+ 1288              	.LBB60:
+ 1289              	.LBB61:
+ 870:tmc/TMCL.c    **** }
+ 871:tmc/TMCL.c    **** 
+ 872:tmc/TMCL.c    **** static void GetVersion(void)
+ 873:tmc/TMCL.c    **** {
+ 874:tmc/TMCL.c    **** 	if(ActualCommand.Type == VERSION_FORMAT_ASCII)
+ 875:tmc/TMCL.c    **** 	{
+ 876:tmc/TMCL.c    **** 		ActualReply.IsSpecial   = 1;
+ 877:tmc/TMCL.c    **** 		ActualReply.Special[0]  = SERIAL_HOST_ADDRESS;
+ 878:tmc/TMCL.c    **** 
+ 879:tmc/TMCL.c    **** 		for(int i = 0; i < 8; i++)
+ 880:tmc/TMCL.c    **** 			ActualReply.Special[i+1] = VersionString[i];
+ 881:tmc/TMCL.c    **** 	}
+ 882:tmc/TMCL.c    **** 	else if(ActualCommand.Type == VERSION_FORMAT_BINARY)
+ 883:tmc/TMCL.c    **** 	{
+ 884:tmc/TMCL.c    **** 		uint8_t tmpVal;
+ 885:tmc/TMCL.c    **** 
+ 886:tmc/TMCL.c    **** 		// module version high
+ 887:tmc/TMCL.c    **** 		tmpVal = (uint8_t) VersionString[0] - '0';	// Ascii digit - '0' = digit value
+ 888:tmc/TMCL.c    **** 		tmpVal *= 10;
+ 889:tmc/TMCL.c    **** 		tmpVal += (uint8_t) VersionString[1] - '0';
+ 890:tmc/TMCL.c    **** 		ActualReply.Value.Byte[3] = tmpVal;
+ 891:tmc/TMCL.c    **** 
+ 892:tmc/TMCL.c    **** 		// module version low
+ 893:tmc/TMCL.c    **** 		tmpVal = (uint8_t) VersionString[2] - '0';
+ 894:tmc/TMCL.c    **** 		tmpVal *= 10;
+ 895:tmc/TMCL.c    **** 		tmpVal += (uint8_t) VersionString[3] - '0';
+ 896:tmc/TMCL.c    **** 		ActualReply.Value.Byte[2] = tmpVal;
+ 897:tmc/TMCL.c    **** 
+ 898:tmc/TMCL.c    **** 		// fw version high
+ 899:tmc/TMCL.c    **** 		ActualReply.Value.Byte[1] = (uint8_t) VersionString[5] - '0';
+ 900:tmc/TMCL.c    **** 
+ 901:tmc/TMCL.c    **** 		// fw version low
+ 902:tmc/TMCL.c    **** 		tmpVal = (uint8_t) VersionString[6] - '0';
+ 903:tmc/TMCL.c    **** 		tmpVal *= 10;
+ 904:tmc/TMCL.c    **** 		tmpVal += (uint8_t) VersionString[7] - '0';
+ 905:tmc/TMCL.c    **** 		ActualReply.Value.Byte[0] = tmpVal;
+ 906:tmc/TMCL.c    **** 	}
+ 907:tmc/TMCL.c    **** 	//how were the boards detected?	// todo CHECK 2: Doesn't fit into GetVersion. Move somewhere else?
+ 908:tmc/TMCL.c    **** 	else if(ActualCommand.Type == VERSION_BOARD_DETECT_SRC)
+ 909:tmc/TMCL.c    **** 	{
+ 910:tmc/TMCL.c    **** 		ActualReply.Value.Byte[0] = IdState.ch1.detectedBy;
+ 911:tmc/TMCL.c    **** 		ActualReply.Value.Byte[1] = IdState.ch2.detectedBy;
+ 912:tmc/TMCL.c    **** 	}
+ 913:tmc/TMCL.c    **** 	else if(ActualCommand.Type == VERSION_BUILD) {
+ 914:tmc/TMCL.c    **** 		ActualReply.Value.UInt32 = BUILD_VERSION;
+ 915:tmc/TMCL.c    **** 	}
+ 916:tmc/TMCL.c    **** }
+ 917:tmc/TMCL.c    **** 
+ 918:tmc/TMCL.c    **** static void GetInput(void)
+ 919:tmc/TMCL.c    **** {
+ 920:tmc/TMCL.c    **** 	switch(ActualCommand.Type)
+ 921:tmc/TMCL.c    **** 	{
+ 922:tmc/TMCL.c    **** 	case 0:
+ 923:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = *HAL.ADCs->AIN0;
+ 924:tmc/TMCL.c    **** 		break;
+ 925:tmc/TMCL.c    **** 	case 1:
+ 926:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = *HAL.ADCs->AIN1;
+ 927:tmc/TMCL.c    **** 		break;
+ 928:tmc/TMCL.c    **** 	case 2:
+ 929:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = *HAL.ADCs->AIN2;
+ 930:tmc/TMCL.c    **** 		break;
+ 931:tmc/TMCL.c    **** 	case 3:
+ 932:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = *HAL.ADCs->DIO4;
+ 933:tmc/TMCL.c    **** 		break;
+ 934:tmc/TMCL.c    **** 	case 4:
+ 935:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = *HAL.ADCs->DIO5;
+ 936:tmc/TMCL.c    **** 		break;
+ 937:tmc/TMCL.c    **** 	case 5:
+ 938:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = VitalSignsMonitor.VM;
+ 939:tmc/TMCL.c    **** 		break;
+ 940:tmc/TMCL.c    **** 	case 6:	// Raw VM ADC value, no scaling calculation done // todo QOL 2: Switch this case with case
+ 941:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = *HAL.ADCs->VM;
+ 942:tmc/TMCL.c    **** 		break;
+ 943:tmc/TMCL.c    **** 	default:
+ 944:tmc/TMCL.c    **** 		ActualReply.Status = REPLY_INVALID_TYPE;
+ 945:tmc/TMCL.c    **** 		break;
+ 946:tmc/TMCL.c    **** 	}
+ 947:tmc/TMCL.c    **** }
+ 948:tmc/TMCL.c    **** 
+ 949:tmc/TMCL.c    **** static void HandleWlanCommand(void)
+ 950:tmc/TMCL.c    **** {
+ 951:tmc/TMCL.c    **** 	switch(ActualCommand.Type)
+ 952:tmc/TMCL.c    **** 	{
+ 953:tmc/TMCL.c    **** 	case 0:
+ 954:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = handleWLANCommand(ActualCommand.Motor, ActualCommand.Value.Int32);
+ 955:tmc/TMCL.c    **** 		break;
+ 956:tmc/TMCL.c    **** 	case 1:
+ 957:tmc/TMCL.c    **** 		enableWLANCommandMode();
+ 958:tmc/TMCL.c    **** 		break;
+ 959:tmc/TMCL.c    **** 	case 2:
+ 960:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = checkReadyToSend();
+ 961:tmc/TMCL.c    **** 		break;
+ 962:tmc/TMCL.c    **** 	case 3:
+ 963:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = checkCmdModeEnabled();
+ 964:tmc/TMCL.c    **** 		break;
+ 965:tmc/TMCL.c    **** 	case 4:
+ 966:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = getCMDReply();
+ 1290              		.loc 1 966 27 view .LVU353
+ 1291 0584 6860     		str	r0, [r5, #4]
+ 967:tmc/TMCL.c    **** 		break;
+ 1292              		.loc 1 967 3 is_stmt 1 view .LVU354
+ 1293 0586 58E6     		b	.L40
+ 1294              	.L70:
+ 1295              	.LBE61:
+ 1296              	.LBE60:
+ 328:tmc/TMCL.c    **** 		break;
+ 1297              		.loc 1 328 3 view .LVU355
+ 1298              	.LBB63:
+ 1299              	.LBI63:
+ 918:tmc/TMCL.c    **** {
+ 1300              		.loc 1 918 13 view .LVU356
+ 1301              	.LBB64:
+ 920:tmc/TMCL.c    **** 	{
+ 1302              		.loc 1 920 2 view .LVU357
+ 1303 0588 6378     		ldrb	r3, [r4, #1]	@ zero_extendqisi2
+ 1304 058a 062B     		cmp	r3, #6
+ 1305 058c A1D8     		bhi	.L117
+ 1306 058e DFE803F0 		tbb	[pc, r3]
+ 1307              	.L103:
+ 1308 0592 04       		.byte	(.L109-.L103)/2
+ 1309 0593 0A       		.byte	(.L108-.L103)/2
+ 1310 0594 0E       		.byte	(.L107-.L103)/2
+ 1311 0595 12       		.byte	(.L106-.L103)/2
+ 1312 0596 16       		.byte	(.L105-.L103)/2
+ 1313 0597 1A       		.byte	(.L104-.L103)/2
+ 1314 0598 1D       		.byte	(.L102-.L103)/2
+ 1315 0599 00       		.p2align 1
+ 1316              	.L109:
+ 923:tmc/TMCL.c    **** 		break;
+ 1317              		.loc 1 923 3 view .LVU358
+ 923:tmc/TMCL.c    **** 		break;
+ 1318              		.loc 1 923 33 is_stmt 0 view .LVU359
+ 1319 059a 764B     		ldr	r3, .L209
+ 923:tmc/TMCL.c    **** 		break;
+ 1320              		.loc 1 923 38 view .LVU360
+ 1321 059c DB69     		ldr	r3, [r3, #28]
+ 1322 059e 1B68     		ldr	r3, [r3]
+ 1323              	.L204:
+ 926:tmc/TMCL.c    **** 		break;
+ 1324              		.loc 1 926 29 view .LVU361
+ 1325 05a0 1B88     		ldrh	r3, [r3]
+ 1326 05a2 9BB2     		uxth	r3, r3
+ 1327 05a4 45E7     		b	.L192
+ 1328              	.L108:
+ 926:tmc/TMCL.c    **** 		break;
+ 1329              		.loc 1 926 3 is_stmt 1 view .LVU362
+ 926:tmc/TMCL.c    **** 		break;
+ 1330              		.loc 1 926 33 is_stmt 0 view .LVU363
+ 1331 05a6 734B     		ldr	r3, .L209
+ 926:tmc/TMCL.c    **** 		break;
+ 1332              		.loc 1 926 38 view .LVU364
+ 1333 05a8 DB69     		ldr	r3, [r3, #28]
+ 1334 05aa 5B68     		ldr	r3, [r3, #4]
+ 1335 05ac F8E7     		b	.L204
+ 1336              	.L107:
+ 929:tmc/TMCL.c    **** 		break;
+ 1337              		.loc 1 929 3 is_stmt 1 view .LVU365
+ 929:tmc/TMCL.c    **** 		break;
+ 1338              		.loc 1 929 33 is_stmt 0 view .LVU366
+ 1339 05ae 714B     		ldr	r3, .L209
+ 929:tmc/TMCL.c    **** 		break;
+ 1340              		.loc 1 929 38 view .LVU367
+ 1341 05b0 DB69     		ldr	r3, [r3, #28]
+ 1342 05b2 9B68     		ldr	r3, [r3, #8]
+ 1343 05b4 F4E7     		b	.L204
+ 1344              	.L106:
+ 932:tmc/TMCL.c    **** 		break;
+ 1345              		.loc 1 932 3 is_stmt 1 view .LVU368
+ 932:tmc/TMCL.c    **** 		break;
+ 1346              		.loc 1 932 33 is_stmt 0 view .LVU369
+ 1347 05b6 6F4B     		ldr	r3, .L209
+ 932:tmc/TMCL.c    **** 		break;
+ 1348              		.loc 1 932 38 view .LVU370
+ 1349 05b8 DB69     		ldr	r3, [r3, #28]
+ 1350 05ba DB68     		ldr	r3, [r3, #12]
+ 1351 05bc F0E7     		b	.L204
+ 1352              	.L105:
+ 935:tmc/TMCL.c    **** 		break;
+ 1353              		.loc 1 935 3 is_stmt 1 view .LVU371
+ 935:tmc/TMCL.c    **** 		break;
+ 1354              		.loc 1 935 33 is_stmt 0 view .LVU372
+ 1355 05be 6D4B     		ldr	r3, .L209
+ 935:tmc/TMCL.c    **** 		break;
+ 1356              		.loc 1 935 38 view .LVU373
+ 1357 05c0 DB69     		ldr	r3, [r3, #28]
+ 1358 05c2 1B69     		ldr	r3, [r3, #16]
+ 1359 05c4 ECE7     		b	.L204
+ 1360              	.L104:
+ 938:tmc/TMCL.c    **** 		break;
+ 1361              		.loc 1 938 3 is_stmt 1 view .LVU374
+ 938:tmc/TMCL.c    **** 		break;
+ 1362              		.loc 1 938 46 is_stmt 0 view .LVU375
+ 1363 05c6 6C4B     		ldr	r3, .L209+4
+ 938:tmc/TMCL.c    **** 		break;
+ 1364              		.loc 1 938 27 view .LVU376
+ 1365 05c8 1B69     		ldr	r3, [r3, #16]
+ 1366 05ca 32E7     		b	.L192
+ 1367              	.L102:
+ 941:tmc/TMCL.c    **** 		break;
+ 1368              		.loc 1 941 3 is_stmt 1 view .LVU377
+ 941:tmc/TMCL.c    **** 		break;
+ 1369              		.loc 1 941 33 is_stmt 0 view .LVU378
+ 1370 05cc 694B     		ldr	r3, .L209
+ 941:tmc/TMCL.c    **** 		break;
+ 1371              		.loc 1 941 38 view .LVU379
+ 1372 05ce DB69     		ldr	r3, [r3, #28]
+ 1373 05d0 5B69     		ldr	r3, [r3, #20]
+ 1374 05d2 E5E7     		b	.L204
+ 1375              	.L68:
+ 1376              	.LBE64:
+ 1377              	.LBE63:
+ 334:tmc/TMCL.c    **** 		break;
+ 1378              		.loc 1 334 3 is_stmt 1 view .LVU380
+ 1379              	.LBB65:
+ 1380              	.LBI65:
+ 600:tmc/TMCL.c    **** {
+ 1381              		.loc 1 600 13 view .LVU381
+ 1382              	.LBB66:
+ 602:tmc/TMCL.c    **** 	if(ActualCommand.Type == 1)
+ 1383              		.loc 1 602 2 view .LVU382
+ 603:tmc/TMCL.c    **** 		spi = &SPI.ch1;
+ 1384              		.loc 1 603 2 view .LVU383
+ 603:tmc/TMCL.c    **** 		spi = &SPI.ch1;
+ 1385              		.loc 1 603 18 is_stmt 0 view .LVU384
+ 1386 05d4 6378     		ldrb	r3, [r4, #1]	@ zero_extendqisi2
+ 603:tmc/TMCL.c    **** 		spi = &SPI.ch1;
+ 1387              		.loc 1 603 4 view .LVU385
+ 1388 05d6 012B     		cmp	r3, #1
+ 1389 05d8 04D0     		beq	.L143
+ 605:tmc/TMCL.c    **** 		spi = &SPI.ch2;
+ 1390              		.loc 1 605 7 is_stmt 1 view .LVU386
+ 605:tmc/TMCL.c    **** 		spi = &SPI.ch2;
+ 1391              		.loc 1 605 9 is_stmt 0 view .LVU387
+ 1392 05da 022B     		cmp	r3, #2
+ 1393 05dc 7FF479AF 		bne	.L117
+ 606:tmc/TMCL.c    **** 	else
+ 1394              		.loc 1 606 7 view .LVU388
+ 1395 05e0 6848     		ldr	r0, .L209+16
+ 1396 05e2 00E0     		b	.L110
+ 1397              	.L143:
+ 604:tmc/TMCL.c    **** 	else if(ActualCommand.Type == 2)
+ 1398              		.loc 1 604 7 view .LVU389
+ 1399 05e4 6848     		ldr	r0, .L209+20
+ 1400              	.L110:
+ 1401              	.LVL72:
+ 613:tmc/TMCL.c    **** 	eeprom_read_array(spi, ActualCommand.Value.Int32, array, 4);
+ 1402              		.loc 1 613 2 is_stmt 1 view .LVU390
+ 614:tmc/TMCL.c    **** 	ActualReply.Value.Int32 = array[3] << 24 | array[2] << 16 | array[1] << 8 | array[0];
+ 1403              		.loc 1 614 2 view .LVU391
+ 1404 05e6 0423     		movs	r3, #4
+ 1405 05e8 6A46     		mov	r2, sp
+ 1406 05ea 89B2     		uxth	r1, r1
+ 1407 05ec FFF7FEFF 		bl	eeprom_read_array
+ 1408              	.LVL73:
+ 615:tmc/TMCL.c    **** }
+ 1409              		.loc 1 615 2 view .LVU392
+ 615:tmc/TMCL.c    **** }
+ 1410              		.loc 1 615 26 is_stmt 0 view .LVU393
+ 1411 05f0 009B     		ldr	r3, [sp]
+ 1412 05f2 1EE7     		b	.L192
+ 1413              	.L67:
+ 615:tmc/TMCL.c    **** }
+ 1414              		.loc 1 615 26 view .LVU394
+ 1415              	.LBE66:
+ 1416              	.LBE65:
+ 337:tmc/TMCL.c    **** 		break;
+ 1417              		.loc 1 337 3 is_stmt 1 view .LVU395
+ 1418              	.LBB67:
+ 1419              	.LBI67:
+ 630:tmc/TMCL.c    **** {
+ 1420              		.loc 1 630 13 view .LVU396
+ 1421              	.LBB68:
+ 632:tmc/TMCL.c    **** 	if(ActualCommand.Type == 1)
+ 1422              		.loc 1 632 2 view .LVU397
+ 633:tmc/TMCL.c    **** 		spi = &SPI.ch1;
+ 1423              		.loc 1 633 2 view .LVU398
+ 633:tmc/TMCL.c    **** 		spi = &SPI.ch1;
+ 1424              		.loc 1 633 18 is_stmt 0 view .LVU399
+ 1425 05f4 6378     		ldrb	r3, [r4, #1]	@ zero_extendqisi2
+ 633:tmc/TMCL.c    **** 		spi = &SPI.ch1;
+ 1426              		.loc 1 633 4 view .LVU400
+ 1427 05f6 012B     		cmp	r3, #1
+ 1428 05f8 04D0     		beq	.L145
+ 635:tmc/TMCL.c    **** 		spi = &SPI.ch2;
+ 1429              		.loc 1 635 7 is_stmt 1 view .LVU401
+ 635:tmc/TMCL.c    **** 		spi = &SPI.ch2;
+ 1430              		.loc 1 635 9 is_stmt 0 view .LVU402
+ 1431 05fa 022B     		cmp	r3, #2
+ 1432 05fc 7FF469AF 		bne	.L117
+ 636:tmc/TMCL.c    **** 	else
+ 1433              		.loc 1 636 7 view .LVU403
+ 1434 0600 604E     		ldr	r6, .L209+16
+ 1435 0602 00E0     		b	.L111
+ 1436              	.L145:
+ 634:tmc/TMCL.c    **** 	else if(ActualCommand.Type == 2)
+ 1437              		.loc 1 634 7 view .LVU404
+ 1438 0604 604E     		ldr	r6, .L209+20
+ 1439              	.L111:
+ 1440              	.LVL74:
+ 643:tmc/TMCL.c    **** 	// ignore when check did not find magic number, quit on other errors
+ 1441              		.loc 1 643 2 is_stmt 1 view .LVU405
+ 643:tmc/TMCL.c    **** 	// ignore when check did not find magic number, quit on other errors
+ 1442              		.loc 1 643 16 is_stmt 0 view .LVU406
+ 1443 0606 3046     		mov	r0, r6
+ 1444 0608 FFF7FEFF 		bl	eeprom_check
+ 1445              	.LVL75:
+ 645:tmc/TMCL.c    **** 	{
+ 1446              		.loc 1 645 2 is_stmt 1 view .LVU407
+ 645:tmc/TMCL.c    **** 	{
+ 1447              		.loc 1 645 38 is_stmt 0 view .LVU408
+ 1448 060c 10F0FD0F 		tst	r0, #253
+ 1449 0610 02D0     		beq	.L112
+ 647:tmc/TMCL.c    **** 		return;
+ 1450              		.loc 1 647 3 is_stmt 1 view .LVU409
+ 647:tmc/TMCL.c    **** 		return;
+ 1451              		.loc 1 647 22 is_stmt 0 view .LVU410
+ 1452 0612 0523     		movs	r3, #5
+ 1453              	.LVL76:
+ 1454              	.L193:
+ 647:tmc/TMCL.c    **** 		return;
+ 1455              		.loc 1 647 22 view .LVU411
+ 1456              	.LBE68:
+ 1457              	.LBE67:
+ 432:tmc/TMCL.c    **** 		break;
+ 1458              		.loc 1 432 22 view .LVU412
+ 1459 0614 2B70     		strb	r3, [r5]
+ 433:tmc/TMCL.c    **** 	}
+ 1460              		.loc 1 433 3 is_stmt 1 view .LVU413
+ 1461 0616 10E6     		b	.L40
+ 1462              	.LVL77:
+ 1463              	.L112:
+ 1464              	.LBB70:
+ 1465              	.LBB69:
+ 651:tmc/TMCL.c    **** 
+ 1466              		.loc 1 651 2 view .LVU414
+ 1467 0618 A278     		ldrb	r2, [r4, #2]	@ zero_extendqisi2
+ 1468 061a 2189     		ldrh	r1, [r4, #8]
+ 1469 061c 3046     		mov	r0, r6
+ 1470              	.LVL78:
+ 651:tmc/TMCL.c    **** 
+ 1471              		.loc 1 651 2 is_stmt 0 view .LVU415
+ 1472 061e FFF7FEFF 		bl	eeprom_write_byte
+ 1473              	.LVL79:
+ 653:tmc/TMCL.c    **** }
+ 1474              		.loc 1 653 2 is_stmt 1 view .LVU416
+ 1475 0622 0AE6     		b	.L40
+ 1476              	.LVL80:
+ 1477              	.L66:
+ 653:tmc/TMCL.c    **** }
+ 1478              		.loc 1 653 2 is_stmt 0 view .LVU417
+ 1479              	.LBE69:
+ 1480              	.LBE70:
+ 341:tmc/TMCL.c    **** 		{
+ 1481              		.loc 1 341 3 is_stmt 1 view .LVU418
+ 341:tmc/TMCL.c    **** 		{
+ 1482              		.loc 1 341 34 is_stmt 0 view .LVU419
+ 1483 0624 554D     		ldr	r5, .L209+8
+ 341:tmc/TMCL.c    **** 		{
+ 1484              		.loc 1 341 20 view .LVU420
+ 1485 0626 5949     		ldr	r1, .L209+24
+ 1486 0628 2B6D     		ldr	r3, [r5, #80]
+ 1487 062a A078     		ldrb	r0, [r4, #2]	@ zero_extendqisi2
+ 1488 062c 9847     		blx	r3
+ 1489              	.LVL81:
+ 341:tmc/TMCL.c    **** 		{
+ 1490              		.loc 1 341 6 view .LVU421
+ 1491 062e C0B2     		uxtb	r0, r0
+ 1492 0630 FFF7FEFF 		bl	setTMCLStatus
+ 1493              	.LVL82:
+ 341:tmc/TMCL.c    **** 		{
+ 1494              		.loc 1 341 5 view .LVU422
+ 1495 0634 8307     		lsls	r3, r0, #30
+ 1496 0636 7FF500AE 		bpl	.L40
+ 343:tmc/TMCL.c    **** 		}
+ 1497              		.loc 1 343 4 is_stmt 1 view .LVU423
+ 343:tmc/TMCL.c    **** 		}
+ 1498              		.loc 1 343 18 is_stmt 0 view .LVU424
+ 1499 063a D5F8C830 		ldr	r3, [r5, #200]
+ 1500 063e 5349     		ldr	r1, .L209+24
+ 1501 0640 AEE6     		b	.L200
+ 1502              	.L63:
+ 352:tmc/TMCL.c    **** 		break;
+ 1503              		.loc 1 352 3 is_stmt 1 view .LVU425
+ 352:tmc/TMCL.c    **** 		break;
+ 1504              		.loc 1 352 17 is_stmt 0 view .LVU426
+ 1505 0642 4E4B     		ldr	r3, .L209+8
+ 352:tmc/TMCL.c    **** 		break;
+ 1506              		.loc 1 352 3 view .LVU427
+ 1507 0644 9B6C     		ldr	r3, [r3, #72]
+ 1508              	.L199:
+ 390:tmc/TMCL.c    **** 		break;
+ 1509              		.loc 1 390 4 view .LVU428
+ 1510 0646 514A     		ldr	r2, .L209+24
+ 1511 0648 ADE0     		b	.L198
+ 1512              	.L62:
+ 355:tmc/TMCL.c    **** 		break;
+ 1513              		.loc 1 355 3 is_stmt 1 view .LVU429
+ 1514              	.LBB71:
+ 1515              	.LBI71:
+ 872:tmc/TMCL.c    **** {
+ 1516              		.loc 1 872 13 view .LVU430
+ 1517              	.LBB72:
+ 874:tmc/TMCL.c    **** 	{
+ 1518              		.loc 1 874 2 view .LVU431
+ 874:tmc/TMCL.c    **** 	{
+ 1519              		.loc 1 874 18 is_stmt 0 view .LVU432
+ 1520 064a 6378     		ldrb	r3, [r4, #1]	@ zero_extendqisi2
+ 874:tmc/TMCL.c    **** 	{
+ 1521              		.loc 1 874 4 view .LVU433
+ 1522 064c 7BB9     		cbnz	r3, .L113
+ 876:tmc/TMCL.c    **** 		ActualReply.Special[0]  = SERIAL_HOST_ADDRESS;
+ 1523              		.loc 1 876 3 is_stmt 1 view .LVU434
+ 876:tmc/TMCL.c    **** 		ActualReply.Special[0]  = SERIAL_HOST_ADDRESS;
+ 1524              		.loc 1 876 27 is_stmt 0 view .LVU435
+ 1525 064e 0123     		movs	r3, #1
+ 1526 0650 4374     		strb	r3, [r0, #17]
+ 877:tmc/TMCL.c    **** 
+ 1527              		.loc 1 877 3 is_stmt 1 view .LVU436
+ 877:tmc/TMCL.c    **** 
+ 1528              		.loc 1 877 27 is_stmt 0 view .LVU437
+ 1529 0652 0223     		movs	r3, #2
+ 1530 0654 0372     		strb	r3, [r0, #8]
+ 879:tmc/TMCL.c    **** 			ActualReply.Special[i+1] = VersionString[i];
+ 1531              		.loc 1 879 3 is_stmt 1 view .LVU438
+ 1532              	.LBB73:
+ 879:tmc/TMCL.c    **** 			ActualReply.Special[i+1] = VersionString[i];
+ 1533              		.loc 1 879 7 view .LVU439
+ 1534              	.LVL83:
+ 879:tmc/TMCL.c    **** 			ActualReply.Special[i+1] = VersionString[i];
+ 1535              		.loc 1 879 18 view .LVU440
+ 880:tmc/TMCL.c    **** 	}
+ 1536              		.loc 1 880 44 is_stmt 0 view .LVU441
+ 1537 0656 4E4B     		ldr	r3, .L209+28
+ 1538 0658 4E49     		ldr	r1, .L209+32
+ 1539 065a 1B68     		ldr	r3, [r3]
+ 1540 065c 5A1E     		subs	r2, r3, #1
+ 1541 065e 0733     		adds	r3, r3, #7
+ 1542              	.LVL84:
+ 1543              	.L114:
+ 880:tmc/TMCL.c    **** 	}
+ 1544              		.loc 1 880 4 is_stmt 1 view .LVU442
+ 880:tmc/TMCL.c    **** 	}
+ 1545              		.loc 1 880 44 is_stmt 0 view .LVU443
+ 1546 0660 12F8010F 		ldrb	r0, [r2, #1]!	@ zero_extendqisi2
+ 1547              	.LVL85:
+ 880:tmc/TMCL.c    **** 	}
+ 1548              		.loc 1 880 29 view .LVU444
+ 1549 0664 01F8010B 		strb	r0, [r1], #1
+ 879:tmc/TMCL.c    **** 			ActualReply.Special[i+1] = VersionString[i];
+ 1550              		.loc 1 879 25 is_stmt 1 view .LVU445
+ 1551              	.LVL86:
+ 879:tmc/TMCL.c    **** 			ActualReply.Special[i+1] = VersionString[i];
+ 1552              		.loc 1 879 18 view .LVU446
+ 879:tmc/TMCL.c    **** 			ActualReply.Special[i+1] = VersionString[i];
+ 1553              		.loc 1 879 3 is_stmt 0 view .LVU447
+ 1554 0668 9A42     		cmp	r2, r3
+ 1555 066a F9D1     		bne	.L114
+ 1556 066c E5E5     		b	.L40
+ 1557              	.LVL87:
+ 1558              	.L113:
+ 879:tmc/TMCL.c    **** 			ActualReply.Special[i+1] = VersionString[i];
+ 1559              		.loc 1 879 3 view .LVU448
+ 1560              	.LBE73:
+ 882:tmc/TMCL.c    **** 	{
+ 1561              		.loc 1 882 7 is_stmt 1 view .LVU449
+ 882:tmc/TMCL.c    **** 	{
+ 1562              		.loc 1 882 9 is_stmt 0 view .LVU450
+ 1563 066e 012B     		cmp	r3, #1
+ 1564 0670 23D1     		bne	.L115
+ 1565              	.LBB74:
+ 884:tmc/TMCL.c    **** 
+ 1566              		.loc 1 884 3 is_stmt 1 view .LVU451
+ 887:tmc/TMCL.c    **** 		tmpVal *= 10;
+ 1567              		.loc 1 887 3 view .LVU452
+ 887:tmc/TMCL.c    **** 		tmpVal *= 10;
+ 1568              		.loc 1 887 35 is_stmt 0 view .LVU453
+ 1569 0672 474B     		ldr	r3, .L209+28
+ 1570 0674 1A68     		ldr	r2, [r3]
+ 887:tmc/TMCL.c    **** 		tmpVal *= 10;
+ 1571              		.loc 1 887 10 view .LVU454
+ 1572 0676 1378     		ldrb	r3, [r2]	@ zero_extendqisi2
+ 889:tmc/TMCL.c    **** 		ActualReply.Value.Byte[3] = tmpVal;
+ 1573              		.loc 1 889 10 view .LVU455
+ 1574 0678 5178     		ldrb	r1, [r2, #1]	@ zero_extendqisi2
+ 887:tmc/TMCL.c    **** 		tmpVal *= 10;
+ 1575              		.loc 1 887 10 view .LVU456
+ 1576 067a 303B     		subs	r3, r3, #48
+ 1577 067c DBB2     		uxtb	r3, r3
+ 1578              	.LVL88:
+ 888:tmc/TMCL.c    **** 		tmpVal += (uint8_t) VersionString[1] - '0';
+ 1579              		.loc 1 888 3 is_stmt 1 view .LVU457
+ 889:tmc/TMCL.c    **** 		ActualReply.Value.Byte[3] = tmpVal;
+ 1580              		.loc 1 889 10 is_stmt 0 view .LVU458
+ 1581 067e 3039     		subs	r1, r1, #48
+ 888:tmc/TMCL.c    **** 		tmpVal += (uint8_t) VersionString[1] - '0';
+ 1582              		.loc 1 888 10 view .LVU459
+ 1583 0680 03EB8303 		add	r3, r3, r3, lsl #2
+ 1584              	.LVL89:
+ 889:tmc/TMCL.c    **** 		ActualReply.Value.Byte[3] = tmpVal;
+ 1585              		.loc 1 889 3 is_stmt 1 view .LVU460
+ 890:tmc/TMCL.c    **** 
+ 1586              		.loc 1 890 3 view .LVU461
+ 889:tmc/TMCL.c    **** 		ActualReply.Value.Byte[3] = tmpVal;
+ 1587              		.loc 1 889 10 is_stmt 0 view .LVU462
+ 1588 0684 01EB4303 		add	r3, r1, r3, lsl #1
+ 1589              	.LVL90:
+ 890:tmc/TMCL.c    **** 
+ 1590              		.loc 1 890 29 view .LVU463
+ 1591 0688 C371     		strb	r3, [r0, #7]
+ 1592              	.LVL91:
+ 893:tmc/TMCL.c    **** 		tmpVal *= 10;
+ 1593              		.loc 1 893 3 is_stmt 1 view .LVU464
+ 893:tmc/TMCL.c    **** 		tmpVal *= 10;
+ 1594              		.loc 1 893 10 is_stmt 0 view .LVU465
+ 1595 068a 9378     		ldrb	r3, [r2, #2]	@ zero_extendqisi2
+ 895:tmc/TMCL.c    **** 		ActualReply.Value.Byte[2] = tmpVal;
+ 1596              		.loc 1 895 10 view .LVU466
+ 1597 068c D178     		ldrb	r1, [r2, #3]	@ zero_extendqisi2
+ 893:tmc/TMCL.c    **** 		tmpVal *= 10;
+ 1598              		.loc 1 893 10 view .LVU467
+ 1599 068e 303B     		subs	r3, r3, #48
+ 1600 0690 DBB2     		uxtb	r3, r3
+ 1601              	.LVL92:
+ 894:tmc/TMCL.c    **** 		tmpVal += (uint8_t) VersionString[3] - '0';
+ 1602              		.loc 1 894 3 is_stmt 1 view .LVU468
+ 894:tmc/TMCL.c    **** 		tmpVal += (uint8_t) VersionString[3] - '0';
+ 1603              		.loc 1 894 10 is_stmt 0 view .LVU469
+ 1604 0692 03EB8303 		add	r3, r3, r3, lsl #2
+ 1605              	.LVL93:
+ 895:tmc/TMCL.c    **** 		ActualReply.Value.Byte[2] = tmpVal;
+ 1606              		.loc 1 895 3 is_stmt 1 view .LVU470
+ 896:tmc/TMCL.c    **** 
+ 1607              		.loc 1 896 3 view .LVU471
+ 895:tmc/TMCL.c    **** 		ActualReply.Value.Byte[2] = tmpVal;
+ 1608              		.loc 1 895 10 is_stmt 0 view .LVU472
+ 1609 0696 3039     		subs	r1, r1, #48
+ 1610 0698 01EB4303 		add	r3, r1, r3, lsl #1
+ 1611              	.LVL94:
+ 896:tmc/TMCL.c    **** 
+ 1612              		.loc 1 896 29 view .LVU473
+ 1613 069c 8371     		strb	r3, [r0, #6]
+ 1614              	.LVL95:
+ 899:tmc/TMCL.c    **** 
+ 1615              		.loc 1 899 3 is_stmt 1 view .LVU474
+ 899:tmc/TMCL.c    **** 
+ 1616              		.loc 1 899 58 is_stmt 0 view .LVU475
+ 1617 069e 5379     		ldrb	r3, [r2, #5]	@ zero_extendqisi2
+ 1618 06a0 303B     		subs	r3, r3, #48
+ 899:tmc/TMCL.c    **** 
+ 1619              		.loc 1 899 29 view .LVU476
+ 1620 06a2 4371     		strb	r3, [r0, #5]
+ 902:tmc/TMCL.c    **** 		tmpVal *= 10;
+ 1621              		.loc 1 902 3 is_stmt 1 view .LVU477
+ 902:tmc/TMCL.c    **** 		tmpVal *= 10;
+ 1622              		.loc 1 902 10 is_stmt 0 view .LVU478
+ 1623 06a4 9379     		ldrb	r3, [r2, #6]	@ zero_extendqisi2
+ 904:tmc/TMCL.c    **** 		ActualReply.Value.Byte[0] = tmpVal;
+ 1624              		.loc 1 904 10 view .LVU479
+ 1625 06a6 D279     		ldrb	r2, [r2, #7]	@ zero_extendqisi2
+ 902:tmc/TMCL.c    **** 		tmpVal *= 10;
+ 1626              		.loc 1 902 10 view .LVU480
+ 1627 06a8 303B     		subs	r3, r3, #48
+ 1628 06aa DBB2     		uxtb	r3, r3
+ 1629              	.LVL96:
+ 903:tmc/TMCL.c    **** 		tmpVal += (uint8_t) VersionString[7] - '0';
+ 1630              		.loc 1 903 3 is_stmt 1 view .LVU481
+ 903:tmc/TMCL.c    **** 		tmpVal += (uint8_t) VersionString[7] - '0';
+ 1631              		.loc 1 903 10 is_stmt 0 view .LVU482
+ 1632 06ac 03EB8303 		add	r3, r3, r3, lsl #2
+ 1633              	.LVL97:
+ 904:tmc/TMCL.c    **** 		ActualReply.Value.Byte[0] = tmpVal;
+ 1634              		.loc 1 904 3 is_stmt 1 view .LVU483
+ 905:tmc/TMCL.c    **** 	}
+ 1635              		.loc 1 905 3 view .LVU484
+ 904:tmc/TMCL.c    **** 		ActualReply.Value.Byte[0] = tmpVal;
+ 1636              		.loc 1 904 10 is_stmt 0 view .LVU485
+ 1637 06b0 303A     		subs	r2, r2, #48
+ 1638 06b2 02EB4303 		add	r3, r2, r3, lsl #1
+ 905:tmc/TMCL.c    **** 	}
+ 1639              		.loc 1 905 29 view .LVU486
+ 1640 06b6 0371     		strb	r3, [r0, #4]
+ 1641              	.LBE74:
+ 1642 06b8 BFE5     		b	.L40
+ 1643              	.L115:
+ 908:tmc/TMCL.c    **** 	{
+ 1644              		.loc 1 908 7 is_stmt 1 view .LVU487
+ 908:tmc/TMCL.c    **** 	{
+ 1645              		.loc 1 908 9 is_stmt 0 view .LVU488
+ 1646 06ba 042B     		cmp	r3, #4
+ 1647 06bc 05D1     		bne	.L116
+ 910:tmc/TMCL.c    **** 		ActualReply.Value.Byte[1] = IdState.ch2.detectedBy;
+ 1648              		.loc 1 910 3 is_stmt 1 view .LVU489
+ 910:tmc/TMCL.c    **** 		ActualReply.Value.Byte[1] = IdState.ch2.detectedBy;
+ 1649              		.loc 1 910 42 is_stmt 0 view .LVU490
+ 1650 06be 364B     		ldr	r3, .L209+36
+ 910:tmc/TMCL.c    **** 		ActualReply.Value.Byte[1] = IdState.ch2.detectedBy;
+ 1651              		.loc 1 910 29 view .LVU491
+ 1652 06c0 9A78     		ldrb	r2, [r3, #2]	@ zero_extendqisi2
+ 911:tmc/TMCL.c    **** 	}
+ 1653              		.loc 1 911 29 view .LVU492
+ 1654 06c2 9B7D     		ldrb	r3, [r3, #22]	@ zero_extendqisi2
+ 910:tmc/TMCL.c    **** 		ActualReply.Value.Byte[1] = IdState.ch2.detectedBy;
+ 1655              		.loc 1 910 29 view .LVU493
+ 1656 06c4 0271     		strb	r2, [r0, #4]
+ 911:tmc/TMCL.c    **** 	}
+ 1657              		.loc 1 911 3 is_stmt 1 view .LVU494
+ 911:tmc/TMCL.c    **** 	}
+ 1658              		.loc 1 911 29 is_stmt 0 view .LVU495
+ 1659 06c6 4371     		strb	r3, [r0, #5]
+ 1660 06c8 B7E5     		b	.L40
+ 1661              	.L116:
+ 913:tmc/TMCL.c    **** 		ActualReply.Value.UInt32 = BUILD_VERSION;
+ 1662              		.loc 1 913 7 is_stmt 1 view .LVU496
+ 913:tmc/TMCL.c    **** 		ActualReply.Value.UInt32 = BUILD_VERSION;
+ 1663              		.loc 1 913 9 is_stmt 0 view .LVU497
+ 1664 06ca 052B     		cmp	r3, #5
+ 1665 06cc 7FF4B5AD 		bne	.L40
+ 914:tmc/TMCL.c    **** 	}
+ 1666              		.loc 1 914 3 is_stmt 1 view .LVU498
+ 914:tmc/TMCL.c    **** 	}
+ 1667              		.loc 1 914 28 is_stmt 0 view .LVU499
+ 1668 06d0 47F2FB73 		movw	r3, #30715
+ 1669 06d4 ADE6     		b	.L192
+ 1670              	.L61:
+ 1671              	.LBE72:
+ 1672              	.LBE71:
+ 358:tmc/TMCL.c    **** 		break;
+ 1673              		.loc 1 358 3 is_stmt 1 view .LVU500
+ 1674              	.LBB75:
+ 1675              	.LBI50:
+ 725:tmc/TMCL.c    **** {
+ 1676              		.loc 1 725 13 view .LVU501
+ 1677              	.LBB55:
+ 727:tmc/TMCL.c    **** 
+ 1678              		.loc 1 727 2 view .LVU502
+ 1679              	.LVL98:
+ 729:tmc/TMCL.c    **** 	ids.ch1.id     = (ActualCommand.Value.Int32 >> 0)   & 0xFF;
+ 1680              		.loc 1 729 2 view .LVU503
+ 730:tmc/TMCL.c    **** 	ids.ch1.state  = (ActualCommand.Value.Int32 >> 8)   & 0xFF;
+ 1681              		.loc 1 730 2 view .LVU504
+ 1682 06d6 6378     		ldrb	r3, [r4, #1]	@ zero_extendqisi2
+ 730:tmc/TMCL.c    **** 	ids.ch1.state  = (ActualCommand.Value.Int32 >> 8)   & 0xFF;
+ 1683              		.loc 1 730 17 is_stmt 0 view .LVU505
+ 1684 06d8 C8B2     		uxtb	r0, r1
+ 1685              	.LVL99:
+ 731:tmc/TMCL.c    **** 	ids.ch2.id     = (ActualCommand.Value.Int32 >> 16)  & 0xFF;
+ 1686              		.loc 1 731 2 is_stmt 1 view .LVU506
+ 732:tmc/TMCL.c    **** 	ids.ch2.state  = (ActualCommand.Value.Int32 >> 24)  & 0xFF;
+ 1687              		.loc 1 732 2 view .LVU507
+ 732:tmc/TMCL.c    **** 	ids.ch2.state  = (ActualCommand.Value.Int32 >> 24)  & 0xFF;
+ 1688              		.loc 1 732 17 is_stmt 0 view .LVU508
+ 1689 06da C1F30742 		ubfx	r2, r1, #16, #8
+ 1690              	.LVL100:
+ 733:tmc/TMCL.c    **** 
+ 1691              		.loc 1 733 2 is_stmt 1 view .LVU509
+ 735:tmc/TMCL.c    **** 	{
+ 1692              		.loc 1 735 2 view .LVU510
+ 1693 06de 042B     		cmp	r3, #4
+ 1694 06e0 3FF6F7AE 		bhi	.L117
+ 1695 06e4 DFE803F0 		tbb	[pc, r3]
+ 1696              	.L119:
+ 1697 06e8 03       		.byte	(.L123-.L119)/2
+ 1698 06e9 1C       		.byte	(.L122-.L119)/2
+ 1699 06ea 30       		.byte	(.L121-.L119)/2
+ 1700 06eb 1F       		.byte	(.L147-.L119)/2
+ 1701 06ec 34       		.byte	(.L118-.L119)/2
+ 1702 06ed 00       		.p2align 1
+ 1703              	.L123:
+ 738:tmc/TMCL.c    **** 		return;
+ 1704              		.loc 1 738 3 view .LVU511
+ 1705              	.LBB52:
+ 1706              	.LBI52:
+ 844:tmc/TMCL.c    **** {
+ 1707              		.loc 1 844 13 view .LVU512
+ 1708              	.LBB53:
+ 846:tmc/TMCL.c    **** 
+ 1709              		.loc 1 846 2 view .LVU513
+ 848:tmc/TMCL.c    **** 	{
+ 1710              		.loc 1 848 2 view .LVU514
+ 848:tmc/TMCL.c    **** 	{
+ 1711              		.loc 1 848 5 is_stmt 0 view .LVU515
+ 1712 06ee 6846     		mov	r0, sp
+ 1713              	.LVL101:
+ 848:tmc/TMCL.c    **** 	{
+ 1714              		.loc 1 848 5 view .LVU516
+ 1715 06f0 FFF7FEFF 		bl	IDDetection_detect
+ 1716              	.LVL102:
+ 848:tmc/TMCL.c    **** 	{
+ 1717              		.loc 1 848 4 view .LVU517
+ 1718 06f4 90B1     		cbz	r0, .L124
+ 850:tmc/TMCL.c    **** 		(
+ 1719              		.loc 1 850 3 is_stmt 1 view .LVU518
+ 854:tmc/TMCL.c    **** 			| (ids.ch2.state << 24)
+ 1720              		.loc 1 854 14 is_stmt 0 view .LVU519
+ 1721 06f6 9DF81530 		ldrb	r3, [sp, #21]	@ zero_extendqisi2
+ 853:tmc/TMCL.c    **** 			| (ids.ch2.id    << 16)
+ 1722              		.loc 1 853 14 view .LVU520
+ 1723 06fa 9DF80020 		ldrb	r2, [sp]	@ zero_extendqisi2
+ 854:tmc/TMCL.c    **** 			| (ids.ch2.state << 24)
+ 1724              		.loc 1 854 21 view .LVU521
+ 1725 06fe 1B04     		lsls	r3, r3, #16
+ 854:tmc/TMCL.c    **** 			| (ids.ch2.state << 24)
+ 1726              		.loc 1 854 4 view .LVU522
+ 1727 0700 43EA0223 		orr	r3, r3, r2, lsl #8
+ 852:tmc/TMCL.c    **** 			| (ids.ch1.state << 8)
+ 1728              		.loc 1 852 12 view .LVU523
+ 1729 0704 9DF80120 		ldrb	r2, [sp, #1]	@ zero_extendqisi2
+ 854:tmc/TMCL.c    **** 			| (ids.ch2.state << 24)
+ 1730              		.loc 1 854 4 view .LVU524
+ 1731 0708 1343     		orrs	r3, r3, r2
+ 855:tmc/TMCL.c    **** 		);
+ 1732              		.loc 1 855 14 view .LVU525
+ 1733 070a 9DF81420 		ldrb	r2, [sp, #20]	@ zero_extendqisi2
+ 858:tmc/TMCL.c    **** 	}
+ 1734              		.loc 1 858 3 view .LVU526
+ 1735 070e 6846     		mov	r0, sp
+ 855:tmc/TMCL.c    **** 		);
+ 1736              		.loc 1 855 4 view .LVU527
+ 1737 0710 43EA0263 		orr	r3, r3, r2, lsl #24
+ 850:tmc/TMCL.c    **** 		(
+ 1738              		.loc 1 850 27 view .LVU528
+ 1739 0714 6B60     		str	r3, [r5, #4]
+ 858:tmc/TMCL.c    **** 	}
+ 1740              		.loc 1 858 3 is_stmt 1 view .LVU529
+ 1741 0716 FFF7FEFF 		bl	Board_assign
+ 1742              	.LVL103:
+ 1743 071a 8EE5     		b	.L40
+ 1744              	.L124:
+ 862:tmc/TMCL.c    **** 	}
+ 1745              		.loc 1 862 3 view .LVU530
+ 862:tmc/TMCL.c    **** 	}
+ 1746              		.loc 1 862 22 is_stmt 0 view .LVU531
+ 1747 071c 8023     		movs	r3, #128
+ 1748 071e 79E7     		b	.L193
+ 1749              	.LVL104:
+ 1750              	.L122:
+ 862:tmc/TMCL.c    **** 	}
+ 1751              		.loc 1 862 22 view .LVU532
+ 1752              	.LBE53:
+ 1753              	.LBE52:
+ 740:tmc/TMCL.c    **** 	case 1:  // id for channel 2 not changed, reset maybe
+ 1754              		.loc 1 740 3 is_stmt 1 view .LVU533
+ 742:tmc/TMCL.c    **** 		ids.ch2.state  = ID_STATE_WAIT_LOW;
+ 1755              		.loc 1 742 3 view .LVU534
+ 742:tmc/TMCL.c    **** 		ids.ch2.state  = ID_STATE_WAIT_LOW;
+ 1756              		.loc 1 742 34 is_stmt 0 view .LVU535
+ 1757 0720 164B     		ldr	r3, .L209+8
+ 1758              	.LVL105:
+ 742:tmc/TMCL.c    **** 		ids.ch2.state  = ID_STATE_WAIT_LOW;
+ 1759              		.loc 1 742 34 view .LVU536
+ 1760 0722 93F87C20 		ldrb	r2, [r3, #124]	@ zero_extendqisi2
+ 1761              	.LVL106:
+ 743:tmc/TMCL.c    **** 		break;
+ 1762              		.loc 1 743 3 is_stmt 1 view .LVU537
+ 744:tmc/TMCL.c    **** 	case 2:  // id for channel 1 not changed, reset maybe
+ 1763              		.loc 1 744 3 view .LVU538
+ 1764              	.L147:
+ 735:tmc/TMCL.c    **** 	{
+ 1765              		.loc 1 735 22 is_stmt 0 view .LVU539
+ 1766 0726 0023     		movs	r3, #0
+ 1767              	.LVL107:
+ 1768              	.L120:
+ 764:tmc/TMCL.c    **** 	}
+ 1769              		.loc 1 764 3 is_stmt 1 view .LVU540
+ 767:tmc/TMCL.c    **** 	ids_buff.ch1.id     = ids.ch1.id;
+ 1770              		.loc 1 767 2 view .LVU541
+ 768:tmc/TMCL.c    **** 	ids_buff.ch1.state  = ID_STATE_DONE;
+ 1771              		.loc 1 768 2 view .LVU542
+ 769:tmc/TMCL.c    **** 	ids_buff.ch2.id     = ids.ch2.id;
+ 1772              		.loc 1 769 22 is_stmt 0 view .LVU543
+ 1773 0728 0221     		movs	r1, #2
+ 768:tmc/TMCL.c    **** 	ids_buff.ch1.state  = ID_STATE_DONE;
+ 1774              		.loc 1 768 22 view .LVU544
+ 1775 072a 8DF80100 		strb	r0, [sp, #1]
+ 769:tmc/TMCL.c    **** 	ids_buff.ch2.id     = ids.ch2.id;
+ 1776              		.loc 1 769 2 is_stmt 1 view .LVU545
+ 769:tmc/TMCL.c    **** 	ids_buff.ch2.id     = ids.ch2.id;
+ 1777              		.loc 1 769 22 is_stmt 0 view .LVU546
+ 1778 072e 8DF80010 		strb	r1, [sp]
+ 770:tmc/TMCL.c    **** 	ids_buff.ch2.state  = ID_STATE_DONE;
+ 1779              		.loc 1 770 2 is_stmt 1 view .LVU547
+ 770:tmc/TMCL.c    **** 	ids_buff.ch2.state  = ID_STATE_DONE;
+ 1780              		.loc 1 770 22 is_stmt 0 view .LVU548
+ 1781 0732 8DF81520 		strb	r2, [sp, #21]
+ 771:tmc/TMCL.c    **** 
+ 1782              		.loc 1 771 2 is_stmt 1 view .LVU549
+ 771:tmc/TMCL.c    **** 
+ 1783              		.loc 1 771 22 is_stmt 0 view .LVU550
+ 1784 0736 8DF81410 		strb	r1, [sp, #20]
+ 773:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = Board_assign(&ids_buff);
+ 1785              		.loc 1 773 2 is_stmt 1 view .LVU551
+ 774:tmc/TMCL.c    **** 	else
+ 1786              		.loc 1 774 29 is_stmt 0 view .LVU552
+ 1787 073a 6846     		mov	r0, sp
+ 773:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = Board_assign(&ids_buff);
+ 1788              		.loc 1 773 4 view .LVU553
+ 1789 073c 002B     		cmp	r3, #0
+ 1790 073e 7FF411AF 		bne	.L127
+ 1791              	.LVL108:
+ 774:tmc/TMCL.c    **** 	else
+ 1792              		.loc 1 774 3 is_stmt 1 view .LVU554
+ 774:tmc/TMCL.c    **** 	else
+ 1793              		.loc 1 774 29 is_stmt 0 view .LVU555
+ 1794 0742 FFF7FEFF 		bl	Board_assign
+ 1795              	.LVL109:
+ 1796 0746 1DE7     		b	.L194
+ 1797              	.LVL110:
+ 1798              	.L121:
+ 746:tmc/TMCL.c    **** 		ids.ch2.state  = (ActualCommand.Value.Int32 >> 8)  & 0xFF;
+ 1799              		.loc 1 746 3 is_stmt 1 view .LVU556
+ 747:tmc/TMCL.c    **** 		ids.ch1.id     = Evalboards.ch1.id;
+ 1800              		.loc 1 747 3 view .LVU557
+ 748:tmc/TMCL.c    **** 		ids.ch1.state  = ID_STATE_WAIT_LOW;
+ 1801              		.loc 1 748 3 view .LVU558
+ 749:tmc/TMCL.c    **** 		break;
+ 1802              		.loc 1 749 3 view .LVU559
+ 750:tmc/TMCL.c    **** 	case 3:  // id for both channels
+ 1803              		.loc 1 750 3 view .LVU560
+ 748:tmc/TMCL.c    **** 		ids.ch1.state  = ID_STATE_WAIT_LOW;
+ 1804              		.loc 1 748 18 is_stmt 0 view .LVU561
+ 1805 0748 0C4B     		ldr	r3, .L209+8
+ 730:tmc/TMCL.c    **** 	ids.ch1.state  = (ActualCommand.Value.Int32 >> 8)   & 0xFF;
+ 1806              		.loc 1 730 17 view .LVU562
+ 1807 074a 0246     		mov	r2, r0
+ 1808              	.LVL111:
+ 748:tmc/TMCL.c    **** 		ids.ch1.state  = ID_STATE_WAIT_LOW;
+ 1809              		.loc 1 748 18 view .LVU563
+ 1810 074c 1879     		ldrb	r0, [r3, #4]	@ zero_extendqisi2
+ 1811 074e EAE7     		b	.L147
+ 1812              	.LVL112:
+ 1813              	.L118:
+ 754:tmc/TMCL.c    **** 		if(ActualReply.Value.Int32 == 0)
+ 1814              		.loc 1 754 3 is_stmt 1 view .LVU564
+ 755:tmc/TMCL.c    **** 		{
+ 1815              		.loc 1 755 3 view .LVU565
+ 755:tmc/TMCL.c    **** 		{
+ 1816              		.loc 1 755 5 is_stmt 0 view .LVU566
+ 1817 0750 19B9     		cbnz	r1, .L148
+ 757:tmc/TMCL.c    **** 			ids.ch2.id = Evalboards.ch2.id;
+ 1818              		.loc 1 757 4 is_stmt 1 view .LVU567
+ 757:tmc/TMCL.c    **** 			ids.ch2.id = Evalboards.ch2.id;
+ 1819              		.loc 1 757 31 is_stmt 0 view .LVU568
+ 1820 0752 0A4B     		ldr	r3, .L209+8
+ 1821              	.LVL113:
+ 757:tmc/TMCL.c    **** 			ids.ch2.id = Evalboards.ch2.id;
+ 1822              		.loc 1 757 31 view .LVU569
+ 1823 0754 1879     		ldrb	r0, [r3, #4]	@ zero_extendqisi2
+ 1824              	.LVL114:
+ 758:tmc/TMCL.c    **** 		}
+ 1825              		.loc 1 758 4 is_stmt 1 view .LVU570
+ 758:tmc/TMCL.c    **** 		}
+ 1826              		.loc 1 758 31 is_stmt 0 view .LVU571
+ 1827 0756 93F87C20 		ldrb	r2, [r3, #124]	@ zero_extendqisi2
+ 1828              	.LVL115:
+ 1829              	.L148:
+ 754:tmc/TMCL.c    **** 		if(ActualReply.Value.Int32 == 0)
+ 1830              		.loc 1 754 12 view .LVU572
+ 1831 075a 0123     		movs	r3, #1
+ 1832 075c E4E7     		b	.L120
+ 1833              	.LVL116:
+ 1834              	.L60:
+ 754:tmc/TMCL.c    **** 		if(ActualReply.Value.Int32 == 0)
+ 1835              		.loc 1 754 12 view .LVU573
+ 1836              	.LBE55:
+ 1837              	.LBE75:
+ 362:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = ActualCommand.Value.Int32;
+ 1838              		.loc 1 362 3 is_stmt 1 view .LVU574
+ 362:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = ActualCommand.Value.Int32;
+ 1839              		.loc 1 362 31 is_stmt 0 view .LVU575
+ 1840 075e 074B     		ldr	r3, .L209+8
+ 362:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = ActualCommand.Value.Int32;
+ 1841              		.loc 1 362 17 view .LVU576
+ 1842 0760 5B6D     		ldr	r3, [r3, #84]
+ 1843              	.L206:
+ 367:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = ActualCommand.Value.Int32;
+ 1844              		.loc 1 367 17 view .LVU577
+ 1845 0762 0E4A     		ldr	r2, .L209+40
+ 1846 0764 A178     		ldrb	r1, [r4, #2]	@ zero_extendqisi2
+ 1847 0766 6078     		ldrb	r0, [r4, #1]	@ zero_extendqisi2
+ 1848 0768 9847     		blx	r3
+ 1849              	.LVL117:
+ 1850 076a 5EE6     		b	.L203
+ 1851              	.L59:
+ 367:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = ActualCommand.Value.Int32;
+ 1852              		.loc 1 367 3 is_stmt 1 view .LVU578
+ 367:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = ActualCommand.Value.Int32;
+ 1853              		.loc 1 367 31 is_stmt 0 view .LVU579
+ 1854 076c 034B     		ldr	r3, .L209+8
+ 367:tmc/TMCL.c    **** 		ActualReply.Value.Int32 = ActualCommand.Value.Int32;
+ 1855              		.loc 1 367 17 view .LVU580
+ 1856 076e D3F8CC30 		ldr	r3, [r3, #204]
+ 1857 0772 F6E7     		b	.L206
+ 1858              	.L210:
+ 1859              		.align	2
+ 1860              	.L209:
+ 1861 0774 00000000 		.word	HAL
+ 1862 0778 00000000 		.word	VitalSignsMonitor
+ 1863 077c 00000000 		.word	Evalboards
+ 1864 0780 00000000 		.word	hwid
+ 1865 0784 14000000 		.word	SPI+20
+ 1866 0788 00000000 		.word	SPI
+ 1867 078c 04000000 		.word	ActualReply+4
+ 1868 0790 00000000 		.word	VersionString
+ 1869 0794 09000000 		.word	ActualReply+9
+ 1870 0798 00000000 		.word	IdState
+ 1871 079c 08000000 		.word	ActualCommand+8
+ 1872              	.L58:
+ 371:tmc/TMCL.c    **** 		break;
+ 1873              		.loc 1 371 3 is_stmt 1 view .LVU581
+ 371:tmc/TMCL.c    **** 		break;
+ 1874              		.loc 1 371 17 is_stmt 0 view .LVU582
+ 1875 07a0 584B     		ldr	r3, .L211
+ 371:tmc/TMCL.c    **** 		break;
+ 1876              		.loc 1 371 3 view .LVU583
+ 1877 07a2 DB6C     		ldr	r3, [r3, #76]
+ 1878              	.L205:
+ 374:tmc/TMCL.c    **** 		break;
+ 1879              		.loc 1 374 3 view .LVU584
+ 1880 07a4 0A46     		mov	r2, r1
+ 1881              	.L198:
+ 390:tmc/TMCL.c    **** 		break;
+ 1882              		.loc 1 390 4 view .LVU585
+ 1883 07a6 6178     		ldrb	r1, [r4, #1]	@ zero_extendqisi2
+ 1884 07a8 A078     		ldrb	r0, [r4, #2]	@ zero_extendqisi2
+ 1885 07aa 11E0     		b	.L197
+ 1886              	.L57:
+ 374:tmc/TMCL.c    **** 		break;
+ 1887              		.loc 1 374 3 is_stmt 1 view .LVU586
+ 374:tmc/TMCL.c    **** 		break;
+ 1888              		.loc 1 374 17 is_stmt 0 view .LVU587
+ 1889 07ac 554B     		ldr	r3, .L211
+ 374:tmc/TMCL.c    **** 		break;
+ 1890              		.loc 1 374 3 view .LVU588
+ 1891 07ae D3F8C430 		ldr	r3, [r3, #196]
+ 1892 07b2 F7E7     		b	.L205
+ 1893              	.L56:
+ 379:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_CHIP_READ_FAILED;
+ 1894              		.loc 1 379 3 is_stmt 1 view .LVU589
+ 379:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_CHIP_READ_FAILED;
+ 1895              		.loc 1 379 25 is_stmt 0 view .LVU590
+ 1896 07b4 544B     		ldr	r3, .L211+4
+ 1897 07b6 A078     		ldrb	r0, [r4, #2]	@ zero_extendqisi2
+ 379:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_CHIP_READ_FAILED;
+ 1898              		.loc 1 379 6 view .LVU591
+ 1899 07b8 93F90230 		ldrsb	r3, [r3, #2]
+ 1900 07bc 002B     		cmp	r3, #0
+ 1901 07be 03DA     		bge	.L128
+ 379:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_CHIP_READ_FAILED;
+ 1902              		.loc 1 379 62 discriminator 1 view .LVU592
+ 1903 07c0 FF28     		cmp	r0, #255
+ 1904 07c2 01D0     		beq	.L128
+ 380:tmc/TMCL.c    **** 		else
+ 1905              		.loc 1 380 4 is_stmt 1 view .LVU593
+ 380:tmc/TMCL.c    **** 		else
+ 1906              		.loc 1 380 23 is_stmt 0 view .LVU594
+ 1907 07c4 0B23     		movs	r3, #11
+ 1908 07c6 25E7     		b	.L193
+ 1909              	.L128:
+ 382:tmc/TMCL.c    **** 		break;
+ 1910              		.loc 1 382 4 is_stmt 1 view .LVU595
+ 382:tmc/TMCL.c    **** 		break;
+ 1911              		.loc 1 382 18 is_stmt 0 view .LVU596
+ 1912 07c8 4E4B     		ldr	r3, .L211
+ 382:tmc/TMCL.c    **** 		break;
+ 1913              		.loc 1 382 4 view .LVU597
+ 1914 07ca 504A     		ldr	r2, .L211+8
+ 1915 07cc 9B6C     		ldr	r3, [r3, #72]
+ 1916 07ce 6178     		ldrb	r1, [r4, #1]	@ zero_extendqisi2
+ 1917              	.L197:
+ 390:tmc/TMCL.c    **** 		break;
+ 1918              		.loc 1 390 4 view .LVU598
+ 1919 07d0 9847     		blx	r3
+ 1920              	.LVL118:
+ 1921 07d2 32E5     		b	.L40
+ 1922              	.L55:
+ 387:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_CHIP_READ_FAILED;
+ 1923              		.loc 1 387 3 is_stmt 1 view .LVU599
+ 390:tmc/TMCL.c    **** 		break;
+ 1924              		.loc 1 390 4 view .LVU600
+ 390:tmc/TMCL.c    **** 		break;
+ 1925              		.loc 1 390 18 is_stmt 0 view .LVU601
+ 1926 07d4 4B4B     		ldr	r3, .L211
+ 390:tmc/TMCL.c    **** 		break;
+ 1927              		.loc 1 390 4 view .LVU602
+ 1928 07d6 D3F8C030 		ldr	r3, [r3, #192]
+ 1929 07da 34E7     		b	.L199
+ 1930              	.L54:
+ 394:tmc/TMCL.c    **** 		break;
+ 1931              		.loc 1 394 3 is_stmt 1 view .LVU603
+ 1932              	.LBB76:
+ 1933              	.LBI76:
+ 819:tmc/TMCL.c    **** {
+ 1934              		.loc 1 819 13 view .LVU604
+ 1935              	.LBB77:
+ 821:tmc/TMCL.c    **** 	{
+ 1936              		.loc 1 821 2 view .LVU605
+ 821:tmc/TMCL.c    **** 	{
+ 1937              		.loc 1 821 22 is_stmt 0 view .LVU606
+ 1938 07dc 6378     		ldrb	r3, [r4, #1]	@ zero_extendqisi2
+ 821:tmc/TMCL.c    **** 	{
+ 1939              		.loc 1 821 2 view .LVU607
+ 1940 07de 3BB1     		cbz	r3, .L129
+ 1941 07e0 012B     		cmp	r3, #1
+ 1942 07e2 7FF476AE 		bne	.L117
+ 827:tmc/TMCL.c    **** 		break;
+ 1943              		.loc 1 827 3 is_stmt 1 view .LVU608
+ 827:tmc/TMCL.c    **** 		break;
+ 1944              		.loc 1 827 38 is_stmt 0 view .LVU609
+ 1945 07e6 474B     		ldr	r3, .L211
+ 827:tmc/TMCL.c    **** 		break;
+ 1946              		.loc 1 827 24 view .LVU610
+ 1947 07e8 484D     		ldr	r5, .L211+8
+ 1948 07ea D3F8C830 		ldr	r3, [r3, #200]
+ 1949 07ee 02E0     		b	.L196
+ 1950              	.L129:
+ 824:tmc/TMCL.c    **** 		break;
+ 1951              		.loc 1 824 3 is_stmt 1 view .LVU611
+ 824:tmc/TMCL.c    **** 		break;
+ 1952              		.loc 1 824 38 is_stmt 0 view .LVU612
+ 1953 07f0 444B     		ldr	r3, .L211
+ 824:tmc/TMCL.c    **** 		break;
+ 1954              		.loc 1 824 24 view .LVU613
+ 1955 07f2 464D     		ldr	r5, .L211+8
+ 1956 07f4 1B6D     		ldr	r3, [r3, #80]
+ 1957              	.L196:
+ 827:tmc/TMCL.c    **** 		break;
+ 1958              		.loc 1 827 24 view .LVU614
+ 1959 07f6 A078     		ldrb	r0, [r4, #2]	@ zero_extendqisi2
+ 1960 07f8 2946     		mov	r1, r5
+ 1961 07fa 9847     		blx	r3
+ 1962              	.LVL119:
+ 827:tmc/TMCL.c    **** 		break;
+ 1963              		.loc 1 827 22 view .LVU615
+ 1964 07fc 05F8040C 		strb	r0, [r5, #-4]
+ 828:tmc/TMCL.c    **** 	default:
+ 1965              		.loc 1 828 3 is_stmt 1 view .LVU616
+ 1966 0800 1BE5     		b	.L40
+ 1967              	.L53:
+ 1968              	.LBE77:
+ 1969              	.LBE76:
+ 398:tmc/TMCL.c    **** 		break;
+ 1970              		.loc 1 398 3 view .LVU617
+ 1971              	.LBB78:
+ 1972              	.LBI78:
+ 779:tmc/TMCL.c    **** {
+ 1973              		.loc 1 779 13 view .LVU618
+ 1974              	.LBB79:
+ 781:tmc/TMCL.c    **** 	{
+ 1975              		.loc 1 781 2 view .LVU619
+ 781:tmc/TMCL.c    **** 	{
+ 1976              		.loc 1 781 22 is_stmt 0 view .LVU620
+ 1977 0802 6378     		ldrb	r3, [r4, #1]	@ zero_extendqisi2
+ 781:tmc/TMCL.c    **** 	{
+ 1978              		.loc 1 781 2 view .LVU621
+ 1979 0804 33B1     		cbz	r3, .L131
+ 1980 0806 012B     		cmp	r3, #1
+ 1981 0808 7FF463AE 		bne	.L117
+ 787:tmc/TMCL.c    **** 		break;
+ 1982              		.loc 1 787 3 is_stmt 1 view .LVU622
+ 787:tmc/TMCL.c    **** 		break;
+ 1983              		.loc 1 787 43 is_stmt 0 view .LVU623
+ 1984 080c 3D4B     		ldr	r3, .L211
+ 787:tmc/TMCL.c    **** 		break;
+ 1985              		.loc 1 787 27 view .LVU624
+ 1986 080e D3F88030 		ldr	r3, [r3, #128]
+ 1987 0812 0EE6     		b	.L192
+ 1988              	.L131:
+ 784:tmc/TMCL.c    **** 		break;
+ 1989              		.loc 1 784 3 is_stmt 1 view .LVU625
+ 784:tmc/TMCL.c    **** 		break;
+ 1990              		.loc 1 784 43 is_stmt 0 view .LVU626
+ 1991 0814 3B4B     		ldr	r3, .L211
+ 1992 0816 8FE6     		b	.L195
+ 1993              	.L52:
+ 1994              	.LBE79:
+ 1995              	.LBE78:
+ 402:tmc/TMCL.c    **** 		break;
+ 1996              		.loc 1 402 3 is_stmt 1 view .LVU627
+ 1997              	.LBB80:
+ 1998              	.LBI80:
+ 795:tmc/TMCL.c    **** {
+ 1999              		.loc 1 795 13 view .LVU628
+ 2000              	.LBB81:
+ 797:tmc/TMCL.c    **** 	{
+ 2001              		.loc 1 797 2 view .LVU629
+ 797:tmc/TMCL.c    **** 	{
+ 2002              		.loc 1 797 22 is_stmt 0 view .LVU630
+ 2003 0818 6378     		ldrb	r3, [r4, #1]	@ zero_extendqisi2
+ 797:tmc/TMCL.c    **** 	{
+ 2004              		.loc 1 797 2 view .LVU631
+ 2005 081a 012B     		cmp	r3, #1
+ 2006 081c 0ED0     		beq	.L133
+ 2007 081e 022B     		cmp	r3, #2
+ 2008 0820 10D0     		beq	.L134
+ 2009 0822 002B     		cmp	r3, #0
+ 2010 0824 7FF455AE 		bne	.L117
+ 800:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_WRITE_PROTECTED;
+ 2011              		.loc 1 800 3 is_stmt 1 view .LVU632
+ 800:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_WRITE_PROTECTED;
+ 2012              		.loc 1 800 21 is_stmt 0 view .LVU633
+ 2013 0828 364B     		ldr	r3, .L211
+ 800:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_WRITE_PROTECTED;
+ 2014              		.loc 1 800 28 view .LVU634
+ 2015 082a 9B69     		ldr	r3, [r3, #24]
+ 2016              	.L189:
+ 800:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_WRITE_PROTECTED;
+ 2017              		.loc 1 800 7 view .LVU635
+ 2018 082c D3F80432 		ldr	r3, [r3, #516]
+ 2019 0830 9847     		blx	r3
+ 2020              	.LVL120:
+ 800:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_WRITE_PROTECTED;
+ 2021              		.loc 1 800 5 view .LVU636
+ 2022 0832 0028     		cmp	r0, #0
+ 2023 0834 7FF401AD 		bne	.L40
+ 801:tmc/TMCL.c    **** 		break;
+ 2024              		.loc 1 801 4 is_stmt 1 view .LVU637
+ 801:tmc/TMCL.c    **** 		break;
+ 2025              		.loc 1 801 23 is_stmt 0 view .LVU638
+ 2026 0838 0823     		movs	r3, #8
+ 2027 083a EBE6     		b	.L193
+ 2028              	.L133:
+ 804:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_WRITE_PROTECTED;
+ 2029              		.loc 1 804 3 is_stmt 1 view .LVU639
+ 804:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_WRITE_PROTECTED;
+ 2030              		.loc 1 804 21 is_stmt 0 view .LVU640
+ 2031 083c 314B     		ldr	r3, .L211
+ 804:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_WRITE_PROTECTED;
+ 2032              		.loc 1 804 28 view .LVU641
+ 2033 083e D3F89030 		ldr	r3, [r3, #144]
+ 2034 0842 F3E7     		b	.L189
+ 2035              	.L134:
+ 808:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_WRITE_PROTECTED;
+ 2036              		.loc 1 808 3 is_stmt 1 view .LVU642
+ 808:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_WRITE_PROTECTED;
+ 2037              		.loc 1 808 21 is_stmt 0 view .LVU643
+ 2038 0844 2F4C     		ldr	r4, .L211
+ 808:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_WRITE_PROTECTED;
+ 2039              		.loc 1 808 28 view .LVU644
+ 2040 0846 A369     		ldr	r3, [r4, #24]
+ 808:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_WRITE_PROTECTED;
+ 2041              		.loc 1 808 7 view .LVU645
+ 2042 0848 D3F80432 		ldr	r3, [r3, #516]
+ 2043 084c 9847     		blx	r3
+ 2044              	.LVL121:
+ 808:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_WRITE_PROTECTED;
+ 2045              		.loc 1 808 5 view .LVU646
+ 2046 084e 08B9     		cbnz	r0, .L136
+ 809:tmc/TMCL.c    **** 		if(!Evalboards.ch2.config->reset())
+ 2047              		.loc 1 809 4 is_stmt 1 view .LVU647
+ 809:tmc/TMCL.c    **** 		if(!Evalboards.ch2.config->reset())
+ 2048              		.loc 1 809 23 is_stmt 0 view .LVU648
+ 2049 0850 0823     		movs	r3, #8
+ 2050 0852 2B70     		strb	r3, [r5]
+ 2051              	.L136:
+ 810:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_WRITE_PROTECTED;
+ 2052              		.loc 1 810 3 is_stmt 1 view .LVU649
+ 810:tmc/TMCL.c    **** 			ActualReply.Status = REPLY_WRITE_PROTECTED;
+ 2053              		.loc 1 810 28 is_stmt 0 view .LVU650
+ 2054 0854 D4F89030 		ldr	r3, [r4, #144]
+ 2055 0858 E8E7     		b	.L189
+ 2056              	.L51:
+ 2057              	.LBE81:
+ 2058              	.LBE80:
+ 405:tmc/TMCL.c    **** 		break;
+ 2059              		.loc 1 405 3 is_stmt 1 view .LVU651
+ 2060              	.LBB82:
+ 2061              	.LBI60:
+ 949:tmc/TMCL.c    **** {
+ 2062              		.loc 1 949 13 view .LVU652
+ 2063              	.LBB62:
+ 951:tmc/TMCL.c    **** 	{
+ 2064              		.loc 1 951 2 view .LVU653
+ 2065 085a 6378     		ldrb	r3, [r4, #1]	@ zero_extendqisi2
+ 2066 085c 042B     		cmp	r3, #4
+ 2067 085e 3FF638AE 		bhi	.L117
+ 2068 0862 DFE803F0 		tbb	[pc, r3]
+ 2069              	.L138:
+ 2070 0866 03       		.byte	(.L142-.L138)/2
+ 2071 0867 07       		.byte	(.L141-.L138)/2
+ 2072 0868 0A       		.byte	(.L140-.L138)/2
+ 2073 0869 0D       		.byte	(.L139-.L138)/2
+ 2074 086a 10       		.byte	(.L137-.L138)/2
+ 2075 086b 00       		.p2align 1
+ 2076              	.L142:
+ 954:tmc/TMCL.c    **** 		break;
+ 2077              		.loc 1 954 3 view .LVU654
+ 954:tmc/TMCL.c    **** 		break;
+ 2078              		.loc 1 954 29 is_stmt 0 view .LVU655
+ 2079 086c A078     		ldrb	r0, [r4, #2]	@ zero_extendqisi2
+ 2080 086e FFF7FEFF 		bl	handleWLANCommand
+ 2081              	.LVL122:
+ 2082 0872 87E6     		b	.L194
+ 2083              	.L141:
+ 957:tmc/TMCL.c    **** 		break;
+ 2084              		.loc 1 957 3 is_stmt 1 view .LVU656
+ 2085 0874 FFF7FEFF 		bl	enableWLANCommandMode
+ 2086              	.LVL123:
+ 958:tmc/TMCL.c    **** 	case 2:
+ 2087              		.loc 1 958 3 view .LVU657
+ 2088 0878 DFE4     		b	.L40
+ 2089              	.L140:
+ 960:tmc/TMCL.c    **** 		break;
+ 2090              		.loc 1 960 3 view .LVU658
+ 960:tmc/TMCL.c    **** 		break;
+ 2091              		.loc 1 960 29 is_stmt 0 view .LVU659
+ 2092 087a FFF7FEFF 		bl	checkReadyToSend
+ 2093              	.LVL124:
+ 2094 087e 81E6     		b	.L194
+ 2095              	.L139:
+ 963:tmc/TMCL.c    **** 		break;
+ 2096              		.loc 1 963 3 is_stmt 1 view .LVU660
+ 963:tmc/TMCL.c    **** 		break;
+ 2097              		.loc 1 963 29 is_stmt 0 view .LVU661
+ 2098 0880 FFF7FEFF 		bl	checkCmdModeEnabled
+ 2099              	.LVL125:
+ 2100 0884 7EE6     		b	.L194
+ 2101              	.L137:
+ 966:tmc/TMCL.c    **** 		break;
+ 2102              		.loc 1 966 3 is_stmt 1 view .LVU662
+ 966:tmc/TMCL.c    **** 		break;
+ 2103              		.loc 1 966 29 is_stmt 0 view .LVU663
+ 2104 0886 FFF7FEFF 		bl	getCMDReply
+ 2105              	.LVL126:
+ 2106 088a 7BE6     		b	.L194
+ 2107              	.L50:
+ 2108              	.LBE62:
+ 2109              	.LBE82:
+ 408:tmc/TMCL.c    **** 		{
+ 2110              		.loc 1 408 3 is_stmt 1 view .LVU664
+ 408:tmc/TMCL.c    **** 		{
+ 2111              		.loc 1 408 34 is_stmt 0 view .LVU665
+ 2112 088c 1D4D     		ldr	r5, .L211
+ 408:tmc/TMCL.c    **** 		{
+ 2113              		.loc 1 408 20 view .LVU666
+ 2114 088e 1F4A     		ldr	r2, .L211+8
+ 2115 0890 2B6F     		ldr	r3, [r5, #112]
+ 2116 0892 A178     		ldrb	r1, [r4, #2]	@ zero_extendqisi2
+ 2117 0894 6078     		ldrb	r0, [r4, #1]	@ zero_extendqisi2
+ 2118 0896 9847     		blx	r3
+ 2119              	.LVL127:
+ 408:tmc/TMCL.c    **** 		{
+ 2120              		.loc 1 408 6 view .LVU667
+ 2121 0898 C0B2     		uxtb	r0, r0
+ 2122 089a FFF7FEFF 		bl	setTMCLStatus
+ 2123              	.LVL128:
+ 408:tmc/TMCL.c    **** 		{
+ 2124              		.loc 1 408 5 view .LVU668
+ 2125 089e 10F0060F 		tst	r0, #6
+ 2126 08a2 3FF4CAAC 		beq	.L40
+ 410:tmc/TMCL.c    **** 		}
+ 2127              		.loc 1 410 4 is_stmt 1 view .LVU669
+ 410:tmc/TMCL.c    **** 		}
+ 2128              		.loc 1 410 18 is_stmt 0 view .LVU670
+ 2129 08a6 D5F8E830 		ldr	r3, [r5, #232]
+ 2130 08aa F4E5     		b	.L202
+ 2131              	.L48:
+ 414:tmc/TMCL.c    **** 		{
+ 2132              		.loc 1 414 3 is_stmt 1 view .LVU671
+ 414:tmc/TMCL.c    **** 		{
+ 2133              		.loc 1 414 34 is_stmt 0 view .LVU672
+ 2134 08ac 154D     		ldr	r5, .L211
+ 414:tmc/TMCL.c    **** 		{
+ 2135              		.loc 1 414 20 view .LVU673
+ 2136 08ae 174A     		ldr	r2, .L211+8
+ 2137 08b0 6B6F     		ldr	r3, [r5, #116]
+ 2138 08b2 A178     		ldrb	r1, [r4, #2]	@ zero_extendqisi2
+ 2139 08b4 6078     		ldrb	r0, [r4, #1]	@ zero_extendqisi2
+ 2140 08b6 9847     		blx	r3
+ 2141              	.LVL129:
+ 414:tmc/TMCL.c    **** 		{
+ 2142              		.loc 1 414 6 view .LVU674
+ 2143 08b8 C0B2     		uxtb	r0, r0
+ 2144 08ba FFF7FEFF 		bl	setTMCLStatus
+ 2145              	.LVL130:
+ 414:tmc/TMCL.c    **** 		{
+ 2146              		.loc 1 414 5 view .LVU675
+ 2147 08be 10F0060F 		tst	r0, #6
+ 2148 08c2 3FF4BAAC 		beq	.L40
+ 416:tmc/TMCL.c    **** 		}
+ 2149              		.loc 1 416 4 is_stmt 1 view .LVU676
+ 416:tmc/TMCL.c    **** 		}
+ 2150              		.loc 1 416 18 is_stmt 0 view .LVU677
+ 2151 08c6 D5F8EC30 		ldr	r3, [r5, #236]
+ 2152 08ca E4E5     		b	.L202
+ 2153              	.L81:
+ 420:tmc/TMCL.c    **** 		if(ActualCommand.Motor          != 0x92)  break;
+ 2154              		.loc 1 420 3 is_stmt 1 view .LVU678
+ 420:tmc/TMCL.c    **** 		if(ActualCommand.Motor          != 0x92)  break;
+ 2155              		.loc 1 420 5 is_stmt 0 view .LVU679
+ 2156 08cc 5378     		ldrb	r3, [r2, #1]	@ zero_extendqisi2
+ 2157 08ce 812B     		cmp	r3, #129
+ 2158 08d0 7FF4B3AC 		bne	.L40
+ 421:tmc/TMCL.c    **** 		if(ActualCommand.Value.Byte[3]  != 0xA3)  break;
+ 2159              		.loc 1 421 3 is_stmt 1 view .LVU680
+ 421:tmc/TMCL.c    **** 		if(ActualCommand.Value.Byte[3]  != 0xA3)  break;
+ 2160              		.loc 1 421 5 is_stmt 0 view .LVU681
+ 2161 08d4 9378     		ldrb	r3, [r2, #2]	@ zero_extendqisi2
+ 2162 08d6 922B     		cmp	r3, #146
+ 2163 08d8 7FF4AFAC 		bne	.L40
+ 422:tmc/TMCL.c    **** 		if(ActualCommand.Value.Byte[2]  != 0xB4)  break;
+ 2164              		.loc 1 422 3 is_stmt 1 view .LVU682
+ 422:tmc/TMCL.c    **** 		if(ActualCommand.Value.Byte[2]  != 0xB4)  break;
+ 2165              		.loc 1 422 5 is_stmt 0 view .LVU683
+ 2166 08dc D37A     		ldrb	r3, [r2, #11]	@ zero_extendqisi2
+ 2167 08de A32B     		cmp	r3, #163
+ 2168 08e0 7FF4ABAC 		bne	.L40
+ 423:tmc/TMCL.c    **** 		if(ActualCommand.Value.Byte[1]  != 0xC5)  break;
+ 2169              		.loc 1 423 3 is_stmt 1 view .LVU684
+ 423:tmc/TMCL.c    **** 		if(ActualCommand.Value.Byte[1]  != 0xC5)  break;
+ 2170              		.loc 1 423 5 is_stmt 0 view .LVU685
+ 2171 08e4 937A     		ldrb	r3, [r2, #10]	@ zero_extendqisi2
+ 2172 08e6 B42B     		cmp	r3, #180
+ 2173 08e8 7FF4A7AC 		bne	.L40
+ 424:tmc/TMCL.c    **** 		if(ActualCommand.Value.Byte[0]  != 0xD6)  break;
+ 2174              		.loc 1 424 3 is_stmt 1 view .LVU686
+ 424:tmc/TMCL.c    **** 		if(ActualCommand.Value.Byte[0]  != 0xD6)  break;
+ 2175              		.loc 1 424 5 is_stmt 0 view .LVU687
+ 2176 08ec 537A     		ldrb	r3, [r2, #9]	@ zero_extendqisi2
+ 2177 08ee C52B     		cmp	r3, #197
+ 2178 08f0 7FF4A3AC 		bne	.L40
+ 425:tmc/TMCL.c    **** 		tmcl_boot();
+ 2179              		.loc 1 425 3 is_stmt 1 view .LVU688
+ 425:tmc/TMCL.c    **** 		tmcl_boot();
+ 2180              		.loc 1 425 5 is_stmt 0 view .LVU689
+ 2181 08f4 137A     		ldrb	r3, [r2, #8]	@ zero_extendqisi2
+ 2182 08f6 D62B     		cmp	r3, #214
+ 2183 08f8 7FF49FAC 		bne	.L40
+ 426:tmc/TMCL.c    **** 		break;
+ 2184              		.loc 1 426 3 is_stmt 1 view .LVU690
+ 2185 08fc FFF7FEFF 		bl	tmcl_boot
+ 2186              	.LVL131:
+ 427:tmc/TMCL.c    **** 	case TMCL_SoftwareReset:
+ 2187              		.loc 1 427 3 view .LVU691
+ 2188 0900 9BE4     		b	.L40
+ 2189              	.L212:
+ 2190 0902 00BF     		.align	2
+ 2191              	.L211:
+ 2192 0904 00000000 		.word	Evalboards
+ 2193 0908 00000000 		.word	VitalSignsMonitor
+ 2194 090c 04000000 		.word	ActualReply+4
+ 2195              		.cfi_endproc
+ 2196              	.LFE2:
+ 2198              		.align	1
+ 2199              		.global	tmcl_process
+ 2200              		.syntax unified
+ 2201              		.thumb
+ 2202              		.thumb_func
+ 2203              		.fpu softvfp
+ 2205              	tmcl_process:
+ 2206              	.LFB4:
+ 447:tmc/TMCL.c    **** 	static int currentInterface = 0;
+ 2207              		.loc 1 447 1 view -0
+ 2208              		.cfi_startproc
+ 2209              		@ args = 0, pretend = 0, frame = 0
+ 2210              		@ frame_needed = 0, uses_anonymous_args = 0
+ 448:tmc/TMCL.c    **** 
+ 2211              		.loc 1 448 2 view .LVU693
+ 450:tmc/TMCL.c    **** 		tx(&interfaces[currentInterface]);
+ 2212              		.loc 1 450 2 view .LVU694
+ 447:tmc/TMCL.c    **** 	static int currentInterface = 0;
+ 2213              		.loc 1 447 1 is_stmt 0 view .LVU695
+ 2214 0910 2DE9F843 		push	{r3, r4, r5, r6, r7, r8, r9, lr}
+ 2215              	.LCFI15:
+ 2216              		.cfi_def_cfa_offset 32
+ 2217              		.cfi_offset 3, -32
+ 2218              		.cfi_offset 4, -28
+ 2219              		.cfi_offset 5, -24
+ 2220              		.cfi_offset 6, -20
+ 2221              		.cfi_offset 7, -16
+ 2222              		.cfi_offset 8, -12
+ 2223              		.cfi_offset 9, -8
+ 2224              		.cfi_offset 14, -4
+ 450:tmc/TMCL.c    **** 		tx(&interfaces[currentInterface]);
+ 2225              		.loc 1 450 18 view .LVU696
+ 2226 0914 164E     		ldr	r6, .L225
+ 2227 0916 174D     		ldr	r5, .L225+4
+ 450:tmc/TMCL.c    **** 		tx(&interfaces[currentInterface]);
+ 2228              		.loc 1 450 4 view .LVU697
+ 2229 0918 7268     		ldr	r2, [r6, #4]
+ 2230 091a 012A     		cmp	r2, #1
+ 2231 091c 06D0     		beq	.L214
+ 451:tmc/TMCL.c    **** 
+ 2232              		.loc 1 451 3 is_stmt 1 view .LVU698
+ 2233 091e 6A68     		ldr	r2, [r5, #4]
+ 2234 0920 154B     		ldr	r3, .L225+8
+ 2235 0922 2420     		movs	r0, #36
+ 2236 0924 00FB0230 		mla	r0, r0, r2, r3
+ 2237 0928 FFF7FEFF 		bl	tx
+ 2238              	.LVL132:
+ 2239              	.L214:
+ 453:tmc/TMCL.c    **** 		HAL.reset(true);
+ 2240              		.loc 1 453 2 view .LVU699
+ 453:tmc/TMCL.c    **** 		HAL.reset(true);
+ 2241              		.loc 1 453 4 is_stmt 0 view .LVU700
+ 2242 092c 2B68     		ldr	r3, [r5]
+ 2243 092e 1BB1     		cbz	r3, .L215
+ 454:tmc/TMCL.c    **** 
+ 2244              		.loc 1 454 3 is_stmt 1 view .LVU701
+ 454:tmc/TMCL.c    **** 
+ 2245              		.loc 1 454 6 is_stmt 0 view .LVU702
+ 2246 0930 124B     		ldr	r3, .L225+12
+ 454:tmc/TMCL.c    **** 
+ 2247              		.loc 1 454 3 view .LVU703
+ 2248 0932 0120     		movs	r0, #1
+ 2249 0934 5B68     		ldr	r3, [r3, #4]
+ 2250 0936 9847     		blx	r3
+ 2251              	.LVL133:
+ 2252              	.L215:
+ 456:tmc/TMCL.c    **** 
+ 2253              		.loc 1 456 2 is_stmt 1 view .LVU704
+ 456:tmc/TMCL.c    **** 
+ 2254              		.loc 1 456 24 is_stmt 0 view .LVU705
+ 2255 0938 114B     		ldr	r3, .L225+16
+ 2256              	.LBB83:
+ 458:tmc/TMCL.c    **** 	{
+ 2257              		.loc 1 458 24 view .LVU706
+ 2258 093a 124F     		ldr	r7, .L225+20
+ 460:tmc/TMCL.c    **** 		if(ActualCommand.Error != TMCL_RX_ERROR_NODATA)
+ 2259              		.loc 1 460 3 view .LVU707
+ 2260 093c DFF83890 		ldr	r9, .L225+8
+ 2261              	.LBE83:
+ 456:tmc/TMCL.c    **** 
+ 2262              		.loc 1 456 24 view .LVU708
+ 2263 0940 0024     		movs	r4, #0
+ 2264 0942 5C74     		strb	r4, [r3, #17]
+ 458:tmc/TMCL.c    **** 	{
+ 2265              		.loc 1 458 2 is_stmt 1 view .LVU709
+ 2266              	.LBB84:
+ 458:tmc/TMCL.c    **** 	{
+ 2267              		.loc 1 458 6 view .LVU710
+ 2268              	.LVL134:
+ 460:tmc/TMCL.c    **** 		if(ActualCommand.Error != TMCL_RX_ERROR_NODATA)
+ 2269              		.loc 1 460 3 is_stmt 0 view .LVU711
+ 2270 0944 4FF02408 		mov	r8, #36
+ 2271              	.LVL135:
+ 2272              	.L216:
+ 458:tmc/TMCL.c    **** 	{
+ 2273              		.loc 1 458 22 is_stmt 1 discriminator 1 view .LVU712
+ 458:tmc/TMCL.c    **** 	{
+ 2274              		.loc 1 458 2 is_stmt 0 discriminator 1 view .LVU713
+ 2275 0948 3B68     		ldr	r3, [r7]
+ 2276 094a A342     		cmp	r3, r4
+ 2277 094c 01D8     		bhi	.L218
+ 2278              	.LBE84:
+ 468:tmc/TMCL.c    **** 
+ 2279              		.loc 1 468 1 view .LVU714
+ 2280 094e BDE8F883 		pop	{r3, r4, r5, r6, r7, r8, r9, pc}
+ 2281              	.LVL136:
+ 2282              	.L218:
+ 2283              	.LBB85:
+ 460:tmc/TMCL.c    **** 		if(ActualCommand.Error != TMCL_RX_ERROR_NODATA)
+ 2284              		.loc 1 460 3 is_stmt 1 view .LVU715
+ 2285 0952 08FB0490 		mla	r0, r8, r4, r9
+ 2286 0956 FFF7FEFF 		bl	rx
+ 2287              	.LVL137:
+ 461:tmc/TMCL.c    **** 		{
+ 2288              		.loc 1 461 3 view .LVU716
+ 461:tmc/TMCL.c    **** 		{
+ 2289              		.loc 1 461 5 is_stmt 0 view .LVU717
+ 2290 095a 7368     		ldr	r3, [r6, #4]
+ 2291 095c 012B     		cmp	r3, #1
+ 2292 095e 04D0     		beq	.L217
+ 463:tmc/TMCL.c    **** 			ExecuteActualCommand();
+ 2293              		.loc 1 463 4 is_stmt 1 view .LVU718
+ 463:tmc/TMCL.c    **** 			ExecuteActualCommand();
+ 2294              		.loc 1 463 21 is_stmt 0 view .LVU719
+ 2295 0960 6C60     		str	r4, [r5, #4]
+ 464:tmc/TMCL.c    **** 			return;
+ 2296              		.loc 1 464 4 is_stmt 1 view .LVU720
+ 2297              	.LBE85:
+ 468:tmc/TMCL.c    **** 
+ 2298              		.loc 1 468 1 is_stmt 0 view .LVU721
+ 2299 0962 BDE8F843 		pop	{r3, r4, r5, r6, r7, r8, r9, lr}
+ 2300              	.LCFI16:
+ 2301              		.cfi_remember_state
+ 2302              		.cfi_restore 14
+ 2303              		.cfi_restore 9
+ 2304              		.cfi_restore 8
+ 2305              		.cfi_restore 7
+ 2306              		.cfi_restore 6
+ 2307              		.cfi_restore 5
+ 2308              		.cfi_restore 4
+ 2309              		.cfi_restore 3
+ 2310              		.cfi_def_cfa_offset 0
+ 2311              	.LVL138:
+ 2312              	.LBB86:
+ 464:tmc/TMCL.c    **** 			return;
+ 2313              		.loc 1 464 4 view .LVU722
+ 2314 0966 FFF7FEBF 		b	ExecuteActualCommand
+ 2315              	.LVL139:
+ 2316              	.L217:
+ 2317              	.LCFI17:
+ 2318              		.cfi_restore_state
+ 458:tmc/TMCL.c    **** 	{
+ 2319              		.loc 1 458 46 is_stmt 1 discriminator 2 view .LVU723
+ 458:tmc/TMCL.c    **** 	{
+ 2320              		.loc 1 458 47 is_stmt 0 discriminator 2 view .LVU724
+ 2321 096a 0134     		adds	r4, r4, #1
+ 2322              	.LVL140:
+ 458:tmc/TMCL.c    **** 	{
+ 2323              		.loc 1 458 47 discriminator 2 view .LVU725
+ 2324 096c ECE7     		b	.L216
+ 2325              	.L226:
+ 2326 096e 00BF     		.align	2
+ 2327              	.L225:
+ 2328 0970 00000000 		.word	ActualCommand
+ 2329 0974 00000000 		.word	.LANCHOR0
+ 2330 0978 00000000 		.word	interfaces
+ 2331 097c 00000000 		.word	HAL
+ 2332 0980 00000000 		.word	ActualReply
+ 2333 0984 00000000 		.word	numberOfInterfaces
+ 2334              	.LBE86:
+ 2335              		.cfi_endproc
+ 2336              	.LFE4:
+ 2338              		.global	resetRequest
+ 2339              		.comm	numberOfInterfaces,4,4
+ 2340              		.comm	interfaces,144,4
+ 2341              		.comm	ActualReply,20,4
+ 2342              		.comm	ActualCommand,12,4
+ 2343              		.comm	EEPROM,48,2
+ 2344              		.comm	IdState,40,4
+ 2345              		.comm	TMCMotionController,532,4
+ 2346              		.comm	TMCDriver,532,4
+ 2347              		.comm	Evalboards,244,4
+ 2348              		.comm	VitalSignsMonitor,20,4
+ 2349              		.comm	hwid,1,1
+ 2350              		.comm	HAL,48,4
+ 2351              		.comm	UART,40,4
+ 2352              		.comm	Timer,16,4
+ 2353              		.comm	WLAN,36,4
+ 2354              		.comm	RS232,36,4
+ 2355              		.comm	LEDs,28,4
+ 2356              		.comm	USB,36,4
+ 2357              		.comm	uart0_interrupt,1,1
+ 2358              		.comm	ADCs,32,4
+ 2359              		.comm	SPI,44,4
+ 2360              		.comm	IOMap,2088,4
+ 2361              		.comm	IOs,52,4
+ 2362              		.comm	Cpu,8,4
+ 2363              		.bss
+ 2364              		.align	2
+ 2365              		.set	.LANCHOR0,. + 0
+ 2368              	resetRequest:
+ 2369 0000 00000000 		.space	4
+ 2372              	currentInterface.7910:
+ 2373 0004 00000000 		.space	4
+ 2376              	ADCValue:
+ 2377 0008 00000000 		.space	12
+ 2377      00000000 
+ 2377      00000000 
+ 2378              		.text
+ 2379              	.Letext0:
+ 2380              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 2381              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 2382              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 2383              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 2384              		.file 6 "TMC-API/tmc/helpers/Config.h"
+ 2385              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 2386              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 2387              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 2388              		.file 10 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\in
+ 2389              		.file 11 "TMC-API/tmc/helpers/API_Header.h"
+ 2390              		.file 12 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 2391              		.file 13 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 2392              		.file 14 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 2393              		.file 15 "./hal/IOs.h"
+ 2394              		.file 16 "./hal/IOMap.h"
+ 2395              		.file 17 "./hal/SPI.h"
+ 2396              		.file 18 "./hal/ADCs.h"
+ 2397              		.file 19 "./hal/RXTX.h"
+ 2398              		.file 20 "./hal/USB.h"
+ 2399              		.file 21 "./hal/LEDs.h"
+ 2400              		.file 22 "./hal/RS232.h"
+ 2401              		.file 23 "./hal/WLAN.h"
+ 2402              		.file 24 "./hal/Timer.h"
+ 2403              		.file 25 "./hal/UART.h"
+ 2404              		.file 26 "./hal/HAL.h"
+ 2405              		.file 27 "./tmc/VitalSignsMonitor.h"
+ 2406              		.file 28 "./boards/Board.h"
+ 2407              		.file 29 "./boards/TMCDriver.h"
+ 2408              		.file 30 "./boards/TMCMotionController.h"
+ 2409              		.file 31 "tmc/BoardAssignment.h"
+ 2410              		.file 32 "tmc/EEPROM.h"
+ 2411              		.file 33 "./hal/SysTick.h"
+ 2412              		.file 34 "./tmc/StepDir.h"
+ 2413              		.file 35 "tmc/IdDetection.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 TMCL.c
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:22     .text:00000000 setDriversEnable
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:70     .text:00000028 $d
+                            *COM*:0000000c ActualCommand
+                            *COM*:000000f4 Evalboards
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:75     .text:00000030 $t
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:82     .text:00000030 setTMCLStatus
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:167    .text:00000070 $d
+                            *COM*:00000014 ActualReply
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:173    .text:00000074 $t
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:180    .text:00000074 tmcl_init
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:247    .text:000000bc $d
+                            *COM*:00000030 HAL
+                            *COM*:00000090 interfaces
+                            *COM*:00000004 numberOfInterfaces
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:254    .text:000000cc $t
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:261    .text:000000cc tx
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:388    .text:00000130 $d
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:392    .text:00000134 $t
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:399    .text:00000134 rx
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:512    .text:0000018c $d
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:516    .text:00000190 $t
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:523    .text:00000190 tmcl_boot
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:644    .text:00000204 $d
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:651    .text:00000214 $t
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:658    .text:00000214 ExecuteActualCommand
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:745    .text:00000260 $d
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:781    .text:000002f0 $t
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:790    .text:000002fc $d
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:805    .text:00000338 $t
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:818    .text:0000034c $d
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:825    .text:00000368 $t
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:1084   .text:000004a8 $d
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:1090   .text:000004c0 $t
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:1148   .text:000004ec $d
+                            *COM*:00000014 VitalSignsMonitor
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:1159   .text:0000050c $t
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:1193   .text:00000530 $d
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:1199   .text:00000536 $t
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:1308   .text:00000592 $d
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:1697   .text:000006e8 $d
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:1861   .text:00000774 $d
+                            *COM*:00000001 hwid
+                            *COM*:0000002c SPI
+                            *COM*:00000028 IdState
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:1875   .text:000007a0 $t
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:2070   .text:00000866 $d
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:2192   .text:00000904 $d
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:2198   .text:00000910 $t
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:2205   .text:00000910 tmcl_process
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:2328   .text:00000970 $d
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:2368   .bss:00000000 resetRequest
+                            *COM*:00000030 EEPROM
+                            *COM*:00000214 TMCMotionController
+                            *COM*:00000214 TMCDriver
+                            *COM*:00000028 UART
+                            *COM*:00000010 Timer
+                            *COM*:00000024 WLAN
+                            *COM*:00000024 RS232
+                            *COM*:0000001c LEDs
+                            *COM*:00000024 USB
+                            *COM*:00000001 uart0_interrupt
+                            *COM*:00000020 ADCs
+                            *COM*:00000828 IOMap
+                            *COM*:00000034 IOs
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:2364   .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:2372   .bss:00000004 currentInterface.7910
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:2376   .bss:00000008 ADCValue
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:1315   .text:00000599 $d
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:1315   .text:0000059a $t
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:1702   .text:000006ed $d
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:1702   .text:000006ee $t
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:2075   .text:0000086b $d
+C:\Users\Shubham\AppData\Local\Temp\ccAWl7ca.s:2075   .text:0000086c $t
+
+UNDEFINED SYMBOLS
+vitalsignsmonitor_clearOvervoltageErrors
+wait
+StepDir_deInit
+IDDetection_deInit
+BLConfig
+Board_supported
+eeprom_read_array
+eeprom_check
+eeprom_write_byte
+IDDetection_detect
+Board_assign
+VersionString
+handleWLANCommand
+enableWLANCommandMode
+checkReadyToSend
+checkCmdModeEnabled
+getCMDReply

@@ -1,0 +1,646 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"main.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.global	shallForceBoot
+  17              		.arch armv7e-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	shallForceBoot:
+  24              	.LFB1:
+  25              		.file 1 "main.c"
+   1:main.c        **** 
+   2:main.c        **** #include "boards/Board.h"
+   3:main.c        **** #include "hal/derivative.h"
+   4:main.c        **** #include "hal/HAL.h"
+   5:main.c        **** #include "tmc/IdDetection.h"
+   6:main.c        **** #include "tmc/TMCL.h"
+   7:main.c        **** #include "tmc/VitalSignsMonitor.h"
+   8:main.c        **** #include "tmc/BoardAssignment.h"
+   9:main.c        **** 
+  10:main.c        **** const char *VersionString = MODULE_ID"V307"; // module id and version of the firmware shown in the 
+  11:main.c        **** 
+  12:main.c        **** /* Keep as is! This lines are important for the update functionality. */
+  13:main.c        **** #if defined(Landungsbruecke)
+  14:main.c        **** 	const uint8_t Protection[] __attribute__ ((section(".cfmconfig")))=
+  15:main.c        **** 	{
+  16:main.c        **** 		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  //Backdoor key
+  17:main.c        **** 		0xFF, 0xFF, 0xFF, 0xFF,                          //Flash protection (FPPROT)
+  18:main.c        **** 		0x7E,                                            //Flash security   (FSEC) => nach Image-Generier
+  19:main.c        **** 		0xF9,                                            //Flash option     (FOPT) (NMI ausgeschaltet, Ez
+  20:main.c        **** 		0xFF,                                            //reserved
+  21:main.c        **** 		0xFF                                             //reserved
+  22:main.c        **** 	};
+  23:main.c        **** 
+  24:main.c        **** 	struct BootloaderConfig {
+  25:main.c        **** 		uint32_t BLMagic;
+  26:main.c        **** 		uint32_t drvEnableResetValue;
+  27:main.c        **** 	};
+  28:main.c        **** 
+  29:main.c        **** 	// This struct gets placed at a specific address by the linker
+  30:main.c        **** 	struct BootloaderConfig __attribute__ ((section(".bldata"))) BLConfig;
+  31:main.c        **** #endif
+  32:main.c        **** 
+  33:main.c        **** 
+  34:main.c        **** /* Check if jumping into bootloader is forced                                           */
+  35:main.c        **** /*                                                                                      */
+  36:main.c        **** /* In order to jump to bootloader e.g. because of an accidental infinite loop           */
+  37:main.c        **** /* in a modified firmware you may short ID_CLK and ID_CH0 pins on start up.             */
+  38:main.c        **** /* This will force the entrance into bootloader mode and allow to replace bad firmware. */
+  39:main.c        **** void shallForceBoot()
+  40:main.c        **** {
+  26              		.loc 1 40 1 view -0
+  27              		.cfi_startproc
+  28              		@ args = 0, pretend = 0, frame = 0
+  29              		@ frame_needed = 0, uses_anonymous_args = 0
+  41:main.c        **** 	// toggle each pin and see if you can read the state on the other
+  42:main.c        **** 	// leave if not, because this means that the pins are not tied together
+  43:main.c        **** 	HAL.IOs->config->toOutput(&HAL.IOs->pins->ID_CLK);
+  30              		.loc 1 43 2 view .LVU1
+  31              		.loc 1 43 5 is_stmt 0 view .LVU2
+  32 0000 234B     		ldr	r3, .L8
+  40:main.c        **** 	// toggle each pin and see if you can read the state on the other
+  33              		.loc 1 40 1 view .LVU3
+  34 0002 10B5     		push	{r4, lr}
+  35              	.LCFI0:
+  36              		.cfi_def_cfa_offset 8
+  37              		.cfi_offset 4, -8
+  38              		.cfi_offset 14, -4
+  39              		.loc 1 43 5 view .LVU4
+  40 0004 DC68     		ldr	r4, [r3, #12]
+  41              		.loc 1 43 17 view .LVU5
+  42 0006 D4E90030 		ldrd	r3, r0, [r4]
+  43              		.loc 1 43 2 view .LVU6
+  44 000a DB68     		ldr	r3, [r3, #12]
+  45 000c 0830     		adds	r0, r0, #8
+  46 000e 9847     		blx	r3
+  47              	.LVL0:
+  44:main.c        **** 	HAL.IOs->config->toInput(&HAL.IOs->pins->ID_CH0);
+  48              		.loc 1 44 2 is_stmt 1 view .LVU7
+  49              		.loc 1 44 17 is_stmt 0 view .LVU8
+  50 0010 D4E90030 		ldrd	r3, r0, [r4]
+  51              		.loc 1 44 2 view .LVU9
+  52 0014 1B69     		ldr	r3, [r3, #16]
+  53 0016 2830     		adds	r0, r0, #40
+  54 0018 9847     		blx	r3
+  55              	.LVL1:
+  45:main.c        **** 
+  46:main.c        **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->ID_CLK);
+  56              		.loc 1 46 2 is_stmt 1 view .LVU10
+  57              		.loc 1 46 17 is_stmt 0 view .LVU11
+  58 001a D4E90030 		ldrd	r3, r0, [r4]
+  59              		.loc 1 46 2 view .LVU12
+  60 001e 5B69     		ldr	r3, [r3, #20]
+  61 0020 0830     		adds	r0, r0, #8
+  62 0022 9847     		blx	r3
+  63              	.LVL2:
+  47:main.c        **** 	if(!HAL.IOs->config->isHigh(&HAL.IOs->pins->ID_CH0))
+  64              		.loc 1 47 2 is_stmt 1 view .LVU13
+  65              		.loc 1 47 21 is_stmt 0 view .LVU14
+  66 0024 D4E90030 		ldrd	r3, r0, [r4]
+  67              		.loc 1 47 6 view .LVU15
+  68 0028 5B6A     		ldr	r3, [r3, #36]
+  69 002a 2830     		adds	r0, r0, #40
+  70 002c 9847     		blx	r3
+  71              	.LVL3:
+  72              		.loc 1 47 4 view .LVU16
+  73 002e 70B3     		cbz	r0, .L1
+  48:main.c        **** 		return;
+  49:main.c        **** 
+  50:main.c        **** 	HAL.IOs->config->setLow(&HAL.IOs->pins->ID_CLK);
+  74              		.loc 1 50 2 is_stmt 1 view .LVU17
+  75              		.loc 1 50 17 is_stmt 0 view .LVU18
+  76 0030 D4E90030 		ldrd	r3, r0, [r4]
+  77              		.loc 1 50 2 view .LVU19
+  78 0034 9B69     		ldr	r3, [r3, #24]
+  79 0036 0830     		adds	r0, r0, #8
+  80 0038 9847     		blx	r3
+  81              	.LVL4:
+  51:main.c        **** 	if(HAL.IOs->config->isHigh(&HAL.IOs->pins->ID_CH0))
+  82              		.loc 1 51 2 is_stmt 1 view .LVU20
+  83              		.loc 1 51 20 is_stmt 0 view .LVU21
+  84 003a D4E90030 		ldrd	r3, r0, [r4]
+  85              		.loc 1 51 5 view .LVU22
+  86 003e 5B6A     		ldr	r3, [r3, #36]
+  87 0040 2830     		adds	r0, r0, #40
+  88 0042 9847     		blx	r3
+  89              	.LVL5:
+  90              		.loc 1 51 4 view .LVU23
+  91 0044 18BB     		cbnz	r0, .L1
+  52:main.c        **** 		return;
+  53:main.c        **** 
+  54:main.c        **** 	HAL.IOs->config->toOutput(&HAL.IOs->pins->ID_CH0);
+  92              		.loc 1 54 2 is_stmt 1 view .LVU24
+  93              		.loc 1 54 17 is_stmt 0 view .LVU25
+  94 0046 D4E90030 		ldrd	r3, r0, [r4]
+  95              		.loc 1 54 2 view .LVU26
+  96 004a DB68     		ldr	r3, [r3, #12]
+  97 004c 2830     		adds	r0, r0, #40
+  98 004e 9847     		blx	r3
+  99              	.LVL6:
+  55:main.c        **** 	HAL.IOs->config->toInput(&HAL.IOs->pins->ID_CLK);
+ 100              		.loc 1 55 2 is_stmt 1 view .LVU27
+ 101              		.loc 1 55 17 is_stmt 0 view .LVU28
+ 102 0050 D4E90030 		ldrd	r3, r0, [r4]
+ 103              		.loc 1 55 2 view .LVU29
+ 104 0054 1B69     		ldr	r3, [r3, #16]
+ 105 0056 0830     		adds	r0, r0, #8
+ 106 0058 9847     		blx	r3
+ 107              	.LVL7:
+  56:main.c        **** 
+  57:main.c        **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->ID_CH0);
+ 108              		.loc 1 57 2 is_stmt 1 view .LVU30
+ 109              		.loc 1 57 17 is_stmt 0 view .LVU31
+ 110 005a D4E90030 		ldrd	r3, r0, [r4]
+ 111              		.loc 1 57 2 view .LVU32
+ 112 005e 5B69     		ldr	r3, [r3, #20]
+ 113 0060 2830     		adds	r0, r0, #40
+ 114 0062 9847     		blx	r3
+ 115              	.LVL8:
+  58:main.c        **** 	if(!HAL.IOs->config->isHigh(&HAL.IOs->pins->ID_CLK))
+ 116              		.loc 1 58 2 is_stmt 1 view .LVU33
+ 117              		.loc 1 58 21 is_stmt 0 view .LVU34
+ 118 0064 D4E90030 		ldrd	r3, r0, [r4]
+ 119              		.loc 1 58 6 view .LVU35
+ 120 0068 5B6A     		ldr	r3, [r3, #36]
+ 121 006a 0830     		adds	r0, r0, #8
+ 122 006c 9847     		blx	r3
+ 123              	.LVL9:
+ 124              		.loc 1 58 4 view .LVU36
+ 125 006e 70B1     		cbz	r0, .L1
+  59:main.c        **** 		return;
+  60:main.c        **** 
+  61:main.c        **** 	HAL.IOs->config->setLow(&HAL.IOs->pins->ID_CH0);
+ 126              		.loc 1 61 2 is_stmt 1 view .LVU37
+ 127              		.loc 1 61 17 is_stmt 0 view .LVU38
+ 128 0070 D4E90030 		ldrd	r3, r0, [r4]
+ 129              		.loc 1 61 2 view .LVU39
+ 130 0074 9B69     		ldr	r3, [r3, #24]
+ 131 0076 2830     		adds	r0, r0, #40
+ 132 0078 9847     		blx	r3
+ 133              	.LVL10:
+  62:main.c        **** 	if(HAL.IOs->config->isHigh(&HAL.IOs->pins->ID_CLK))
+ 134              		.loc 1 62 2 is_stmt 1 view .LVU40
+ 135              		.loc 1 62 20 is_stmt 0 view .LVU41
+ 136 007a D4E90030 		ldrd	r3, r0, [r4]
+ 137              		.loc 1 62 5 view .LVU42
+ 138 007e 5B6A     		ldr	r3, [r3, #36]
+ 139 0080 0830     		adds	r0, r0, #8
+ 140 0082 9847     		blx	r3
+ 141              	.LVL11:
+ 142              		.loc 1 62 4 view .LVU43
+ 143 0084 18B9     		cbnz	r0, .L1
+  63:main.c        **** 		return;
+  64:main.c        **** 
+  65:main.c        **** 	// not returned, this means pins are tied together
+  66:main.c        **** 	tmcl_boot();
+ 144              		.loc 1 66 2 is_stmt 1 view .LVU44
+  67:main.c        **** }
+ 145              		.loc 1 67 1 is_stmt 0 view .LVU45
+ 146 0086 BDE81040 		pop	{r4, lr}
+ 147              	.LCFI1:
+ 148              		.cfi_remember_state
+ 149              		.cfi_restore 14
+ 150              		.cfi_restore 4
+ 151              		.cfi_def_cfa_offset 0
+  66:main.c        **** }
+ 152              		.loc 1 66 2 view .LVU46
+ 153 008a FFF7FEBF 		b	tmcl_boot
+ 154              	.LVL12:
+ 155              	.L1:
+ 156              	.LCFI2:
+ 157              		.cfi_restore_state
+ 158              		.loc 1 67 1 view .LVU47
+ 159 008e 10BD     		pop	{r4, pc}
+ 160              	.L9:
+ 161              		.align	2
+ 162              	.L8:
+ 163 0090 00000000 		.word	HAL
+ 164              		.cfi_endproc
+ 165              	.LFE1:
+ 167              		.section	.text.startup,"ax",%progbits
+ 168              		.align	1
+ 169              		.global	main
+ 170              		.syntax unified
+ 171              		.thumb
+ 172              		.thumb_func
+ 173              		.fpu softvfp
+ 175              	main:
+ 176              	.LFB3:
+  68:main.c        **** 
+  69:main.c        **** /* Call all standard initialization routines. */
+  70:main.c        **** static void init()
+  71:main.c        **** {
+  72:main.c        **** #if defined(Landungsbruecke)
+  73:main.c        **** 	// Default value: Driver enable gets set high by the bootloader
+  74:main.c        **** 	BLConfig.drvEnableResetValue = 1;
+  75:main.c        **** #endif
+  76:main.c        **** 
+  77:main.c        **** 	HAL.init();                  // Initialize Hardware Abstraction Layer
+  78:main.c        **** 	IDDetection_init();          // Initialize board detection
+  79:main.c        **** 	tmcl_init();                 // Initialize TMCL communication
+  80:main.c        **** 
+  81:main.c        **** 	tmcdriver_init();            // Initialize dummy driver board --> preset EvalBoards.ch2
+  82:main.c        **** 	tmcmotioncontroller_init();  // Initialize dummy motion controller board  --> preset EvalBoards.ch
+  83:main.c        **** 
+  84:main.c        **** 	VitalSignsMonitor.busy = 1;  // Put state to busy
+  85:main.c        **** 	Evalboards.driverEnable = DRIVER_ENABLE;
+  86:main.c        **** 	Evalboards.ch1.id = 0;       // preset id for driver board to 0 --> error/not found
+  87:main.c        **** 	Evalboards.ch2.id = 0;       // preset id for driver board to 0 --> error/not found
+  88:main.c        **** 
+  89:main.c        **** 	// We disable the drivers before configurating anything
+  90:main.c        **** 	HAL.IOs->config->toOutput(&HAL.IOs->pins->DIO0);
+  91:main.c        **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->DIO0);
+  92:main.c        **** 
+  93:main.c        **** 	IdAssignmentTypeDef ids;
+  94:main.c        **** 	IDDetection_initialScan(&ids);  // start initial board detection
+  95:main.c        **** 	IDDetection_initialScan(&ids);  // start second time, first time not 100% reliable, not sure why -
+  96:main.c        **** 	if(!ids.ch1.id && !ids.ch2.id)
+  97:main.c        **** 	{
+  98:main.c        **** 		shallForceBoot();           // only checking to force jump into bootloader if there are no boards
+  99:main.c        **** 		// todo CHECK 2: Workaround: shallForceBoot() changes pin settings - change them again here, sinc
+ 100:main.c        **** 		HAL.IOs->config->toOutput(&HAL.IOs->pins->ID_CLK);
+ 101:main.c        **** 		HAL.IOs->config->toInput(&HAL.IOs->pins->ID_CH0);
+ 102:main.c        **** 	}
+ 103:main.c        **** 	Board_assign(&ids);             // assign boards with detected id
+ 104:main.c        **** 
+ 105:main.c        **** 	VitalSignsMonitor.busy 	= 0;    // not busy any more!
+ 106:main.c        **** }
+ 107:main.c        **** 
+ 108:main.c        **** /* main function */
+ 109:main.c        **** int main(void)
+ 110:main.c        **** {
+ 177              		.loc 1 110 1 is_stmt 1 view -0
+ 178              		.cfi_startproc
+ 179              		@ Volatile: function does not return.
+ 180              		@ args = 0, pretend = 0, frame = 40
+ 181              		@ frame_needed = 0, uses_anonymous_args = 0
+ 111:main.c        **** 	// Start all initialization routines
+ 112:main.c        **** 	init();
+ 182              		.loc 1 112 2 view .LVU49
+ 183              	.LBB4:
+ 184              	.LBI4:
+  70:main.c        **** {
+ 185              		.loc 1 70 13 view .LVU50
+ 186              	.LBB5:
+  74:main.c        **** #endif
+ 187              		.loc 1 74 2 view .LVU51
+ 188              	.LBE5:
+ 189              	.LBE4:
+ 110:main.c        **** 	// Start all initialization routines
+ 190              		.loc 1 110 1 is_stmt 0 view .LVU52
+ 191 0000 80B5     		push	{r7, lr}
+ 192              	.LCFI3:
+ 193              		.cfi_def_cfa_offset 8
+ 194              		.cfi_offset 7, -8
+ 195              		.cfi_offset 14, -4
+ 196              	.LBB8:
+ 197              	.LBB6:
+  74:main.c        **** #endif
+ 198              		.loc 1 74 31 view .LVU53
+ 199 0002 274B     		ldr	r3, .L13
+  77:main.c        **** 	IDDetection_init();          // Initialize board detection
+ 200              		.loc 1 77 5 view .LVU54
+ 201 0004 274F     		ldr	r7, .L13+4
+  85:main.c        **** 	Evalboards.ch1.id = 0;       // preset id for driver board to 0 --> error/not found
+ 202              		.loc 1 85 26 view .LVU55
+ 203 0006 284D     		ldr	r5, .L13+8
+  84:main.c        **** 	Evalboards.driverEnable = DRIVER_ENABLE;
+ 204              		.loc 1 84 25 view .LVU56
+ 205 0008 284E     		ldr	r6, .L13+12
+  74:main.c        **** #endif
+ 206              		.loc 1 74 31 view .LVU57
+ 207 000a 0124     		movs	r4, #1
+ 208              	.LBE6:
+ 209              	.LBE8:
+ 110:main.c        **** 	// Start all initialization routines
+ 210              		.loc 1 110 1 view .LVU58
+ 211 000c 8AB0     		sub	sp, sp, #40
+ 212              	.LCFI4:
+ 213              		.cfi_def_cfa_offset 48
+ 214              	.LBB9:
+ 215              	.LBB7:
+  74:main.c        **** #endif
+ 216              		.loc 1 74 31 view .LVU59
+ 217 000e 5C60     		str	r4, [r3, #4]
+  77:main.c        **** 	IDDetection_init();          // Initialize board detection
+ 218              		.loc 1 77 2 is_stmt 1 view .LVU60
+ 219 0010 3B68     		ldr	r3, [r7]
+ 220 0012 9847     		blx	r3
+ 221              	.LVL13:
+  78:main.c        **** 	tmcl_init();                 // Initialize TMCL communication
+ 222              		.loc 1 78 2 view .LVU61
+ 223 0014 FFF7FEFF 		bl	IDDetection_init
+ 224              	.LVL14:
+  79:main.c        **** 
+ 225              		.loc 1 79 2 view .LVU62
+ 226 0018 FFF7FEFF 		bl	tmcl_init
+ 227              	.LVL15:
+  81:main.c        **** 	tmcmotioncontroller_init();  // Initialize dummy motion controller board  --> preset EvalBoards.ch
+ 228              		.loc 1 81 2 view .LVU63
+ 229 001c FFF7FEFF 		bl	tmcdriver_init
+ 230              	.LVL16:
+  82:main.c        **** 
+ 231              		.loc 1 82 2 view .LVU64
+ 232 0020 FFF7FEFF 		bl	tmcmotioncontroller_init
+ 233              	.LVL17:
+  84:main.c        **** 	Evalboards.driverEnable = DRIVER_ENABLE;
+ 234              		.loc 1 84 2 view .LVU65
+  85:main.c        **** 	Evalboards.ch1.id = 0;       // preset id for driver board to 0 --> error/not found
+ 235              		.loc 1 85 26 is_stmt 0 view .LVU66
+ 236 0024 85F8F040 		strb	r4, [r5, #240]
+  84:main.c        **** 	Evalboards.driverEnable = DRIVER_ENABLE;
+ 237              		.loc 1 84 25 view .LVU67
+ 238 0028 7470     		strb	r4, [r6, #1]
+  85:main.c        **** 	Evalboards.ch1.id = 0;       // preset id for driver board to 0 --> error/not found
+ 239              		.loc 1 85 2 is_stmt 1 view .LVU68
+  86:main.c        **** 	Evalboards.ch2.id = 0;       // preset id for driver board to 0 --> error/not found
+ 240              		.loc 1 86 2 view .LVU69
+  86:main.c        **** 	Evalboards.ch2.id = 0;       // preset id for driver board to 0 --> error/not found
+ 241              		.loc 1 86 20 is_stmt 0 view .LVU70
+ 242 002a 0023     		movs	r3, #0
+  90:main.c        **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->DIO0);
+ 243              		.loc 1 90 5 view .LVU71
+ 244 002c FC68     		ldr	r4, [r7, #12]
+  87:main.c        **** 
+ 245              		.loc 1 87 20 view .LVU72
+ 246 002e 85F87C30 		strb	r3, [r5, #124]
+  86:main.c        **** 	Evalboards.ch2.id = 0;       // preset id for driver board to 0 --> error/not found
+ 247              		.loc 1 86 20 view .LVU73
+ 248 0032 2B71     		strb	r3, [r5, #4]
+  87:main.c        **** 
+ 249              		.loc 1 87 2 is_stmt 1 view .LVU74
+  90:main.c        **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->DIO0);
+ 250              		.loc 1 90 2 view .LVU75
+  90:main.c        **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->DIO0);
+ 251              		.loc 1 90 17 is_stmt 0 view .LVU76
+ 252 0034 D4E90030 		ldrd	r3, r0, [r4]
+  90:main.c        **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->DIO0);
+ 253              		.loc 1 90 2 view .LVU77
+ 254 0038 DB68     		ldr	r3, [r3, #12]
+ 255 003a 6830     		adds	r0, r0, #104
+ 256 003c 9847     		blx	r3
+ 257              	.LVL18:
+  91:main.c        **** 
+ 258              		.loc 1 91 2 is_stmt 1 view .LVU78
+  91:main.c        **** 
+ 259              		.loc 1 91 17 is_stmt 0 view .LVU79
+ 260 003e D4E90030 		ldrd	r3, r0, [r4]
+  91:main.c        **** 
+ 261              		.loc 1 91 2 view .LVU80
+ 262 0042 5B69     		ldr	r3, [r3, #20]
+ 263 0044 6830     		adds	r0, r0, #104
+ 264 0046 9847     		blx	r3
+ 265              	.LVL19:
+  93:main.c        **** 	IDDetection_initialScan(&ids);  // start initial board detection
+ 266              		.loc 1 93 2 is_stmt 1 view .LVU81
+  94:main.c        **** 	IDDetection_initialScan(&ids);  // start second time, first time not 100% reliable, not sure why -
+ 267              		.loc 1 94 2 view .LVU82
+ 268 0048 6846     		mov	r0, sp
+ 269 004a FFF7FEFF 		bl	IDDetection_initialScan
+ 270              	.LVL20:
+  95:main.c        **** 	if(!ids.ch1.id && !ids.ch2.id)
+ 271              		.loc 1 95 2 view .LVU83
+ 272 004e 6846     		mov	r0, sp
+ 273 0050 FFF7FEFF 		bl	IDDetection_initialScan
+ 274              	.LVL21:
+  96:main.c        **** 	{
+ 275              		.loc 1 96 2 view .LVU84
+  96:main.c        **** 	{
+ 276              		.loc 1 96 17 is_stmt 0 view .LVU85
+ 277 0054 9DF80120 		ldrb	r2, [sp, #1]	@ zero_extendqisi2
+ 278 0058 9DF81530 		ldrb	r3, [sp, #21]	@ zero_extendqisi2
+ 279 005c 1343     		orrs	r3, r2, r3
+ 280 005e 0BD1     		bne	.L11
+  98:main.c        **** 		// todo CHECK 2: Workaround: shallForceBoot() changes pin settings - change them again here, sinc
+ 281              		.loc 1 98 3 is_stmt 1 view .LVU86
+ 282 0060 FFF7FEFF 		bl	shallForceBoot
+ 283              	.LVL22:
+ 100:main.c        **** 		HAL.IOs->config->toInput(&HAL.IOs->pins->ID_CH0);
+ 284              		.loc 1 100 3 view .LVU87
+ 100:main.c        **** 		HAL.IOs->config->toInput(&HAL.IOs->pins->ID_CH0);
+ 285              		.loc 1 100 18 is_stmt 0 view .LVU88
+ 286 0064 D4E90030 		ldrd	r3, r0, [r4]
+ 100:main.c        **** 		HAL.IOs->config->toInput(&HAL.IOs->pins->ID_CH0);
+ 287              		.loc 1 100 3 view .LVU89
+ 288 0068 DB68     		ldr	r3, [r3, #12]
+ 289 006a 0830     		adds	r0, r0, #8
+ 290 006c 9847     		blx	r3
+ 291              	.LVL23:
+ 101:main.c        **** 	}
+ 292              		.loc 1 101 3 is_stmt 1 view .LVU90
+ 101:main.c        **** 	}
+ 293              		.loc 1 101 18 is_stmt 0 view .LVU91
+ 294 006e D4E90030 		ldrd	r3, r0, [r4]
+ 101:main.c        **** 	}
+ 295              		.loc 1 101 3 view .LVU92
+ 296 0072 1B69     		ldr	r3, [r3, #16]
+ 297 0074 2830     		adds	r0, r0, #40
+ 298 0076 9847     		blx	r3
+ 299              	.LVL24:
+ 300              	.L11:
+ 103:main.c        **** 
+ 301              		.loc 1 103 2 is_stmt 1 view .LVU93
+ 302 0078 6846     		mov	r0, sp
+ 303 007a FFF7FEFF 		bl	Board_assign
+ 304              	.LVL25:
+ 105:main.c        **** }
+ 305              		.loc 1 105 2 view .LVU94
+ 105:main.c        **** }
+ 306              		.loc 1 105 26 is_stmt 0 view .LVU95
+ 307 007e 0023     		movs	r3, #0
+ 308 0080 7370     		strb	r3, [r6, #1]
+ 309              	.L12:
+ 310              	.LBE7:
+ 311              	.LBE9:
+ 113:main.c        **** 
+ 114:main.c        **** 	// Main loop
+ 115:main.c        **** 	while(1)
+ 312              		.loc 1 115 2 is_stmt 1 discriminator 1 view .LVU96
+ 116:main.c        **** 	{
+ 117:main.c        **** 		// Check all parameters and life signs and mark errors
+ 118:main.c        **** 		vitalsignsmonitor_checkVitalSigns();
+ 313              		.loc 1 118 3 discriminator 1 view .LVU97
+ 314 0082 FFF7FEFF 		bl	vitalsignsmonitor_checkVitalSigns
+ 315              	.LVL26:
+ 119:main.c        **** 
+ 120:main.c        **** 		// Perodic jobs of Motion controller/Driver boards
+ 121:main.c        **** 		Evalboards.ch1.periodicJob(systick_getTick());
+ 316              		.loc 1 121 3 discriminator 1 view .LVU98
+ 317              		.loc 1 121 17 is_stmt 0 discriminator 1 view .LVU99
+ 318 0086 AC6D     		ldr	r4, [r5, #88]
+ 319              		.loc 1 121 3 discriminator 1 view .LVU100
+ 320 0088 FFF7FEFF 		bl	systick_getTick
+ 321              	.LVL27:
+ 322 008c A047     		blx	r4
+ 323              	.LVL28:
+ 122:main.c        **** 		Evalboards.ch2.periodicJob(systick_getTick());
+ 324              		.loc 1 122 3 is_stmt 1 discriminator 1 view .LVU101
+ 325              		.loc 1 122 17 is_stmt 0 discriminator 1 view .LVU102
+ 326 008e D5F8D040 		ldr	r4, [r5, #208]
+ 327              		.loc 1 122 3 discriminator 1 view .LVU103
+ 328 0092 FFF7FEFF 		bl	systick_getTick
+ 329              	.LVL29:
+ 330 0096 A047     		blx	r4
+ 331              	.LVL30:
+ 123:main.c        **** 
+ 124:main.c        **** 		// Process TMCL communication
+ 125:main.c        **** 		tmcl_process();
+ 332              		.loc 1 125 3 is_stmt 1 discriminator 1 view .LVU104
+ 333 0098 FFF7FEFF 		bl	tmcl_process
+ 334              	.LVL31:
+ 115:main.c        **** 	{
+ 335              		.loc 1 115 7 discriminator 1 view .LVU105
+ 336 009c F1E7     		b	.L12
+ 337              	.L14:
+ 338 009e 00BF     		.align	2
+ 339              	.L13:
+ 340 00a0 00000000 		.word	.LANCHOR0
+ 341 00a4 00000000 		.word	HAL
+ 342 00a8 00000000 		.word	Evalboards
+ 343 00ac 00000000 		.word	VitalSignsMonitor
+ 344              		.cfi_endproc
+ 345              	.LFE3:
+ 347              		.global	BLConfig
+ 348              		.global	Protection
+ 349              		.global	VersionString
+ 350              		.section	.rodata.str1.1,"aMS",%progbits,1
+ 351              	.LC0:
+ 352 0000 30303132 		.ascii	"0012V307\000"
+ 352      56333037 
+ 352      00
+ 353              		.comm	IdState,40,4
+ 354              		.comm	TMCMotionController,532,4
+ 355              		.comm	TMCDriver,532,4
+ 356              		.comm	Evalboards,244,4
+ 357              		.comm	VitalSignsMonitor,20,4
+ 358              		.comm	hwid,1,1
+ 359              		.comm	HAL,48,4
+ 360              		.comm	UART,40,4
+ 361              		.comm	Timer,16,4
+ 362              		.comm	WLAN,36,4
+ 363              		.comm	RS232,36,4
+ 364              		.comm	LEDs,28,4
+ 365              		.comm	USB,36,4
+ 366              		.comm	uart0_interrupt,1,1
+ 367              		.comm	ADCs,32,4
+ 368              		.comm	SPI,44,4
+ 369              		.comm	IOMap,2088,4
+ 370              		.comm	IOs,52,4
+ 371              		.comm	Cpu,8,4
+ 372              		.data
+ 373              		.align	2
+ 376              	VersionString:
+ 377 0000 00000000 		.word	.LC0
+ 378              		.bss
+ 379              		.align	1
+ 382              	ADCValue:
+ 383 0000 00000000 		.space	12
+ 383      00000000 
+ 383      00000000 
+ 384              		.section	.bldata,"aw"
+ 385              		.align	2
+ 386              		.set	.LANCHOR0,. + 0
+ 389              	BLConfig:
+ 390 0000 00000000 		.space	8
+ 390      00000000 
+ 391              		.section	.cfmconfig,"a"
+ 394              	Protection:
+ 395 0000 FFFFFFFF 		.ascii	"\377\377\377\377\377\377\377\377\377\377\377\377~\371"
+ 395      FFFFFFFF 
+ 395      FFFFFFFF 
+ 395      7EF9
+ 396 000e FFFF     		.ascii	"\377\377"
+ 397              		.text
+ 398              	.Letext0:
+ 399              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 400              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 401              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 402              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 403              		.file 6 "TMC-API/tmc/helpers/Config.h"
+ 404              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 405              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 406              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 407              		.file 10 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\in
+ 408              		.file 11 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 409              		.file 12 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 410              		.file 13 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 411              		.file 14 "./hal/IOs.h"
+ 412              		.file 15 "./hal/IOMap.h"
+ 413              		.file 16 "./hal/SPI.h"
+ 414              		.file 17 "./hal/ADCs.h"
+ 415              		.file 18 "./hal/RXTX.h"
+ 416              		.file 19 "./hal/USB.h"
+ 417              		.file 20 "./hal/LEDs.h"
+ 418              		.file 21 "./hal/RS232.h"
+ 419              		.file 22 "./hal/WLAN.h"
+ 420              		.file 23 "./hal/Timer.h"
+ 421              		.file 24 "./hal/UART.h"
+ 422              		.file 25 "./hal/HAL.h"
+ 423              		.file 26 "./tmc/VitalSignsMonitor.h"
+ 424              		.file 27 "boards/Board.h"
+ 425              		.file 28 "boards/TMCDriver.h"
+ 426              		.file 29 "boards/TMCMotionController.h"
+ 427              		.file 30 "tmc/BoardAssignment.h"
+ 428              		.file 31 "tmc/IdDetection.h"
+ 429              		.file 32 "tmc/TMCL.h"
+ 430              		.file 33 "./hal/SysTick.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 main.c
+C:\Users\Shubham\AppData\Local\Temp\cc2AHYFX.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\cc2AHYFX.s:23     .text:00000000 shallForceBoot
+C:\Users\Shubham\AppData\Local\Temp\cc2AHYFX.s:163    .text:00000090 $d
+                            *COM*:00000030 HAL
+C:\Users\Shubham\AppData\Local\Temp\cc2AHYFX.s:168    .text.startup:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\cc2AHYFX.s:175    .text.startup:00000000 main
+C:\Users\Shubham\AppData\Local\Temp\cc2AHYFX.s:340    .text.startup:000000a0 $d
+                            *COM*:000000f4 Evalboards
+                            *COM*:00000014 VitalSignsMonitor
+C:\Users\Shubham\AppData\Local\Temp\cc2AHYFX.s:389    .bldata:00000000 BLConfig
+C:\Users\Shubham\AppData\Local\Temp\cc2AHYFX.s:394    .cfmconfig:00000000 Protection
+C:\Users\Shubham\AppData\Local\Temp\cc2AHYFX.s:376    .data:00000000 VersionString
+                            *COM*:00000028 IdState
+                            *COM*:00000214 TMCMotionController
+                            *COM*:00000214 TMCDriver
+                            *COM*:00000001 hwid
+                            *COM*:00000028 UART
+                            *COM*:00000010 Timer
+                            *COM*:00000024 WLAN
+                            *COM*:00000024 RS232
+                            *COM*:0000001c LEDs
+                            *COM*:00000024 USB
+                            *COM*:00000001 uart0_interrupt
+                            *COM*:00000020 ADCs
+                            *COM*:0000002c SPI
+                            *COM*:00000828 IOMap
+                            *COM*:00000034 IOs
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\cc2AHYFX.s:373    .data:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\cc2AHYFX.s:379    .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\cc2AHYFX.s:382    .bss:00000000 ADCValue
+C:\Users\Shubham\AppData\Local\Temp\cc2AHYFX.s:385    .bldata:00000000 $d
+
+UNDEFINED SYMBOLS
+tmcl_boot
+IDDetection_init
+tmcl_init
+tmcdriver_init
+tmcmotioncontroller_init
+IDDetection_initialScan
+Board_assign
+vitalsignsmonitor_checkVitalSigns
+systick_getTick
+tmcl_process

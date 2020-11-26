@@ -1,0 +1,2163 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"TMC2224_eval.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.arch armv7e-m
+  17              		.syntax unified
+  18              		.thumb
+  19              		.thumb_func
+  20              		.fpu softvfp
+  22              	checkErrors:
+  23              	.LVL0:
+  24              	.LFB12:
+  25              		.file 1 "boards/TMC2224_eval.c"
+   1:boards/TMC2224_eval.c **** #include "Board.h"
+   2:boards/TMC2224_eval.c **** #include "tmc/ic/TMC2224/TMC2224.h"
+   3:boards/TMC2224_eval.c **** #include "tmc/StepDir.h"
+   4:boards/TMC2224_eval.c **** 
+   5:boards/TMC2224_eval.c **** #undef  TMC2224_MAX_VELOCITY
+   6:boards/TMC2224_eval.c **** #define TMC2224_MAX_VELOCITY  STEPDIR_MAX_VELOCITY
+   7:boards/TMC2224_eval.c **** 
+   8:boards/TMC2224_eval.c **** // Stepdir precision: 2^17 -> 17 digits of precision
+   9:boards/TMC2224_eval.c **** #define STEPDIR_PRECISION (1 << 17)
+  10:boards/TMC2224_eval.c **** 
+  11:boards/TMC2224_eval.c **** #define ERRORS_VM        (1<<0)
+  12:boards/TMC2224_eval.c **** #define ERRORS_VM_UNDER  (1<<1)
+  13:boards/TMC2224_eval.c **** #define ERRORS_VM_OVER   (1<<2)
+  14:boards/TMC2224_eval.c **** 
+  15:boards/TMC2224_eval.c **** #define VM_MIN  50   // VM[V/10] min
+  16:boards/TMC2224_eval.c **** #define VM_MAX  390  // VM[V/10] max
+  17:boards/TMC2224_eval.c **** 
+  18:boards/TMC2224_eval.c **** #define MOTORS 1
+  19:boards/TMC2224_eval.c **** 
+  20:boards/TMC2224_eval.c **** #define TIMEOUT_VALUE 20 // 15 ms
+  21:boards/TMC2224_eval.c **** 
+  22:boards/TMC2224_eval.c **** static uint32_t right(uint8_t motor, int32_t velocity);
+  23:boards/TMC2224_eval.c **** static uint32_t left(uint8_t motor, int32_t velocity);
+  24:boards/TMC2224_eval.c **** static uint32_t rotate(uint8_t motor, int32_t velocity);
+  25:boards/TMC2224_eval.c **** static uint32_t stop(uint8_t motor);
+  26:boards/TMC2224_eval.c **** static uint32_t moveTo(uint8_t motor, int32_t position);
+  27:boards/TMC2224_eval.c **** static uint32_t moveBy(uint8_t motor, int32_t *ticks);
+  28:boards/TMC2224_eval.c **** static uint32_t GAP(uint8_t type, uint8_t motor, int32_t *value);
+  29:boards/TMC2224_eval.c **** static uint32_t SAP(uint8_t type, uint8_t motor, int32_t value);
+  30:boards/TMC2224_eval.c **** 
+  31:boards/TMC2224_eval.c **** static void checkErrors (uint32_t tick);
+  32:boards/TMC2224_eval.c **** static void deInit(void);
+  33:boards/TMC2224_eval.c **** static uint32_t userFunction(uint8_t type, uint8_t motor, int32_t *value);
+  34:boards/TMC2224_eval.c **** 
+  35:boards/TMC2224_eval.c **** static void periodicJob(uint32_t tick);
+  36:boards/TMC2224_eval.c **** static uint8_t reset(void);
+  37:boards/TMC2224_eval.c **** static void enableDriver(DriverState state);
+  38:boards/TMC2224_eval.c **** 
+  39:boards/TMC2224_eval.c **** static UART_Config *TMC2224_UARTChannel;
+  40:boards/TMC2224_eval.c **** static TMC2224TypeDef TMC2224;
+  41:boards/TMC2224_eval.c **** static ConfigurationTypeDef *TMC2224_config;
+  42:boards/TMC2224_eval.c **** 
+  43:boards/TMC2224_eval.c **** // Helper macro - index is always 1 here (channel 1 <-> index 0, channel 2 <-> index 1)
+  44:boards/TMC2224_eval.c **** #define TMC2224_CRC(data, length) tmc_CRC8(data, length, 1)
+  45:boards/TMC2224_eval.c **** 
+  46:boards/TMC2224_eval.c **** typedef struct
+  47:boards/TMC2224_eval.c **** {
+  48:boards/TMC2224_eval.c **** 	IOPinTypeDef  *DRV_ENN;
+  49:boards/TMC2224_eval.c **** 	IOPinTypeDef  *STEP;
+  50:boards/TMC2224_eval.c **** 	IOPinTypeDef  *DIR;
+  51:boards/TMC2224_eval.c **** 	IOPinTypeDef  *MS1;
+  52:boards/TMC2224_eval.c **** 	IOPinTypeDef  *MS2;
+  53:boards/TMC2224_eval.c **** 	IOPinTypeDef  *DIAG;
+  54:boards/TMC2224_eval.c **** 	IOPinTypeDef  *INDEX;
+  55:boards/TMC2224_eval.c **** } PinsTypeDef;
+  56:boards/TMC2224_eval.c **** 
+  57:boards/TMC2224_eval.c **** static PinsTypeDef Pins;
+  58:boards/TMC2224_eval.c **** 
+  59:boards/TMC2224_eval.c **** void tmc2224_writeRegister(uint8_t motor, uint8_t address, int32_t value)
+  60:boards/TMC2224_eval.c **** {
+  61:boards/TMC2224_eval.c **** 	UNUSED(motor);
+  62:boards/TMC2224_eval.c **** 	UART_writeInt(TMC2224_UARTChannel, tmc2224_get_slave(&TMC2224), address, value);
+  63:boards/TMC2224_eval.c **** }
+  64:boards/TMC2224_eval.c **** 
+  65:boards/TMC2224_eval.c **** void tmc2224_readRegister(uint8_t motor, uint8_t address, int32_t *value)
+  66:boards/TMC2224_eval.c **** {
+  67:boards/TMC2224_eval.c **** 	UNUSED(motor);
+  68:boards/TMC2224_eval.c **** 	UART_readInt(TMC2224_UARTChannel, tmc2224_get_slave(&TMC2224), address, value);
+  69:boards/TMC2224_eval.c **** }
+  70:boards/TMC2224_eval.c **** 
+  71:boards/TMC2224_eval.c **** static uint32_t rotate(uint8_t motor, int32_t velocity)
+  72:boards/TMC2224_eval.c **** {
+  73:boards/TMC2224_eval.c **** 	if(motor >= MOTORS)
+  74:boards/TMC2224_eval.c **** 		return TMC_ERROR_MOTOR;
+  75:boards/TMC2224_eval.c **** 
+  76:boards/TMC2224_eval.c **** 	StepDir_rotate(motor, velocity);
+  77:boards/TMC2224_eval.c **** 
+  78:boards/TMC2224_eval.c **** 	return TMC_ERROR_NONE;
+  79:boards/TMC2224_eval.c **** }
+  80:boards/TMC2224_eval.c **** 
+  81:boards/TMC2224_eval.c **** static uint32_t right(uint8_t motor, int32_t velocity)
+  82:boards/TMC2224_eval.c **** {
+  83:boards/TMC2224_eval.c **** 	return rotate(motor, velocity);
+  84:boards/TMC2224_eval.c **** }
+  85:boards/TMC2224_eval.c **** 
+  86:boards/TMC2224_eval.c **** static uint32_t left(uint8_t motor, int32_t velocity)
+  87:boards/TMC2224_eval.c **** {
+  88:boards/TMC2224_eval.c **** 	return rotate(motor, -velocity);
+  89:boards/TMC2224_eval.c **** }
+  90:boards/TMC2224_eval.c **** 
+  91:boards/TMC2224_eval.c **** static uint32_t stop(uint8_t motor)
+  92:boards/TMC2224_eval.c **** {
+  93:boards/TMC2224_eval.c **** 	return rotate(motor, 0);
+  94:boards/TMC2224_eval.c **** }
+  95:boards/TMC2224_eval.c **** 
+  96:boards/TMC2224_eval.c **** static uint32_t moveTo(uint8_t motor, int32_t position)
+  97:boards/TMC2224_eval.c **** {
+  98:boards/TMC2224_eval.c **** 	if(motor >= MOTORS)
+  99:boards/TMC2224_eval.c **** 		return TMC_ERROR_MOTOR;
+ 100:boards/TMC2224_eval.c **** 
+ 101:boards/TMC2224_eval.c **** 	StepDir_moveTo(motor, position);
+ 102:boards/TMC2224_eval.c **** 
+ 103:boards/TMC2224_eval.c **** 	return TMC_ERROR_NONE;
+ 104:boards/TMC2224_eval.c **** }
+ 105:boards/TMC2224_eval.c **** 
+ 106:boards/TMC2224_eval.c **** static uint32_t moveBy(uint8_t motor, int32_t *ticks)
+ 107:boards/TMC2224_eval.c **** {
+ 108:boards/TMC2224_eval.c **** 	if(motor >= MOTORS)
+ 109:boards/TMC2224_eval.c **** 		return TMC_ERROR_MOTOR;
+ 110:boards/TMC2224_eval.c **** 
+ 111:boards/TMC2224_eval.c **** 	// determine actual position and add numbers of ticks to move
+ 112:boards/TMC2224_eval.c **** 	*ticks += StepDir_getActualPosition(motor);
+ 113:boards/TMC2224_eval.c **** 
+ 114:boards/TMC2224_eval.c **** 	return moveTo(motor, *ticks);
+ 115:boards/TMC2224_eval.c **** }
+ 116:boards/TMC2224_eval.c **** 
+ 117:boards/TMC2224_eval.c **** static uint32_t handleParameter(uint8_t readWrite, uint8_t motor, uint8_t type, int32_t *value)
+ 118:boards/TMC2224_eval.c **** {
+ 119:boards/TMC2224_eval.c **** 	uint32_t errors = TMC_ERROR_NONE;
+ 120:boards/TMC2224_eval.c **** 
+ 121:boards/TMC2224_eval.c **** 
+ 122:boards/TMC2224_eval.c **** 	if(motor >= MOTORS)
+ 123:boards/TMC2224_eval.c **** 		return TMC_ERROR_MOTOR;
+ 124:boards/TMC2224_eval.c **** 
+ 125:boards/TMC2224_eval.c **** 	switch(type)
+ 126:boards/TMC2224_eval.c **** 	{
+ 127:boards/TMC2224_eval.c **** 	case 0:
+ 128:boards/TMC2224_eval.c **** 		// Target position
+ 129:boards/TMC2224_eval.c **** 		if(readWrite == READ) {
+ 130:boards/TMC2224_eval.c **** 			*value = StepDir_getTargetPosition(motor);
+ 131:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 132:boards/TMC2224_eval.c **** 			StepDir_moveTo(motor, *value);
+ 133:boards/TMC2224_eval.c **** 		}
+ 134:boards/TMC2224_eval.c **** 		break;
+ 135:boards/TMC2224_eval.c **** 	case 1:
+ 136:boards/TMC2224_eval.c **** 		// Actual position
+ 137:boards/TMC2224_eval.c **** 		if(readWrite == READ) {
+ 138:boards/TMC2224_eval.c **** 			*value = StepDir_getActualPosition(motor);
+ 139:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 140:boards/TMC2224_eval.c **** 			StepDir_setActualPosition(motor, *value);
+ 141:boards/TMC2224_eval.c **** 		}
+ 142:boards/TMC2224_eval.c **** 		break;
+ 143:boards/TMC2224_eval.c **** 	case 2:
+ 144:boards/TMC2224_eval.c **** 		// Target speed
+ 145:boards/TMC2224_eval.c **** 		if(readWrite == READ) {
+ 146:boards/TMC2224_eval.c **** 			*value = StepDir_getTargetVelocity(motor);
+ 147:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 148:boards/TMC2224_eval.c **** 			StepDir_rotate(motor, *value);
+ 149:boards/TMC2224_eval.c **** 		}
+ 150:boards/TMC2224_eval.c **** 		break;
+ 151:boards/TMC2224_eval.c **** 	case 3:
+ 152:boards/TMC2224_eval.c **** 		// Actual speed
+ 153:boards/TMC2224_eval.c **** 		if(readWrite == READ) {
+ 154:boards/TMC2224_eval.c **** 			*value = StepDir_getActualVelocity(motor);
+ 155:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 156:boards/TMC2224_eval.c **** 			errors |= TMC_ERROR_TYPE;
+ 157:boards/TMC2224_eval.c **** 		}
+ 158:boards/TMC2224_eval.c **** 		break;
+ 159:boards/TMC2224_eval.c **** 	case 4:
+ 160:boards/TMC2224_eval.c **** 		// Maximum speed
+ 161:boards/TMC2224_eval.c **** 		if(readWrite == READ) {
+ 162:boards/TMC2224_eval.c **** 			*value = StepDir_getVelocityMax(motor);
+ 163:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 164:boards/TMC2224_eval.c **** 			StepDir_setVelocityMax(motor, abs(*value));
+ 165:boards/TMC2224_eval.c **** 		}
+ 166:boards/TMC2224_eval.c **** 		break;
+ 167:boards/TMC2224_eval.c **** 	case 5:
+ 168:boards/TMC2224_eval.c **** 		// Maximum acceleration
+ 169:boards/TMC2224_eval.c **** 		if(readWrite == READ) {
+ 170:boards/TMC2224_eval.c **** 			*value = StepDir_getAcceleration(motor);
+ 171:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 172:boards/TMC2224_eval.c **** 			StepDir_setAcceleration(motor, *value);
+ 173:boards/TMC2224_eval.c **** 		}
+ 174:boards/TMC2224_eval.c **** 		break;
+ 175:boards/TMC2224_eval.c **** 	case 6:
+ 176:boards/TMC2224_eval.c **** 		// UART slave address
+ 177:boards/TMC2224_eval.c **** 		if(readWrite == READ) {
+ 178:boards/TMC2224_eval.c **** 			*value = tmc2224_get_slave(&TMC2224);
+ 179:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 180:boards/TMC2224_eval.c **** 			tmc2224_set_slave(&TMC2224, *value);
+ 181:boards/TMC2224_eval.c **** 		}
+ 182:boards/TMC2224_eval.c **** 		break;
+ 183:boards/TMC2224_eval.c **** 	default:
+ 184:boards/TMC2224_eval.c **** 		errors |= TMC_ERROR_TYPE;
+ 185:boards/TMC2224_eval.c **** 		break;
+ 186:boards/TMC2224_eval.c **** 	}
+ 187:boards/TMC2224_eval.c **** 
+ 188:boards/TMC2224_eval.c **** 	return errors;
+ 189:boards/TMC2224_eval.c **** }
+ 190:boards/TMC2224_eval.c **** 
+ 191:boards/TMC2224_eval.c **** static uint32_t SAP(uint8_t type, uint8_t motor, int32_t value)
+ 192:boards/TMC2224_eval.c **** {
+ 193:boards/TMC2224_eval.c **** 	return handleParameter(WRITE, motor, type, &value);
+ 194:boards/TMC2224_eval.c **** }
+ 195:boards/TMC2224_eval.c **** 
+ 196:boards/TMC2224_eval.c **** static uint32_t GAP(uint8_t type, uint8_t motor, int32_t *value)
+ 197:boards/TMC2224_eval.c **** {
+ 198:boards/TMC2224_eval.c **** 	return handleParameter(READ, motor, type, value);
+ 199:boards/TMC2224_eval.c **** }
+ 200:boards/TMC2224_eval.c **** 
+ 201:boards/TMC2224_eval.c **** static void checkErrors(uint32_t tick)
+ 202:boards/TMC2224_eval.c **** {
+  26              		.loc 1 202 1 view -0
+  27              		.cfi_startproc
+  28              		@ args = 0, pretend = 0, frame = 0
+  29              		@ frame_needed = 0, uses_anonymous_args = 0
+  30              		@ link register save eliminated.
+ 203:boards/TMC2224_eval.c **** 	UNUSED(tick);
+  31              		.loc 1 203 2 view .LVU1
+ 204:boards/TMC2224_eval.c **** 	Evalboards.ch2.errors = 0;
+  32              		.loc 1 204 2 view .LVU2
+  33              		.loc 1 204 24 is_stmt 0 view .LVU3
+  34 0000 024B     		ldr	r3, .L2
+  35 0002 0022     		movs	r2, #0
+  36 0004 C3F88020 		str	r2, [r3, #128]
+ 205:boards/TMC2224_eval.c **** }
+  37              		.loc 1 205 1 view .LVU4
+  38 0008 7047     		bx	lr
+  39              	.L3:
+  40 000a 00BF     		.align	2
+  41              	.L2:
+  42 000c 00000000 		.word	Evalboards
+  43              		.cfi_endproc
+  44              	.LFE12:
+  46              		.align	1
+  47              		.global	tmc2224_writeRegister
+  48              		.syntax unified
+  49              		.thumb
+  50              		.thumb_func
+  51              		.fpu softvfp
+  53              	tmc2224_writeRegister:
+  54              	.LVL1:
+  55              	.LFB1:
+  60:boards/TMC2224_eval.c **** 	UNUSED(motor);
+  56              		.loc 1 60 1 is_stmt 1 view -0
+  57              		.cfi_startproc
+  58              		@ args = 0, pretend = 0, frame = 0
+  59              		@ frame_needed = 0, uses_anonymous_args = 0
+  61:boards/TMC2224_eval.c **** 	UART_writeInt(TMC2224_UARTChannel, tmc2224_get_slave(&TMC2224), address, value);
+  60              		.loc 1 61 2 view .LVU6
+  62:boards/TMC2224_eval.c **** }
+  61              		.loc 1 62 2 view .LVU7
+  62 0010 0748     		ldr	r0, .L5
+  63              	.LVL2:
+  60:boards/TMC2224_eval.c **** 	UNUSED(motor);
+  64              		.loc 1 60 1 is_stmt 0 view .LVU8
+  65 0012 70B5     		push	{r4, r5, r6, lr}
+  66              	.LCFI0:
+  67              		.cfi_def_cfa_offset 16
+  68              		.cfi_offset 4, -16
+  69              		.cfi_offset 5, -12
+  70              		.cfi_offset 6, -8
+  71              		.cfi_offset 14, -4
+  62:boards/TMC2224_eval.c **** }
+  72              		.loc 1 62 2 view .LVU9
+  73 0014 50F8046B 		ldr	r6, [r0], #4
+  60:boards/TMC2224_eval.c **** 	UNUSED(motor);
+  74              		.loc 1 60 1 view .LVU10
+  75 0018 0C46     		mov	r4, r1
+  76 001a 1546     		mov	r5, r2
+  62:boards/TMC2224_eval.c **** }
+  77              		.loc 1 62 2 view .LVU11
+  78 001c FFF7FEFF 		bl	tmc2224_get_slave
+  79              	.LVL3:
+  62:boards/TMC2224_eval.c **** }
+  80              		.loc 1 62 2 view .LVU12
+  81 0020 2B46     		mov	r3, r5
+  82 0022 0146     		mov	r1, r0
+  83 0024 2246     		mov	r2, r4
+  84 0026 3046     		mov	r0, r6
+  63:boards/TMC2224_eval.c **** 
+  85              		.loc 1 63 1 view .LVU13
+  86 0028 BDE87040 		pop	{r4, r5, r6, lr}
+  87              	.LCFI1:
+  88              		.cfi_restore 14
+  89              		.cfi_restore 6
+  90              		.cfi_restore 5
+  91              		.cfi_restore 4
+  92              		.cfi_def_cfa_offset 0
+  93              	.LVL4:
+  62:boards/TMC2224_eval.c **** }
+  94              		.loc 1 62 2 view .LVU14
+  95 002c FFF7FEBF 		b	UART_writeInt
+  96              	.LVL5:
+  97              	.L6:
+  62:boards/TMC2224_eval.c **** }
+  98              		.loc 1 62 2 view .LVU15
+  99              		.align	2
+ 100              	.L5:
+ 101 0030 00000000 		.word	.LANCHOR0
+ 102              		.cfi_endproc
+ 103              	.LFE1:
+ 105              		.align	1
+ 106              		.global	tmc2224_readRegister
+ 107              		.syntax unified
+ 108              		.thumb
+ 109              		.thumb_func
+ 110              		.fpu softvfp
+ 112              	tmc2224_readRegister:
+ 113              	.LVL6:
+ 114              	.LFB2:
+  66:boards/TMC2224_eval.c **** 	UNUSED(motor);
+ 115              		.loc 1 66 1 is_stmt 1 view -0
+ 116              		.cfi_startproc
+ 117              		@ args = 0, pretend = 0, frame = 0
+ 118              		@ frame_needed = 0, uses_anonymous_args = 0
+  67:boards/TMC2224_eval.c **** 	UART_readInt(TMC2224_UARTChannel, tmc2224_get_slave(&TMC2224), address, value);
+ 119              		.loc 1 67 2 view .LVU17
+  68:boards/TMC2224_eval.c **** }
+ 120              		.loc 1 68 2 view .LVU18
+ 121 0034 0748     		ldr	r0, .L8
+ 122              	.LVL7:
+  66:boards/TMC2224_eval.c **** 	UNUSED(motor);
+ 123              		.loc 1 66 1 is_stmt 0 view .LVU19
+ 124 0036 70B5     		push	{r4, r5, r6, lr}
+ 125              	.LCFI2:
+ 126              		.cfi_def_cfa_offset 16
+ 127              		.cfi_offset 4, -16
+ 128              		.cfi_offset 5, -12
+ 129              		.cfi_offset 6, -8
+ 130              		.cfi_offset 14, -4
+  68:boards/TMC2224_eval.c **** }
+ 131              		.loc 1 68 2 view .LVU20
+ 132 0038 50F8046B 		ldr	r6, [r0], #4
+  66:boards/TMC2224_eval.c **** 	UNUSED(motor);
+ 133              		.loc 1 66 1 view .LVU21
+ 134 003c 0C46     		mov	r4, r1
+ 135 003e 1546     		mov	r5, r2
+  68:boards/TMC2224_eval.c **** }
+ 136              		.loc 1 68 2 view .LVU22
+ 137 0040 FFF7FEFF 		bl	tmc2224_get_slave
+ 138              	.LVL8:
+  68:boards/TMC2224_eval.c **** }
+ 139              		.loc 1 68 2 view .LVU23
+ 140 0044 2B46     		mov	r3, r5
+ 141 0046 0146     		mov	r1, r0
+ 142 0048 2246     		mov	r2, r4
+ 143 004a 3046     		mov	r0, r6
+  69:boards/TMC2224_eval.c **** 
+ 144              		.loc 1 69 1 view .LVU24
+ 145 004c BDE87040 		pop	{r4, r5, r6, lr}
+ 146              	.LCFI3:
+ 147              		.cfi_restore 14
+ 148              		.cfi_restore 6
+ 149              		.cfi_restore 5
+ 150              		.cfi_restore 4
+ 151              		.cfi_def_cfa_offset 0
+ 152              	.LVL9:
+  68:boards/TMC2224_eval.c **** }
+ 153              		.loc 1 68 2 view .LVU25
+ 154 0050 FFF7FEBF 		b	UART_readInt
+ 155              	.LVL10:
+ 156              	.L9:
+  68:boards/TMC2224_eval.c **** }
+ 157              		.loc 1 68 2 view .LVU26
+ 158              		.align	2
+ 159              	.L8:
+ 160 0054 00000000 		.word	.LANCHOR0
+ 161              		.cfi_endproc
+ 162              	.LFE2:
+ 164              		.align	1
+ 165              		.syntax unified
+ 166              		.thumb
+ 167              		.thumb_func
+ 168              		.fpu softvfp
+ 170              	periodicJob:
+ 171              	.LVL11:
+ 172              	.LFB18:
+ 206:boards/TMC2224_eval.c **** 
+ 207:boards/TMC2224_eval.c **** static uint32_t userFunction(uint8_t type, uint8_t motor, int32_t *value)
+ 208:boards/TMC2224_eval.c **** {
+ 209:boards/TMC2224_eval.c **** 	uint32_t errors = 0;
+ 210:boards/TMC2224_eval.c **** 
+ 211:boards/TMC2224_eval.c **** 	switch(type)
+ 212:boards/TMC2224_eval.c **** 	{
+ 213:boards/TMC2224_eval.c **** 	case 0:  // Read StepDir status bits
+ 214:boards/TMC2224_eval.c **** 		*value = StepDir_getStatus(motor);
+ 215:boards/TMC2224_eval.c **** 		break;
+ 216:boards/TMC2224_eval.c **** 	default:
+ 217:boards/TMC2224_eval.c **** 		errors |= TMC_ERROR_TYPE;
+ 218:boards/TMC2224_eval.c **** 		break;
+ 219:boards/TMC2224_eval.c **** 	}
+ 220:boards/TMC2224_eval.c **** 
+ 221:boards/TMC2224_eval.c **** 	return errors;
+ 222:boards/TMC2224_eval.c **** }
+ 223:boards/TMC2224_eval.c **** 
+ 224:boards/TMC2224_eval.c **** static void deInit(void)
+ 225:boards/TMC2224_eval.c **** {
+ 226:boards/TMC2224_eval.c **** 	enableDriver(DRIVER_DISABLE);
+ 227:boards/TMC2224_eval.c **** 
+ 228:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.DRV_ENN);
+ 229:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.STEP);
+ 230:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.DIR);
+ 231:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.MS1);
+ 232:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.MS2);
+ 233:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.DIAG);
+ 234:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.INDEX);
+ 235:boards/TMC2224_eval.c **** 
+ 236:boards/TMC2224_eval.c **** 	TMC2224_UARTChannel->rxtx.deInit();
+ 237:boards/TMC2224_eval.c **** 	StepDir_deInit();
+ 238:boards/TMC2224_eval.c **** };
+ 239:boards/TMC2224_eval.c **** 
+ 240:boards/TMC2224_eval.c **** static uint8_t reset()
+ 241:boards/TMC2224_eval.c **** {
+ 242:boards/TMC2224_eval.c **** 	StepDir_init(STEPDIR_PRECISION);
+ 243:boards/TMC2224_eval.c **** 	StepDir_setPins(0, Pins.STEP, Pins.DIR, NULL);
+ 244:boards/TMC2224_eval.c **** 
+ 245:boards/TMC2224_eval.c **** 	return tmc2224_reset(TMC2224_config);
+ 246:boards/TMC2224_eval.c **** }
+ 247:boards/TMC2224_eval.c **** 
+ 248:boards/TMC2224_eval.c **** static uint8_t restore()
+ 249:boards/TMC2224_eval.c **** {
+ 250:boards/TMC2224_eval.c **** 	return tmc2224_restore(TMC2224_config);
+ 251:boards/TMC2224_eval.c **** }
+ 252:boards/TMC2224_eval.c **** 
+ 253:boards/TMC2224_eval.c **** static void enableDriver(DriverState state)
+ 254:boards/TMC2224_eval.c **** {
+ 255:boards/TMC2224_eval.c **** 	if(state == DRIVER_USE_GLOBAL_ENABLE)
+ 256:boards/TMC2224_eval.c **** 		state = Evalboards.driverEnable;
+ 257:boards/TMC2224_eval.c **** 
+ 258:boards/TMC2224_eval.c **** 	if(state == DRIVER_DISABLE)
+ 259:boards/TMC2224_eval.c **** 		HAL.IOs->config->setHigh(Pins.DRV_ENN);
+ 260:boards/TMC2224_eval.c **** 	else if((state == DRIVER_ENABLE) && (Evalboards.driverEnable == DRIVER_ENABLE))
+ 261:boards/TMC2224_eval.c **** 		HAL.IOs->config->setLow(Pins.DRV_ENN);
+ 262:boards/TMC2224_eval.c **** }
+ 263:boards/TMC2224_eval.c **** 
+ 264:boards/TMC2224_eval.c **** static void periodicJob(uint32_t tick)
+ 265:boards/TMC2224_eval.c **** {
+ 173              		.loc 1 265 1 is_stmt 1 view -0
+ 174              		.cfi_startproc
+ 175              		@ args = 0, pretend = 0, frame = 0
+ 176              		@ frame_needed = 0, uses_anonymous_args = 0
+ 266:boards/TMC2224_eval.c **** 	for(int motor = 0; motor < MOTORS; motor++)
+ 177              		.loc 1 266 2 view .LVU28
+ 178              	.LBB2:
+ 179              		.loc 1 266 6 view .LVU29
+ 180              		.loc 1 266 21 view .LVU30
+ 267:boards/TMC2224_eval.c **** 	{
+ 268:boards/TMC2224_eval.c **** 		tmc2224_periodicJob(motor, tick, &TMC2224, TMC2224_config);
+ 181              		.loc 1 268 3 view .LVU31
+ 182              	.LBE2:
+ 265:boards/TMC2224_eval.c **** 	for(int motor = 0; motor < MOTORS; motor++)
+ 183              		.loc 1 265 1 is_stmt 0 view .LVU32
+ 184 0058 08B5     		push	{r3, lr}
+ 185              	.LCFI4:
+ 186              		.cfi_def_cfa_offset 8
+ 187              		.cfi_offset 3, -8
+ 188              		.cfi_offset 14, -4
+ 189              	.LBB3:
+ 190              		.loc 1 268 3 view .LVU33
+ 191 005a 064A     		ldr	r2, .L11
+ 192              	.LBE3:
+ 265:boards/TMC2224_eval.c **** 	for(int motor = 0; motor < MOTORS; motor++)
+ 193              		.loc 1 265 1 view .LVU34
+ 194 005c 0146     		mov	r1, r0
+ 195              	.LBB4:
+ 196              		.loc 1 268 3 view .LVU35
+ 197 005e D2F89432 		ldr	r3, [r2, #660]
+ 198 0062 0020     		movs	r0, #0
+ 199              	.LVL12:
+ 200              		.loc 1 268 3 view .LVU36
+ 201 0064 0432     		adds	r2, r2, #4
+ 202 0066 FFF7FEFF 		bl	tmc2224_periodicJob
+ 203              	.LVL13:
+ 269:boards/TMC2224_eval.c **** 		StepDir_periodicJob(motor);
+ 204              		.loc 1 269 3 is_stmt 1 view .LVU37
+ 205              	.LBE4:
+ 270:boards/TMC2224_eval.c **** 	}
+ 271:boards/TMC2224_eval.c **** }
+ 206              		.loc 1 271 1 is_stmt 0 view .LVU38
+ 207 006a BDE80840 		pop	{r3, lr}
+ 208              	.LCFI5:
+ 209              		.cfi_restore 14
+ 210              		.cfi_restore 3
+ 211              		.cfi_def_cfa_offset 0
+ 212              	.LBB5:
+ 269:boards/TMC2224_eval.c **** 		StepDir_periodicJob(motor);
+ 213              		.loc 1 269 3 view .LVU39
+ 214 006e 0020     		movs	r0, #0
+ 215 0070 FFF7FEBF 		b	StepDir_periodicJob
+ 216              	.LVL14:
+ 217              	.L12:
+ 218              		.align	2
+ 219              	.L11:
+ 220 0074 00000000 		.word	.LANCHOR0
+ 221              	.LBE5:
+ 222              		.cfi_endproc
+ 223              	.LFE18:
+ 225              		.align	1
+ 226              		.syntax unified
+ 227              		.thumb
+ 228              		.thumb_func
+ 229              		.fpu softvfp
+ 231              	userFunction:
+ 232              	.LVL15:
+ 233              	.LFB13:
+ 208:boards/TMC2224_eval.c **** 	uint32_t errors = 0;
+ 234              		.loc 1 208 1 is_stmt 1 view -0
+ 235              		.cfi_startproc
+ 236              		@ args = 0, pretend = 0, frame = 0
+ 237              		@ frame_needed = 0, uses_anonymous_args = 0
+ 209:boards/TMC2224_eval.c **** 
+ 238              		.loc 1 209 2 view .LVU41
+ 211:boards/TMC2224_eval.c **** 	{
+ 239              		.loc 1 211 2 view .LVU42
+ 208:boards/TMC2224_eval.c **** 	uint32_t errors = 0;
+ 240              		.loc 1 208 1 is_stmt 0 view .LVU43
+ 241 0078 38B5     		push	{r3, r4, r5, lr}
+ 242              	.LCFI6:
+ 243              		.cfi_def_cfa_offset 16
+ 244              		.cfi_offset 3, -16
+ 245              		.cfi_offset 4, -12
+ 246              		.cfi_offset 5, -8
+ 247              		.cfi_offset 14, -4
+ 208:boards/TMC2224_eval.c **** 	uint32_t errors = 0;
+ 248              		.loc 1 208 1 view .LVU44
+ 249 007a 0446     		mov	r4, r0
+ 250 007c 1546     		mov	r5, r2
+ 251 007e 0846     		mov	r0, r1
+ 252              	.LVL16:
+ 211:boards/TMC2224_eval.c **** 	{
+ 253              		.loc 1 211 2 view .LVU45
+ 254 0080 24B9     		cbnz	r4, .L15
+ 214:boards/TMC2224_eval.c **** 		break;
+ 255              		.loc 1 214 3 is_stmt 1 view .LVU46
+ 214:boards/TMC2224_eval.c **** 		break;
+ 256              		.loc 1 214 12 is_stmt 0 view .LVU47
+ 257 0082 FFF7FEFF 		bl	StepDir_getStatus
+ 258              	.LVL17:
+ 214:boards/TMC2224_eval.c **** 		break;
+ 259              		.loc 1 214 12 view .LVU48
+ 260 0086 2860     		str	r0, [r5]
+ 215:boards/TMC2224_eval.c **** 	default:
+ 261              		.loc 1 215 3 is_stmt 1 view .LVU49
+ 209:boards/TMC2224_eval.c **** 
+ 262              		.loc 1 209 11 is_stmt 0 view .LVU50
+ 263 0088 2046     		mov	r0, r4
+ 264              	.LVL18:
+ 265              	.L13:
+ 222:boards/TMC2224_eval.c **** 
+ 266              		.loc 1 222 1 view .LVU51
+ 267 008a 38BD     		pop	{r3, r4, r5, pc}
+ 268              	.LVL19:
+ 269              	.L15:
+ 217:boards/TMC2224_eval.c **** 		break;
+ 270              		.loc 1 217 10 view .LVU52
+ 271 008c 0420     		movs	r0, #4
+ 272              	.LVL20:
+ 221:boards/TMC2224_eval.c **** }
+ 273              		.loc 1 221 2 is_stmt 1 view .LVU53
+ 221:boards/TMC2224_eval.c **** }
+ 274              		.loc 1 221 9 is_stmt 0 view .LVU54
+ 275 008e FCE7     		b	.L13
+ 276              		.cfi_endproc
+ 277              	.LFE13:
+ 279              		.align	1
+ 280              		.syntax unified
+ 281              		.thumb
+ 282              		.thumb_func
+ 283              		.fpu softvfp
+ 285              	moveTo:
+ 286              	.LVL21:
+ 287              	.LFB7:
+  97:boards/TMC2224_eval.c **** 	if(motor >= MOTORS)
+ 288              		.loc 1 97 1 is_stmt 1 view -0
+ 289              		.cfi_startproc
+ 290              		@ args = 0, pretend = 0, frame = 0
+ 291              		@ frame_needed = 0, uses_anonymous_args = 0
+  98:boards/TMC2224_eval.c **** 		return TMC_ERROR_MOTOR;
+ 292              		.loc 1 98 2 view .LVU56
+  97:boards/TMC2224_eval.c **** 	if(motor >= MOTORS)
+ 293              		.loc 1 97 1 is_stmt 0 view .LVU57
+ 294 0090 10B5     		push	{r4, lr}
+ 295              	.LCFI7:
+ 296              		.cfi_def_cfa_offset 8
+ 297              		.cfi_offset 4, -8
+ 298              		.cfi_offset 14, -4
+  98:boards/TMC2224_eval.c **** 		return TMC_ERROR_MOTOR;
+ 299              		.loc 1 98 4 view .LVU58
+ 300 0092 0446     		mov	r4, r0
+ 301 0094 18B9     		cbnz	r0, .L18
+ 101:boards/TMC2224_eval.c **** 
+ 302              		.loc 1 101 2 is_stmt 1 view .LVU59
+ 303 0096 FFF7FEFF 		bl	StepDir_moveTo
+ 304              	.LVL22:
+ 103:boards/TMC2224_eval.c **** }
+ 305              		.loc 1 103 2 view .LVU60
+ 103:boards/TMC2224_eval.c **** }
+ 306              		.loc 1 103 9 is_stmt 0 view .LVU61
+ 307 009a 2046     		mov	r0, r4
+ 308              	.L16:
+ 104:boards/TMC2224_eval.c **** 
+ 309              		.loc 1 104 1 view .LVU62
+ 310 009c 10BD     		pop	{r4, pc}
+ 311              	.LVL23:
+ 312              	.L18:
+  99:boards/TMC2224_eval.c **** 
+ 313              		.loc 1 99 10 view .LVU63
+ 314 009e 0820     		movs	r0, #8
+ 315              	.LVL24:
+  99:boards/TMC2224_eval.c **** 
+ 316              		.loc 1 99 10 view .LVU64
+ 317 00a0 FCE7     		b	.L16
+ 318              		.cfi_endproc
+ 319              	.LFE7:
+ 321              		.align	1
+ 322              		.syntax unified
+ 323              		.thumb
+ 324              		.thumb_func
+ 325              		.fpu softvfp
+ 327              	rotate:
+ 328              	.LVL25:
+ 329              	.LFB3:
+  72:boards/TMC2224_eval.c **** 	if(motor >= MOTORS)
+ 330              		.loc 1 72 1 is_stmt 1 view -0
+ 331              		.cfi_startproc
+ 332              		@ args = 0, pretend = 0, frame = 0
+ 333              		@ frame_needed = 0, uses_anonymous_args = 0
+  73:boards/TMC2224_eval.c **** 		return TMC_ERROR_MOTOR;
+ 334              		.loc 1 73 2 view .LVU66
+  72:boards/TMC2224_eval.c **** 	if(motor >= MOTORS)
+ 335              		.loc 1 72 1 is_stmt 0 view .LVU67
+ 336 00a2 10B5     		push	{r4, lr}
+ 337              	.LCFI8:
+ 338              		.cfi_def_cfa_offset 8
+ 339              		.cfi_offset 4, -8
+ 340              		.cfi_offset 14, -4
+  73:boards/TMC2224_eval.c **** 		return TMC_ERROR_MOTOR;
+ 341              		.loc 1 73 4 view .LVU68
+ 342 00a4 0446     		mov	r4, r0
+ 343 00a6 18B9     		cbnz	r0, .L21
+  76:boards/TMC2224_eval.c **** 
+ 344              		.loc 1 76 2 is_stmt 1 view .LVU69
+ 345 00a8 FFF7FEFF 		bl	StepDir_rotate
+ 346              	.LVL26:
+  78:boards/TMC2224_eval.c **** }
+ 347              		.loc 1 78 2 view .LVU70
+  78:boards/TMC2224_eval.c **** }
+ 348              		.loc 1 78 9 is_stmt 0 view .LVU71
+ 349 00ac 2046     		mov	r0, r4
+ 350              	.L19:
+  79:boards/TMC2224_eval.c **** 
+ 351              		.loc 1 79 1 view .LVU72
+ 352 00ae 10BD     		pop	{r4, pc}
+ 353              	.LVL27:
+ 354              	.L21:
+  74:boards/TMC2224_eval.c **** 
+ 355              		.loc 1 74 10 view .LVU73
+ 356 00b0 0820     		movs	r0, #8
+ 357              	.LVL28:
+  74:boards/TMC2224_eval.c **** 
+ 358              		.loc 1 74 10 view .LVU74
+ 359 00b2 FCE7     		b	.L19
+ 360              		.cfi_endproc
+ 361              	.LFE3:
+ 363              		.align	1
+ 364              		.syntax unified
+ 365              		.thumb
+ 366              		.thumb_func
+ 367              		.fpu softvfp
+ 369              	stop:
+ 370              	.LVL29:
+ 371              	.LFB6:
+  92:boards/TMC2224_eval.c **** 	return rotate(motor, 0);
+ 372              		.loc 1 92 1 is_stmt 1 view -0
+ 373              		.cfi_startproc
+ 374              		@ args = 0, pretend = 0, frame = 0
+ 375              		@ frame_needed = 0, uses_anonymous_args = 0
+ 376              		@ link register save eliminated.
+  93:boards/TMC2224_eval.c **** }
+ 377              		.loc 1 93 2 view .LVU76
+  93:boards/TMC2224_eval.c **** }
+ 378              		.loc 1 93 9 is_stmt 0 view .LVU77
+ 379 00b4 0021     		movs	r1, #0
+ 380 00b6 F4E7     		b	rotate
+ 381              	.LVL30:
+  93:boards/TMC2224_eval.c **** }
+ 382              		.loc 1 93 9 view .LVU78
+ 383              		.cfi_endproc
+ 384              	.LFE6:
+ 386              		.align	1
+ 387              		.syntax unified
+ 388              		.thumb
+ 389              		.thumb_func
+ 390              		.fpu softvfp
+ 392              	left:
+ 393              	.LVL31:
+ 394              	.LFB5:
+  87:boards/TMC2224_eval.c **** 	return rotate(motor, -velocity);
+ 395              		.loc 1 87 1 is_stmt 1 view -0
+ 396              		.cfi_startproc
+ 397              		@ args = 0, pretend = 0, frame = 0
+ 398              		@ frame_needed = 0, uses_anonymous_args = 0
+ 399              		@ link register save eliminated.
+  88:boards/TMC2224_eval.c **** }
+ 400              		.loc 1 88 2 view .LVU80
+  88:boards/TMC2224_eval.c **** }
+ 401              		.loc 1 88 9 is_stmt 0 view .LVU81
+ 402 00b8 4942     		rsbs	r1, r1, #0
+ 403              	.LVL32:
+  88:boards/TMC2224_eval.c **** }
+ 404              		.loc 1 88 9 view .LVU82
+ 405 00ba F2E7     		b	rotate
+ 406              	.LVL33:
+  88:boards/TMC2224_eval.c **** }
+ 407              		.loc 1 88 9 view .LVU83
+ 408              		.cfi_endproc
+ 409              	.LFE5:
+ 411              		.align	1
+ 412              		.syntax unified
+ 413              		.thumb
+ 414              		.thumb_func
+ 415              		.fpu softvfp
+ 417              	right:
+ 418              	.LVL34:
+ 419              	.LFB4:
+  82:boards/TMC2224_eval.c **** 	return rotate(motor, velocity);
+ 420              		.loc 1 82 1 is_stmt 1 view -0
+ 421              		.cfi_startproc
+ 422              		@ args = 0, pretend = 0, frame = 0
+ 423              		@ frame_needed = 0, uses_anonymous_args = 0
+ 424              		@ link register save eliminated.
+  83:boards/TMC2224_eval.c **** }
+ 425              		.loc 1 83 2 view .LVU85
+  83:boards/TMC2224_eval.c **** }
+ 426              		.loc 1 83 9 is_stmt 0 view .LVU86
+ 427 00bc F1E7     		b	rotate
+ 428              	.LVL35:
+  83:boards/TMC2224_eval.c **** }
+ 429              		.loc 1 83 9 view .LVU87
+ 430              		.cfi_endproc
+ 431              	.LFE4:
+ 433              		.align	1
+ 434              		.syntax unified
+ 435              		.thumb
+ 436              		.thumb_func
+ 437              		.fpu softvfp
+ 439              	restore:
+ 440              	.LFB16:
+ 249:boards/TMC2224_eval.c **** 	return tmc2224_restore(TMC2224_config);
+ 441              		.loc 1 249 1 is_stmt 1 view -0
+ 442              		.cfi_startproc
+ 443              		@ args = 0, pretend = 0, frame = 0
+ 444              		@ frame_needed = 0, uses_anonymous_args = 0
+ 445              		@ link register save eliminated.
+ 250:boards/TMC2224_eval.c **** }
+ 446              		.loc 1 250 2 view .LVU89
+ 250:boards/TMC2224_eval.c **** }
+ 447              		.loc 1 250 9 is_stmt 0 view .LVU90
+ 448 00be 024B     		ldr	r3, .L26
+ 449 00c0 D3F89402 		ldr	r0, [r3, #660]
+ 450 00c4 FFF7FEBF 		b	tmc2224_restore
+ 451              	.LVL36:
+ 452              	.L27:
+ 453              		.align	2
+ 454              	.L26:
+ 455 00c8 00000000 		.word	.LANCHOR0
+ 456              		.cfi_endproc
+ 457              	.LFE16:
+ 459              		.align	1
+ 460              		.syntax unified
+ 461              		.thumb
+ 462              		.thumb_func
+ 463              		.fpu softvfp
+ 465              	reset:
+ 466              	.LFB15:
+ 241:boards/TMC2224_eval.c **** 	StepDir_init(STEPDIR_PRECISION);
+ 467              		.loc 1 241 1 is_stmt 1 view -0
+ 468              		.cfi_startproc
+ 469              		@ args = 0, pretend = 0, frame = 0
+ 470              		@ frame_needed = 0, uses_anonymous_args = 0
+ 242:boards/TMC2224_eval.c **** 	StepDir_setPins(0, Pins.STEP, Pins.DIR, NULL);
+ 471              		.loc 1 242 2 view .LVU92
+ 241:boards/TMC2224_eval.c **** 	StepDir_init(STEPDIR_PRECISION);
+ 472              		.loc 1 241 1 is_stmt 0 view .LVU93
+ 473 00cc 10B5     		push	{r4, lr}
+ 474              	.LCFI9:
+ 475              		.cfi_def_cfa_offset 8
+ 476              		.cfi_offset 4, -8
+ 477              		.cfi_offset 14, -4
+ 242:boards/TMC2224_eval.c **** 	StepDir_setPins(0, Pins.STEP, Pins.DIR, NULL);
+ 478              		.loc 1 242 2 view .LVU94
+ 479 00ce 4FF40030 		mov	r0, #131072
+ 243:boards/TMC2224_eval.c **** 
+ 480              		.loc 1 243 2 view .LVU95
+ 481 00d2 074C     		ldr	r4, .L29
+ 242:boards/TMC2224_eval.c **** 	StepDir_setPins(0, Pins.STEP, Pins.DIR, NULL);
+ 482              		.loc 1 242 2 view .LVU96
+ 483 00d4 FFF7FEFF 		bl	StepDir_init
+ 484              	.LVL37:
+ 243:boards/TMC2224_eval.c **** 
+ 485              		.loc 1 243 2 is_stmt 1 view .LVU97
+ 486 00d8 0023     		movs	r3, #0
+ 487 00da D4E9A712 		ldrd	r1, r2, [r4, #668]
+ 488 00de 1846     		mov	r0, r3
+ 489 00e0 FFF7FEFF 		bl	StepDir_setPins
+ 490              	.LVL38:
+ 245:boards/TMC2224_eval.c **** }
+ 491              		.loc 1 245 2 view .LVU98
+ 245:boards/TMC2224_eval.c **** }
+ 492              		.loc 1 245 9 is_stmt 0 view .LVU99
+ 493 00e4 D4F89402 		ldr	r0, [r4, #660]
+ 246:boards/TMC2224_eval.c **** 
+ 494              		.loc 1 246 1 view .LVU100
+ 495 00e8 BDE81040 		pop	{r4, lr}
+ 496              	.LCFI10:
+ 497              		.cfi_restore 14
+ 498              		.cfi_restore 4
+ 499              		.cfi_def_cfa_offset 0
+ 245:boards/TMC2224_eval.c **** }
+ 500              		.loc 1 245 9 view .LVU101
+ 501 00ec FFF7FEBF 		b	tmc2224_reset
+ 502              	.LVL39:
+ 503              	.L30:
+ 504              		.align	2
+ 505              	.L29:
+ 506 00f0 00000000 		.word	.LANCHOR0
+ 507              		.cfi_endproc
+ 508              	.LFE15:
+ 510              		.align	1
+ 511              		.syntax unified
+ 512              		.thumb
+ 513              		.thumb_func
+ 514              		.fpu softvfp
+ 516              	enableDriver:
+ 517              	.LVL40:
+ 518              	.LFB17:
+ 254:boards/TMC2224_eval.c **** 	if(state == DRIVER_USE_GLOBAL_ENABLE)
+ 519              		.loc 1 254 1 is_stmt 1 view -0
+ 520              		.cfi_startproc
+ 521              		@ args = 0, pretend = 0, frame = 0
+ 522              		@ frame_needed = 0, uses_anonymous_args = 0
+ 523              		@ link register save eliminated.
+ 255:boards/TMC2224_eval.c **** 		state = Evalboards.driverEnable;
+ 524              		.loc 1 255 2 view .LVU103
+ 255:boards/TMC2224_eval.c **** 		state = Evalboards.driverEnable;
+ 525              		.loc 1 255 4 is_stmt 0 view .LVU104
+ 526 00f4 0228     		cmp	r0, #2
+ 256:boards/TMC2224_eval.c **** 
+ 527              		.loc 1 256 3 is_stmt 1 view .LVU105
+ 256:boards/TMC2224_eval.c **** 
+ 528              		.loc 1 256 9 is_stmt 0 view .LVU106
+ 529 00f6 04BF     		itt	eq
+ 530 00f8 0C4B     		ldreq	r3, .L36
+ 531 00fa 93F8F000 		ldrbeq	r0, [r3, #240]	@ zero_extendqisi2
+ 532              	.LVL41:
+ 258:boards/TMC2224_eval.c **** 		HAL.IOs->config->setHigh(Pins.DRV_ENN);
+ 533              		.loc 1 258 2 is_stmt 1 view .LVU107
+ 258:boards/TMC2224_eval.c **** 		HAL.IOs->config->setHigh(Pins.DRV_ENN);
+ 534              		.loc 1 258 4 is_stmt 0 view .LVU108
+ 535 00fe 38B9     		cbnz	r0, .L33
+ 259:boards/TMC2224_eval.c **** 	else if((state == DRIVER_ENABLE) && (Evalboards.driverEnable == DRIVER_ENABLE))
+ 536              		.loc 1 259 3 is_stmt 1 view .LVU109
+ 259:boards/TMC2224_eval.c **** 	else if((state == DRIVER_ENABLE) && (Evalboards.driverEnable == DRIVER_ENABLE))
+ 537              		.loc 1 259 6 is_stmt 0 view .LVU110
+ 538 0100 0B4B     		ldr	r3, .L36+4
+ 259:boards/TMC2224_eval.c **** 	else if((state == DRIVER_ENABLE) && (Evalboards.driverEnable == DRIVER_ENABLE))
+ 539              		.loc 1 259 10 view .LVU111
+ 540 0102 DB68     		ldr	r3, [r3, #12]
+ 259:boards/TMC2224_eval.c **** 	else if((state == DRIVER_ENABLE) && (Evalboards.driverEnable == DRIVER_ENABLE))
+ 541              		.loc 1 259 18 view .LVU112
+ 542 0104 1B68     		ldr	r3, [r3]
+ 259:boards/TMC2224_eval.c **** 	else if((state == DRIVER_ENABLE) && (Evalboards.driverEnable == DRIVER_ENABLE))
+ 543              		.loc 1 259 3 view .LVU113
+ 544 0106 5B69     		ldr	r3, [r3, #20]
+ 545              	.L35:
+ 546              	.LBB8:
+ 547              	.LBB9:
+ 261:boards/TMC2224_eval.c **** }
+ 548              		.loc 1 261 3 view .LVU114
+ 549 0108 0A4A     		ldr	r2, .L36+8
+ 550 010a D2F89802 		ldr	r0, [r2, #664]
+ 551 010e 1847     		bx	r3	@ indirect register sibling call
+ 552              	.LVL42:
+ 553              	.L33:
+ 261:boards/TMC2224_eval.c **** }
+ 554              		.loc 1 261 3 view .LVU115
+ 555              	.LBE9:
+ 556              	.LBE8:
+ 260:boards/TMC2224_eval.c **** 		HAL.IOs->config->setLow(Pins.DRV_ENN);
+ 557              		.loc 1 260 7 is_stmt 1 view .LVU116
+ 260:boards/TMC2224_eval.c **** 		HAL.IOs->config->setLow(Pins.DRV_ENN);
+ 558              		.loc 1 260 9 is_stmt 0 view .LVU117
+ 559 0110 0128     		cmp	r0, #1
+ 560 0112 09D1     		bne	.L31
+ 260:boards/TMC2224_eval.c **** 		HAL.IOs->config->setLow(Pins.DRV_ENN);
+ 561              		.loc 1 260 49 discriminator 1 view .LVU118
+ 562 0114 054B     		ldr	r3, .L36
+ 260:boards/TMC2224_eval.c **** 		HAL.IOs->config->setLow(Pins.DRV_ENN);
+ 563              		.loc 1 260 35 discriminator 1 view .LVU119
+ 564 0116 93F8F030 		ldrb	r3, [r3, #240]	@ zero_extendqisi2
+ 565 011a 012B     		cmp	r3, #1
+ 566 011c 04D1     		bne	.L31
+ 567              	.LBB11:
+ 568              	.LBI8:
+ 253:boards/TMC2224_eval.c **** {
+ 569              		.loc 1 253 13 is_stmt 1 view .LVU120
+ 570              	.LVL43:
+ 571              	.LBB10:
+ 261:boards/TMC2224_eval.c **** }
+ 572              		.loc 1 261 3 view .LVU121
+ 261:boards/TMC2224_eval.c **** }
+ 573              		.loc 1 261 6 is_stmt 0 view .LVU122
+ 574 011e 044B     		ldr	r3, .L36+4
+ 261:boards/TMC2224_eval.c **** }
+ 575              		.loc 1 261 10 view .LVU123
+ 576 0120 DB68     		ldr	r3, [r3, #12]
+ 261:boards/TMC2224_eval.c **** }
+ 577              		.loc 1 261 18 view .LVU124
+ 578 0122 1B68     		ldr	r3, [r3]
+ 261:boards/TMC2224_eval.c **** }
+ 579              		.loc 1 261 3 view .LVU125
+ 580 0124 9B69     		ldr	r3, [r3, #24]
+ 581 0126 EFE7     		b	.L35
+ 582              	.LVL44:
+ 583              	.L31:
+ 261:boards/TMC2224_eval.c **** }
+ 584              		.loc 1 261 3 view .LVU126
+ 585              	.LBE10:
+ 586              	.LBE11:
+ 262:boards/TMC2224_eval.c **** 
+ 587              		.loc 1 262 1 view .LVU127
+ 588 0128 7047     		bx	lr
+ 589              	.L37:
+ 590 012a 00BF     		.align	2
+ 591              	.L36:
+ 592 012c 00000000 		.word	Evalboards
+ 593 0130 00000000 		.word	HAL
+ 594 0134 00000000 		.word	.LANCHOR0
+ 595              		.cfi_endproc
+ 596              	.LFE17:
+ 598              		.align	1
+ 599              		.syntax unified
+ 600              		.thumb
+ 601              		.thumb_func
+ 602              		.fpu softvfp
+ 604              	deInit:
+ 605              	.LFB14:
+ 225:boards/TMC2224_eval.c **** 	enableDriver(DRIVER_DISABLE);
+ 606              		.loc 1 225 1 is_stmt 1 view -0
+ 607              		.cfi_startproc
+ 608              		@ args = 0, pretend = 0, frame = 0
+ 609              		@ frame_needed = 0, uses_anonymous_args = 0
+ 226:boards/TMC2224_eval.c **** 
+ 610              		.loc 1 226 2 view .LVU129
+ 225:boards/TMC2224_eval.c **** 	enableDriver(DRIVER_DISABLE);
+ 611              		.loc 1 225 1 is_stmt 0 view .LVU130
+ 612 0138 38B5     		push	{r3, r4, r5, lr}
+ 613              	.LCFI11:
+ 614              		.cfi_def_cfa_offset 16
+ 615              		.cfi_offset 3, -16
+ 616              		.cfi_offset 4, -12
+ 617              		.cfi_offset 5, -8
+ 618              		.cfi_offset 14, -4
+ 226:boards/TMC2224_eval.c **** 
+ 619              		.loc 1 226 2 view .LVU131
+ 620 013a 0020     		movs	r0, #0
+ 621 013c FFF7DAFF 		bl	enableDriver
+ 622              	.LVL45:
+ 228:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.STEP);
+ 623              		.loc 1 228 2 is_stmt 1 view .LVU132
+ 228:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.STEP);
+ 624              		.loc 1 228 5 is_stmt 0 view .LVU133
+ 625 0140 164B     		ldr	r3, .L39
+ 228:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.STEP);
+ 626              		.loc 1 228 2 view .LVU134
+ 627 0142 174C     		ldr	r4, .L39+4
+ 228:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.STEP);
+ 628              		.loc 1 228 5 view .LVU135
+ 629 0144 DD68     		ldr	r5, [r3, #12]
+ 228:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.STEP);
+ 630              		.loc 1 228 2 view .LVU136
+ 631 0146 D4F89802 		ldr	r0, [r4, #664]
+ 228:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.STEP);
+ 632              		.loc 1 228 17 view .LVU137
+ 633 014a 2B68     		ldr	r3, [r5]
+ 228:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.STEP);
+ 634              		.loc 1 228 2 view .LVU138
+ 635 014c 9B68     		ldr	r3, [r3, #8]
+ 636 014e 9847     		blx	r3
+ 637              	.LVL46:
+ 229:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.DIR);
+ 638              		.loc 1 229 2 is_stmt 1 view .LVU139
+ 229:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.DIR);
+ 639              		.loc 1 229 17 is_stmt 0 view .LVU140
+ 640 0150 2B68     		ldr	r3, [r5]
+ 229:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.DIR);
+ 641              		.loc 1 229 2 view .LVU141
+ 642 0152 D4F89C02 		ldr	r0, [r4, #668]
+ 643 0156 9B68     		ldr	r3, [r3, #8]
+ 644 0158 9847     		blx	r3
+ 645              	.LVL47:
+ 230:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.MS1);
+ 646              		.loc 1 230 2 is_stmt 1 view .LVU142
+ 230:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.MS1);
+ 647              		.loc 1 230 17 is_stmt 0 view .LVU143
+ 648 015a 2B68     		ldr	r3, [r5]
+ 230:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.MS1);
+ 649              		.loc 1 230 2 view .LVU144
+ 650 015c D4F8A002 		ldr	r0, [r4, #672]
+ 651 0160 9B68     		ldr	r3, [r3, #8]
+ 652 0162 9847     		blx	r3
+ 653              	.LVL48:
+ 231:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.MS2);
+ 654              		.loc 1 231 2 is_stmt 1 view .LVU145
+ 231:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.MS2);
+ 655              		.loc 1 231 17 is_stmt 0 view .LVU146
+ 656 0164 2B68     		ldr	r3, [r5]
+ 231:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.MS2);
+ 657              		.loc 1 231 2 view .LVU147
+ 658 0166 D4F8A402 		ldr	r0, [r4, #676]
+ 659 016a 9B68     		ldr	r3, [r3, #8]
+ 660 016c 9847     		blx	r3
+ 661              	.LVL49:
+ 232:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.DIAG);
+ 662              		.loc 1 232 2 is_stmt 1 view .LVU148
+ 232:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.DIAG);
+ 663              		.loc 1 232 17 is_stmt 0 view .LVU149
+ 664 016e 2B68     		ldr	r3, [r5]
+ 232:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.DIAG);
+ 665              		.loc 1 232 2 view .LVU150
+ 666 0170 D4F8A802 		ldr	r0, [r4, #680]
+ 667 0174 9B68     		ldr	r3, [r3, #8]
+ 668 0176 9847     		blx	r3
+ 669              	.LVL50:
+ 233:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.INDEX);
+ 670              		.loc 1 233 2 is_stmt 1 view .LVU151
+ 233:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.INDEX);
+ 671              		.loc 1 233 17 is_stmt 0 view .LVU152
+ 672 0178 2B68     		ldr	r3, [r5]
+ 233:boards/TMC2224_eval.c **** 	HAL.IOs->config->reset(Pins.INDEX);
+ 673              		.loc 1 233 2 view .LVU153
+ 674 017a D4F8AC02 		ldr	r0, [r4, #684]
+ 675 017e 9B68     		ldr	r3, [r3, #8]
+ 676 0180 9847     		blx	r3
+ 677              	.LVL51:
+ 234:boards/TMC2224_eval.c **** 
+ 678              		.loc 1 234 2 is_stmt 1 view .LVU154
+ 234:boards/TMC2224_eval.c **** 
+ 679              		.loc 1 234 17 is_stmt 0 view .LVU155
+ 680 0182 2B68     		ldr	r3, [r5]
+ 234:boards/TMC2224_eval.c **** 
+ 681              		.loc 1 234 2 view .LVU156
+ 682 0184 D4F8B002 		ldr	r0, [r4, #688]
+ 683 0188 9B68     		ldr	r3, [r3, #8]
+ 684 018a 9847     		blx	r3
+ 685              	.LVL52:
+ 236:boards/TMC2224_eval.c **** 	StepDir_deInit();
+ 686              		.loc 1 236 2 is_stmt 1 view .LVU157
+ 236:boards/TMC2224_eval.c **** 	StepDir_deInit();
+ 687              		.loc 1 236 27 is_stmt 0 view .LVU158
+ 688 018c 2368     		ldr	r3, [r4]
+ 236:boards/TMC2224_eval.c **** 	StepDir_deInit();
+ 689              		.loc 1 236 2 view .LVU159
+ 690 018e 9B68     		ldr	r3, [r3, #8]
+ 691 0190 9847     		blx	r3
+ 692              	.LVL53:
+ 237:boards/TMC2224_eval.c **** };
+ 693              		.loc 1 237 2 is_stmt 1 view .LVU160
+ 238:boards/TMC2224_eval.c **** 
+ 694              		.loc 1 238 1 is_stmt 0 view .LVU161
+ 695 0192 BDE83840 		pop	{r3, r4, r5, lr}
+ 696              	.LCFI12:
+ 697              		.cfi_restore 14
+ 698              		.cfi_restore 5
+ 699              		.cfi_restore 4
+ 700              		.cfi_restore 3
+ 701              		.cfi_def_cfa_offset 0
+ 237:boards/TMC2224_eval.c **** };
+ 702              		.loc 1 237 2 view .LVU162
+ 703 0196 FFF7FEBF 		b	StepDir_deInit
+ 704              	.LVL54:
+ 705              	.L40:
+ 706 019a 00BF     		.align	2
+ 707              	.L39:
+ 708 019c 00000000 		.word	HAL
+ 709 01a0 00000000 		.word	.LANCHOR0
+ 710              		.cfi_endproc
+ 711              	.LFE14:
+ 713              		.align	1
+ 714              		.syntax unified
+ 715              		.thumb
+ 716              		.thumb_func
+ 717              		.fpu softvfp
+ 719              	moveBy:
+ 720              	.LVL55:
+ 721              	.LFB8:
+ 107:boards/TMC2224_eval.c **** 	if(motor >= MOTORS)
+ 722              		.loc 1 107 1 is_stmt 1 view -0
+ 723              		.cfi_startproc
+ 724              		@ args = 0, pretend = 0, frame = 0
+ 725              		@ frame_needed = 0, uses_anonymous_args = 0
+ 108:boards/TMC2224_eval.c **** 		return TMC_ERROR_MOTOR;
+ 726              		.loc 1 108 2 view .LVU164
+ 107:boards/TMC2224_eval.c **** 	if(motor >= MOTORS)
+ 727              		.loc 1 107 1 is_stmt 0 view .LVU165
+ 728 01a4 38B5     		push	{r3, r4, r5, lr}
+ 729              	.LCFI13:
+ 730              		.cfi_def_cfa_offset 16
+ 731              		.cfi_offset 3, -16
+ 732              		.cfi_offset 4, -12
+ 733              		.cfi_offset 5, -8
+ 734              		.cfi_offset 14, -4
+ 107:boards/TMC2224_eval.c **** 	if(motor >= MOTORS)
+ 735              		.loc 1 107 1 view .LVU166
+ 736 01a6 0D46     		mov	r5, r1
+ 108:boards/TMC2224_eval.c **** 		return TMC_ERROR_MOTOR;
+ 737              		.loc 1 108 4 view .LVU167
+ 738 01a8 0446     		mov	r4, r0
+ 739 01aa 48B9     		cbnz	r0, .L43
+ 740              	.LVL56:
+ 741              	.LBB16:
+ 742              	.LBI16:
+ 106:boards/TMC2224_eval.c **** {
+ 743              		.loc 1 106 17 is_stmt 1 view .LVU168
+ 744              	.LBB17:
+ 112:boards/TMC2224_eval.c **** 
+ 745              		.loc 1 112 2 view .LVU169
+ 112:boards/TMC2224_eval.c **** 
+ 746              		.loc 1 112 12 is_stmt 0 view .LVU170
+ 747 01ac FFF7FEFF 		bl	StepDir_getActualPosition
+ 748              	.LVL57:
+ 112:boards/TMC2224_eval.c **** 
+ 749              		.loc 1 112 9 view .LVU171
+ 750 01b0 2968     		ldr	r1, [r5]
+ 751 01b2 0144     		add	r1, r1, r0
+ 752 01b4 2960     		str	r1, [r5]
+ 114:boards/TMC2224_eval.c **** }
+ 753              		.loc 1 114 2 is_stmt 1 view .LVU172
+ 754              	.LVL58:
+ 755              	.LBB18:
+ 756              	.LBI18:
+  96:boards/TMC2224_eval.c **** {
+ 757              		.loc 1 96 17 view .LVU173
+ 758              	.LBB19:
+  98:boards/TMC2224_eval.c **** 		return TMC_ERROR_MOTOR;
+ 759              		.loc 1 98 2 view .LVU174
+ 101:boards/TMC2224_eval.c **** 
+ 760              		.loc 1 101 2 view .LVU175
+ 761 01b6 2046     		mov	r0, r4
+ 762 01b8 FFF7FEFF 		bl	StepDir_moveTo
+ 763              	.LVL59:
+ 103:boards/TMC2224_eval.c **** }
+ 764              		.loc 1 103 2 view .LVU176
+ 101:boards/TMC2224_eval.c **** 
+ 765              		.loc 1 101 2 is_stmt 0 view .LVU177
+ 766 01bc 2046     		mov	r0, r4
+ 767              	.L41:
+ 768              	.LBE19:
+ 769              	.LBE18:
+ 770              	.LBE17:
+ 771              	.LBE16:
+ 115:boards/TMC2224_eval.c **** 
+ 772              		.loc 1 115 1 view .LVU178
+ 773 01be 38BD     		pop	{r3, r4, r5, pc}
+ 774              	.LVL60:
+ 775              	.L43:
+ 109:boards/TMC2224_eval.c **** 
+ 776              		.loc 1 109 10 view .LVU179
+ 777 01c0 0820     		movs	r0, #8
+ 778              	.LVL61:
+ 109:boards/TMC2224_eval.c **** 
+ 779              		.loc 1 109 10 view .LVU180
+ 780 01c2 FCE7     		b	.L41
+ 781              		.cfi_endproc
+ 782              	.LFE8:
+ 784              		.align	1
+ 785              		.syntax unified
+ 786              		.thumb
+ 787              		.thumb_func
+ 788              		.fpu softvfp
+ 790              	SAP:
+ 791              	.LVL62:
+ 792              	.LFB10:
+ 192:boards/TMC2224_eval.c **** 	return handleParameter(WRITE, motor, type, &value);
+ 793              		.loc 1 192 1 is_stmt 1 view -0
+ 794              		.cfi_startproc
+ 795              		@ args = 0, pretend = 0, frame = 0
+ 796              		@ frame_needed = 0, uses_anonymous_args = 0
+ 193:boards/TMC2224_eval.c **** }
+ 797              		.loc 1 193 2 view .LVU182
+ 192:boards/TMC2224_eval.c **** 	return handleParameter(WRITE, motor, type, &value);
+ 798              		.loc 1 192 1 is_stmt 0 view .LVU183
+ 799 01c4 08B5     		push	{r3, lr}
+ 800              	.LCFI14:
+ 801              		.cfi_def_cfa_offset 8
+ 802              		.cfi_offset 3, -8
+ 803              		.cfi_offset 14, -4
+ 192:boards/TMC2224_eval.c **** 	return handleParameter(WRITE, motor, type, &value);
+ 804              		.loc 1 192 1 view .LVU184
+ 805 01c6 0B46     		mov	r3, r1
+ 806              	.LVL63:
+ 807              	.LBB22:
+ 808              	.LBI22:
+ 117:boards/TMC2224_eval.c **** {
+ 809              		.loc 1 117 17 is_stmt 1 view .LVU185
+ 810              	.LBB23:
+ 119:boards/TMC2224_eval.c **** 
+ 811              		.loc 1 119 2 view .LVU186
+ 122:boards/TMC2224_eval.c **** 		return TMC_ERROR_MOTOR;
+ 812              		.loc 1 122 2 view .LVU187
+ 813              	.LBE23:
+ 814              	.LBE22:
+ 192:boards/TMC2224_eval.c **** 	return handleParameter(WRITE, motor, type, &value);
+ 815              		.loc 1 192 1 is_stmt 0 view .LVU188
+ 816 01c8 1146     		mov	r1, r2
+ 817              	.LVL64:
+ 818              	.LBB26:
+ 819              	.LBB24:
+ 122:boards/TMC2224_eval.c **** 		return TMC_ERROR_MOTOR;
+ 820              		.loc 1 122 4 view .LVU189
+ 821 01ca 23BB     		cbnz	r3, .L53
+ 125:boards/TMC2224_eval.c **** 	{
+ 822              		.loc 1 125 2 is_stmt 1 view .LVU190
+ 823 01cc 0628     		cmp	r0, #6
+ 824 01ce 24D8     		bhi	.L54
+ 825 01d0 DFE800F0 		tbb	[pc, r0]
+ 826              	.LVL65:
+ 827              	.L47:
+ 828 01d4 04       		.byte	(.L52-.L47)/2
+ 829 01d5 09       		.byte	(.L51-.L47)/2
+ 830 01d6 0D       		.byte	(.L50-.L47)/2
+ 831 01d7 23       		.byte	(.L54-.L47)/2
+ 832 01d8 11       		.byte	(.L49-.L47)/2
+ 833 01d9 18       		.byte	(.L48-.L47)/2
+ 834 01da 1C       		.byte	(.L46-.L47)/2
+ 835 01db 00       		.p2align 1
+ 836              	.L52:
+ 129:boards/TMC2224_eval.c **** 			*value = StepDir_getTargetPosition(motor);
+ 837              		.loc 1 129 3 view .LVU191
+ 131:boards/TMC2224_eval.c **** 			StepDir_moveTo(motor, *value);
+ 838              		.loc 1 131 10 view .LVU192
+ 132:boards/TMC2224_eval.c **** 		}
+ 839              		.loc 1 132 4 view .LVU193
+ 840 01dc 0020     		movs	r0, #0
+ 841              	.LVL66:
+ 132:boards/TMC2224_eval.c **** 		}
+ 842              		.loc 1 132 4 is_stmt 0 view .LVU194
+ 843 01de FFF7FEFF 		bl	StepDir_moveTo
+ 844              	.LVL67:
+ 845              	.L55:
+ 119:boards/TMC2224_eval.c **** 
+ 846              		.loc 1 119 11 view .LVU195
+ 847 01e2 0020     		movs	r0, #0
+ 848              	.LVL68:
+ 849              	.L44:
+ 119:boards/TMC2224_eval.c **** 
+ 850              		.loc 1 119 11 view .LVU196
+ 851              	.LBE24:
+ 852              	.LBE26:
+ 194:boards/TMC2224_eval.c **** 
+ 853              		.loc 1 194 1 view .LVU197
+ 854 01e4 08BD     		pop	{r3, pc}
+ 855              	.LVL69:
+ 856              	.L51:
+ 857              	.LBB27:
+ 858              	.LBB25:
+ 137:boards/TMC2224_eval.c **** 			*value = StepDir_getActualPosition(motor);
+ 859              		.loc 1 137 3 is_stmt 1 view .LVU198
+ 139:boards/TMC2224_eval.c **** 			StepDir_setActualPosition(motor, *value);
+ 860              		.loc 1 139 10 view .LVU199
+ 140:boards/TMC2224_eval.c **** 		}
+ 861              		.loc 1 140 4 view .LVU200
+ 862 01e6 0020     		movs	r0, #0
+ 863              	.LVL70:
+ 140:boards/TMC2224_eval.c **** 		}
+ 864              		.loc 1 140 4 is_stmt 0 view .LVU201
+ 865 01e8 FFF7FEFF 		bl	StepDir_setActualPosition
+ 866              	.LVL71:
+ 140:boards/TMC2224_eval.c **** 		}
+ 867              		.loc 1 140 4 view .LVU202
+ 868 01ec F9E7     		b	.L55
+ 869              	.LVL72:
+ 870              	.L50:
+ 145:boards/TMC2224_eval.c **** 			*value = StepDir_getTargetVelocity(motor);
+ 871              		.loc 1 145 3 is_stmt 1 view .LVU203
+ 147:boards/TMC2224_eval.c **** 			StepDir_rotate(motor, *value);
+ 872              		.loc 1 147 10 view .LVU204
+ 148:boards/TMC2224_eval.c **** 		}
+ 873              		.loc 1 148 4 view .LVU205
+ 874 01ee 0020     		movs	r0, #0
+ 875              	.LVL73:
+ 148:boards/TMC2224_eval.c **** 		}
+ 876              		.loc 1 148 4 is_stmt 0 view .LVU206
+ 877 01f0 FFF7FEFF 		bl	StepDir_rotate
+ 878              	.LVL74:
+ 148:boards/TMC2224_eval.c **** 		}
+ 879              		.loc 1 148 4 view .LVU207
+ 880 01f4 F5E7     		b	.L55
+ 881              	.LVL75:
+ 882              	.L49:
+ 161:boards/TMC2224_eval.c **** 			*value = StepDir_getVelocityMax(motor);
+ 883              		.loc 1 161 3 is_stmt 1 view .LVU208
+ 163:boards/TMC2224_eval.c **** 			StepDir_setVelocityMax(motor, abs(*value));
+ 884              		.loc 1 163 10 view .LVU209
+ 164:boards/TMC2224_eval.c **** 		}
+ 885              		.loc 1 164 4 view .LVU210
+ 886 01f6 002A     		cmp	r2, #0
+ 887 01f8 B8BF     		it	lt
+ 888 01fa 5142     		rsblt	r1, r2, #0
+ 889              	.LVL76:
+ 164:boards/TMC2224_eval.c **** 		}
+ 890              		.loc 1 164 4 is_stmt 0 view .LVU211
+ 891 01fc 0020     		movs	r0, #0
+ 892              	.LVL77:
+ 164:boards/TMC2224_eval.c **** 		}
+ 893              		.loc 1 164 4 view .LVU212
+ 894 01fe FFF7FEFF 		bl	StepDir_setVelocityMax
+ 895              	.LVL78:
+ 164:boards/TMC2224_eval.c **** 		}
+ 896              		.loc 1 164 4 view .LVU213
+ 897 0202 EEE7     		b	.L55
+ 898              	.LVL79:
+ 899              	.L48:
+ 169:boards/TMC2224_eval.c **** 			*value = StepDir_getAcceleration(motor);
+ 900              		.loc 1 169 3 is_stmt 1 view .LVU214
+ 171:boards/TMC2224_eval.c **** 			StepDir_setAcceleration(motor, *value);
+ 901              		.loc 1 171 10 view .LVU215
+ 172:boards/TMC2224_eval.c **** 		}
+ 902              		.loc 1 172 4 view .LVU216
+ 903 0204 0020     		movs	r0, #0
+ 904              	.LVL80:
+ 172:boards/TMC2224_eval.c **** 		}
+ 905              		.loc 1 172 4 is_stmt 0 view .LVU217
+ 906 0206 FFF7FEFF 		bl	StepDir_setAcceleration
+ 907              	.LVL81:
+ 172:boards/TMC2224_eval.c **** 		}
+ 908              		.loc 1 172 4 view .LVU218
+ 909 020a EAE7     		b	.L55
+ 910              	.LVL82:
+ 911              	.L46:
+ 177:boards/TMC2224_eval.c **** 			*value = tmc2224_get_slave(&TMC2224);
+ 912              		.loc 1 177 3 is_stmt 1 view .LVU219
+ 179:boards/TMC2224_eval.c **** 			tmc2224_set_slave(&TMC2224, *value);
+ 913              		.loc 1 179 10 view .LVU220
+ 180:boards/TMC2224_eval.c **** 		}
+ 914              		.loc 1 180 4 view .LVU221
+ 915 020c 0448     		ldr	r0, .L56
+ 916              	.LVL83:
+ 180:boards/TMC2224_eval.c **** 		}
+ 917              		.loc 1 180 4 is_stmt 0 view .LVU222
+ 918 020e D1B2     		uxtb	r1, r2
+ 919              	.LVL84:
+ 180:boards/TMC2224_eval.c **** 		}
+ 920              		.loc 1 180 4 view .LVU223
+ 921 0210 FFF7FEFF 		bl	tmc2224_set_slave
+ 922              	.LVL85:
+ 180:boards/TMC2224_eval.c **** 		}
+ 923              		.loc 1 180 4 view .LVU224
+ 924 0214 E5E7     		b	.L55
+ 925              	.LVL86:
+ 926              	.L53:
+ 123:boards/TMC2224_eval.c **** 
+ 927              		.loc 1 123 10 view .LVU225
+ 928 0216 0820     		movs	r0, #8
+ 929              	.LVL87:
+ 123:boards/TMC2224_eval.c **** 
+ 930              		.loc 1 123 10 view .LVU226
+ 931 0218 E4E7     		b	.L44
+ 932              	.LVL88:
+ 933              	.L54:
+ 122:boards/TMC2224_eval.c **** 		return TMC_ERROR_MOTOR;
+ 934              		.loc 1 122 4 view .LVU227
+ 935 021a 0420     		movs	r0, #4
+ 936              	.LVL89:
+ 122:boards/TMC2224_eval.c **** 		return TMC_ERROR_MOTOR;
+ 937              		.loc 1 122 4 view .LVU228
+ 938              	.LBE25:
+ 939              	.LBE27:
+ 193:boards/TMC2224_eval.c **** }
+ 940              		.loc 1 193 9 view .LVU229
+ 941 021c E2E7     		b	.L44
+ 942              	.L57:
+ 943 021e 00BF     		.align	2
+ 944              	.L56:
+ 945 0220 04000000 		.word	.LANCHOR0+4
+ 946              		.cfi_endproc
+ 947              	.LFE10:
+ 949              		.align	1
+ 950              		.syntax unified
+ 951              		.thumb
+ 952              		.thumb_func
+ 953              		.fpu softvfp
+ 955              	GAP:
+ 956              	.LVL90:
+ 957              	.LFB11:
+ 197:boards/TMC2224_eval.c **** 	return handleParameter(READ, motor, type, value);
+ 958              		.loc 1 197 1 is_stmt 1 view -0
+ 959              		.cfi_startproc
+ 960              		@ args = 0, pretend = 0, frame = 0
+ 961              		@ frame_needed = 0, uses_anonymous_args = 0
+ 198:boards/TMC2224_eval.c **** }
+ 962              		.loc 1 198 2 view .LVU231
+ 197:boards/TMC2224_eval.c **** 	return handleParameter(READ, motor, type, value);
+ 963              		.loc 1 197 1 is_stmt 0 view .LVU232
+ 964 0224 10B5     		push	{r4, lr}
+ 965              	.LCFI15:
+ 966              		.cfi_def_cfa_offset 8
+ 967              		.cfi_offset 4, -8
+ 968              		.cfi_offset 14, -4
+ 197:boards/TMC2224_eval.c **** 	return handleParameter(READ, motor, type, value);
+ 969              		.loc 1 197 1 view .LVU233
+ 970 0226 1446     		mov	r4, r2
+ 971              	.LVL91:
+ 972              	.LBB30:
+ 973              	.LBI30:
+ 117:boards/TMC2224_eval.c **** {
+ 974              		.loc 1 117 17 is_stmt 1 view .LVU234
+ 975              	.LBB31:
+ 119:boards/TMC2224_eval.c **** 
+ 976              		.loc 1 119 2 view .LVU235
+ 122:boards/TMC2224_eval.c **** 		return TMC_ERROR_MOTOR;
+ 977              		.loc 1 122 2 view .LVU236
+ 122:boards/TMC2224_eval.c **** 		return TMC_ERROR_MOTOR;
+ 978              		.loc 1 122 4 is_stmt 0 view .LVU237
+ 979 0228 29BB     		cbnz	r1, .L68
+ 125:boards/TMC2224_eval.c **** 	{
+ 980              		.loc 1 125 2 is_stmt 1 view .LVU238
+ 981 022a 0628     		cmp	r0, #6
+ 982 022c 25D8     		bhi	.L69
+ 983 022e DFE800F0 		tbb	[pc, r0]
+ 984              	.L61:
+ 985 0232 04       		.byte	(.L67-.L61)/2
+ 986 0233 0A       		.byte	(.L66-.L61)/2
+ 987 0234 0E       		.byte	(.L65-.L61)/2
+ 988 0235 12       		.byte	(.L64-.L61)/2
+ 989 0236 16       		.byte	(.L63-.L61)/2
+ 990 0237 1A       		.byte	(.L62-.L61)/2
+ 991 0238 1E       		.byte	(.L60-.L61)/2
+ 992 0239 00       		.p2align 1
+ 993              	.L67:
+ 129:boards/TMC2224_eval.c **** 			*value = StepDir_getTargetPosition(motor);
+ 994              		.loc 1 129 3 view .LVU239
+ 130:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 995              		.loc 1 130 4 view .LVU240
+ 130:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 996              		.loc 1 130 13 is_stmt 0 view .LVU241
+ 997 023a 0020     		movs	r0, #0
+ 998              	.LVL92:
+ 130:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 999              		.loc 1 130 13 view .LVU242
+ 1000 023c FFF7FEFF 		bl	StepDir_getTargetPosition
+ 1001              	.LVL93:
+ 1002              	.L70:
+ 178:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1003              		.loc 1 178 13 view .LVU243
+ 1004 0240 2060     		str	r0, [r4]
+ 119:boards/TMC2224_eval.c **** 
+ 1005              		.loc 1 119 11 view .LVU244
+ 1006 0242 0020     		movs	r0, #0
+ 1007              	.LVL94:
+ 1008              	.L58:
+ 119:boards/TMC2224_eval.c **** 
+ 1009              		.loc 1 119 11 view .LVU245
+ 1010              	.LBE31:
+ 1011              	.LBE30:
+ 199:boards/TMC2224_eval.c **** 
+ 1012              		.loc 1 199 1 view .LVU246
+ 1013 0244 10BD     		pop	{r4, pc}
+ 1014              	.LVL95:
+ 1015              	.L66:
+ 1016              	.LBB33:
+ 1017              	.LBB32:
+ 137:boards/TMC2224_eval.c **** 			*value = StepDir_getActualPosition(motor);
+ 1018              		.loc 1 137 3 is_stmt 1 view .LVU247
+ 138:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1019              		.loc 1 138 4 view .LVU248
+ 138:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1020              		.loc 1 138 13 is_stmt 0 view .LVU249
+ 1021 0246 0020     		movs	r0, #0
+ 1022              	.LVL96:
+ 138:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1023              		.loc 1 138 13 view .LVU250
+ 1024 0248 FFF7FEFF 		bl	StepDir_getActualPosition
+ 1025              	.LVL97:
+ 138:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1026              		.loc 1 138 13 view .LVU251
+ 1027 024c F8E7     		b	.L70
+ 1028              	.LVL98:
+ 1029              	.L65:
+ 145:boards/TMC2224_eval.c **** 			*value = StepDir_getTargetVelocity(motor);
+ 1030              		.loc 1 145 3 is_stmt 1 view .LVU252
+ 146:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1031              		.loc 1 146 4 view .LVU253
+ 146:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1032              		.loc 1 146 13 is_stmt 0 view .LVU254
+ 1033 024e 0020     		movs	r0, #0
+ 1034              	.LVL99:
+ 146:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1035              		.loc 1 146 13 view .LVU255
+ 1036 0250 FFF7FEFF 		bl	StepDir_getTargetVelocity
+ 1037              	.LVL100:
+ 146:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1038              		.loc 1 146 13 view .LVU256
+ 1039 0254 F4E7     		b	.L70
+ 1040              	.LVL101:
+ 1041              	.L64:
+ 153:boards/TMC2224_eval.c **** 			*value = StepDir_getActualVelocity(motor);
+ 1042              		.loc 1 153 3 is_stmt 1 view .LVU257
+ 154:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1043              		.loc 1 154 4 view .LVU258
+ 154:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1044              		.loc 1 154 13 is_stmt 0 view .LVU259
+ 1045 0256 0020     		movs	r0, #0
+ 1046              	.LVL102:
+ 154:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1047              		.loc 1 154 13 view .LVU260
+ 1048 0258 FFF7FEFF 		bl	StepDir_getActualVelocity
+ 1049              	.LVL103:
+ 154:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1050              		.loc 1 154 13 view .LVU261
+ 1051 025c F0E7     		b	.L70
+ 1052              	.LVL104:
+ 1053              	.L63:
+ 161:boards/TMC2224_eval.c **** 			*value = StepDir_getVelocityMax(motor);
+ 1054              		.loc 1 161 3 is_stmt 1 view .LVU262
+ 162:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1055              		.loc 1 162 4 view .LVU263
+ 162:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1056              		.loc 1 162 13 is_stmt 0 view .LVU264
+ 1057 025e 0020     		movs	r0, #0
+ 1058              	.LVL105:
+ 162:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1059              		.loc 1 162 13 view .LVU265
+ 1060 0260 FFF7FEFF 		bl	StepDir_getVelocityMax
+ 1061              	.LVL106:
+ 162:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1062              		.loc 1 162 13 view .LVU266
+ 1063 0264 ECE7     		b	.L70
+ 1064              	.LVL107:
+ 1065              	.L62:
+ 169:boards/TMC2224_eval.c **** 			*value = StepDir_getAcceleration(motor);
+ 1066              		.loc 1 169 3 is_stmt 1 view .LVU267
+ 170:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1067              		.loc 1 170 4 view .LVU268
+ 170:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1068              		.loc 1 170 13 is_stmt 0 view .LVU269
+ 1069 0266 0020     		movs	r0, #0
+ 1070              	.LVL108:
+ 170:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1071              		.loc 1 170 13 view .LVU270
+ 1072 0268 FFF7FEFF 		bl	StepDir_getAcceleration
+ 1073              	.LVL109:
+ 170:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1074              		.loc 1 170 13 view .LVU271
+ 1075 026c E8E7     		b	.L70
+ 1076              	.LVL110:
+ 1077              	.L60:
+ 177:boards/TMC2224_eval.c **** 			*value = tmc2224_get_slave(&TMC2224);
+ 1078              		.loc 1 177 3 is_stmt 1 view .LVU272
+ 178:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1079              		.loc 1 178 4 view .LVU273
+ 178:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1080              		.loc 1 178 13 is_stmt 0 view .LVU274
+ 1081 026e 0448     		ldr	r0, .L71
+ 1082              	.LVL111:
+ 178:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1083              		.loc 1 178 13 view .LVU275
+ 1084 0270 FFF7FEFF 		bl	tmc2224_get_slave
+ 1085              	.LVL112:
+ 178:boards/TMC2224_eval.c **** 		} else if(readWrite == WRITE) {
+ 1086              		.loc 1 178 13 view .LVU276
+ 1087 0274 E4E7     		b	.L70
+ 1088              	.LVL113:
+ 1089              	.L68:
+ 123:boards/TMC2224_eval.c **** 
+ 1090              		.loc 1 123 10 view .LVU277
+ 1091 0276 0820     		movs	r0, #8
+ 1092              	.LVL114:
+ 123:boards/TMC2224_eval.c **** 
+ 1093              		.loc 1 123 10 view .LVU278
+ 1094 0278 E4E7     		b	.L58
+ 1095              	.LVL115:
+ 1096              	.L69:
+ 122:boards/TMC2224_eval.c **** 		return TMC_ERROR_MOTOR;
+ 1097              		.loc 1 122 4 view .LVU279
+ 1098 027a 0420     		movs	r0, #4
+ 1099              	.LVL116:
+ 122:boards/TMC2224_eval.c **** 		return TMC_ERROR_MOTOR;
+ 1100              		.loc 1 122 4 view .LVU280
+ 1101              	.LBE32:
+ 1102              	.LBE33:
+ 198:boards/TMC2224_eval.c **** }
+ 1103              		.loc 1 198 9 view .LVU281
+ 1104 027c E2E7     		b	.L58
+ 1105              	.L72:
+ 1106 027e 00BF     		.align	2
+ 1107              	.L71:
+ 1108 0280 04000000 		.word	.LANCHOR0+4
+ 1109              		.cfi_endproc
+ 1110              	.LFE11:
+ 1112              		.align	1
+ 1113              		.global	TMC2224_init
+ 1114              		.syntax unified
+ 1115              		.thumb
+ 1116              		.thumb_func
+ 1117              		.fpu softvfp
+ 1119              	TMC2224_init:
+ 1120              	.LFB19:
+ 272:boards/TMC2224_eval.c **** 
+ 273:boards/TMC2224_eval.c **** void TMC2224_init(void)
+ 274:boards/TMC2224_eval.c **** {
+ 1121              		.loc 1 274 1 is_stmt 1 view -0
+ 1122              		.cfi_startproc
+ 1123              		@ args = 0, pretend = 0, frame = 0
+ 1124              		@ frame_needed = 0, uses_anonymous_args = 0
+ 275:boards/TMC2224_eval.c **** 	tmc_fillCRC8Table(0x07, true, 1);
+ 1125              		.loc 1 275 2 view .LVU283
+ 274:boards/TMC2224_eval.c **** 	tmc_fillCRC8Table(0x07, true, 1);
+ 1126              		.loc 1 274 1 is_stmt 0 view .LVU284
+ 1127 0284 70B5     		push	{r4, r5, r6, lr}
+ 1128              	.LCFI16:
+ 1129              		.cfi_def_cfa_offset 16
+ 1130              		.cfi_offset 4, -16
+ 1131              		.cfi_offset 5, -12
+ 1132              		.cfi_offset 6, -8
+ 1133              		.cfi_offset 14, -4
+ 1134              		.loc 1 275 2 view .LVU285
+ 1135 0286 0122     		movs	r2, #1
+ 276:boards/TMC2224_eval.c **** 
+ 277:boards/TMC2224_eval.c **** 	tmc2224_initConfig(&TMC2224);
+ 1136              		.loc 1 277 2 view .LVU286
+ 1137 0288 514C     		ldr	r4, .L74
+ 278:boards/TMC2224_eval.c **** 
+ 279:boards/TMC2224_eval.c **** 	Pins.DRV_ENN  = &HAL.IOs->pins->DIO0;
+ 1138              		.loc 1 279 22 view .LVU287
+ 1139 028a 524E     		ldr	r6, .L74+4
+ 275:boards/TMC2224_eval.c **** 
+ 1140              		.loc 1 275 2 view .LVU288
+ 1141 028c 1146     		mov	r1, r2
+ 1142 028e 0720     		movs	r0, #7
+ 1143 0290 FFF7FEFF 		bl	tmc_fillCRC8Table
+ 1144              	.LVL117:
+ 277:boards/TMC2224_eval.c **** 
+ 1145              		.loc 1 277 2 is_stmt 1 view .LVU289
+ 1146 0294 201D     		adds	r0, r4, #4
+ 1147 0296 FFF7FEFF 		bl	tmc2224_initConfig
+ 1148              	.LVL118:
+ 1149              		.loc 1 279 2 view .LVU290
+ 1150              		.loc 1 279 22 is_stmt 0 view .LVU291
+ 1151 029a F568     		ldr	r5, [r6, #12]
+ 1152              		.loc 1 279 26 view .LVU292
+ 1153 029c 6B68     		ldr	r3, [r5, #4]
+ 280:boards/TMC2224_eval.c **** 	Pins.STEP     = &HAL.IOs->pins->DIO6;
+ 1154              		.loc 1 280 18 view .LVU293
+ 1155 029e 03F59472 		add	r2, r3, #296
+ 1156              		.loc 1 280 16 view .LVU294
+ 1157 02a2 C4F89C22 		str	r2, [r4, #668]
+ 281:boards/TMC2224_eval.c **** 	Pins.DIR      = &HAL.IOs->pins->DIO7;
+ 1158              		.loc 1 281 18 view .LVU295
+ 1159 02a6 03F5A472 		add	r2, r3, #328
+ 1160              		.loc 1 281 16 view .LVU296
+ 1161 02aa C4F8A022 		str	r2, [r4, #672]
+ 282:boards/TMC2224_eval.c **** 	Pins.MS1      = &HAL.IOs->pins->DIO3;
+ 1162              		.loc 1 282 18 view .LVU297
+ 1163 02ae 03F1C802 		add	r2, r3, #200
+ 1164              		.loc 1 282 16 view .LVU298
+ 1165 02b2 C4F8A422 		str	r2, [r4, #676]
+ 283:boards/TMC2224_eval.c **** 	Pins.MS2      = &HAL.IOs->pins->DIO4;
+ 1166              		.loc 1 283 18 view .LVU299
+ 1167 02b6 03F1E802 		add	r2, r3, #232
+ 279:boards/TMC2224_eval.c **** 	Pins.STEP     = &HAL.IOs->pins->DIO6;
+ 1168              		.loc 1 279 18 view .LVU300
+ 1169 02ba 03F16800 		add	r0, r3, #104
+ 1170              		.loc 1 283 16 view .LVU301
+ 1171 02be C4F8A822 		str	r2, [r4, #680]
+ 284:boards/TMC2224_eval.c **** 	Pins.DIAG     = &HAL.IOs->pins->DIO1;
+ 1172              		.loc 1 284 18 view .LVU302
+ 1173 02c2 03F18802 		add	r2, r3, #136
+ 285:boards/TMC2224_eval.c **** 	Pins.INDEX    = &HAL.IOs->pins->DIO2;
+ 1174              		.loc 1 285 18 view .LVU303
+ 1175 02c6 A833     		adds	r3, r3, #168
+ 1176              		.loc 1 285 16 view .LVU304
+ 1177 02c8 C4F8B032 		str	r3, [r4, #688]
+ 286:boards/TMC2224_eval.c **** 
+ 287:boards/TMC2224_eval.c **** 	HAL.IOs->config->toOutput(Pins.DRV_ENN);
+ 1178              		.loc 1 287 17 view .LVU305
+ 1179 02cc 2B68     		ldr	r3, [r5]
+ 284:boards/TMC2224_eval.c **** 	Pins.INDEX    = &HAL.IOs->pins->DIO2;
+ 1180              		.loc 1 284 16 view .LVU306
+ 1181 02ce C4F8AC22 		str	r2, [r4, #684]
+ 1182              		.loc 1 287 2 view .LVU307
+ 1183 02d2 DB68     		ldr	r3, [r3, #12]
+ 279:boards/TMC2224_eval.c **** 	Pins.STEP     = &HAL.IOs->pins->DIO6;
+ 1184              		.loc 1 279 16 view .LVU308
+ 1185 02d4 C4F89802 		str	r0, [r4, #664]
+ 280:boards/TMC2224_eval.c **** 	Pins.DIR      = &HAL.IOs->pins->DIO7;
+ 1186              		.loc 1 280 2 is_stmt 1 view .LVU309
+ 281:boards/TMC2224_eval.c **** 	Pins.MS1      = &HAL.IOs->pins->DIO3;
+ 1187              		.loc 1 281 2 view .LVU310
+ 282:boards/TMC2224_eval.c **** 	Pins.MS2      = &HAL.IOs->pins->DIO4;
+ 1188              		.loc 1 282 2 view .LVU311
+ 283:boards/TMC2224_eval.c **** 	Pins.DIAG     = &HAL.IOs->pins->DIO1;
+ 1189              		.loc 1 283 2 view .LVU312
+ 284:boards/TMC2224_eval.c **** 	Pins.INDEX    = &HAL.IOs->pins->DIO2;
+ 1190              		.loc 1 284 2 view .LVU313
+ 285:boards/TMC2224_eval.c **** 
+ 1191              		.loc 1 285 2 view .LVU314
+ 1192              		.loc 1 287 2 view .LVU315
+ 1193 02d8 9847     		blx	r3
+ 1194              	.LVL119:
+ 288:boards/TMC2224_eval.c **** 	HAL.IOs->config->toOutput(Pins.STEP);
+ 1195              		.loc 1 288 2 view .LVU316
+ 1196              		.loc 1 288 17 is_stmt 0 view .LVU317
+ 1197 02da 2B68     		ldr	r3, [r5]
+ 1198              		.loc 1 288 2 view .LVU318
+ 1199 02dc D4F89C02 		ldr	r0, [r4, #668]
+ 1200 02e0 DB68     		ldr	r3, [r3, #12]
+ 1201 02e2 9847     		blx	r3
+ 1202              	.LVL120:
+ 289:boards/TMC2224_eval.c **** 	HAL.IOs->config->toOutput(Pins.DIR);
+ 1203              		.loc 1 289 2 is_stmt 1 view .LVU319
+ 1204              		.loc 1 289 17 is_stmt 0 view .LVU320
+ 1205 02e4 2B68     		ldr	r3, [r5]
+ 1206              		.loc 1 289 2 view .LVU321
+ 1207 02e6 D4F8A002 		ldr	r0, [r4, #672]
+ 1208 02ea DB68     		ldr	r3, [r3, #12]
+ 1209 02ec 9847     		blx	r3
+ 1210              	.LVL121:
+ 290:boards/TMC2224_eval.c **** 	HAL.IOs->config->toOutput(Pins.MS1);
+ 1211              		.loc 1 290 2 is_stmt 1 view .LVU322
+ 1212              		.loc 1 290 17 is_stmt 0 view .LVU323
+ 1213 02ee 2B68     		ldr	r3, [r5]
+ 1214              		.loc 1 290 2 view .LVU324
+ 1215 02f0 D4F8A402 		ldr	r0, [r4, #676]
+ 1216 02f4 DB68     		ldr	r3, [r3, #12]
+ 1217 02f6 9847     		blx	r3
+ 1218              	.LVL122:
+ 291:boards/TMC2224_eval.c **** 	HAL.IOs->config->toOutput(Pins.MS2);
+ 1219              		.loc 1 291 2 is_stmt 1 view .LVU325
+ 1220              		.loc 1 291 17 is_stmt 0 view .LVU326
+ 1221 02f8 2B68     		ldr	r3, [r5]
+ 1222              		.loc 1 291 2 view .LVU327
+ 1223 02fa D4F8A802 		ldr	r0, [r4, #680]
+ 1224 02fe DB68     		ldr	r3, [r3, #12]
+ 1225 0300 9847     		blx	r3
+ 1226              	.LVL123:
+ 292:boards/TMC2224_eval.c **** 	HAL.IOs->config->toInput(Pins.DIAG);
+ 1227              		.loc 1 292 2 is_stmt 1 view .LVU328
+ 1228              		.loc 1 292 17 is_stmt 0 view .LVU329
+ 1229 0302 2B68     		ldr	r3, [r5]
+ 1230              		.loc 1 292 2 view .LVU330
+ 1231 0304 D4F8AC02 		ldr	r0, [r4, #684]
+ 1232 0308 1B69     		ldr	r3, [r3, #16]
+ 1233 030a 9847     		blx	r3
+ 1234              	.LVL124:
+ 293:boards/TMC2224_eval.c **** 	HAL.IOs->config->toInput(Pins.INDEX);
+ 1235              		.loc 1 293 2 is_stmt 1 view .LVU331
+ 1236              		.loc 1 293 17 is_stmt 0 view .LVU332
+ 1237 030c 2B68     		ldr	r3, [r5]
+ 1238              		.loc 1 293 2 view .LVU333
+ 1239 030e D4F8B002 		ldr	r0, [r4, #688]
+ 1240 0312 1B69     		ldr	r3, [r3, #16]
+ 1241 0314 9847     		blx	r3
+ 1242              	.LVL125:
+ 294:boards/TMC2224_eval.c **** 
+ 295:boards/TMC2224_eval.c **** 	TMC2224_UARTChannel = HAL.UART;
+ 1243              		.loc 1 295 2 is_stmt 1 view .LVU334
+ 1244              		.loc 1 295 27 is_stmt 0 view .LVU335
+ 1245 0316 F36A     		ldr	r3, [r6, #44]
+ 1246              		.loc 1 295 22 view .LVU336
+ 1247 0318 2360     		str	r3, [r4]
+ 296:boards/TMC2224_eval.c **** 	TMC2224_UARTChannel->rxtx.init();
+ 1248              		.loc 1 296 2 is_stmt 1 view .LVU337
+ 1249 031a 5B68     		ldr	r3, [r3, #4]
+ 1250 031c 9847     		blx	r3
+ 1251              	.LVL126:
+ 297:boards/TMC2224_eval.c **** 
+ 298:boards/TMC2224_eval.c **** 	TMC2224_config = Evalboards.ch2.config;
+ 1252              		.loc 1 298 2 view .LVU338
+ 1253              		.loc 1 298 33 is_stmt 0 view .LVU339
+ 1254 031e 2E4B     		ldr	r3, .L74+8
+ 299:boards/TMC2224_eval.c **** 
+ 300:boards/TMC2224_eval.c **** 	Evalboards.ch2.config->reset        = reset;
+ 1255              		.loc 1 300 38 view .LVU340
+ 1256 0320 2E49     		ldr	r1, .L74+12
+ 298:boards/TMC2224_eval.c **** 
+ 1257              		.loc 1 298 33 view .LVU341
+ 1258 0322 D3F89020 		ldr	r2, [r3, #144]
+ 298:boards/TMC2224_eval.c **** 
+ 1259              		.loc 1 298 17 view .LVU342
+ 1260 0326 C4F89422 		str	r2, [r4, #660]
+ 1261              		.loc 1 300 2 is_stmt 1 view .LVU343
+ 301:boards/TMC2224_eval.c **** 	Evalboards.ch2.config->restore      = restore;
+ 302:boards/TMC2224_eval.c **** 	Evalboards.ch2.config->state        = CONFIG_RESET;
+ 1262              		.loc 1 302 38 is_stmt 0 view .LVU344
+ 1263 032a 0125     		movs	r5, #1
+ 300:boards/TMC2224_eval.c **** 	Evalboards.ch2.config->restore      = restore;
+ 1264              		.loc 1 300 38 view .LVU345
+ 1265 032c C2F80412 		str	r1, [r2, #516]
+ 301:boards/TMC2224_eval.c **** 	Evalboards.ch2.config->restore      = restore;
+ 1266              		.loc 1 301 2 is_stmt 1 view .LVU346
+ 301:boards/TMC2224_eval.c **** 	Evalboards.ch2.config->restore      = restore;
+ 1267              		.loc 1 301 38 is_stmt 0 view .LVU347
+ 1268 0330 2B49     		ldr	r1, .L74+16
+ 1269              		.loc 1 302 38 view .LVU348
+ 1270 0332 1580     		strh	r5, [r2]	@ movhi
+ 301:boards/TMC2224_eval.c **** 	Evalboards.ch2.config->restore      = restore;
+ 1271              		.loc 1 301 38 view .LVU349
+ 1272 0334 C2F80812 		str	r1, [r2, #520]
+ 1273              		.loc 1 302 2 is_stmt 1 view .LVU350
+ 303:boards/TMC2224_eval.c **** 	Evalboards.ch2.config->configIndex  = 0;
+ 1274              		.loc 1 303 2 view .LVU351
+ 304:boards/TMC2224_eval.c **** 
+ 305:boards/TMC2224_eval.c **** 	Evalboards.ch2.rotate               = rotate;
+ 1275              		.loc 1 305 2 view .LVU352
+ 1276              		.loc 1 305 38 is_stmt 0 view .LVU353
+ 1277 0338 2A4A     		ldr	r2, .L74+20
+ 1278 033a C3F89C20 		str	r2, [r3, #156]
+ 306:boards/TMC2224_eval.c **** 	Evalboards.ch2.right                = right;
+ 1279              		.loc 1 306 2 is_stmt 1 view .LVU354
+ 1280              		.loc 1 306 38 is_stmt 0 view .LVU355
+ 1281 033e 2A4A     		ldr	r2, .L74+24
+ 1282 0340 C3F89820 		str	r2, [r3, #152]
+ 307:boards/TMC2224_eval.c **** 	Evalboards.ch2.left                 = left;
+ 1283              		.loc 1 307 2 is_stmt 1 view .LVU356
+ 1284              		.loc 1 307 38 is_stmt 0 view .LVU357
+ 1285 0344 294A     		ldr	r2, .L74+28
+ 1286 0346 C3F89420 		str	r2, [r3, #148]
+ 308:boards/TMC2224_eval.c **** 	Evalboards.ch2.stop                 = stop;
+ 1287              		.loc 1 308 2 is_stmt 1 view .LVU358
+ 1288              		.loc 1 308 38 is_stmt 0 view .LVU359
+ 1289 034a 294A     		ldr	r2, .L74+32
+ 1290 034c C3F8A020 		str	r2, [r3, #160]
+ 309:boards/TMC2224_eval.c **** 	Evalboards.ch2.GAP                  = GAP;
+ 1291              		.loc 1 309 2 is_stmt 1 view .LVU360
+ 1292              		.loc 1 309 38 is_stmt 0 view .LVU361
+ 1293 0350 284A     		ldr	r2, .L74+36
+ 1294 0352 C3F8B420 		str	r2, [r3, #180]
+ 310:boards/TMC2224_eval.c **** 	Evalboards.ch2.SAP                  = SAP;
+ 1295              		.loc 1 310 2 is_stmt 1 view .LVU362
+ 1296              		.loc 1 310 38 is_stmt 0 view .LVU363
+ 1297 0356 284A     		ldr	r2, .L74+40
+ 1298 0358 C3F8B020 		str	r2, [r3, #176]
+ 311:boards/TMC2224_eval.c **** 	Evalboards.ch2.moveTo               = moveTo;
+ 1299              		.loc 1 311 2 is_stmt 1 view .LVU364
+ 1300              		.loc 1 311 38 is_stmt 0 view .LVU365
+ 1301 035c 274A     		ldr	r2, .L74+44
+ 1302 035e C3F8A420 		str	r2, [r3, #164]
+ 312:boards/TMC2224_eval.c **** 	Evalboards.ch2.moveBy               = moveBy;
+ 1303              		.loc 1 312 2 is_stmt 1 view .LVU366
+ 1304              		.loc 1 312 38 is_stmt 0 view .LVU367
+ 1305 0362 274A     		ldr	r2, .L74+48
+ 1306 0364 C3F8A820 		str	r2, [r3, #168]
+ 313:boards/TMC2224_eval.c **** 	Evalboards.ch2.writeRegister        = tmc2224_writeRegister;
+ 1307              		.loc 1 313 2 is_stmt 1 view .LVU368
+ 1308              		.loc 1 313 38 is_stmt 0 view .LVU369
+ 1309 0368 264A     		ldr	r2, .L74+52
+ 1310 036a C3F8C420 		str	r2, [r3, #196]
+ 314:boards/TMC2224_eval.c **** 	Evalboards.ch2.readRegister         = tmc2224_readRegister;
+ 1311              		.loc 1 314 2 is_stmt 1 view .LVU370
+ 1312              		.loc 1 314 38 is_stmt 0 view .LVU371
+ 1313 036e 264A     		ldr	r2, .L74+56
+ 1314 0370 C3F8C020 		str	r2, [r3, #192]
+ 315:boards/TMC2224_eval.c **** 	Evalboards.ch2.userFunction         = userFunction;
+ 1315              		.loc 1 315 2 is_stmt 1 view .LVU372
+ 1316              		.loc 1 315 38 is_stmt 0 view .LVU373
+ 1317 0374 254A     		ldr	r2, .L74+60
+ 1318 0376 C3F8CC20 		str	r2, [r3, #204]
+ 316:boards/TMC2224_eval.c **** 	Evalboards.ch2.enableDriver         = enableDriver;
+ 1319              		.loc 1 316 2 is_stmt 1 view .LVU374
+ 1320              		.loc 1 316 38 is_stmt 0 view .LVU375
+ 1321 037a 254A     		ldr	r2, .L74+64
+ 1322 037c C3F8DC20 		str	r2, [r3, #220]
+ 317:boards/TMC2224_eval.c **** 	Evalboards.ch2.checkErrors          = checkErrors;
+ 1323              		.loc 1 317 2 is_stmt 1 view .LVU376
+ 1324              		.loc 1 317 38 is_stmt 0 view .LVU377
+ 1325 0380 244A     		ldr	r2, .L74+68
+ 1326 0382 C3F8D820 		str	r2, [r3, #216]
+ 318:boards/TMC2224_eval.c **** 	Evalboards.ch2.numberOfMotors       = MOTORS;
+ 1327              		.loc 1 318 2 is_stmt 1 view .LVU378
+ 319:boards/TMC2224_eval.c **** 	Evalboards.ch2.VMMin                = VM_MIN;
+ 320:boards/TMC2224_eval.c **** 	Evalboards.ch2.VMMax                = VM_MAX;
+ 1328              		.loc 1 320 38 is_stmt 0 view .LVU379
+ 1329 0386 3221     		movs	r1, #50
+ 1330 0388 4FF4C372 		mov	r2, #390
+ 1331 038c C3E92121 		strd	r2, r1, [r3, #132]
+ 321:boards/TMC2224_eval.c **** 	Evalboards.ch2.deInit               = deInit;
+ 1332              		.loc 1 321 38 view .LVU380
+ 1333 0390 214A     		ldr	r2, .L74+72
+ 1334 0392 C3F8D420 		str	r2, [r3, #212]
+ 322:boards/TMC2224_eval.c **** 	Evalboards.ch2.periodicJob          = periodicJob;
+ 323:boards/TMC2224_eval.c **** 
+ 324:boards/TMC2224_eval.c **** 	StepDir_init(STEPDIR_PRECISION);
+ 1335              		.loc 1 324 2 view .LVU381
+ 1336 0396 4FF40030 		mov	r0, #131072
+ 322:boards/TMC2224_eval.c **** 	Evalboards.ch2.periodicJob          = periodicJob;
+ 1337              		.loc 1 322 38 view .LVU382
+ 1338 039a 204A     		ldr	r2, .L74+76
+ 318:boards/TMC2224_eval.c **** 	Evalboards.ch2.VMMin                = VM_MIN;
+ 1339              		.loc 1 318 38 view .LVU383
+ 1340 039c 83F88C50 		strb	r5, [r3, #140]
+ 319:boards/TMC2224_eval.c **** 	Evalboards.ch2.VMMax                = VM_MAX;
+ 1341              		.loc 1 319 2 is_stmt 1 view .LVU384
+ 321:boards/TMC2224_eval.c **** 	Evalboards.ch2.periodicJob          = periodicJob;
+ 1342              		.loc 1 321 2 view .LVU385
+ 322:boards/TMC2224_eval.c **** 
+ 1343              		.loc 1 322 2 view .LVU386
+ 322:boards/TMC2224_eval.c **** 
+ 1344              		.loc 1 322 38 is_stmt 0 view .LVU387
+ 1345 03a0 C3F8D020 		str	r2, [r3, #208]
+ 1346              		.loc 1 324 2 is_stmt 1 view .LVU388
+ 1347 03a4 FFF7FEFF 		bl	StepDir_init
+ 1348              	.LVL127:
+ 325:boards/TMC2224_eval.c **** 	StepDir_setPins(0, Pins.STEP, Pins.DIR, NULL);
+ 1349              		.loc 1 325 2 view .LVU389
+ 1350 03a8 0023     		movs	r3, #0
+ 1351 03aa D4E9A712 		ldrd	r1, r2, [r4, #668]
+ 1352 03ae 1846     		mov	r0, r3
+ 1353 03b0 FFF7FEFF 		bl	StepDir_setPins
+ 1354              	.LVL128:
+ 326:boards/TMC2224_eval.c **** 	StepDir_setVelocityMax(0, 51200);
+ 1355              		.loc 1 326 2 view .LVU390
+ 1356 03b4 4FF44841 		mov	r1, #51200
+ 1357 03b8 0020     		movs	r0, #0
+ 1358 03ba FFF7FEFF 		bl	StepDir_setVelocityMax
+ 1359              	.LVL129:
+ 327:boards/TMC2224_eval.c **** 	StepDir_setAcceleration(0, 51200);
+ 1360              		.loc 1 327 2 view .LVU391
+ 1361 03be 0020     		movs	r0, #0
+ 1362 03c0 4FF44841 		mov	r1, #51200
+ 1363 03c4 FFF7FEFF 		bl	StepDir_setAcceleration
+ 1364              	.LVL130:
+ 328:boards/TMC2224_eval.c **** 
+ 329:boards/TMC2224_eval.c **** 	enableDriver(DRIVER_ENABLE);
+ 1365              		.loc 1 329 2 view .LVU392
+ 1366 03c8 2846     		mov	r0, r5
+ 330:boards/TMC2224_eval.c **** };
+ 1367              		.loc 1 330 1 is_stmt 0 view .LVU393
+ 1368 03ca BDE87040 		pop	{r4, r5, r6, lr}
+ 1369              	.LCFI17:
+ 1370              		.cfi_restore 14
+ 1371              		.cfi_restore 6
+ 1372              		.cfi_restore 5
+ 1373              		.cfi_restore 4
+ 1374              		.cfi_def_cfa_offset 0
+ 329:boards/TMC2224_eval.c **** };
+ 1375              		.loc 1 329 2 view .LVU394
+ 1376 03ce 91E6     		b	enableDriver
+ 1377              	.LVL131:
+ 1378              	.L75:
+ 1379              		.align	2
+ 1380              	.L74:
+ 1381 03d0 00000000 		.word	.LANCHOR0
+ 1382 03d4 00000000 		.word	HAL
+ 1383 03d8 00000000 		.word	Evalboards
+ 1384 03dc 00000000 		.word	reset
+ 1385 03e0 00000000 		.word	restore
+ 1386 03e4 00000000 		.word	rotate
+ 1387 03e8 00000000 		.word	right
+ 1388 03ec 00000000 		.word	left
+ 1389 03f0 00000000 		.word	stop
+ 1390 03f4 00000000 		.word	GAP
+ 1391 03f8 00000000 		.word	SAP
+ 1392 03fc 00000000 		.word	moveTo
+ 1393 0400 00000000 		.word	moveBy
+ 1394 0404 00000000 		.word	tmc2224_writeRegister
+ 1395 0408 00000000 		.word	tmc2224_readRegister
+ 1396 040c 00000000 		.word	userFunction
+ 1397 0410 00000000 		.word	enableDriver
+ 1398 0414 00000000 		.word	checkErrors
+ 1399 0418 00000000 		.word	deInit
+ 1400 041c 00000000 		.word	periodicJob
+ 1401              		.cfi_endproc
+ 1402              	.LFE19:
+ 1404              		.comm	TMCMotionController,532,4
+ 1405              		.comm	TMCDriver,532,4
+ 1406              		.comm	Evalboards,244,4
+ 1407              		.comm	VitalSignsMonitor,20,4
+ 1408              		.comm	hwid,1,1
+ 1409              		.comm	HAL,48,4
+ 1410              		.comm	UART,40,4
+ 1411              		.comm	Timer,16,4
+ 1412              		.comm	WLAN,36,4
+ 1413              		.comm	RS232,36,4
+ 1414              		.comm	LEDs,28,4
+ 1415              		.comm	USB,36,4
+ 1416              		.comm	uart0_interrupt,1,1
+ 1417              		.comm	ADCs,32,4
+ 1418              		.comm	SPI,44,4
+ 1419              		.comm	IOMap,2088,4
+ 1420              		.comm	IOs,52,4
+ 1421              		.comm	Cpu,8,4
+ 1422              		.bss
+ 1423              		.align	2
+ 1424              		.set	.LANCHOR0,. + 0
+ 1427              	TMC2224_UARTChannel:
+ 1428 0000 00000000 		.space	4
+ 1431              	TMC2224:
+ 1432 0004 00000000 		.space	656
+ 1432      00000000 
+ 1432      00000000 
+ 1432      00000000 
+ 1432      00000000 
+ 1435              	TMC2224_config:
+ 1436 0294 00000000 		.space	4
+ 1439              	Pins:
+ 1440 0298 00000000 		.space	28
+ 1440      00000000 
+ 1440      00000000 
+ 1440      00000000 
+ 1440      00000000 
+ 1443              	ADCValue:
+ 1444 02b4 00000000 		.space	12
+ 1444      00000000 
+ 1444      00000000 
+ 1445              		.text
+ 1446              	.Letext0:
+ 1447              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 1448              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1449              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1450              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 1451              		.file 6 "TMC-API/tmc/helpers/Config.h"
+ 1452              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1453              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1454              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1455              		.file 10 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\in
+ 1456              		.file 11 "TMC-API/tmc/helpers/API_Header.h"
+ 1457              		.file 12 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 1458              		.file 13 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 1459              		.file 14 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 1460              		.file 15 "./hal/IOs.h"
+ 1461              		.file 16 "./hal/IOMap.h"
+ 1462              		.file 17 "./hal/SPI.h"
+ 1463              		.file 18 "./hal/ADCs.h"
+ 1464              		.file 19 "./hal/RXTX.h"
+ 1465              		.file 20 "./hal/USB.h"
+ 1466              		.file 21 "./hal/LEDs.h"
+ 1467              		.file 22 "./hal/RS232.h"
+ 1468              		.file 23 "./hal/WLAN.h"
+ 1469              		.file 24 "./hal/Timer.h"
+ 1470              		.file 25 "./hal/UART.h"
+ 1471              		.file 26 "./hal/HAL.h"
+ 1472              		.file 27 "./tmc/VitalSignsMonitor.h"
+ 1473              		.file 28 "boards/Board.h"
+ 1474              		.file 29 "boards/TMCDriver.h"
+ 1475              		.file 30 "boards/TMCMotionController.h"
+ 1476              		.file 31 "TMC-API/tmc/ic/TMC2224/TMC2224.h"
+ 1477              		.file 32 "TMC-API/tmc/helpers/CRC.h"
+ 1478              		.file 33 "./tmc/StepDir.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 TMC2224_eval.c
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:22     .text:00000000 checkErrors
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:42     .text:0000000c $d
+                            *COM*:000000f4 Evalboards
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:46     .text:00000010 $t
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:53     .text:00000010 tmc2224_writeRegister
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:101    .text:00000030 $d
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:105    .text:00000034 $t
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:112    .text:00000034 tmc2224_readRegister
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:160    .text:00000054 $d
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:164    .text:00000058 $t
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:170    .text:00000058 periodicJob
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:220    .text:00000074 $d
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:225    .text:00000078 $t
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:231    .text:00000078 userFunction
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:285    .text:00000090 moveTo
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:327    .text:000000a2 rotate
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:369    .text:000000b4 stop
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:392    .text:000000b8 left
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:417    .text:000000bc right
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:439    .text:000000be restore
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:455    .text:000000c8 $d
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:459    .text:000000cc $t
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:465    .text:000000cc reset
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:506    .text:000000f0 $d
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:510    .text:000000f4 $t
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:516    .text:000000f4 enableDriver
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:592    .text:0000012c $d
+                            *COM*:00000030 HAL
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:598    .text:00000138 $t
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:604    .text:00000138 deInit
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:708    .text:0000019c $d
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:713    .text:000001a4 $t
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:719    .text:000001a4 moveBy
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:790    .text:000001c4 SAP
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:828    .text:000001d4 $d
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:945    .text:00000220 $d
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:949    .text:00000224 $t
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:955    .text:00000224 GAP
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:985    .text:00000232 $d
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:1108   .text:00000280 $d
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:1112   .text:00000284 $t
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:1119   .text:00000284 TMC2224_init
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:1381   .text:000003d0 $d
+                            *COM*:00000214 TMCMotionController
+                            *COM*:00000214 TMCDriver
+                            *COM*:00000014 VitalSignsMonitor
+                            *COM*:00000001 hwid
+                            *COM*:00000028 UART
+                            *COM*:00000010 Timer
+                            *COM*:00000024 WLAN
+                            *COM*:00000024 RS232
+                            *COM*:0000001c LEDs
+                            *COM*:00000024 USB
+                            *COM*:00000001 uart0_interrupt
+                            *COM*:00000020 ADCs
+                            *COM*:0000002c SPI
+                            *COM*:00000828 IOMap
+                            *COM*:00000034 IOs
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:1423   .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:1427   .bss:00000000 TMC2224_UARTChannel
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:1431   .bss:00000004 TMC2224
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:1435   .bss:00000294 TMC2224_config
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:1439   .bss:00000298 Pins
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:1443   .bss:000002b4 ADCValue
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:835    .text:000001db $d
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:835    .text:000001dc $t
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:992    .text:00000239 $d
+C:\Users\Shubham\AppData\Local\Temp\ccxvJo7G.s:992    .text:0000023a $t
+
+UNDEFINED SYMBOLS
+tmc2224_get_slave
+UART_writeInt
+UART_readInt
+tmc2224_periodicJob
+StepDir_periodicJob
+StepDir_getStatus
+StepDir_moveTo
+StepDir_rotate
+tmc2224_restore
+StepDir_init
+StepDir_setPins
+tmc2224_reset
+StepDir_deInit
+StepDir_getActualPosition
+StepDir_setActualPosition
+StepDir_setVelocityMax
+StepDir_setAcceleration
+tmc2224_set_slave
+StepDir_getTargetPosition
+StepDir_getTargetVelocity
+StepDir_getActualVelocity
+StepDir_getVelocityMax
+StepDir_getAcceleration
+tmc_fillCRC8Table
+tmc2224_initConfig

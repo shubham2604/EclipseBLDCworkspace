@@ -1,0 +1,736 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"Functions.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.global	tmc_limitInt
+  17              		.arch armv7e-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	tmc_limitInt:
+  24              	.LVL0:
+  25              	.LFB0:
+  26              		.file 1 "TMC-API/tmc/helpers/Functions.c"
+   1:TMC-API/tmc/helpers/Functions.c **** /*
+   2:TMC-API/tmc/helpers/Functions.c ****  * Functions.c
+   3:TMC-API/tmc/helpers/Functions.c ****  *
+   4:TMC-API/tmc/helpers/Functions.c ****  *  Created on: 23.07.2018
+   5:TMC-API/tmc/helpers/Functions.c ****  *      Author: ed
+   6:TMC-API/tmc/helpers/Functions.c ****  */
+   7:TMC-API/tmc/helpers/Functions.c **** #include "Functions.h"
+   8:TMC-API/tmc/helpers/Functions.c **** 
+   9:TMC-API/tmc/helpers/Functions.c **** int32_t tmc_limitInt(int32_t value, int32_t min, int32_t max)
+  10:TMC-API/tmc/helpers/Functions.c **** {
+  27              		.loc 1 10 1 view -0
+  28              		.cfi_startproc
+  29              		@ args = 0, pretend = 0, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  31              		@ link register save eliminated.
+  11:TMC-API/tmc/helpers/Functions.c **** 	if (value > max)
+  32              		.loc 1 11 2 view .LVU1
+  10:TMC-API/tmc/helpers/Functions.c **** 	if (value > max)
+  33              		.loc 1 10 1 is_stmt 0 view .LVU2
+  34 0000 0346     		mov	r3, r0
+  35              		.loc 1 11 5 view .LVU3
+  36 0002 9342     		cmp	r3, r2
+  10:TMC-API/tmc/helpers/Functions.c **** 	if (value > max)
+  37              		.loc 1 10 1 view .LVU4
+  38 0004 1046     		mov	r0, r2
+  39              	.LVL1:
+  40              		.loc 1 11 5 view .LVU5
+  41 0006 03DC     		bgt	.L2
+  12:TMC-API/tmc/helpers/Functions.c **** 		return max;
+  13:TMC-API/tmc/helpers/Functions.c **** 	else if (value < min)
+  42              		.loc 1 13 7 is_stmt 1 view .LVU6
+  43 0008 8B42     		cmp	r3, r1
+  44 000a B8BF     		it	lt
+  45 000c 0B46     		movlt	r3, r1
+  46              	.LVL2:
+  47              		.loc 1 13 7 is_stmt 0 view .LVU7
+  48 000e 1846     		mov	r0, r3
+  49              	.L2:
+  14:TMC-API/tmc/helpers/Functions.c **** 		return min;
+  15:TMC-API/tmc/helpers/Functions.c **** 	else
+  16:TMC-API/tmc/helpers/Functions.c **** 		return value;
+  17:TMC-API/tmc/helpers/Functions.c **** }
+  50              		.loc 1 17 1 view .LVU8
+  51 0010 7047     		bx	lr
+  52              		.cfi_endproc
+  53              	.LFE0:
+  55              		.align	1
+  56              		.global	tmc_limitS64
+  57              		.syntax unified
+  58              		.thumb
+  59              		.thumb_func
+  60              		.fpu softvfp
+  62              	tmc_limitS64:
+  63              	.LVL3:
+  64              	.LFB1:
+  18:TMC-API/tmc/helpers/Functions.c **** 
+  19:TMC-API/tmc/helpers/Functions.c **** int64_t tmc_limitS64(int64_t value, int64_t min, int64_t max)
+  20:TMC-API/tmc/helpers/Functions.c **** {
+  65              		.loc 1 20 1 is_stmt 1 view -0
+  66              		.cfi_startproc
+  67              		@ args = 8, pretend = 0, frame = 0
+  68              		@ frame_needed = 0, uses_anonymous_args = 0
+  21:TMC-API/tmc/helpers/Functions.c **** 	if (value > max)
+  69              		.loc 1 21 2 view .LVU10
+  20:TMC-API/tmc/helpers/Functions.c **** 	if (value > max)
+  70              		.loc 1 20 1 is_stmt 0 view .LVU11
+  71 0012 F0B5     		push	{r4, r5, r6, r7, lr}
+  72              	.LCFI0:
+  73              		.cfi_def_cfa_offset 20
+  74              		.cfi_offset 4, -20
+  75              		.cfi_offset 5, -16
+  76              		.cfi_offset 6, -12
+  77              		.cfi_offset 7, -8
+  78              		.cfi_offset 14, -4
+  20:TMC-API/tmc/helpers/Functions.c **** 	if (value > max)
+  79              		.loc 1 20 1 view .LVU12
+  80 0014 0646     		mov	r6, r0
+  81 0016 0F46     		mov	r7, r1
+  82 0018 DDE90501 		ldrd	r0, [sp, #20]
+  83              	.LVL4:
+  84              		.loc 1 21 5 view .LVU13
+  85 001c B042     		cmp	r0, r6
+  20:TMC-API/tmc/helpers/Functions.c **** 	if (value > max)
+  86              		.loc 1 20 1 view .LVU14
+  87 001e 1D46     		mov	r5, r3
+  88              		.loc 1 21 5 view .LVU15
+  89 0020 71EB0703 		sbcs	r3, r1, r7
+  90 0024 07DB     		blt	.L4
+  22:TMC-API/tmc/helpers/Functions.c **** 		return max;
+  23:TMC-API/tmc/helpers/Functions.c **** 	else if (value < min)
+  91              		.loc 1 23 7 is_stmt 1 view .LVU16
+  92 0026 9642     		cmp	r6, r2
+  93 0028 77EB0503 		sbcs	r3, r7, r5
+  94 002c 3046     		mov	r0, r6
+  95 002e 3946     		mov	r1, r7
+  96 0030 BCBF     		itt	lt
+  97 0032 1046     		movlt	r0, r2
+  98 0034 2946     		movlt	r1, r5
+  99              	.L4:
+  24:TMC-API/tmc/helpers/Functions.c **** 		return min;
+  25:TMC-API/tmc/helpers/Functions.c **** 	else
+  26:TMC-API/tmc/helpers/Functions.c **** 		return value;
+  27:TMC-API/tmc/helpers/Functions.c **** }
+ 100              		.loc 1 27 1 is_stmt 0 view .LVU17
+ 101 0036 F0BD     		pop	{r4, r5, r6, r7, pc}
+ 102              		.loc 1 27 1 view .LVU18
+ 103              		.cfi_endproc
+ 104              	.LFE1:
+ 106              		.align	1
+ 107              		.global	tmc_sqrti
+ 108              		.syntax unified
+ 109              		.thumb
+ 110              		.thumb_func
+ 111              		.fpu softvfp
+ 113              	tmc_sqrti:
+ 114              	.LVL5:
+ 115              	.LFB2:
+  28:TMC-API/tmc/helpers/Functions.c **** 
+  29:TMC-API/tmc/helpers/Functions.c **** /* lookup table for square root function */
+  30:TMC-API/tmc/helpers/Functions.c **** static const unsigned char sqrttable[256] =
+  31:TMC-API/tmc/helpers/Functions.c **** {
+  32:TMC-API/tmc/helpers/Functions.c **** 	0,   16,  22,  27,  32,  35,  39,  42,  45,  48,  50,  53,  55,  57,  59,  61,
+  33:TMC-API/tmc/helpers/Functions.c **** 	64,  65,  67,  69,  71,  73,  75,  76,  78,  80,  81,  83,  84,  86,  87,  89,
+  34:TMC-API/tmc/helpers/Functions.c **** 	90,  91,  93,  94,  96,  97,  98,  99,  101, 102, 103, 104, 106, 107, 108, 109,
+  35:TMC-API/tmc/helpers/Functions.c **** 	110, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126,
+  36:TMC-API/tmc/helpers/Functions.c **** 	128, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142,
+  37:TMC-API/tmc/helpers/Functions.c **** 	143, 144, 144, 145, 146, 147, 148, 149, 150, 150, 151, 152, 153, 154, 155, 155,
+  38:TMC-API/tmc/helpers/Functions.c **** 	156, 157, 158, 159, 160, 160, 161, 162, 163, 163, 164, 165, 166, 167, 167, 168,
+  39:TMC-API/tmc/helpers/Functions.c **** 	169, 170, 170, 171, 172, 173, 173, 174, 175, 176, 176, 177, 178, 178, 179, 180,
+  40:TMC-API/tmc/helpers/Functions.c **** 	181, 181, 182, 183, 183, 184, 185, 185, 186, 187, 187, 188, 189, 189, 190, 191,
+  41:TMC-API/tmc/helpers/Functions.c **** 	192, 192, 193, 193, 194, 195, 195, 196, 197, 197, 198, 199, 199, 200, 201, 201,
+  42:TMC-API/tmc/helpers/Functions.c **** 	202, 203, 203, 204, 204, 205, 206, 206, 207, 208, 208, 209, 209, 210, 211, 211,
+  43:TMC-API/tmc/helpers/Functions.c **** 	212, 212, 213, 214, 214, 215, 215, 216, 217, 217, 218, 218, 219, 219, 220, 221,
+  44:TMC-API/tmc/helpers/Functions.c **** 	221, 222, 222, 223, 224, 224, 225, 225, 226, 226, 227, 227, 228, 229, 229, 230,
+  45:TMC-API/tmc/helpers/Functions.c **** 	230, 231, 231, 232, 232, 233, 234, 234, 235, 235, 236, 236, 237, 237, 238, 238,
+  46:TMC-API/tmc/helpers/Functions.c **** 	239, 240, 240, 241, 241, 242, 242, 243, 243, 244, 244, 245, 245, 246, 246, 247,
+  47:TMC-API/tmc/helpers/Functions.c **** 	247, 248, 248, 249, 249, 250, 250, 251, 251, 252, 252, 253, 253, 254, 254, 255
+  48:TMC-API/tmc/helpers/Functions.c **** };
+  49:TMC-API/tmc/helpers/Functions.c **** 
+  50:TMC-API/tmc/helpers/Functions.c **** int32_t tmc_sqrti(int32_t x)
+  51:TMC-API/tmc/helpers/Functions.c **** {
+ 116              		.loc 1 51 1 is_stmt 1 view -0
+ 117              		.cfi_startproc
+ 118              		@ args = 0, pretend = 0, frame = 0
+ 119              		@ frame_needed = 0, uses_anonymous_args = 0
+ 120              		@ link register save eliminated.
+  52:TMC-API/tmc/helpers/Functions.c **** 	int32_t xn;
+ 121              		.loc 1 52 2 view .LVU20
+  53:TMC-API/tmc/helpers/Functions.c **** 
+  54:TMC-API/tmc/helpers/Functions.c **** 	// Negative parameter?
+  55:TMC-API/tmc/helpers/Functions.c **** 	if (x < 0)
+ 122              		.loc 1 55 2 view .LVU21
+ 123              		.loc 1 55 5 is_stmt 0 view .LVU22
+ 124 0038 031E     		subs	r3, r0, #0
+ 125 003a 65DB     		blt	.L23
+  56:TMC-API/tmc/helpers/Functions.c **** 		return -1;
+  57:TMC-API/tmc/helpers/Functions.c **** 
+  58:TMC-API/tmc/helpers/Functions.c **** 	if (x < 0x0100)
+ 126              		.loc 1 58 2 is_stmt 1 view .LVU23
+ 127              		.loc 1 58 5 is_stmt 0 view .LVU24
+ 128 003c FF2B     		cmp	r3, #255
+ 129 003e 344A     		ldr	r2, .L25
+ 130 0040 02DC     		bgt	.L8
+  59:TMC-API/tmc/helpers/Functions.c **** 		return (int) sqrttable[x] >> 4;
+ 131              		.loc 1 59 3 is_stmt 1 view .LVU25
+ 132              		.loc 1 59 29 is_stmt 0 view .LVU26
+ 133 0042 D05C     		ldrb	r0, [r2, r3]	@ zero_extendqisi2
+ 134              	.LVL6:
+ 135              		.loc 1 59 29 view .LVU27
+ 136 0044 0009     		lsrs	r0, r0, #4
+ 137 0046 7047     		bx	lr
+ 138              	.LVL7:
+ 139              	.L8:
+  60:TMC-API/tmc/helpers/Functions.c **** 
+  61:TMC-API/tmc/helpers/Functions.c **** 	if (x >= 0x00010000)
+ 140              		.loc 1 61 2 is_stmt 1 view .LVU28
+ 141              		.loc 1 61 5 is_stmt 0 view .LVU29
+ 142 0048 B3F5803F 		cmp	r3, #65536
+ 143 004c 43DB     		blt	.L9
+  62:TMC-API/tmc/helpers/Functions.c **** 	{
+  63:TMC-API/tmc/helpers/Functions.c **** 		if (x >= 0x01000000)
+ 144              		.loc 1 63 3 is_stmt 1 view .LVU30
+ 145              		.loc 1 63 6 is_stmt 0 view .LVU31
+ 146 004e B3F1807F 		cmp	r3, #16777216
+ 147 0052 27DB     		blt	.L10
+  64:TMC-API/tmc/helpers/Functions.c **** 		{
+  65:TMC-API/tmc/helpers/Functions.c **** 			if (x >= 0x10000000)
+ 148              		.loc 1 65 4 is_stmt 1 view .LVU32
+ 149              		.loc 1 65 7 is_stmt 0 view .LVU33
+ 150 0054 B3F1805F 		cmp	r3, #268435456
+ 151 0058 19DB     		blt	.L11
+  66:TMC-API/tmc/helpers/Functions.c **** 			{
+  67:TMC-API/tmc/helpers/Functions.c **** 				if (x >= 0x40000000)
+ 152              		.loc 1 67 5 is_stmt 1 view .LVU34
+ 153              		.loc 1 67 8 is_stmt 0 view .LVU35
+ 154 005a B3F1804F 		cmp	r3, #1073741824
+  68:TMC-API/tmc/helpers/Functions.c **** 				{
+  69:TMC-API/tmc/helpers/Functions.c **** 					// 0x40000000 <= x < 0x7FFFFFFF
+  70:TMC-API/tmc/helpers/Functions.c **** 					xn = (int) sqrttable[x >> 24] << 8;
+ 155              		.loc 1 70 6 is_stmt 1 view .LVU36
+ 156              		.loc 1 70 29 is_stmt 0 view .LVU37
+ 157 005e ABBF     		itete	ge
+ 158 0060 1916     		asrge	r1, r3, #24
+  71:TMC-API/tmc/helpers/Functions.c **** 				}
+  72:TMC-API/tmc/helpers/Functions.c **** 				else
+  73:TMC-API/tmc/helpers/Functions.c **** 				{
+  74:TMC-API/tmc/helpers/Functions.c **** 					// 0x10000000 <= x < 0x40000000
+  75:TMC-API/tmc/helpers/Functions.c **** 					xn = (int) sqrttable[x >> 22] << 7;
+ 159              		.loc 1 75 29 view .LVU38
+ 160 0062 9915     		asrlt	r1, r3, #22
+  70:TMC-API/tmc/helpers/Functions.c **** 				}
+ 161              		.loc 1 70 11 view .LVU39
+ 162 0064 525C     		ldrbge	r2, [r2, r1]	@ zero_extendqisi2
+ 163              		.loc 1 75 11 view .LVU40
+ 164 0066 525C     		ldrblt	r2, [r2, r1]	@ zero_extendqisi2
+  70:TMC-API/tmc/helpers/Functions.c **** 				}
+ 165              		.loc 1 70 9 view .LVU41
+ 166 0068 ACBF     		ite	ge
+ 167 006a 1202     		lslge	r2, r2, #8
+ 168              		.loc 1 75 6 is_stmt 1 view .LVU42
+ 169              		.loc 1 75 9 is_stmt 0 view .LVU43
+ 170 006c D201     		lsllt	r2, r2, #7
+ 171              	.LVL8:
+ 172              	.L13:
+  76:TMC-API/tmc/helpers/Functions.c **** 				}
+  77:TMC-API/tmc/helpers/Functions.c **** 			}
+  78:TMC-API/tmc/helpers/Functions.c **** 			else
+  79:TMC-API/tmc/helpers/Functions.c **** 			{
+  80:TMC-API/tmc/helpers/Functions.c **** 				if (x >= 0x04000000)
+  81:TMC-API/tmc/helpers/Functions.c **** 				{
+  82:TMC-API/tmc/helpers/Functions.c **** 					// 0x04000000 <= x < 0x10000000
+  83:TMC-API/tmc/helpers/Functions.c **** 					xn = (int) sqrttable[x >> 20] << 6;
+  84:TMC-API/tmc/helpers/Functions.c **** 				}
+  85:TMC-API/tmc/helpers/Functions.c **** 				else
+  86:TMC-API/tmc/helpers/Functions.c **** 				{
+  87:TMC-API/tmc/helpers/Functions.c **** 					// 0x01000000 <= x < 0x04000000
+  88:TMC-API/tmc/helpers/Functions.c **** 					xn = (int) sqrttable[x >> 18] << 5;
+  89:TMC-API/tmc/helpers/Functions.c **** 				}
+  90:TMC-API/tmc/helpers/Functions.c **** 			}
+  91:TMC-API/tmc/helpers/Functions.c **** 
+  92:TMC-API/tmc/helpers/Functions.c **** 			// Two steps of the babylonian method
+  93:TMC-API/tmc/helpers/Functions.c **** 			xn = (xn + 1 + (x / xn)) >> 1;
+ 173              		.loc 1 93 4 is_stmt 1 view .LVU44
+ 174              		.loc 1 93 13 is_stmt 0 view .LVU45
+ 175 006e 501C     		adds	r0, r2, #1
+ 176              	.LVL9:
+ 177              		.loc 1 93 22 view .LVU46
+ 178 0070 93FBF2F2 		sdiv	r2, r3, r2
+ 179              	.LVL10:
+ 180              		.loc 1 93 17 view .LVU47
+ 181 0074 0244     		add	r2, r2, r0
+ 182              		.loc 1 93 7 view .LVU48
+ 183 0076 5210     		asrs	r2, r2, #1
+ 184              	.LVL11:
+  94:TMC-API/tmc/helpers/Functions.c **** 			xn = (xn + 1 + (x / xn)) >> 1;
+ 185              		.loc 1 94 4 is_stmt 1 view .LVU49
+ 186              	.L18:
+  95:TMC-API/tmc/helpers/Functions.c **** 		}
+  96:TMC-API/tmc/helpers/Functions.c **** 		else
+  97:TMC-API/tmc/helpers/Functions.c **** 		{
+  98:TMC-API/tmc/helpers/Functions.c **** 			if (x >= 0x00100000)
+  99:TMC-API/tmc/helpers/Functions.c **** 			{
+ 100:TMC-API/tmc/helpers/Functions.c **** 				if (x >= 0x00400000)
+ 101:TMC-API/tmc/helpers/Functions.c **** 				{
+ 102:TMC-API/tmc/helpers/Functions.c **** 					// 0x00400000 <= x < 0x01000000
+ 103:TMC-API/tmc/helpers/Functions.c **** 					xn = (int) sqrttable[x >> 16] << 4;
+ 104:TMC-API/tmc/helpers/Functions.c **** 				}
+ 105:TMC-API/tmc/helpers/Functions.c **** 				else
+ 106:TMC-API/tmc/helpers/Functions.c **** 				{
+ 107:TMC-API/tmc/helpers/Functions.c **** 					// 0x00100000 <= x < 0x00400000
+ 108:TMC-API/tmc/helpers/Functions.c **** 					xn = (int) sqrttable[x >> 14] << 3;
+ 109:TMC-API/tmc/helpers/Functions.c **** 				}
+ 110:TMC-API/tmc/helpers/Functions.c **** 			}
+ 111:TMC-API/tmc/helpers/Functions.c **** 			else
+ 112:TMC-API/tmc/helpers/Functions.c **** 			{
+ 113:TMC-API/tmc/helpers/Functions.c **** 				if (x >= 0x00040000)
+ 114:TMC-API/tmc/helpers/Functions.c **** 				{
+ 115:TMC-API/tmc/helpers/Functions.c **** 					// 0x00040000 <= x < 0x00100000
+ 116:TMC-API/tmc/helpers/Functions.c **** 					xn = (int) sqrttable[x >> 12] << 2;
+ 117:TMC-API/tmc/helpers/Functions.c **** 				}
+ 118:TMC-API/tmc/helpers/Functions.c **** 				else
+ 119:TMC-API/tmc/helpers/Functions.c **** 				{
+ 120:TMC-API/tmc/helpers/Functions.c **** 					// 0x00010000 <= x < 0x00040000
+ 121:TMC-API/tmc/helpers/Functions.c **** 					xn = (int) sqrttable[x >> 10] << 1;
+ 122:TMC-API/tmc/helpers/Functions.c **** 				}
+ 123:TMC-API/tmc/helpers/Functions.c **** 			}
+ 124:TMC-API/tmc/helpers/Functions.c **** 
+ 125:TMC-API/tmc/helpers/Functions.c **** 			// One step of the babylonian method
+ 126:TMC-API/tmc/helpers/Functions.c **** 			xn = (xn + 1 + (x / xn)) >> 1;
+ 187              		.loc 1 126 4 view .LVU50
+ 188              		.loc 1 126 13 is_stmt 0 view .LVU51
+ 189 0078 501C     		adds	r0, r2, #1
+ 190              		.loc 1 126 22 view .LVU52
+ 191 007a 93FBF2F2 		sdiv	r2, r3, r2
+ 192              	.LVL12:
+ 193              		.loc 1 126 17 view .LVU53
+ 194 007e 1044     		add	r0, r0, r2
+ 195              	.LVL13:
+ 196              		.loc 1 126 7 view .LVU54
+ 197 0080 4010     		asrs	r0, r0, #1
+ 198              	.LVL14:
+ 199              	.L15:
+ 127:TMC-API/tmc/helpers/Functions.c **** 		}
+ 128:TMC-API/tmc/helpers/Functions.c **** 	}
+ 129:TMC-API/tmc/helpers/Functions.c **** 	else
+ 130:TMC-API/tmc/helpers/Functions.c **** 	{
+ 131:TMC-API/tmc/helpers/Functions.c **** 		if (x >= 0x1000)
+ 132:TMC-API/tmc/helpers/Functions.c **** 		{
+ 133:TMC-API/tmc/helpers/Functions.c **** 			if (x >= 0x4000)
+ 134:TMC-API/tmc/helpers/Functions.c **** 			{
+ 135:TMC-API/tmc/helpers/Functions.c **** 				// 0x4000 <= x < 0x00010000
+ 136:TMC-API/tmc/helpers/Functions.c **** 				xn = (int) (sqrttable[x >> 8] ) + 1;
+ 137:TMC-API/tmc/helpers/Functions.c **** 			}
+ 138:TMC-API/tmc/helpers/Functions.c **** 			else
+ 139:TMC-API/tmc/helpers/Functions.c **** 			{
+ 140:TMC-API/tmc/helpers/Functions.c **** 				// 0x1000 <= x < 0x4000
+ 141:TMC-API/tmc/helpers/Functions.c **** 				xn = (int) (sqrttable[x >> 6] >> 1) + 1;
+ 142:TMC-API/tmc/helpers/Functions.c **** 			}
+ 143:TMC-API/tmc/helpers/Functions.c **** 		}
+ 144:TMC-API/tmc/helpers/Functions.c **** 		else
+ 145:TMC-API/tmc/helpers/Functions.c **** 		{
+ 146:TMC-API/tmc/helpers/Functions.c **** 			if (x >= 0x0400)
+ 147:TMC-API/tmc/helpers/Functions.c **** 			{
+ 148:TMC-API/tmc/helpers/Functions.c **** 				// 0x0400 <= x < 0x1000
+ 149:TMC-API/tmc/helpers/Functions.c **** 				xn = (int) (sqrttable[x >> 4] >> 2) + 1;
+ 150:TMC-API/tmc/helpers/Functions.c **** 			}
+ 151:TMC-API/tmc/helpers/Functions.c **** 			else
+ 152:TMC-API/tmc/helpers/Functions.c **** 			{
+ 153:TMC-API/tmc/helpers/Functions.c **** 				// 0x0100 <= x < 0x0400
+ 154:TMC-API/tmc/helpers/Functions.c **** 				xn = (int) (sqrttable[x >> 2] >> 3) + 1;
+ 155:TMC-API/tmc/helpers/Functions.c **** 			}
+ 156:TMC-API/tmc/helpers/Functions.c **** 		}
+ 157:TMC-API/tmc/helpers/Functions.c **** 	}
+ 158:TMC-API/tmc/helpers/Functions.c **** 
+ 159:TMC-API/tmc/helpers/Functions.c **** 	// Make sure that our result is floored
+ 160:TMC-API/tmc/helpers/Functions.c **** 	if ((xn * xn) > x)
+ 200              		.loc 1 160 2 is_stmt 1 view .LVU55
+ 201              		.loc 1 160 10 is_stmt 0 view .LVU56
+ 202 0082 00FB00F2 		mul	r2, r0, r0
+ 203              		.loc 1 160 5 view .LVU57
+ 204 0086 9A42     		cmp	r2, r3
+ 205 0088 40DD     		ble	.L6
+ 161:TMC-API/tmc/helpers/Functions.c **** 		xn--;
+ 206              		.loc 1 161 3 is_stmt 1 view .LVU58
+ 207              		.loc 1 161 5 is_stmt 0 view .LVU59
+ 208 008a 0138     		subs	r0, r0, #1
+ 209              	.LVL15:
+ 210              		.loc 1 161 5 view .LVU60
+ 211 008c 7047     		bx	lr
+ 212              	.LVL16:
+ 213              	.L11:
+  80:TMC-API/tmc/helpers/Functions.c **** 				{
+ 214              		.loc 1 80 5 is_stmt 1 view .LVU61
+  80:TMC-API/tmc/helpers/Functions.c **** 				{
+ 215              		.loc 1 80 8 is_stmt 0 view .LVU62
+ 216 008e B3F1806F 		cmp	r3, #67108864
+  83:TMC-API/tmc/helpers/Functions.c **** 				}
+ 217              		.loc 1 83 6 is_stmt 1 view .LVU63
+  83:TMC-API/tmc/helpers/Functions.c **** 				}
+ 218              		.loc 1 83 29 is_stmt 0 view .LVU64
+ 219 0092 ABBF     		itete	ge
+ 220 0094 1915     		asrge	r1, r3, #20
+  88:TMC-API/tmc/helpers/Functions.c **** 				}
+ 221              		.loc 1 88 29 view .LVU65
+ 222 0096 9914     		asrlt	r1, r3, #18
+  83:TMC-API/tmc/helpers/Functions.c **** 				}
+ 223              		.loc 1 83 11 view .LVU66
+ 224 0098 525C     		ldrbge	r2, [r2, r1]	@ zero_extendqisi2
+  88:TMC-API/tmc/helpers/Functions.c **** 				}
+ 225              		.loc 1 88 11 view .LVU67
+ 226 009a 525C     		ldrblt	r2, [r2, r1]	@ zero_extendqisi2
+  83:TMC-API/tmc/helpers/Functions.c **** 				}
+ 227              		.loc 1 83 9 view .LVU68
+ 228 009c ACBF     		ite	ge
+ 229 009e 9201     		lslge	r2, r2, #6
+  88:TMC-API/tmc/helpers/Functions.c **** 				}
+ 230              		.loc 1 88 6 is_stmt 1 view .LVU69
+  88:TMC-API/tmc/helpers/Functions.c **** 				}
+ 231              		.loc 1 88 9 is_stmt 0 view .LVU70
+ 232 00a0 5201     		lsllt	r2, r2, #5
+ 233              	.LVL17:
+  88:TMC-API/tmc/helpers/Functions.c **** 				}
+ 234              		.loc 1 88 9 view .LVU71
+ 235 00a2 E4E7     		b	.L13
+ 236              	.LVL18:
+ 237              	.L10:
+  98:TMC-API/tmc/helpers/Functions.c **** 			{
+ 238              		.loc 1 98 4 is_stmt 1 view .LVU72
+  98:TMC-API/tmc/helpers/Functions.c **** 			{
+ 239              		.loc 1 98 7 is_stmt 0 view .LVU73
+ 240 00a4 B3F5801F 		cmp	r3, #1048576
+ 241 00a8 0ADB     		blt	.L16
+ 100:TMC-API/tmc/helpers/Functions.c **** 				{
+ 242              		.loc 1 100 5 is_stmt 1 view .LVU74
+ 100:TMC-API/tmc/helpers/Functions.c **** 				{
+ 243              		.loc 1 100 8 is_stmt 0 view .LVU75
+ 244 00aa B3F5800F 		cmp	r3, #4194304
+ 103:TMC-API/tmc/helpers/Functions.c **** 				}
+ 245              		.loc 1 103 6 is_stmt 1 view .LVU76
+ 103:TMC-API/tmc/helpers/Functions.c **** 				}
+ 246              		.loc 1 103 29 is_stmt 0 view .LVU77
+ 247 00ae ABBF     		itete	ge
+ 248 00b0 1914     		asrge	r1, r3, #16
+ 108:TMC-API/tmc/helpers/Functions.c **** 				}
+ 249              		.loc 1 108 29 view .LVU78
+ 250 00b2 9913     		asrlt	r1, r3, #14
+ 103:TMC-API/tmc/helpers/Functions.c **** 				}
+ 251              		.loc 1 103 11 view .LVU79
+ 252 00b4 525C     		ldrbge	r2, [r2, r1]	@ zero_extendqisi2
+ 108:TMC-API/tmc/helpers/Functions.c **** 				}
+ 253              		.loc 1 108 11 view .LVU80
+ 254 00b6 525C     		ldrblt	r2, [r2, r1]	@ zero_extendqisi2
+ 103:TMC-API/tmc/helpers/Functions.c **** 				}
+ 255              		.loc 1 103 9 view .LVU81
+ 256 00b8 ACBF     		ite	ge
+ 257 00ba 1201     		lslge	r2, r2, #4
+ 108:TMC-API/tmc/helpers/Functions.c **** 				}
+ 258              		.loc 1 108 6 is_stmt 1 view .LVU82
+ 108:TMC-API/tmc/helpers/Functions.c **** 				}
+ 259              		.loc 1 108 9 is_stmt 0 view .LVU83
+ 260 00bc D200     		lsllt	r2, r2, #3
+ 261              	.LVL19:
+ 108:TMC-API/tmc/helpers/Functions.c **** 				}
+ 262              		.loc 1 108 9 view .LVU84
+ 263 00be DBE7     		b	.L18
+ 264              	.LVL20:
+ 265              	.L16:
+ 113:TMC-API/tmc/helpers/Functions.c **** 				{
+ 266              		.loc 1 113 5 is_stmt 1 view .LVU85
+ 113:TMC-API/tmc/helpers/Functions.c **** 				{
+ 267              		.loc 1 113 8 is_stmt 0 view .LVU86
+ 268 00c0 B3F5802F 		cmp	r3, #262144
+ 116:TMC-API/tmc/helpers/Functions.c **** 				}
+ 269              		.loc 1 116 6 is_stmt 1 view .LVU87
+ 116:TMC-API/tmc/helpers/Functions.c **** 				}
+ 270              		.loc 1 116 29 is_stmt 0 view .LVU88
+ 271 00c4 ABBF     		itete	ge
+ 272 00c6 1913     		asrge	r1, r3, #12
+ 121:TMC-API/tmc/helpers/Functions.c **** 				}
+ 273              		.loc 1 121 29 view .LVU89
+ 274 00c8 9912     		asrlt	r1, r3, #10
+ 116:TMC-API/tmc/helpers/Functions.c **** 				}
+ 275              		.loc 1 116 11 view .LVU90
+ 276 00ca 525C     		ldrbge	r2, [r2, r1]	@ zero_extendqisi2
+ 121:TMC-API/tmc/helpers/Functions.c **** 				}
+ 277              		.loc 1 121 11 view .LVU91
+ 278 00cc 525C     		ldrblt	r2, [r2, r1]	@ zero_extendqisi2
+ 116:TMC-API/tmc/helpers/Functions.c **** 				}
+ 279              		.loc 1 116 9 view .LVU92
+ 280 00ce ACBF     		ite	ge
+ 281 00d0 9200     		lslge	r2, r2, #2
+ 121:TMC-API/tmc/helpers/Functions.c **** 				}
+ 282              		.loc 1 121 6 is_stmt 1 view .LVU93
+ 121:TMC-API/tmc/helpers/Functions.c **** 				}
+ 283              		.loc 1 121 9 is_stmt 0 view .LVU94
+ 284 00d2 5200     		lsllt	r2, r2, #1
+ 285              	.LVL21:
+ 121:TMC-API/tmc/helpers/Functions.c **** 				}
+ 286              		.loc 1 121 9 view .LVU95
+ 287 00d4 D0E7     		b	.L18
+ 288              	.LVL22:
+ 289              	.L9:
+ 131:TMC-API/tmc/helpers/Functions.c **** 		{
+ 290              		.loc 1 131 3 is_stmt 1 view .LVU96
+ 131:TMC-API/tmc/helpers/Functions.c **** 		{
+ 291              		.loc 1 131 6 is_stmt 0 view .LVU97
+ 292 00d6 B3F5805F 		cmp	r3, #4096
+ 293 00da 0ADB     		blt	.L20
+ 133:TMC-API/tmc/helpers/Functions.c **** 			{
+ 294              		.loc 1 133 4 is_stmt 1 view .LVU98
+ 133:TMC-API/tmc/helpers/Functions.c **** 			{
+ 295              		.loc 1 133 7 is_stmt 0 view .LVU99
+ 296 00dc B3F5804F 		cmp	r3, #16384
+ 136:TMC-API/tmc/helpers/Functions.c **** 			}
+ 297              		.loc 1 136 5 is_stmt 1 view .LVU100
+ 141:TMC-API/tmc/helpers/Functions.c **** 			}
+ 298              		.loc 1 141 29 is_stmt 0 view .LVU101
+ 299 00e0 B5BF     		itete	lt
+ 300 00e2 9911     		asrlt	r1, r3, #6
+ 136:TMC-API/tmc/helpers/Functions.c **** 			}
+ 301              		.loc 1 136 29 view .LVU102
+ 302 00e4 1912     		asrge	r1, r3, #8
+ 141:TMC-API/tmc/helpers/Functions.c **** 			}
+ 303              		.loc 1 141 10 view .LVU103
+ 304 00e6 505C     		ldrblt	r0, [r2, r1]	@ zero_extendqisi2
+ 305              	.LVL23:
+ 136:TMC-API/tmc/helpers/Functions.c **** 			}
+ 306              		.loc 1 136 10 view .LVU104
+ 307 00e8 505C     		ldrbge	r0, [r2, r1]	@ zero_extendqisi2
+ 141:TMC-API/tmc/helpers/Functions.c **** 			}
+ 308              		.loc 1 141 5 is_stmt 1 view .LVU105
+ 141:TMC-API/tmc/helpers/Functions.c **** 			}
+ 309              		.loc 1 141 10 is_stmt 0 view .LVU106
+ 310 00ea B8BF     		it	lt
+ 311 00ec 4008     		lsrlt	r0, r0, #1
+ 312              	.L24:
+ 154:TMC-API/tmc/helpers/Functions.c **** 			}
+ 313              		.loc 1 154 8 view .LVU107
+ 314 00ee 0130     		adds	r0, r0, #1
+ 315              	.LVL24:
+ 154:TMC-API/tmc/helpers/Functions.c **** 			}
+ 316              		.loc 1 154 8 view .LVU108
+ 317 00f0 C7E7     		b	.L15
+ 318              	.LVL25:
+ 319              	.L20:
+ 146:TMC-API/tmc/helpers/Functions.c **** 			{
+ 320              		.loc 1 146 4 is_stmt 1 view .LVU109
+ 146:TMC-API/tmc/helpers/Functions.c **** 			{
+ 321              		.loc 1 146 7 is_stmt 0 view .LVU110
+ 322 00f2 B3F5806F 		cmp	r3, #1024
+ 149:TMC-API/tmc/helpers/Functions.c **** 			}
+ 323              		.loc 1 149 5 is_stmt 1 view .LVU111
+ 149:TMC-API/tmc/helpers/Functions.c **** 			}
+ 324              		.loc 1 149 29 is_stmt 0 view .LVU112
+ 325 00f6 ABBF     		itete	ge
+ 326 00f8 1911     		asrge	r1, r3, #4
+ 154:TMC-API/tmc/helpers/Functions.c **** 			}
+ 327              		.loc 1 154 29 view .LVU113
+ 328 00fa 9910     		asrlt	r1, r3, #2
+ 149:TMC-API/tmc/helpers/Functions.c **** 			}
+ 329              		.loc 1 149 10 view .LVU114
+ 330 00fc 505C     		ldrbge	r0, [r2, r1]	@ zero_extendqisi2
+ 331              	.LVL26:
+ 154:TMC-API/tmc/helpers/Functions.c **** 			}
+ 332              		.loc 1 154 10 view .LVU115
+ 333 00fe 505C     		ldrblt	r0, [r2, r1]	@ zero_extendqisi2
+ 149:TMC-API/tmc/helpers/Functions.c **** 			}
+ 334              		.loc 1 149 10 view .LVU116
+ 335 0100 ACBF     		ite	ge
+ 336 0102 8008     		lsrge	r0, r0, #2
+ 154:TMC-API/tmc/helpers/Functions.c **** 			}
+ 337              		.loc 1 154 5 is_stmt 1 view .LVU117
+ 154:TMC-API/tmc/helpers/Functions.c **** 			}
+ 338              		.loc 1 154 10 is_stmt 0 view .LVU118
+ 339 0104 C008     		lsrlt	r0, r0, #3
+ 340 0106 F2E7     		b	.L24
+ 341              	.LVL27:
+ 342              	.L23:
+  56:TMC-API/tmc/helpers/Functions.c **** 
+ 343              		.loc 1 56 10 view .LVU119
+ 344 0108 4FF0FF30 		mov	r0, #-1
+ 345              	.LVL28:
+ 346              	.L6:
+ 162:TMC-API/tmc/helpers/Functions.c **** 
+ 163:TMC-API/tmc/helpers/Functions.c **** 	return xn;
+ 164:TMC-API/tmc/helpers/Functions.c **** }
+ 347              		.loc 1 164 1 view .LVU120
+ 348 010c 7047     		bx	lr
+ 349              	.L26:
+ 350 010e 00BF     		.align	2
+ 351              	.L25:
+ 352 0110 00000000 		.word	.LANCHOR0
+ 353              		.cfi_endproc
+ 354              	.LFE2:
+ 356              		.align	1
+ 357              		.global	tmc_filterPT1
+ 358              		.syntax unified
+ 359              		.thumb
+ 360              		.thumb_func
+ 361              		.fpu softvfp
+ 363              	tmc_filterPT1:
+ 364              	.LVL29:
+ 365              	.LFB3:
+ 165:TMC-API/tmc/helpers/Functions.c **** 
+ 166:TMC-API/tmc/helpers/Functions.c **** int32_t tmc_filterPT1(int64_t *akku, int32_t newValue, int32_t lastValue, uint8_t actualFilter, uin
+ 167:TMC-API/tmc/helpers/Functions.c **** {
+ 366              		.loc 1 167 1 is_stmt 1 view -0
+ 367              		.cfi_startproc
+ 368              		@ args = 4, pretend = 0, frame = 0
+ 369              		@ frame_needed = 0, uses_anonymous_args = 0
+ 168:TMC-API/tmc/helpers/Functions.c **** 	*akku += (newValue-lastValue) << (maxFilter-actualFilter);
+ 370              		.loc 1 168 2 view .LVU122
+ 167:TMC-API/tmc/helpers/Functions.c **** 	*akku += (newValue-lastValue) << (maxFilter-actualFilter);
+ 371              		.loc 1 167 1 is_stmt 0 view .LVU123
+ 372 0114 30B5     		push	{r4, r5, lr}
+ 373              	.LCFI1:
+ 374              		.cfi_def_cfa_offset 12
+ 375              		.cfi_offset 4, -12
+ 376              		.cfi_offset 5, -8
+ 377              		.cfi_offset 14, -4
+ 167:TMC-API/tmc/helpers/Functions.c **** 	*akku += (newValue-lastValue) << (maxFilter-actualFilter);
+ 378              		.loc 1 167 1 view .LVU124
+ 379 0116 9DF80C40 		ldrb	r4, [sp, #12]	@ zero_extendqisi2
+ 380              		.loc 1 168 20 view .LVU125
+ 381 011a 891A     		subs	r1, r1, r2
+ 382              	.LVL30:
+ 383              		.loc 1 168 45 view .LVU126
+ 384 011c E31A     		subs	r3, r4, r3
+ 385              	.LVL31:
+ 386              		.loc 1 168 32 view .LVU127
+ 387 011e 9940     		lsls	r1, r1, r3
+ 388              		.loc 1 168 8 view .LVU128
+ 389 0120 D0E90023 		ldrd	r2, [r0]
+ 390              	.LVL32:
+ 391              		.loc 1 168 8 view .LVU129
+ 392 0124 5218     		adds	r2, r2, r1
+ 393 0126 43EBE173 		adc	r3, r3, r1, asr #31
+ 169:TMC-API/tmc/helpers/Functions.c **** 	return *akku >> maxFilter;
+ 394              		.loc 1 169 15 view .LVU130
+ 395 012a C4F12005 		rsb	r5, r4, #32
+ 396 012e B4F12001 		subs	r1, r4, #32
+ 168:TMC-API/tmc/helpers/Functions.c **** 	*akku += (newValue-lastValue) << (maxFilter-actualFilter);
+ 397              		.loc 1 168 8 view .LVU131
+ 398 0132 C0E90023 		strd	r2, [r0]
+ 399              		.loc 1 169 2 is_stmt 1 view .LVU132
+ 400              		.loc 1 169 15 is_stmt 0 view .LVU133
+ 401 0136 03FA05F5 		lsl	r5, r3, r5
+ 402 013a 22FA04F0 		lsr	r0, r2, r4
+ 403              	.LVL33:
+ 404              		.loc 1 169 15 view .LVU134
+ 405 013e 40EA0500 		orr	r0, r0, r5
+ 406 0142 5CBF     		itt	pl
+ 407 0144 43FA01F1 		asrpl	r1, r3, r1
+ 408 0148 0843     		orrpl	r0, r0, r1
+ 170:TMC-API/tmc/helpers/Functions.c **** }
+ 409              		.loc 1 170 1 view .LVU135
+ 410 014a 30BD     		pop	{r4, r5, pc}
+ 411              		.loc 1 170 1 view .LVU136
+ 412              		.cfi_endproc
+ 413              	.LFE3:
+ 415              		.section	.rodata
+ 416              		.set	.LANCHOR0,. + 0
+ 419              	sqrttable:
+ 420 0000 0010161B 		.ascii	"\000\020\026\033 #'*-02579;=@ACEGIKLNPQSTVWYZ[]^`ab"
+ 420      2023272A 
+ 420      2D303235 
+ 420      37393B3D 
+ 420      40414345 
+ 421 0027 63656667 		.ascii	"cefghjklmnpqrstuvwxyz{|}~\200\200\201\202\203\204\205"
+ 421      686A6B6C 
+ 421      6D6E7071 
+ 421      72737475 
+ 421      76777879 
+ 422 0047 86878889 		.ascii	"\206\207\210\211\212\213\214\215\216\217\220\220\221"
+ 422      8A8B8C8D 
+ 422      8E8F9090 
+ 422      91
+ 423 0054 92939495 		.ascii	"\222\223\224\225\226\226\227\230\231\232\233\233\234"
+ 423      96969798 
+ 423      999A9B9B 
+ 423      9C
+ 424 0061 9D9E9FA0 		.ascii	"\235\236\237\240\240\241\242\243\243\244\245\246\247"
+ 424      A0A1A2A3 
+ 424      A3A4A5A6 
+ 424      A7
+ 425 006e A7A8A9AA 		.ascii	"\247\250\251\252\252\253\254\255\255\256\257\260\260"
+ 425      AAABACAD 
+ 425      ADAEAFB0 
+ 425      B0
+ 426 007b B1B2B2B3 		.ascii	"\261\262\262\263\264\265\265\266\267\267\270\271\271"
+ 426      B4B5B5B6 
+ 426      B7B7B8B9 
+ 426      B9
+ 427 0088 BABBBBBC 		.ascii	"\272\273\273\274\275\275\276\277\300\300\301\301\302"
+ 427      BDBDBEBF 
+ 427      C0C0C1C1 
+ 427      C2
+ 428 0095 C3C3C4C5 		.ascii	"\303\303\304\305\305\306\307\307\310\311\311\312\313"
+ 428      C5C6C7C7 
+ 428      C8C9C9CA 
+ 428      CB
+ 429 00a2 CBCCCCCD 		.ascii	"\313\314\314\315\316\316\317\320\320\321\321\322\323"
+ 429      CECECFD0 
+ 429      D0D1D1D2 
+ 429      D3
+ 430 00af D3D4D4D5 		.ascii	"\323\324\324\325\326\326\327\327\330\331\331\332\332"
+ 430      D6D6D7D7 
+ 430      D8D9D9DA 
+ 430      DA
+ 431 00bc DBDBDCDD 		.ascii	"\333\333\334\335\335\336\336\337\340\340\341\341\342"
+ 431      DDDEDEDF 
+ 431      E0E0E1E1 
+ 431      E2
+ 432 00c9 E2E3E3E4 		.ascii	"\342\343\343\344\345\345\346\346\347\347\350\350\351"
+ 432      E5E5E6E6 
+ 432      E7E7E8E8 
+ 432      E9
+ 433 00d6 EAEAEBEB 		.ascii	"\352\352\353\353\354\354\355\355\356\356\357\360\360"
+ 433      ECECEDED 
+ 433      EEEEEFF0 
+ 433      F0
+ 434 00e3 F1F1F2F2 		.ascii	"\361\361\362\362\363\363\364\364\365\365\366\366\367"
+ 434      F3F3F4F4 
+ 434      F5F5F6F6 
+ 434      F7
+ 435 00f0 F7F8F8F9 		.ascii	"\367\370\370\371\371\372\372\373\373\374\374\375\375"
+ 435      F9FAFAFB 
+ 435      FBFCFCFD 
+ 435      FD
+ 436 00fd FEFEFF   		.ascii	"\376\376\377"
+ 437              		.text
+ 438              	.Letext0:
+ 439              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 440              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 441              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 442              		.file 5 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 443              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 444              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 445              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+DEFINED SYMBOLS
+                            *ABS*:00000000 Functions.c
+C:\Users\Shubham\AppData\Local\Temp\ccnNcu82.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccnNcu82.s:23     .text:00000000 tmc_limitInt
+C:\Users\Shubham\AppData\Local\Temp\ccnNcu82.s:62     .text:00000012 tmc_limitS64
+C:\Users\Shubham\AppData\Local\Temp\ccnNcu82.s:113    .text:00000038 tmc_sqrti
+C:\Users\Shubham\AppData\Local\Temp\ccnNcu82.s:352    .text:00000110 $d
+C:\Users\Shubham\AppData\Local\Temp\ccnNcu82.s:356    .text:00000114 $t
+C:\Users\Shubham\AppData\Local\Temp\ccnNcu82.s:363    .text:00000114 tmc_filterPT1
+C:\Users\Shubham\AppData\Local\Temp\ccnNcu82.s:419    .rodata:00000000 sqrttable
+
+NO UNDEFINED SYMBOLS

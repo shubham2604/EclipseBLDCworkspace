@@ -1,0 +1,1701 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"usb_driver.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.arch armv7e-m
+  17              		.syntax unified
+  18              		.thumb
+  19              		.thumb_func
+  20              		.fpu softvfp
+  22              	USB_Device_Init_Params:
+  23              	.LFB0:
+  24              		.file 1 "hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c"
+   1:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /******************************************************************************
+   2:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+   3:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * Freescale Semiconductor Inc.
+   4:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * (c) Copyright 2004-2010 Freescale Semiconductor, Inc.
+   5:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * ALL RIGHTS RESERVED.
+   6:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+   7:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  ******************************************************************************
+   8:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+   9:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * THIS SOFTWARE IS PROVIDED BY FREESCALE "AS IS" AND ANY EXPRESSED OR
+  10:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+  11:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+  12:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * IN NO EVENT SHALL FREESCALE OR ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+  13:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+  14:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+  15:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+  16:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+  17:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+  18:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+  19:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * THE POSSIBILITY OF SUCH DAMAGE.
+  20:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+  21:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  **************************************************************************//*!
+  22:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+  23:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @file usb_driver.c
+  24:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+  25:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @author
+  26:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+  27:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @version
+  28:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+  29:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @date
+  30:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+  31:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @brief The file contains S08 USB stack device layer implementation.
+  32:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+  33:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *****************************************************************************/
+  34:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+  35:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /******************************************************************************
+  36:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * Includes
+  37:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *****************************************************************************/
+  38:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #include "usb_devapi.h" /* USB Device Layer API Header File */
+  39:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #include "usb_dciapi.h" /* USB Controller API Header File */
+  40:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #ifdef _MK_xxx_H_
+  41:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 	#include "usb_dci_kinetis.h"
+  42:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #endif
+  43:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #ifndef MULTIPLE_DEVICES
+  44:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 	#include "USB_Config.h"
+  45:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #endif
+  46:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+  47:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /*****************************************************************************
+  48:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * Constant and Macro's
+  49:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *****************************************************************************/
+  50:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+  51:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+  52:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /****************************************************************************
+  53:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * Global Variables
+  54:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  ****************************************************************************/
+  55:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** extern void USB_Control_Service (PTR_USB_DEV_EVENT_STRUCT event );
+  56:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** extern void USB_Reset_Service (PTR_USB_DEV_EVENT_STRUCT event );
+  57:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** extern void USB_Sof_Service (PTR_USB_DEV_EVENT_STRUCT event );
+  58:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** extern void USB_Resume_Service (PTR_USB_DEV_EVENT_STRUCT event );
+  59:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** extern void USB_Suspend_Service (PTR_USB_DEV_EVENT_STRUCT event );
+  60:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** extern void USB_Error_Service (PTR_USB_DEV_EVENT_STRUCT event );
+  61:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** extern void USB_Stall_Service (PTR_USB_DEV_EVENT_STRUCT event );
+  62:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+  63:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /* Array of USB Service pointers */
+  64:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #ifdef MULTIPLE_DEVICES
+  65:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 	static USB_SERVICE_CALLBACK g_usb_CB[USB_SERVICE_MAX];
+  66:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #else
+  67:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 	static USB_SERVICE_CALLBACK g_usb_CB[USB_SERVICE_MAX] = {
+  68:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		USB_EP0_CALLBACK,
+  69:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		USB_EP1_CALLBACK,
+  70:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		USB_EP2_CALLBACK,
+  71:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		USB_EP3_CALLBACK,
+  72:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		USB_EP4_CALLBACK,
+  73:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		USB_EP5_CALLBACK,
+  74:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		USB_EP6_CALLBACK,
+  75:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		USB_EP7_CALLBACK,
+  76:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		USB_EP8_CALLBACK,
+  77:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		USB_EP9_CALLBACK,
+  78:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		USB_EP10_CALLBACK,
+  79:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		USB_EP11_CALLBACK,
+  80:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		USB_EP12_CALLBACK,
+  81:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		USB_EP13_CALLBACK,
+  82:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		USB_EP14_CALLBACK,
+  83:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		USB_EP15_CALLBACK,
+  84:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		USB_BUS_RESET_CALLBACK,
+  85:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		USB_SUSPEND_CALLBACK,
+  86:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		USB_SOF_CALLBACK,
+  87:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		USB_RESUME_CALLBACK,
+  88:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		USB_SLEEP_CALLBACK,
+  89:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		USB_SPEED_DETECTION_CALLBACK,
+  90:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		USB_ERROR_CALLBACK,
+  91:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		USB_STALL_CALLBACK
+  92:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** };
+  93:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #endif
+  94:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /* Array of USB Component Status */
+  95:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /* Test mode is the last service */
+  96:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** static uint_8 g_usb_component_status[USB_STATUS_TEST_MODE];
+  97:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /* Array of USB Endpoint Status */
+  98:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** static uint_8 g_usb_ep_status[MAX_SUPPORTED_ENDPOINTS];
+  99:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /* Current un-initialized non CONTROL Endpoint */
+ 100:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** static uint_8 g_EPn=0;
+ 101:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /* Maximum number of Non CONTROL Endpoint required by upper layer */
+ 102:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** static uint_8 g_EPn_max=0;
+ 103:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 104:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /*****************************************************************************
+ 105:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * Local Types - None
+ 106:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *****************************************************************************/
+ 107:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 108:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /*****************************************************************************
+ 109:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * Local Functions Prototypes - None
+ 110:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *****************************************************************************/
+ 111:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** static void USB_Device_Init_Params(void);
+ 112:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 113:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /*****************************************************************************
+ 114:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * Local Variables - None
+ 115:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *****************************************************************************/
+ 116:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 117:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /*****************************************************************************
+ 118:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * Local Functions
+ 119:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *****************************************************************************/
+ 120:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #if 0 /* << EST */
+ 121:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #if (defined(_MC9S08MM128_H) || defined(_MC9S08JE128_H))
+ 122:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #pragma CODE_SEG DEFAULT
+ 123:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #endif
+ 124:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #else
+ 125:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /* device is Kinetis K20D72 << EST */
+ 126:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #endif
+ 127:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /*****************************************************************************
+ 128:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * Global Functions
+ 129:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *****************************************************************************/
+ 130:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** extern uint_8 USB_DCI_DeInit(void);
+ 131:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 132:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /**************************************************************************//*!
+ 133:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 134:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @name  USB_Device_Init_Params
+ 135:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 136:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @brief The function initializes the Device Layer Structures
+ 137:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 138:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param  None
+ 139:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 140:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @return None
+ 141:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 142:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  ******************************************************************************
+ 143:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * Initializes USB Device Layer Structures
+ 144:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *****************************************************************************/
+ 145:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** static void USB_Device_Init_Params(void)
+ 146:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** {
+  25              		.loc 1 146 1 view -0
+  26              		.cfi_startproc
+  27              		@ args = 0, pretend = 0, frame = 0
+  28              		@ frame_needed = 0, uses_anonymous_args = 0
+  29              		@ link register save eliminated.
+ 147:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8 loop_index=0;
+  30              		.loc 1 147 5 view .LVU1
+  31              	.LVL0:
+ 148:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 149:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     g_EPn= g_EPn_max; /* 1 control endpoint */
+  32              		.loc 1 149 5 view .LVU2
+  33              		.loc 1 149 10 is_stmt 0 view .LVU3
+  34 0000 094B     		ldr	r3, .L2
+  35 0002 5A78     		ldrb	r2, [r3, #1]	@ zero_extendqisi2
+  36 0004 1A70     		strb	r2, [r3]
+ 150:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 151:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     /*
+ 152:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****        Initialize USB_STATUS_DEVICE_STATE, USB_STATUS_INTERFACE,
+ 153:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****        USB_STATUS_ADDRESS, USB_STATUS_CURRENT_CONFIG, USB_STATUS_SOF_COUNT
+ 154:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****        and USB_STATUS_DEVICE to USB_STATUS_UNKNOWN
+ 155:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     */
+ 156:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     for(loop_index = 0; loop_index < USB_STATUS_TEST_MODE; loop_index++)
+  37              		.loc 1 156 5 is_stmt 1 view .LVU4
+  38              		.loc 1 156 25 view .LVU5
+ 157:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 158:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         #ifdef OTG_BUILD
+ 159:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****          if(loop_index != (USB_STATUS_OTG-1)) /* Do not initialize the OTG status with 0xFFFF */
+ 160:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         #endif
+ 161:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****          {
+ 162:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****           g_usb_component_status[loop_index] = USB_STATUS_UNKNOWN;
+  39              		.loc 1 162 11 view .LVU6
+  40              		.loc 1 162 46 is_stmt 0 view .LVU7
+  41 0006 FF22     		movs	r2, #255
+  42 0008 9A70     		strb	r2, [r3, #2]
+ 156:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+  43              		.loc 1 156 60 is_stmt 1 view .LVU8
+  44              	.LVL1:
+ 156:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+  45              		.loc 1 156 25 view .LVU9
+  46              		.loc 1 162 11 view .LVU10
+  47              		.loc 1 162 46 is_stmt 0 view .LVU11
+  48 000a DA70     		strb	r2, [r3, #3]
+ 156:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+  49              		.loc 1 156 60 is_stmt 1 view .LVU12
+  50              	.LVL2:
+ 156:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+  51              		.loc 1 156 25 view .LVU13
+  52              		.loc 1 162 11 view .LVU14
+  53              		.loc 1 162 46 is_stmt 0 view .LVU15
+  54 000c 1A71     		strb	r2, [r3, #4]
+ 156:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+  55              		.loc 1 156 60 is_stmt 1 view .LVU16
+  56              	.LVL3:
+ 156:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+  57              		.loc 1 156 25 view .LVU17
+  58              		.loc 1 162 11 view .LVU18
+  59              		.loc 1 162 46 is_stmt 0 view .LVU19
+  60 000e 5A71     		strb	r2, [r3, #5]
+ 156:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+  61              		.loc 1 156 60 is_stmt 1 view .LVU20
+  62              	.LVL4:
+ 156:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+  63              		.loc 1 156 25 view .LVU21
+  64              		.loc 1 162 11 view .LVU22
+  65              		.loc 1 162 46 is_stmt 0 view .LVU23
+  66 0010 9A71     		strb	r2, [r3, #6]
+ 156:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+  67              		.loc 1 156 60 is_stmt 1 view .LVU24
+  68              	.LVL5:
+ 156:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+  69              		.loc 1 156 25 view .LVU25
+  70              		.loc 1 162 11 view .LVU26
+  71              		.loc 1 162 46 is_stmt 0 view .LVU27
+  72 0012 DA71     		strb	r2, [r3, #7]
+ 156:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+  73              		.loc 1 156 60 is_stmt 1 view .LVU28
+  74              	.LVL6:
+ 156:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+  75              		.loc 1 156 25 view .LVU29
+  76              		.loc 1 162 11 view .LVU30
+  77              		.loc 1 162 46 is_stmt 0 view .LVU31
+  78 0014 1A72     		strb	r2, [r3, #8]
+ 156:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+  79              		.loc 1 156 60 is_stmt 1 view .LVU32
+  80              	.LVL7:
+ 156:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+  81              		.loc 1 156 25 view .LVU33
+ 163:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****          }
+ 164:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 165:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 166:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     /* Initialize status of All Endpoints to USB_STATUS_DISABLED */
+ 167:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     for(loop_index = 0; loop_index < MAX_SUPPORTED_ENDPOINTS; loop_index++)
+  82              		.loc 1 167 25 view .LVU34
+ 168:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 169:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         g_usb_ep_status[loop_index] = USB_STATUS_DISABLED;
+  83              		.loc 1 169 9 view .LVU35
+  84              		.loc 1 169 37 is_stmt 0 view .LVU36
+  85 0016 0522     		movs	r2, #5
+  86 0018 5A72     		strb	r2, [r3, #9]
+ 167:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+  87              		.loc 1 167 63 is_stmt 1 view .LVU37
+  88              	.LVL8:
+ 167:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+  89              		.loc 1 167 25 view .LVU38
+  90              		.loc 1 169 9 view .LVU39
+  91              		.loc 1 169 37 is_stmt 0 view .LVU40
+  92 001a 9A72     		strb	r2, [r3, #10]
+ 167:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+  93              		.loc 1 167 63 is_stmt 1 view .LVU41
+  94              	.LVL9:
+ 167:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+  95              		.loc 1 167 25 view .LVU42
+  96              		.loc 1 169 9 view .LVU43
+  97              		.loc 1 169 37 is_stmt 0 view .LVU44
+  98 001c DA72     		strb	r2, [r3, #11]
+ 167:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+  99              		.loc 1 167 63 is_stmt 1 view .LVU45
+ 100              	.LVL10:
+ 167:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 101              		.loc 1 167 25 view .LVU46
+ 102              		.loc 1 169 9 view .LVU47
+ 103              		.loc 1 169 37 is_stmt 0 view .LVU48
+ 104 001e 1A73     		strb	r2, [r3, #12]
+ 167:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 105              		.loc 1 167 63 is_stmt 1 view .LVU49
+ 106              	.LVL11:
+ 167:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 107              		.loc 1 167 25 view .LVU50
+ 108              		.loc 1 169 9 view .LVU51
+ 109              		.loc 1 169 37 is_stmt 0 view .LVU52
+ 110 0020 5A73     		strb	r2, [r3, #13]
+ 167:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 111              		.loc 1 167 63 is_stmt 1 view .LVU53
+ 112              	.LVL12:
+ 167:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 113              		.loc 1 167 25 view .LVU54
+ 114              		.loc 1 169 9 view .LVU55
+ 115              		.loc 1 169 37 is_stmt 0 view .LVU56
+ 116 0022 9A73     		strb	r2, [r3, #14]
+ 167:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 117              		.loc 1 167 63 is_stmt 1 view .LVU57
+ 118              	.LVL13:
+ 167:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 119              		.loc 1 167 25 view .LVU58
+ 120              		.loc 1 169 9 view .LVU59
+ 121              		.loc 1 169 37 is_stmt 0 view .LVU60
+ 122 0024 DA73     		strb	r2, [r3, #15]
+ 167:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 123              		.loc 1 167 63 is_stmt 1 view .LVU61
+ 124              	.LVL14:
+ 167:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 125              		.loc 1 167 25 view .LVU62
+ 170:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 171:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** }
+ 126              		.loc 1 171 1 is_stmt 0 view .LVU63
+ 127 0026 7047     		bx	lr
+ 128              	.L3:
+ 129              		.align	2
+ 130              	.L2:
+ 131 0028 00000000 		.word	.LANCHOR0
+ 132              		.cfi_endproc
+ 133              	.LFE0:
+ 135              		.align	1
+ 136              		.global	USB_NULL_CALLBACK
+ 137              		.syntax unified
+ 138              		.thumb
+ 139              		.thumb_func
+ 140              		.fpu softvfp
+ 142              	USB_NULL_CALLBACK:
+ 143              	.LVL15:
+ 144              	.LFB10:
+ 172:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 173:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /*****************************************************************************
+ 174:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * Global Functions
+ 175:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *****************************************************************************/
+ 176:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 177:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 178:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /**************************************************************************//*!
+ 179:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 180:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @name  _usb_device_init
+ 181:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 182:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @brief The function initializes the Device and Controller layer
+ 183:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 184:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param device_number       : USB Device controller to initialize
+ 185:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param handle              : pointer to USB Device handle
+ 186:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param number_of_endpoints : Endpoint count of the application
+ 187:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 188:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @return status
+ 189:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *         USB_OK                              : When Successfull
+ 190:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *         USBERR_INVALID_NUM_OF_ENDPOINTS     : When endpoints > max Supported
+ 191:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  ******************************************************************************
+ 192:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * This function initializes the Device layer and the Controller layer of the
+ 193:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * S08 USB stack. It initializes the variables used for this layer and then
+ 194:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * calls the controller layer initialize function
+ 195:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *****************************************************************************/
+ 196:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** uint_8 _usb_device_init (
+ 197:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8    device_number,			/* [IN] USB Device controller to initialize */
+ 198:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     _usb_device_handle _PTR_  handle,	/* [IN] Pointer to USB Device handle */
+ 199:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8    number_of_endpoints,		/* [IN] Number of endpoints to initialize */
+ 200:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8    bVregEn        			/* Enables or disables internal regulator */
+ 201:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** )
+ 202:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** {
+ 203:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 	UNUSED(handle);
+ 204:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 205:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     /* validate endpoints param */
+ 206:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     if((number_of_endpoints > MAX_SUPPORTED_ENDPOINTS) ||
+ 207:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****       (number_of_endpoints < MIN_SUPPORTED_ENDPOINTS))
+ 208:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 209:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         return USBERR_INVALID_NUM_OF_ENDPOINTS;
+ 210:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 211:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 212:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     /* init variables */
+ 213:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     g_EPn_max = (uint_8)(number_of_endpoints - 1);
+ 214:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 215:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     USB_Device_Init_Params();
+ 216:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 217:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #ifdef MULTIPLE_DEVICES
+ 218:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     /* Initialize all services to null value */
+ 219:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     Clear_Mem((uint_8_ptr)g_usb_CB,
+ 220:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         (uint_32)(sizeof(USB_SERVICE_CALLBACK) * USB_SERVICE_MAX), (uint_8)0);
+ 221:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #endif
+ 222:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     /* Call controller layer initialization function */
+ 223:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     return USB_DCI_Init(device_number, bVregEn);
+ 224:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 225:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** }
+ 226:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 227:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /**************************************************************************//*!
+ 228:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 229:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @name  _usb_device_deinit
+ 230:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 231:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @brief The function de-initializes the Device and Controller layer
+ 232:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 233:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @return status
+ 234:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *         USB_OK                              : When Successfull
+ 235:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *         USBERR_INVALID_NUM_OF_ENDPOINTS     : When endpoints > max Supported
+ 236:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  ******************************************************************************
+ 237:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * This function de-initializes the Device layer and the Controller layer
+ 238:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *****************************************************************************/
+ 239:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** uint_8 _usb_device_deinit(void)
+ 240:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** {
+ 241:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 	g_EPn_max = 0;
+ 242:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 	/* Call controller layer de-initialization function */
+ 243:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 	return USB_DCI_DeInit();
+ 244:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** }
+ 245:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 246:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /**************************************************************************//*!
+ 247:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 248:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @name  _usb_device_init_endpoint
+ 249:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 250:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @brief The function initializes the endpoint
+ 251:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 252:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param handle          : USB Device handle
+ 253:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param endpoint_number : Endpoint number
+ 254:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param max_packet_size : Maximum packet size (in bytes) for the endpoint
+ 255:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param direction       : Direction of transfer
+ 256:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param endpoint_type   : Type of endpoint
+ 257:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param flag            : Zero termination flag
+ 258:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 259:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @return status
+ 260:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *         USB_OK                              : When Successfull
+ 261:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *         USBERR_EP_INIT_FAILED     : When endpoints > max Supported
+ 262:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  ******************************************************************************
+ 263:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 264:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * This function initializes an endpoint the Device layer and the Controller
+ 265:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * layer in the S08 USB stack. It validate whether all endpoints have already
+ 266:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * been initialized or not and then calls the controller layer endpoint
+ 267:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *  initialize function
+ 268:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 269:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *****************************************************************************/
+ 270:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** uint_8 _usb_device_init_endpoint (
+ 271:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     _usb_device_handle    handle,             /* [IN] USB Device handle */
+ 272:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8                endpoint_number,    /* [IN] Endpoint number*/
+ 273:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_16               max_packet_size,    /* [IN] Maximum packet size (in bytes) for the endpoi
+ 274:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8                direction,          /* [IN] Direction of transfer */
+ 275:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8                endpoint_type,      /* [IN] Type of endpoint */
+ 276:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8                flag                /* [IN] Zero termination flag */
+ 277:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** )
+ 278:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** {
+ 279:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 	USB_EP_STRUCT ep_str;
+ 280:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 281:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8 status = USB_OK;
+ 282:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 283:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     /* check if all endpoint have already been initialised */
+ 284:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     if((g_EPn == 0) && (endpoint_number != CONTROL_ENDPOINT))
+ 285:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 286:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         return USBERR_EP_INIT_FAILED;
+ 287:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 288:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 289:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     ep_str.direction = direction;
+ 290:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     ep_str.ep_num = endpoint_number;
+ 291:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 292:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #if 0 /* << EST */
+ 293:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #ifndef _MC9S08JS16_H
+ 294:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     ep_str.size = max_packet_size;
+ 295:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #else
+ 296:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     ep_str.size = (char)max_packet_size;
+ 297:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #endif
+ 298:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #else
+ 299:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /* device is Kinetis K20D72 << EST */
+ 300:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     ep_str.size = max_packet_size;
+ 301:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #endif
+ 302:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 303:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     ep_str.type = endpoint_type;
+ 304:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 305:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     /* call controller layer for initiazation */
+ 306:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     status = USB_DCI_Init_EndPoint(*((uint_8*)handle), &ep_str, flag);
+ 307:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 308:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     /* if endpoint successfully initialised update counter */
+ 309:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     if((ep_str.ep_num != CONTROL_ENDPOINT) && (status == USB_OK))
+ 310:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 311:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         g_EPn--;
+ 312:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 313:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 314:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     return status;
+ 315:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** }
+ 316:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 317:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 318:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /**************************************************************************//*!
+ 319:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 320:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @name  _usb_device_deinit_endpoint
+ 321:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 322:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @brief The function de-initializes the endpoint
+ 323:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 324:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param handle          : USB Device handle
+ 325:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param endpoint_number : Endpoint number
+ 326:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param direction       : Endpoint direction
+ 327:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 328:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @return status
+ 329:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *         USB_OK                              : When Successfull
+ 330:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *         USBERR_EP_DEINIT_FAILED     : When endpoints > max Supported
+ 331:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  ******************************************************************************
+ 332:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 333:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * This function deinitializes an endpoint the Device layer and the Controller
+ 334:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * layer in the S08 USB stack. It validate whether all endpoints have already
+ 335:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * been deinitialized or not and then calls the controller layer endpoint
+ 336:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * deinitialize function
+ 337:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 338:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *****************************************************************************/
+ 339:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** uint_8 _usb_device_deinit_endpoint (
+ 340:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     _usb_device_handle    handle,             /* [IN] USB Device handle */
+ 341:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8                endpoint_number,    /* [IN] Endpoint number */
+ 342:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8                direction           /* [IN] Direction */
+ 343:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** )
+ 344:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** {
+ 345:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8 status=USB_OK;
+ 346:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 347:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     /* check if all endpoint have already been initialised */
+ 348:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     if((g_EPn == g_EPn_max) && (endpoint_number != CONTROL_ENDPOINT))
+ 349:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 350:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         return USBERR_EP_DEINIT_FAILED;
+ 351:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 352:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 353:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     /* call controller layer for initiazation */
+ 354:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     status = USB_DCI_Deinit_EndPoint(*((uint_8*)handle), endpoint_number, direction);
+ 355:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 356:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     /* if endpoint successfully deinitialised update counter */
+ 357:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     if((endpoint_number != CONTROL_ENDPOINT) && (status == USB_OK))
+ 358:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 359:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         g_EPn++;
+ 360:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 361:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 362:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     return status;
+ 363:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** }
+ 364:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 365:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /**************************************************************************//*!
+ 366:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 367:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @name  _usb_device_get_status
+ 368:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 369:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @brief The function retrieves various endpoint as well as USB component status
+ 370:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 371:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param handle        : USB Device handle
+ 372:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param component     : USB component
+ 373:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param status        : Pointer to 16 bit return value
+ 374:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 375:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @return status
+ 376:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *         USB_OK                : When Successfull
+ 377:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *         USBERR_BAD_STATUS     : When error
+ 378:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 379:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  ******************************************************************************
+ 380:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * This function retrieves the endpoint as well USB component status which is
+ 381:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * stored by calling USB_Device_Set_Status. This function can be called by Ap-
+ 382:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * plication as well as the DCI layer.
+ 383:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *****************************************************************************/
+ 384:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** uint_8 _usb_device_get_status (
+ 385:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     _usb_device_handle    handle,       /* [IN]  USB Device handle */
+ 386:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8                component,    /* [IN]  USB component */
+ 387:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8_ptr            status        /* [OUT] Pointer to 16 bit return value */
+ 388:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** )
+ 389:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** {
+ 390:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     /* get the endpoint number from component input variable */
+ 391:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8 ep_num = (uint_8)(component & USB_STATUS_ENDPOINT_NUMBER_MASK);
+ 392:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     UNUSED (handle);
+ 393:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 394:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     if((component <= USB_STATUS_TEST_MODE) &&
+ 395:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         (component >= USB_STATUS_DEVICE_STATE))
+ 396:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 397:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         /* Get the corresponding component status
+ 398:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****            -1 as components start from 1 */
+ 399:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         *status = g_usb_component_status[component-1];
+ 400:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 401:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     else if((component & USB_STATUS_ENDPOINT) &&
+ 402:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         (ep_num < MAX_SUPPORTED_ENDPOINTS))
+ 403:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 404:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         /* Get the corresponding endpoint status */
+ 405:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         *status = g_usb_ep_status[ep_num];
+ 406:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 407:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     else
+ 408:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 409:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         return USBERR_BAD_STATUS;
+ 410:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 411:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 412:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     return USB_OK;
+ 413:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** }
+ 414:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 415:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /**************************************************************************//*!
+ 416:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 417:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @name  _usb_device_set_status
+ 418:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 419:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @brief The function saves status of endpoints as well as USB components.
+ 420:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 421:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param handle    : USB Device handle
+ 422:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param component : USB component
+ 423:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param setting   : Value to be set
+ 424:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 425:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @return status
+ 426:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *         USB_OK                : When Successfull
+ 427:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *         USBERR_BAD_STATUS     : When error
+ 428:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 429:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  ******************************************************************************
+ 430:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * This function sets the endpoint as well USB component status which can be
+ 431:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * retrieved by calling _usb_device_get_status. This function can be called by
+ 432:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * Application as well as the DCI layer.
+ 433:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *****************************************************************************/
+ 434:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** uint_8 _usb_device_set_status(
+ 435:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     _usb_device_handle    handle,       /* [IN] USB Device handle */
+ 436:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8                component,    /* [IN] USB Component status to set */
+ 437:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8                setting       /* [IN] Status to set */
+ 438:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** )
+ 439:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** {
+ 440:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     /* get the endpoint number from component input variable */
+ 441:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8 ep_num = (uint_8)(component & USB_STATUS_ENDPOINT_NUMBER_MASK);
+ 442:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     UNUSED (handle);
+ 443:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 444:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     if((component <= USB_STATUS_TEST_MODE) &&
+ 445:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         (component >= USB_STATUS_DEVICE_STATE))
+ 446:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 447:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         /*
+ 448:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****            Set the corresponding component setting
+ 449:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****            -1 as components start from 1
+ 450:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         */
+ 451:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         g_usb_component_status[component-1] = setting;
+ 452:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 453:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     else if((component & USB_STATUS_ENDPOINT) &&
+ 454:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         (ep_num < MAX_SUPPORTED_ENDPOINTS))
+ 455:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 456:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         uint_8 direction =
+ 457:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****             (uint_8)((component >> USB_COMPONENT_DIRECTION_SHIFT) &
+ 458:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****             USB_COMPONENT_DIRECTION_MASK);
+ 459:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         /* HALT Endpoint */
+ 460:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         if(setting == USB_STATUS_STALLED)
+ 461:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         {
+ 462:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         	_usb_device_stall_endpoint(handle, ep_num, direction);
+ 463:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         }
+ 464:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         else if((setting == USB_STATUS_IDLE) &&
+ 465:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****             (g_usb_ep_status[ep_num] == USB_STATUS_STALLED))
+ 466:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         {
+ 467:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         	_usb_device_unstall_endpoint(handle, ep_num, direction);
+ 468:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 469:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****             if(ep_num == CONTROL_ENDPOINT)
+ 470:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****             {
+ 471:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****                 direction = (uint_8)((direction == USB_SEND)?
+ 472:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****                     (USB_RECV):(USB_SEND));
+ 473:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****                 _usb_device_unstall_endpoint(handle, ep_num, direction);
+ 474:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****             }
+ 475:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         }
+ 476:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         /* Set the corresponding endpoint setting */
+ 477:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         g_usb_ep_status[ep_num] = setting;
+ 478:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 479:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     else
+ 480:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 481:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         return USBERR_BAD_STATUS;
+ 482:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 483:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     return USB_OK;
+ 484:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** }
+ 485:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 486:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /**************************************************************************//*!
+ 487:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 488:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @name  _usb_device_register_service
+ 489:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 490:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @brief The function registers a callback function from the Application layer
+ 491:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 492:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param controller_ID : Controller ID
+ 493:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param type          : event type or endpoint number
+ 494:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param service       : callback function pointer
+ 495:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 496:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @return status
+ 497:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *         USB_OK                   : When Successfull
+ 498:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *         USBERR_ALLOC_SERVICE     : When invalid type or already registered
+ 499:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 500:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  ******************************************************************************
+ 501:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * This function registers a callback function from the application if it is
+ 502:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * called not already registered so that the registered callback function can
+ 503:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * be if the event of that type occurs
+ 504:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *****************************************************************************/
+ 505:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** uint_8 _usb_device_register_service(
+ 506:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8                    controller_ID, /* [IN] Controller ID           */
+ 507:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8                    type,          /* [IN] type of event or endpoint
+ 508:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****                                                      number to service       */
+ 509:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     USB_SERVICE_CALLBACK      service        /* [IN] pointer to callback
+ 510:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****                                                      function                */
+ 511:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** )
+ 512:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** {
+ 513:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     UNUSED (controller_ID);
+ 514:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     UNUSED (service);
+ 515:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #ifdef MULTIPLE_DEVICES
+ 516:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     /* check if the type is valid and callback for the type
+ 517:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****        is not already registered */
+ 518:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     if(((type  <= USB_SERVICE_MAX_EP) ||
+ 519:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         ((type < USB_SERVICE_MAX) && (type >= USB_SERVICE_BUS_RESET))) &&
+ 520:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****        (g_usb_CB[type] == NULL))
+ 521:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 522:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 523:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         /* register the callback function */
+ 524:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         g_usb_CB[type] = service;
+ 525:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         return USB_OK;
+ 526:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 527:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     else
+ 528:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 529:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         return USBERR_ALLOC_SERVICE;
+ 530:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 531:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #else
+ 532:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     UNUSED(type);
+ 533:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     return USB_OK;
+ 534:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #endif
+ 535:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 536:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** }
+ 537:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 538:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /**************************************************************************//*!
+ 539:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 540:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @name  _usb_device_unregister_service
+ 541:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 542:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @brief The function unregisters an event or endpoint callback function
+ 543:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 544:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param handle         : USB Device handle
+ 545:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param event_endpoint : event type or endpoint number
+ 546:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 547:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @return status
+ 548:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *         USB_OK                   : When Successfull
+ 549:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *         USBERR_UNKNOWN_ERROR     : When invalid type or not registered
+ 550:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 551:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *****************************************************************************
+ 552:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * This function un registers a callback function which has been previously
+ 553:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * registered by the application layer
+ 554:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *****************************************************************************/
+ 555:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** uint_8 _usb_device_unregister_service(
+ 556:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     _usb_device_handle    handle,           /* [IN] USB Device handle */
+ 557:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8                event_endpoint    /* [IN] Endpoint (0 through 15) or event to service */
+ 558:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** )
+ 559:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** {
+ 560:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     UNUSED (handle);
+ 561:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     /* check if the type is valid and callback for the type
+ 562:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****        is already registered */
+ 563:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     if(((event_endpoint  <= USB_SERVICE_MAX_EP) ||
+ 564:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         ((event_endpoint < USB_SERVICE_MAX) && (event_endpoint >= USB_SERVICE_BUS_RESET))) &&
+ 565:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****        (g_usb_CB[event_endpoint] != NULL))
+ 566:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 567:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #ifdef MULTIPLE_DEVICES
+ 568:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         /* unregister the callback */
+ 569:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         g_usb_CB[event_endpoint] = NULL;
+ 570:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #endif
+ 571:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         return USB_OK;
+ 572:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 573:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     else
+ 574:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 575:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         return USBERR_UNKNOWN_ERROR;
+ 576:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 577:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** }
+ 578:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 579:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** /**************************************************************************//*!
+ 580:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 581:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @name  USB_Device_Call_Service
+ 582:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 583:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @brief The function is a device layer event handler
+ 584:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 585:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param type  : Type of service or endpoint
+ 586:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @param event : Pointer to event structure
+ 587:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 588:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * @return status
+ 589:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *         USB_OK      : Always
+ 590:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 591:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *****************************************************************************
+ 592:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 593:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * This function calls the registered service callback function of the applic-
+ 594:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * ation layer based on the type of event received. This function is called
+ 595:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  * from the DCI layer.
+ 596:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *
+ 597:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****  *****************************************************************************/
+ 598:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** uint_8 USB_Device_Call_Service(
+ 599:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8                    type,    /* [IN] Type of service or endpoint */
+ 600:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     PTR_USB_DEV_EVENT_STRUCT  event    /* [IN] Pointer to event structure  */
+ 601:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** )
+ 602:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** {
+ 603:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 604:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     if(type == USB_SERVICE_BUS_RESET)
+ 605:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {    /* if it is an reset interrupt then reset all status structures */
+ 606:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****        USB_Device_Init_Params();
+ 607:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 608:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 609:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     /* check if the callback is registered or not */
+ 610:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     if(g_usb_CB[type] != NULL)
+ 611:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 612:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         /* call the callback function */
+ 613:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         g_usb_CB[type](event);
+ 614:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 615:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 616:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     return USB_OK;
+ 617:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** }
+ 618:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 619:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** void USB_NULL_CALLBACK (PTR_USB_DEV_EVENT_STRUCT event)
+ 620:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** {
+ 145              		.loc 1 620 1 is_stmt 1 view -0
+ 146              		.cfi_startproc
+ 147              		@ args = 0, pretend = 0, frame = 0
+ 148              		@ frame_needed = 0, uses_anonymous_args = 0
+ 149              		@ link register save eliminated.
+ 621:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 	UNUSED(event);
+ 150              		.loc 1 621 2 view .LVU65
+ 151              		.loc 1 621 15 view .LVU66
+ 622:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 623:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 	#if (defined(__CWCC__) || defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC__))
+ 624:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		asm("nop");
+ 152              		.loc 1 624 3 view .LVU67
+ 153              		.syntax unified
+ 154              	@ 624 "hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c" 1
+ 155 002c 00BF     		nop
+ 156              	@ 0 "" 2
+ 625:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 	#elif defined (__CC_ARM)
+ 626:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 		__nop();
+ 627:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 	#endif
+ 628:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** }
+ 157              		.loc 1 628 1 is_stmt 0 view .LVU68
+ 158              		.thumb
+ 159              		.syntax unified
+ 160 002e 7047     		bx	lr
+ 161              		.cfi_endproc
+ 162              	.LFE10:
+ 164              		.align	1
+ 165              		.global	_usb_device_init
+ 166              		.syntax unified
+ 167              		.thumb
+ 168              		.thumb_func
+ 169              		.fpu softvfp
+ 171              	_usb_device_init:
+ 172              	.LVL16:
+ 173              	.LFB1:
+ 202:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 	UNUSED(handle);
+ 174              		.loc 1 202 1 is_stmt 1 view -0
+ 175              		.cfi_startproc
+ 176              		@ args = 0, pretend = 0, frame = 0
+ 177              		@ frame_needed = 0, uses_anonymous_args = 0
+ 203:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 178              		.loc 1 203 2 view .LVU70
+ 203:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 179              		.loc 1 203 16 view .LVU71
+ 206:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****       (number_of_endpoints < MIN_SUPPORTED_ENDPOINTS))
+ 180              		.loc 1 206 5 view .LVU72
+ 206:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****       (number_of_endpoints < MIN_SUPPORTED_ENDPOINTS))
+ 181              		.loc 1 206 56 is_stmt 0 view .LVU73
+ 182 0030 013A     		subs	r2, r2, #1
+ 183              	.LVL17:
+ 206:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****       (number_of_endpoints < MIN_SUPPORTED_ENDPOINTS))
+ 184              		.loc 1 206 56 view .LVU74
+ 185 0032 D2B2     		uxtb	r2, r2
+ 206:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****       (number_of_endpoints < MIN_SUPPORTED_ENDPOINTS))
+ 186              		.loc 1 206 7 view .LVU75
+ 187 0034 062A     		cmp	r2, #6
+ 202:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 	UNUSED(handle);
+ 188              		.loc 1 202 1 view .LVU76
+ 189 0036 08B5     		push	{r3, lr}
+ 190              	.LCFI0:
+ 191              		.cfi_def_cfa_offset 8
+ 192              		.cfi_offset 3, -8
+ 193              		.cfi_offset 14, -4
+ 202:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 	UNUSED(handle);
+ 194              		.loc 1 202 1 view .LVU77
+ 195 0038 1946     		mov	r1, r3
+ 196              	.LVL18:
+ 206:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****       (number_of_endpoints < MIN_SUPPORTED_ENDPOINTS))
+ 197              		.loc 1 206 7 view .LVU78
+ 198 003a 07D8     		bhi	.L6
+ 213:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 199              		.loc 1 213 5 is_stmt 1 view .LVU79
+ 213:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 200              		.loc 1 213 15 is_stmt 0 view .LVU80
+ 201 003c 044B     		ldr	r3, .L7
+ 202              	.LVL19:
+ 213:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 203              		.loc 1 213 15 view .LVU81
+ 204 003e 5A70     		strb	r2, [r3, #1]
+ 215:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 205              		.loc 1 215 5 is_stmt 1 view .LVU82
+ 206 0040 FFF7DEFF 		bl	USB_Device_Init_Params
+ 207              	.LVL20:
+ 223:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 208              		.loc 1 223 5 view .LVU83
+ 225:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 209              		.loc 1 225 1 is_stmt 0 view .LVU84
+ 210 0044 BDE80840 		pop	{r3, lr}
+ 211              	.LCFI1:
+ 212              		.cfi_remember_state
+ 213              		.cfi_restore 14
+ 214              		.cfi_restore 3
+ 215              		.cfi_def_cfa_offset 0
+ 223:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 216              		.loc 1 223 12 view .LVU85
+ 217 0048 FFF7FEBF 		b	USB_DCI_Init
+ 218              	.LVL21:
+ 219              	.L6:
+ 220              	.LCFI2:
+ 221              		.cfi_restore_state
+ 225:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 222              		.loc 1 225 1 view .LVU86
+ 223 004c 9920     		movs	r0, #153
+ 224              	.LVL22:
+ 225:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 225              		.loc 1 225 1 view .LVU87
+ 226 004e 08BD     		pop	{r3, pc}
+ 227              	.LVL23:
+ 228              	.L8:
+ 225:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 229              		.loc 1 225 1 view .LVU88
+ 230              		.align	2
+ 231              	.L7:
+ 232 0050 00000000 		.word	.LANCHOR0
+ 233              		.cfi_endproc
+ 234              	.LFE1:
+ 236              		.align	1
+ 237              		.global	_usb_device_deinit
+ 238              		.syntax unified
+ 239              		.thumb
+ 240              		.thumb_func
+ 241              		.fpu softvfp
+ 243              	_usb_device_deinit:
+ 244              	.LFB2:
+ 240:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 	g_EPn_max = 0;
+ 245              		.loc 1 240 1 is_stmt 1 view -0
+ 246              		.cfi_startproc
+ 247              		@ args = 0, pretend = 0, frame = 0
+ 248              		@ frame_needed = 0, uses_anonymous_args = 0
+ 249              		@ link register save eliminated.
+ 241:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 	/* Call controller layer de-initialization function */
+ 250              		.loc 1 241 2 view .LVU90
+ 241:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 	/* Call controller layer de-initialization function */
+ 251              		.loc 1 241 12 is_stmt 0 view .LVU91
+ 252 0054 024B     		ldr	r3, .L10
+ 253 0056 0022     		movs	r2, #0
+ 254 0058 5A70     		strb	r2, [r3, #1]
+ 243:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** }
+ 255              		.loc 1 243 2 is_stmt 1 view .LVU92
+ 243:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** }
+ 256              		.loc 1 243 9 is_stmt 0 view .LVU93
+ 257 005a FFF7FEBF 		b	USB_DCI_DeInit
+ 258              	.LVL24:
+ 259              	.L11:
+ 260 005e 00BF     		.align	2
+ 261              	.L10:
+ 262 0060 00000000 		.word	.LANCHOR0
+ 263              		.cfi_endproc
+ 264              	.LFE2:
+ 266              		.align	1
+ 267              		.global	_usb_device_init_endpoint
+ 268              		.syntax unified
+ 269              		.thumb
+ 270              		.thumb_func
+ 271              		.fpu softvfp
+ 273              	_usb_device_init_endpoint:
+ 274              	.LVL25:
+ 275              	.LFB3:
+ 278:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 	USB_EP_STRUCT ep_str;
+ 276              		.loc 1 278 1 is_stmt 1 view -0
+ 277              		.cfi_startproc
+ 278              		@ args = 8, pretend = 0, frame = 8
+ 279              		@ frame_needed = 0, uses_anonymous_args = 0
+ 279:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 280              		.loc 1 279 2 view .LVU95
+ 281:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 281              		.loc 1 281 5 view .LVU96
+ 284:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 282              		.loc 1 284 5 view .LVU97
+ 278:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 	USB_EP_STRUCT ep_str;
+ 283              		.loc 1 278 1 is_stmt 0 view .LVU98
+ 284 0064 37B5     		push	{r0, r1, r2, r4, r5, lr}
+ 285              	.LCFI3:
+ 286              		.cfi_def_cfa_offset 24
+ 287              		.cfi_offset 4, -12
+ 288              		.cfi_offset 5, -8
+ 289              		.cfi_offset 14, -4
+ 284:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 290              		.loc 1 284 15 view .LVU99
+ 291 0066 0F4C     		ldr	r4, .L19
+ 284:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 292              		.loc 1 284 7 view .LVU100
+ 293 0068 2578     		ldrb	r5, [r4]	@ zero_extendqisi2
+ 294 006a 05B9     		cbnz	r5, .L13
+ 284:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 295              		.loc 1 284 21 discriminator 1 view .LVU101
+ 296 006c C1B9     		cbnz	r1, .L15
+ 297              	.L13:
+ 289:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     ep_str.ep_num = endpoint_number;
+ 298              		.loc 1 289 5 is_stmt 1 view .LVU102
+ 289:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     ep_str.ep_num = endpoint_number;
+ 299              		.loc 1 289 22 is_stmt 0 view .LVU103
+ 300 006e 8DF80230 		strb	r3, [sp, #2]
+ 290:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 301              		.loc 1 290 5 is_stmt 1 view .LVU104
+ 290:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 302              		.loc 1 290 19 is_stmt 0 view .LVU105
+ 303 0072 8DF80010 		strb	r1, [sp]
+ 300:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #endif
+ 304              		.loc 1 300 5 is_stmt 1 view .LVU106
+ 303:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 305              		.loc 1 303 17 is_stmt 0 view .LVU107
+ 306 0076 9DF81830 		ldrb	r3, [sp, #24]	@ zero_extendqisi2
+ 307              	.LVL26:
+ 300:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #endif
+ 308              		.loc 1 300 17 view .LVU108
+ 309 007a ADF80320 		strh	r2, [sp, #3]	@ unaligned
+ 303:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 310              		.loc 1 303 5 is_stmt 1 view .LVU109
+ 306:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 311              		.loc 1 306 14 is_stmt 0 view .LVU110
+ 312 007e 0078     		ldrb	r0, [r0]	@ zero_extendqisi2
+ 313              	.LVL27:
+ 306:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 314              		.loc 1 306 14 view .LVU111
+ 315 0080 9DF81C20 		ldrb	r2, [sp, #28]	@ zero_extendqisi2
+ 316              	.LVL28:
+ 303:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 317              		.loc 1 303 17 view .LVU112
+ 318 0084 8DF80130 		strb	r3, [sp, #1]
+ 306:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 319              		.loc 1 306 5 is_stmt 1 view .LVU113
+ 306:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 320              		.loc 1 306 14 is_stmt 0 view .LVU114
+ 321 0088 6946     		mov	r1, sp
+ 322              	.LVL29:
+ 306:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 323              		.loc 1 306 14 view .LVU115
+ 324 008a FFF7FEFF 		bl	USB_DCI_Init_EndPoint
+ 325              	.LVL30:
+ 309:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 326              		.loc 1 309 5 is_stmt 1 view .LVU116
+ 309:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 327              		.loc 1 309 7 is_stmt 0 view .LVU117
+ 328 008e 9DF80030 		ldrb	r3, [sp]	@ zero_extendqisi2
+ 329 0092 1BB1     		cbz	r3, .L14
+ 309:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 330              		.loc 1 309 44 discriminator 1 view .LVU118
+ 331 0094 10B9     		cbnz	r0, .L14
+ 311:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 332              		.loc 1 311 9 is_stmt 1 view .LVU119
+ 311:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 333              		.loc 1 311 14 is_stmt 0 view .LVU120
+ 334 0096 2378     		ldrb	r3, [r4]	@ zero_extendqisi2
+ 335 0098 013B     		subs	r3, r3, #1
+ 336 009a 2370     		strb	r3, [r4]
+ 337              	.LVL31:
+ 338              	.L14:
+ 315:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 339              		.loc 1 315 1 view .LVU121
+ 340 009c 03B0     		add	sp, sp, #12
+ 341              	.LCFI4:
+ 342              		.cfi_remember_state
+ 343              		.cfi_def_cfa_offset 12
+ 344              		@ sp needed
+ 345 009e 30BD     		pop	{r4, r5, pc}
+ 346              	.LVL32:
+ 347              	.L15:
+ 348              	.LCFI5:
+ 349              		.cfi_restore_state
+ 286:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 350              		.loc 1 286 16 view .LVU122
+ 351 00a0 9520     		movs	r0, #149
+ 352              	.LVL33:
+ 286:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 353              		.loc 1 286 16 view .LVU123
+ 354 00a2 FBE7     		b	.L14
+ 355              	.L20:
+ 356              		.align	2
+ 357              	.L19:
+ 358 00a4 00000000 		.word	.LANCHOR0
+ 359              		.cfi_endproc
+ 360              	.LFE3:
+ 362              		.align	1
+ 363              		.global	_usb_device_deinit_endpoint
+ 364              		.syntax unified
+ 365              		.thumb
+ 366              		.thumb_func
+ 367              		.fpu softvfp
+ 369              	_usb_device_deinit_endpoint:
+ 370              	.LVL34:
+ 371              	.LFB4:
+ 344:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8 status=USB_OK;
+ 372              		.loc 1 344 1 is_stmt 1 view -0
+ 373              		.cfi_startproc
+ 374              		@ args = 0, pretend = 0, frame = 0
+ 375              		@ frame_needed = 0, uses_anonymous_args = 0
+ 345:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 376              		.loc 1 345 5 view .LVU125
+ 348:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 377              		.loc 1 348 5 view .LVU126
+ 344:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8 status=USB_OK;
+ 378              		.loc 1 344 1 is_stmt 0 view .LVU127
+ 379 00a8 38B5     		push	{r3, r4, r5, lr}
+ 380              	.LCFI6:
+ 381              		.cfi_def_cfa_offset 16
+ 382              		.cfi_offset 3, -16
+ 383              		.cfi_offset 4, -12
+ 384              		.cfi_offset 5, -8
+ 385              		.cfi_offset 14, -4
+ 348:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 386              		.loc 1 348 15 view .LVU128
+ 387 00aa 0A4B     		ldr	r3, .L28
+ 344:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     uint_8 status=USB_OK;
+ 388              		.loc 1 344 1 view .LVU129
+ 389 00ac 0D46     		mov	r5, r1
+ 348:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 390              		.loc 1 348 7 view .LVU130
+ 391 00ae 1C78     		ldrb	r4, [r3]	@ zero_extendqisi2
+ 392 00b0 5978     		ldrb	r1, [r3, #1]	@ zero_extendqisi2
+ 393              	.LVL35:
+ 348:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 394              		.loc 1 348 7 view .LVU131
+ 395 00b2 8C42     		cmp	r4, r1
+ 396 00b4 1C46     		mov	r4, r3
+ 397 00b6 00D1     		bne	.L22
+ 348:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 398              		.loc 1 348 29 discriminator 1 view .LVU132
+ 399 00b8 4DB9     		cbnz	r5, .L24
+ 400              	.L22:
+ 354:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 401              		.loc 1 354 5 is_stmt 1 view .LVU133
+ 354:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 402              		.loc 1 354 14 is_stmt 0 view .LVU134
+ 403 00ba 0078     		ldrb	r0, [r0]	@ zero_extendqisi2
+ 404              	.LVL36:
+ 354:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 405              		.loc 1 354 14 view .LVU135
+ 406 00bc 2946     		mov	r1, r5
+ 407 00be FFF7FEFF 		bl	USB_DCI_Deinit_EndPoint
+ 408              	.LVL37:
+ 357:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 409              		.loc 1 357 5 is_stmt 1 view .LVU136
+ 357:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 410              		.loc 1 357 7 is_stmt 0 view .LVU137
+ 411 00c2 1DB1     		cbz	r5, .L23
+ 357:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 412              		.loc 1 357 46 discriminator 1 view .LVU138
+ 413 00c4 10B9     		cbnz	r0, .L23
+ 359:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 414              		.loc 1 359 9 is_stmt 1 view .LVU139
+ 359:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 415              		.loc 1 359 14 is_stmt 0 view .LVU140
+ 416 00c6 2378     		ldrb	r3, [r4]	@ zero_extendqisi2
+ 417 00c8 0133     		adds	r3, r3, #1
+ 418 00ca 2370     		strb	r3, [r4]
+ 419              	.LVL38:
+ 420              	.L23:
+ 363:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 421              		.loc 1 363 1 view .LVU141
+ 422 00cc 38BD     		pop	{r3, r4, r5, pc}
+ 423              	.LVL39:
+ 424              	.L24:
+ 350:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 425              		.loc 1 350 16 view .LVU142
+ 426 00ce 9620     		movs	r0, #150
+ 427              	.LVL40:
+ 350:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 428              		.loc 1 350 16 view .LVU143
+ 429 00d0 FCE7     		b	.L23
+ 430              	.L29:
+ 431 00d2 00BF     		.align	2
+ 432              	.L28:
+ 433 00d4 00000000 		.word	.LANCHOR0
+ 434              		.cfi_endproc
+ 435              	.LFE4:
+ 437              		.align	1
+ 438              		.global	_usb_device_get_status
+ 439              		.syntax unified
+ 440              		.thumb
+ 441              		.thumb_func
+ 442              		.fpu softvfp
+ 444              	_usb_device_get_status:
+ 445              	.LVL41:
+ 446              	.LFB5:
+ 389:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     /* get the endpoint number from component input variable */
+ 447              		.loc 1 389 1 is_stmt 1 view -0
+ 448              		.cfi_startproc
+ 449              		@ args = 0, pretend = 0, frame = 0
+ 450              		@ frame_needed = 0, uses_anonymous_args = 0
+ 451              		@ link register save eliminated.
+ 391:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     UNUSED (handle);
+ 452              		.loc 1 391 5 view .LVU145
+ 392:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 453              		.loc 1 392 5 view .LVU146
+ 392:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 454              		.loc 1 392 20 view .LVU147
+ 394:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         (component >= USB_STATUS_DEVICE_STATE))
+ 455              		.loc 1 394 5 view .LVU148
+ 394:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         (component >= USB_STATUS_DEVICE_STATE))
+ 456              		.loc 1 394 7 is_stmt 0 view .LVU149
+ 457 00d8 4B1E     		subs	r3, r1, #1
+ 458 00da 062B     		cmp	r3, #6
+ 459 00dc 05D8     		bhi	.L31
+ 399:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 460              		.loc 1 399 9 is_stmt 1 view .LVU150
+ 399:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 461              		.loc 1 399 41 is_stmt 0 view .LVU151
+ 462 00de 094B     		ldr	r3, .L36
+ 463 00e0 1944     		add	r1, r1, r3
+ 464              	.LVL42:
+ 399:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 465              		.loc 1 399 17 view .LVU152
+ 466 00e2 4B78     		ldrb	r3, [r1, #1]	@ zero_extendqisi2
+ 467              	.L35:
+ 405:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 468              		.loc 1 405 17 view .LVU153
+ 469 00e4 1370     		strb	r3, [r2]
+ 412:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** }
+ 470              		.loc 1 412 12 view .LVU154
+ 471 00e6 0020     		movs	r0, #0
+ 472              	.LVL43:
+ 405:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 473              		.loc 1 405 17 view .LVU155
+ 474 00e8 7047     		bx	lr
+ 475              	.LVL44:
+ 476              	.L31:
+ 401:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         (ep_num < MAX_SUPPORTED_ENDPOINTS))
+ 477              		.loc 1 401 10 is_stmt 1 view .LVU156
+ 401:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         (ep_num < MAX_SUPPORTED_ENDPOINTS))
+ 478              		.loc 1 401 12 is_stmt 0 view .LVU157
+ 479 00ea CB06     		lsls	r3, r1, #27
+ 480 00ec 07D5     		bpl	.L34
+ 391:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     UNUSED (handle);
+ 481              		.loc 1 391 12 discriminator 1 view .LVU158
+ 482 00ee 01F00F01 		and	r1, r1, #15
+ 483              	.LVL45:
+ 401:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         (ep_num < MAX_SUPPORTED_ENDPOINTS))
+ 484              		.loc 1 401 47 discriminator 1 view .LVU159
+ 485 00f2 0629     		cmp	r1, #6
+ 486 00f4 03D8     		bhi	.L34
+ 405:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 487              		.loc 1 405 9 is_stmt 1 view .LVU160
+ 405:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 488              		.loc 1 405 34 is_stmt 0 view .LVU161
+ 489 00f6 034B     		ldr	r3, .L36
+ 490 00f8 1944     		add	r1, r1, r3
+ 405:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 491              		.loc 1 405 17 view .LVU162
+ 492 00fa 4B7A     		ldrb	r3, [r1, #9]	@ zero_extendqisi2
+ 493 00fc F2E7     		b	.L35
+ 494              	.L34:
+ 409:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 495              		.loc 1 409 16 view .LVU163
+ 496 00fe 8220     		movs	r0, #130
+ 497              	.LVL46:
+ 413:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 498              		.loc 1 413 1 view .LVU164
+ 499 0100 7047     		bx	lr
+ 500              	.L37:
+ 501 0102 00BF     		.align	2
+ 502              	.L36:
+ 503 0104 00000000 		.word	.LANCHOR0
+ 504              		.cfi_endproc
+ 505              	.LFE5:
+ 507              		.align	1
+ 508              		.global	_usb_device_set_status
+ 509              		.syntax unified
+ 510              		.thumb
+ 511              		.thumb_func
+ 512              		.fpu softvfp
+ 514              	_usb_device_set_status:
+ 515              	.LVL47:
+ 516              	.LFB6:
+ 439:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     /* get the endpoint number from component input variable */
+ 517              		.loc 1 439 1 is_stmt 1 view -0
+ 518              		.cfi_startproc
+ 519              		@ args = 0, pretend = 0, frame = 0
+ 520              		@ frame_needed = 0, uses_anonymous_args = 0
+ 441:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     UNUSED (handle);
+ 521              		.loc 1 441 5 view .LVU166
+ 442:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 522              		.loc 1 442 5 view .LVU167
+ 442:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 523              		.loc 1 442 20 view .LVU168
+ 444:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         (component >= USB_STATUS_DEVICE_STATE))
+ 524              		.loc 1 444 5 view .LVU169
+ 439:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     /* get the endpoint number from component input variable */
+ 525              		.loc 1 439 1 is_stmt 0 view .LVU170
+ 526 0108 2DE9F041 		push	{r4, r5, r6, r7, r8, lr}
+ 527              	.LCFI7:
+ 528              		.cfi_def_cfa_offset 24
+ 529              		.cfi_offset 4, -24
+ 530              		.cfi_offset 5, -20
+ 531              		.cfi_offset 6, -16
+ 532              		.cfi_offset 7, -12
+ 533              		.cfi_offset 8, -8
+ 534              		.cfi_offset 14, -4
+ 439:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     /* get the endpoint number from component input variable */
+ 535              		.loc 1 439 1 view .LVU171
+ 536 010c 1646     		mov	r6, r2
+ 444:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         (component >= USB_STATUS_DEVICE_STATE))
+ 537              		.loc 1 444 7 view .LVU172
+ 538 010e 4A1E     		subs	r2, r1, #1
+ 539              	.LVL48:
+ 444:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         (component >= USB_STATUS_DEVICE_STATE))
+ 540              		.loc 1 444 7 view .LVU173
+ 541 0110 062A     		cmp	r2, #6
+ 439:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     /* get the endpoint number from component input variable */
+ 542              		.loc 1 439 1 view .LVU174
+ 543 0112 8046     		mov	r8, r0
+ 544 0114 0B46     		mov	r3, r1
+ 444:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         (component >= USB_STATUS_DEVICE_STATE))
+ 545              		.loc 1 444 7 view .LVU175
+ 546 0116 05D8     		bhi	.L39
+ 451:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 547              		.loc 1 451 9 is_stmt 1 view .LVU176
+ 451:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 548              		.loc 1 451 45 is_stmt 0 view .LVU177
+ 549 0118 1649     		ldr	r1, .L48
+ 550              	.LVL49:
+ 451:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 551              		.loc 1 451 45 view .LVU178
+ 552 011a 0B44     		add	r3, r3, r1
+ 553 011c 5E70     		strb	r6, [r3, #1]
+ 554              	.LVL50:
+ 555              	.L47:
+ 483:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** }
+ 556              		.loc 1 483 12 view .LVU179
+ 557 011e 0020     		movs	r0, #0
+ 558              	.L40:
+ 484:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 559              		.loc 1 484 1 view .LVU180
+ 560 0120 BDE8F081 		pop	{r4, r5, r6, r7, r8, pc}
+ 561              	.LVL51:
+ 562              	.L39:
+ 453:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         (ep_num < MAX_SUPPORTED_ENDPOINTS))
+ 563              		.loc 1 453 10 is_stmt 1 view .LVU181
+ 453:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         (ep_num < MAX_SUPPORTED_ENDPOINTS))
+ 564              		.loc 1 453 12 is_stmt 0 view .LVU182
+ 565 0124 CA06     		lsls	r2, r1, #27
+ 566 0126 22D5     		bpl	.L46
+ 441:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     UNUSED (handle);
+ 567              		.loc 1 441 12 discriminator 1 view .LVU183
+ 568 0128 01F00F05 		and	r5, r1, #15
+ 453:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         (ep_num < MAX_SUPPORTED_ENDPOINTS))
+ 569              		.loc 1 453 47 discriminator 1 view .LVU184
+ 570 012c 062D     		cmp	r5, #6
+ 571 012e 1ED8     		bhi	.L46
+ 572              	.LBB2:
+ 456:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****             (uint_8)((component >> USB_COMPONENT_DIRECTION_SHIFT) &
+ 573              		.loc 1 456 9 is_stmt 1 view .LVU185
+ 460:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         {
+ 574              		.loc 1 460 11 is_stmt 0 view .LVU186
+ 575 0130 012E     		cmp	r6, #1
+ 576 0132 104F     		ldr	r7, .L48
+ 456:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****             (uint_8)((component >> USB_COMPONENT_DIRECTION_SHIFT) &
+ 577              		.loc 1 456 16 view .LVU187
+ 578 0134 4FEAD114 		lsr	r4, r1, #7
+ 579              	.LVL52:
+ 460:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         {
+ 580              		.loc 1 460 9 is_stmt 1 view .LVU188
+ 460:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         {
+ 581              		.loc 1 460 11 is_stmt 0 view .LVU189
+ 582 0138 06D1     		bne	.L41
+ 462:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         }
+ 583              		.loc 1 462 10 is_stmt 1 view .LVU190
+ 584 013a 2246     		mov	r2, r4
+ 585 013c 2946     		mov	r1, r5
+ 586              	.LVL53:
+ 462:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         }
+ 587              		.loc 1 462 10 is_stmt 0 view .LVU191
+ 588 013e FFF7FEFF 		bl	_usb_device_stall_endpoint
+ 589              	.LVL54:
+ 590              	.L42:
+ 477:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 591              		.loc 1 477 9 is_stmt 1 view .LVU192
+ 477:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 592              		.loc 1 477 33 is_stmt 0 view .LVU193
+ 593 0142 3D44     		add	r5, r5, r7
+ 594 0144 6E72     		strb	r6, [r5, #9]
+ 595 0146 EAE7     		b	.L47
+ 596              	.LVL55:
+ 597              	.L41:
+ 464:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****             (g_usb_ep_status[ep_num] == USB_STATUS_STALLED))
+ 598              		.loc 1 464 14 is_stmt 1 view .LVU194
+ 464:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****             (g_usb_ep_status[ep_num] == USB_STATUS_STALLED))
+ 599              		.loc 1 464 16 is_stmt 0 view .LVU195
+ 600 0148 002E     		cmp	r6, #0
+ 601 014a FAD1     		bne	.L42
+ 465:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         {
+ 602              		.loc 1 465 29 discriminator 1 view .LVU196
+ 603 014c 7B19     		adds	r3, r7, r5
+ 464:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****             (g_usb_ep_status[ep_num] == USB_STATUS_STALLED))
+ 604              		.loc 1 464 46 discriminator 1 view .LVU197
+ 605 014e 5B7A     		ldrb	r3, [r3, #9]	@ zero_extendqisi2
+ 606 0150 012B     		cmp	r3, #1
+ 607 0152 F6D1     		bne	.L42
+ 467:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 608              		.loc 1 467 10 is_stmt 1 view .LVU198
+ 609 0154 2246     		mov	r2, r4
+ 610 0156 2946     		mov	r1, r5
+ 611              	.LVL56:
+ 467:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 612              		.loc 1 467 10 is_stmt 0 view .LVU199
+ 613 0158 FFF7FEFF 		bl	_usb_device_unstall_endpoint
+ 614              	.LVL57:
+ 469:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****             {
+ 615              		.loc 1 469 13 is_stmt 1 view .LVU200
+ 469:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****             {
+ 616              		.loc 1 469 15 is_stmt 0 view .LVU201
+ 617 015c 002D     		cmp	r5, #0
+ 618 015e F0D1     		bne	.L42
+ 471:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****                     (USB_RECV):(USB_SEND));
+ 619              		.loc 1 471 17 is_stmt 1 view .LVU202
+ 620              	.LVL58:
+ 473:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****             }
+ 621              		.loc 1 473 17 view .LVU203
+ 622 0160 84F00102 		eor	r2, r4, #1
+ 623 0164 2946     		mov	r1, r5
+ 624 0166 4046     		mov	r0, r8
+ 625 0168 FFF7FEFF 		bl	_usb_device_unstall_endpoint
+ 626              	.LVL59:
+ 627 016c E9E7     		b	.L42
+ 628              	.LVL60:
+ 629              	.L46:
+ 473:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****             }
+ 630              		.loc 1 473 17 is_stmt 0 view .LVU204
+ 631              	.LBE2:
+ 481:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 632              		.loc 1 481 16 view .LVU205
+ 633 016e 8220     		movs	r0, #130
+ 634              	.LVL61:
+ 481:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 635              		.loc 1 481 16 view .LVU206
+ 636 0170 D6E7     		b	.L40
+ 637              	.L49:
+ 638 0172 00BF     		.align	2
+ 639              	.L48:
+ 640 0174 00000000 		.word	.LANCHOR0
+ 641              		.cfi_endproc
+ 642              	.LFE6:
+ 644              		.align	1
+ 645              		.global	_usb_device_register_service
+ 646              		.syntax unified
+ 647              		.thumb
+ 648              		.thumb_func
+ 649              		.fpu softvfp
+ 651              	_usb_device_register_service:
+ 652              	.LVL62:
+ 653              	.LFB7:
+ 512:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     UNUSED (controller_ID);
+ 654              		.loc 1 512 1 is_stmt 1 view -0
+ 655              		.cfi_startproc
+ 656              		@ args = 0, pretend = 0, frame = 0
+ 657              		@ frame_needed = 0, uses_anonymous_args = 0
+ 658              		@ link register save eliminated.
+ 513:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     UNUSED (service);
+ 659              		.loc 1 513 5 view .LVU208
+ 513:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     UNUSED (service);
+ 660              		.loc 1 513 27 view .LVU209
+ 514:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #ifdef MULTIPLE_DEVICES
+ 661              		.loc 1 514 5 view .LVU210
+ 514:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #ifdef MULTIPLE_DEVICES
+ 662              		.loc 1 514 21 view .LVU211
+ 532:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     return USB_OK;
+ 663              		.loc 1 532 5 view .LVU212
+ 532:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     return USB_OK;
+ 664              		.loc 1 532 17 view .LVU213
+ 533:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** #endif
+ 665              		.loc 1 533 5 view .LVU214
+ 536:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 666              		.loc 1 536 1 is_stmt 0 view .LVU215
+ 667 0178 0020     		movs	r0, #0
+ 668              	.LVL63:
+ 536:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 669              		.loc 1 536 1 view .LVU216
+ 670 017a 7047     		bx	lr
+ 671              		.cfi_endproc
+ 672              	.LFE7:
+ 674              		.align	1
+ 675              		.global	_usb_device_unregister_service
+ 676              		.syntax unified
+ 677              		.thumb
+ 678              		.thumb_func
+ 679              		.fpu softvfp
+ 681              	_usb_device_unregister_service:
+ 682              	.LVL64:
+ 683              	.LFB8:
+ 559:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     UNUSED (handle);
+ 684              		.loc 1 559 1 is_stmt 1 view -0
+ 685              		.cfi_startproc
+ 686              		@ args = 0, pretend = 0, frame = 0
+ 687              		@ frame_needed = 0, uses_anonymous_args = 0
+ 688              		@ link register save eliminated.
+ 560:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     /* check if the type is valid and callback for the type
+ 689              		.loc 1 560 5 view .LVU218
+ 560:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     /* check if the type is valid and callback for the type
+ 690              		.loc 1 560 20 view .LVU219
+ 563:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         ((event_endpoint < USB_SERVICE_MAX) && (event_endpoint >= USB_SERVICE_BUS_RESET))) &&
+ 691              		.loc 1 563 5 view .LVU220
+ 563:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         ((event_endpoint < USB_SERVICE_MAX) && (event_endpoint >= USB_SERVICE_BUS_RESET))) &&
+ 692              		.loc 1 563 7 is_stmt 0 view .LVU221
+ 693 017c 0629     		cmp	r1, #6
+ 694 017e 03D9     		bls	.L52
+ 563:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****         ((event_endpoint < USB_SERVICE_MAX) && (event_endpoint >= USB_SERVICE_BUS_RESET))) &&
+ 695              		.loc 1 563 49 discriminator 1 view .LVU222
+ 696 0180 A1F11003 		sub	r3, r1, #16
+ 697 0184 072B     		cmp	r3, #7
+ 698 0186 07D8     		bhi	.L54
+ 699              	.L52:
+ 565:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 700              		.loc 1 565 17 view .LVU223
+ 701 0188 044B     		ldr	r3, .L56
+ 564:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****        (g_usb_CB[event_endpoint] != NULL))
+ 702              		.loc 1 564 92 view .LVU224
+ 703 018a 53F82130 		ldr	r3, [r3, r1, lsl #2]
+ 704 018e 002B     		cmp	r3, #0
+ 571:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 705              		.loc 1 571 16 view .LVU225
+ 706 0190 0CBF     		ite	eq
+ 707 0192 C420     		moveq	r0, #196
+ 708              	.LVL65:
+ 571:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 709              		.loc 1 571 16 view .LVU226
+ 710 0194 0020     		movne	r0, #0
+ 711 0196 7047     		bx	lr
+ 712              	.LVL66:
+ 713              	.L54:
+ 575:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 714              		.loc 1 575 16 view .LVU227
+ 715 0198 C420     		movs	r0, #196
+ 716              	.LVL67:
+ 577:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 717              		.loc 1 577 1 view .LVU228
+ 718 019a 7047     		bx	lr
+ 719              	.L57:
+ 720              		.align	2
+ 721              	.L56:
+ 722 019c 00000000 		.word	.LANCHOR1
+ 723              		.cfi_endproc
+ 724              	.LFE8:
+ 726              		.align	1
+ 727              		.global	USB_Device_Call_Service
+ 728              		.syntax unified
+ 729              		.thumb
+ 730              		.thumb_func
+ 731              		.fpu softvfp
+ 733              	USB_Device_Call_Service:
+ 734              	.LVL68:
+ 735              	.LFB9:
+ 602:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 736              		.loc 1 602 1 is_stmt 1 view -0
+ 737              		.cfi_startproc
+ 738              		@ args = 0, pretend = 0, frame = 0
+ 739              		@ frame_needed = 0, uses_anonymous_args = 0
+ 604:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {    /* if it is an reset interrupt then reset all status structures */
+ 740              		.loc 1 604 5 view .LVU230
+ 602:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 741              		.loc 1 602 1 is_stmt 0 view .LVU231
+ 742 01a0 10B5     		push	{r4, lr}
+ 743              	.LCFI8:
+ 744              		.cfi_def_cfa_offset 8
+ 745              		.cfi_offset 4, -8
+ 746              		.cfi_offset 14, -4
+ 602:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 747              		.loc 1 602 1 view .LVU232
+ 748 01a2 0446     		mov	r4, r0
+ 604:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {    /* if it is an reset interrupt then reset all status structures */
+ 749              		.loc 1 604 7 view .LVU233
+ 750 01a4 102C     		cmp	r4, #16
+ 602:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 751              		.loc 1 602 1 view .LVU234
+ 752 01a6 0846     		mov	r0, r1
+ 753              	.LVL69:
+ 604:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {    /* if it is an reset interrupt then reset all status structures */
+ 754              		.loc 1 604 7 view .LVU235
+ 755 01a8 01D1     		bne	.L59
+ 606:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 756              		.loc 1 606 8 is_stmt 1 view .LVU236
+ 757 01aa FFF729FF 		bl	USB_Device_Init_Params
+ 758              	.LVL70:
+ 759              	.L59:
+ 610:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 760              		.loc 1 610 5 view .LVU237
+ 610:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 761              		.loc 1 610 16 is_stmt 0 view .LVU238
+ 762 01ae 034B     		ldr	r3, .L64
+ 763 01b0 53F82430 		ldr	r3, [r3, r4, lsl #2]
+ 610:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     {
+ 764              		.loc 1 610 7 view .LVU239
+ 765 01b4 03B1     		cbz	r3, .L60
+ 613:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c ****     }
+ 766              		.loc 1 613 9 is_stmt 1 view .LVU240
+ 767 01b6 9847     		blx	r3
+ 768              	.LVL71:
+ 769              	.L60:
+ 616:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** }
+ 770              		.loc 1 616 5 view .LVU241
+ 617:hal/Landungsbruecke/freescale/USB_CDC/usb_driver.c **** 
+ 771              		.loc 1 617 1 is_stmt 0 view .LVU242
+ 772 01b8 0020     		movs	r0, #0
+ 773 01ba 10BD     		pop	{r4, pc}
+ 774              	.L65:
+ 775              		.align	2
+ 776              	.L64:
+ 777 01bc 00000000 		.word	.LANCHOR1
+ 778              		.cfi_endproc
+ 779              	.LFE9:
+ 781              		.comm	Cpu,8,4
+ 782              		.section	.rodata
+ 783              		.align	2
+ 784              		.set	.LANCHOR1,. + 0
+ 787              	g_usb_CB:
+ 788 0000 00000000 		.word	USB_Control_Service
+ 789 0004 00000000 		.word	USB_Class_CDC_Service_Dic_Bulk_In
+ 790 0008 00000000 		.word	USB_Class_CDC_Service_Dic_Bulk_Out
+ 791 000c 00000000 		.word	USB_Class_CDC_Service_Cic_Notify
+ 792 0010 00000000 		.word	USB_NULL_CALLBACK
+ 793 0014 00000000 		.word	USB_NULL_CALLBACK
+ 794 0018 00000000 		.word	USB_NULL_CALLBACK
+ 795 001c 00000000 		.word	USB_NULL_CALLBACK
+ 796 0020 00000000 		.word	USB_NULL_CALLBACK
+ 797 0024 00000000 		.word	USB_NULL_CALLBACK
+ 798 0028 00000000 		.word	USB_NULL_CALLBACK
+ 799 002c 00000000 		.word	USB_NULL_CALLBACK
+ 800 0030 00000000 		.word	USB_NULL_CALLBACK
+ 801 0034 00000000 		.word	USB_NULL_CALLBACK
+ 802 0038 00000000 		.word	USB_NULL_CALLBACK
+ 803 003c 00000000 		.word	USB_NULL_CALLBACK
+ 804 0040 00000000 		.word	USB_Reset_Service
+ 805 0044 00000000 		.word	USB_Suspend_Service
+ 806 0048 00000000 		.word	USB_Sof_Service
+ 807 004c 00000000 		.word	USB_Resume_Service
+ 808 0050 00000000 		.word	USB_Suspend_Service
+ 809 0054 00000000 		.word	USB_NULL_CALLBACK
+ 810 0058 00000000 		.word	USB_Error_Service
+ 811 005c 00000000 		.word	USB_Stall_Service
+ 812              		.bss
+ 813              		.set	.LANCHOR0,. + 0
+ 816              	g_EPn:
+ 817 0000 00       		.space	1
+ 820              	g_EPn_max:
+ 821 0001 00       		.space	1
+ 824              	g_usb_component_status:
+ 825 0002 00000000 		.space	7
+ 825      000000
+ 828              	g_usb_ep_status:
+ 829 0009 00000000 		.space	7
+ 829      000000
+ 830              		.text
+ 831              	.Letext0:
+ 832              		.file 2 "hal/Landungsbruecke/freescale/USB_CDC/types.h"
+ 833              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 834              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 835              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 836              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 837              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 838              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 839              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 840              		.file 10 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\in
+ 841              		.file 11 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 842              		.file 12 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 843              		.file 13 "hal/Landungsbruecke/freescale/USB_CDC/usb_devapi.h"
+ 844              		.file 14 "hal/Landungsbruecke/freescale/USB_CDC/usb_dciapi.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 usb_driver.c
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:22     .text:00000000 USB_Device_Init_Params
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:131    .text:00000028 $d
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:135    .text:0000002c $t
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:142    .text:0000002c USB_NULL_CALLBACK
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:171    .text:00000030 _usb_device_init
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:232    .text:00000050 $d
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:236    .text:00000054 $t
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:243    .text:00000054 _usb_device_deinit
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:262    .text:00000060 $d
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:266    .text:00000064 $t
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:273    .text:00000064 _usb_device_init_endpoint
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:358    .text:000000a4 $d
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:362    .text:000000a8 $t
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:369    .text:000000a8 _usb_device_deinit_endpoint
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:433    .text:000000d4 $d
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:437    .text:000000d8 $t
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:444    .text:000000d8 _usb_device_get_status
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:503    .text:00000104 $d
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:507    .text:00000108 $t
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:514    .text:00000108 _usb_device_set_status
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:640    .text:00000174 $d
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:644    .text:00000178 $t
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:651    .text:00000178 _usb_device_register_service
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:681    .text:0000017c _usb_device_unregister_service
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:722    .text:0000019c $d
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:726    .text:000001a0 $t
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:733    .text:000001a0 USB_Device_Call_Service
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:777    .text:000001bc $d
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:783    .rodata:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:787    .rodata:00000000 g_usb_CB
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:816    .bss:00000000 g_EPn
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:817    .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:820    .bss:00000001 g_EPn_max
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:824    .bss:00000002 g_usb_component_status
+C:\Users\Shubham\AppData\Local\Temp\ccYFX24g.s:828    .bss:00000009 g_usb_ep_status
+
+UNDEFINED SYMBOLS
+USB_DCI_Init
+USB_DCI_DeInit
+USB_DCI_Init_EndPoint
+USB_DCI_Deinit_EndPoint
+_usb_device_stall_endpoint
+_usb_device_unstall_endpoint
+USB_Control_Service
+USB_Class_CDC_Service_Dic_Bulk_In
+USB_Class_CDC_Service_Dic_Bulk_Out
+USB_Class_CDC_Service_Cic_Notify
+USB_Reset_Service
+USB_Suspend_Service
+USB_Sof_Service
+USB_Resume_Service
+USB_Error_Service
+USB_Stall_Service

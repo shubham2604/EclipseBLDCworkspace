@@ -1,0 +1,977 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"HelloWorld.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.global	shallForceBoot
+  17              		.arch armv7e-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	shallForceBoot:
+  24              	.LFB1:
+  25              		.file 1 "HelloWorld.c"
+   1:HelloWorld.c  **** // use TMC4671 API
+   2:HelloWorld.c  **** 
+   3:HelloWorld.c  **** #include "tmc/ic/TMC4671/TMC4671.h"
+   4:HelloWorld.c  **** 
+   5:HelloWorld.c  **** #include "boards/Board.h"
+   6:HelloWorld.c  **** #include "hal/derivative.h"
+   7:HelloWorld.c  **** #include "hal/HAL.h"
+   8:HelloWorld.c  **** #include "tmc/IdDetection.h"
+   9:HelloWorld.c  **** #include "tmc/TMCL.h"
+  10:HelloWorld.c  **** #include "tmc/VitalSignsMonitor.h"
+  11:HelloWorld.c  **** #include "tmc/BoardAssignment.h"
+  12:HelloWorld.c  **** 
+  13:HelloWorld.c  **** 
+  14:HelloWorld.c  **** 
+  15:HelloWorld.c  **** const char *VersionString = MODULE_ID"V307"; // module id and version of the firmware shown in the 
+  16:HelloWorld.c  **** 
+  17:HelloWorld.c  **** /* Keep as is! This lines are important for the update functionality. */
+  18:HelloWorld.c  **** #if defined(Landungsbruecke)
+  19:HelloWorld.c  **** 	const uint8_t Protection[] __attribute__ ((section(".cfmconfig")))=
+  20:HelloWorld.c  **** 	{
+  21:HelloWorld.c  **** 		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  //Backdoor key
+  22:HelloWorld.c  **** 		0xFF, 0xFF, 0xFF, 0xFF,                          //Flash protection (FPPROT)
+  23:HelloWorld.c  **** 		0x7E,                                            //Flash security   (FSEC) => nach Image-Generier
+  24:HelloWorld.c  **** 		0xF9,                                            //Flash option     (FOPT) (NMI ausgeschaltet, Ez
+  25:HelloWorld.c  **** 		0xFF,                                            //reserved
+  26:HelloWorld.c  **** 		0xFF                                             //reserved
+  27:HelloWorld.c  **** 	};
+  28:HelloWorld.c  **** 
+  29:HelloWorld.c  **** 	struct BootloaderConfig {
+  30:HelloWorld.c  **** 		uint32_t BLMagic;
+  31:HelloWorld.c  **** 		uint32_t drvEnableResetValue;
+  32:HelloWorld.c  **** 	};
+  33:HelloWorld.c  **** 
+  34:HelloWorld.c  **** 	// This struct gets placed at a specific address by the linker
+  35:HelloWorld.c  **** 	struct BootloaderConfig __attribute__ ((section(".bldata"))) BLConfig;
+  36:HelloWorld.c  **** #endif
+  37:HelloWorld.c  **** 
+  38:HelloWorld.c  **** 	void shallForceBoot()
+  39:HelloWorld.c  **** 	{
+  26              		.loc 1 39 2 view -0
+  27              		.cfi_startproc
+  28              		@ args = 0, pretend = 0, frame = 0
+  29              		@ frame_needed = 0, uses_anonymous_args = 0
+  40:HelloWorld.c  **** 		// toggle each pin and see if you can read the state on the other
+  41:HelloWorld.c  **** 		// leave if not, because this means that the pins are not tied together
+  42:HelloWorld.c  **** 		HAL.IOs->config->toOutput(&HAL.IOs->pins->ID_CLK);
+  30              		.loc 1 42 3 view .LVU1
+  31              		.loc 1 42 6 is_stmt 0 view .LVU2
+  32 0000 234B     		ldr	r3, .L8
+  39:HelloWorld.c  **** 		// toggle each pin and see if you can read the state on the other
+  33              		.loc 1 39 2 view .LVU3
+  34 0002 10B5     		push	{r4, lr}
+  35              	.LCFI0:
+  36              		.cfi_def_cfa_offset 8
+  37              		.cfi_offset 4, -8
+  38              		.cfi_offset 14, -4
+  39              		.loc 1 42 6 view .LVU4
+  40 0004 DC68     		ldr	r4, [r3, #12]
+  41              		.loc 1 42 18 view .LVU5
+  42 0006 D4E90030 		ldrd	r3, r0, [r4]
+  43              		.loc 1 42 3 view .LVU6
+  44 000a DB68     		ldr	r3, [r3, #12]
+  45 000c 0830     		adds	r0, r0, #8
+  46 000e 9847     		blx	r3
+  47              	.LVL0:
+  43:HelloWorld.c  **** 		HAL.IOs->config->toInput(&HAL.IOs->pins->ID_CH0);
+  48              		.loc 1 43 3 is_stmt 1 view .LVU7
+  49              		.loc 1 43 18 is_stmt 0 view .LVU8
+  50 0010 D4E90030 		ldrd	r3, r0, [r4]
+  51              		.loc 1 43 3 view .LVU9
+  52 0014 1B69     		ldr	r3, [r3, #16]
+  53 0016 2830     		adds	r0, r0, #40
+  54 0018 9847     		blx	r3
+  55              	.LVL1:
+  44:HelloWorld.c  **** 
+  45:HelloWorld.c  **** 		HAL.IOs->config->setHigh(&HAL.IOs->pins->ID_CLK);
+  56              		.loc 1 45 3 is_stmt 1 view .LVU10
+  57              		.loc 1 45 18 is_stmt 0 view .LVU11
+  58 001a D4E90030 		ldrd	r3, r0, [r4]
+  59              		.loc 1 45 3 view .LVU12
+  60 001e 5B69     		ldr	r3, [r3, #20]
+  61 0020 0830     		adds	r0, r0, #8
+  62 0022 9847     		blx	r3
+  63              	.LVL2:
+  46:HelloWorld.c  **** 		if(!HAL.IOs->config->isHigh(&HAL.IOs->pins->ID_CH0))
+  64              		.loc 1 46 3 is_stmt 1 view .LVU13
+  65              		.loc 1 46 22 is_stmt 0 view .LVU14
+  66 0024 D4E90030 		ldrd	r3, r0, [r4]
+  67              		.loc 1 46 7 view .LVU15
+  68 0028 5B6A     		ldr	r3, [r3, #36]
+  69 002a 2830     		adds	r0, r0, #40
+  70 002c 9847     		blx	r3
+  71              	.LVL3:
+  72              		.loc 1 46 5 view .LVU16
+  73 002e 70B3     		cbz	r0, .L1
+  47:HelloWorld.c  **** 			return;
+  48:HelloWorld.c  **** 
+  49:HelloWorld.c  **** 		HAL.IOs->config->setLow(&HAL.IOs->pins->ID_CLK);
+  74              		.loc 1 49 3 is_stmt 1 view .LVU17
+  75              		.loc 1 49 18 is_stmt 0 view .LVU18
+  76 0030 D4E90030 		ldrd	r3, r0, [r4]
+  77              		.loc 1 49 3 view .LVU19
+  78 0034 9B69     		ldr	r3, [r3, #24]
+  79 0036 0830     		adds	r0, r0, #8
+  80 0038 9847     		blx	r3
+  81              	.LVL4:
+  50:HelloWorld.c  **** 		if(HAL.IOs->config->isHigh(&HAL.IOs->pins->ID_CH0))
+  82              		.loc 1 50 3 is_stmt 1 view .LVU20
+  83              		.loc 1 50 21 is_stmt 0 view .LVU21
+  84 003a D4E90030 		ldrd	r3, r0, [r4]
+  85              		.loc 1 50 6 view .LVU22
+  86 003e 5B6A     		ldr	r3, [r3, #36]
+  87 0040 2830     		adds	r0, r0, #40
+  88 0042 9847     		blx	r3
+  89              	.LVL5:
+  90              		.loc 1 50 5 view .LVU23
+  91 0044 18BB     		cbnz	r0, .L1
+  51:HelloWorld.c  **** 			return;
+  52:HelloWorld.c  **** 
+  53:HelloWorld.c  **** 		HAL.IOs->config->toOutput(&HAL.IOs->pins->ID_CH0);
+  92              		.loc 1 53 3 is_stmt 1 view .LVU24
+  93              		.loc 1 53 18 is_stmt 0 view .LVU25
+  94 0046 D4E90030 		ldrd	r3, r0, [r4]
+  95              		.loc 1 53 3 view .LVU26
+  96 004a DB68     		ldr	r3, [r3, #12]
+  97 004c 2830     		adds	r0, r0, #40
+  98 004e 9847     		blx	r3
+  99              	.LVL6:
+  54:HelloWorld.c  **** 		HAL.IOs->config->toInput(&HAL.IOs->pins->ID_CLK);
+ 100              		.loc 1 54 3 is_stmt 1 view .LVU27
+ 101              		.loc 1 54 18 is_stmt 0 view .LVU28
+ 102 0050 D4E90030 		ldrd	r3, r0, [r4]
+ 103              		.loc 1 54 3 view .LVU29
+ 104 0054 1B69     		ldr	r3, [r3, #16]
+ 105 0056 0830     		adds	r0, r0, #8
+ 106 0058 9847     		blx	r3
+ 107              	.LVL7:
+  55:HelloWorld.c  **** 
+  56:HelloWorld.c  **** 		HAL.IOs->config->setHigh(&HAL.IOs->pins->ID_CH0);
+ 108              		.loc 1 56 3 is_stmt 1 view .LVU30
+ 109              		.loc 1 56 18 is_stmt 0 view .LVU31
+ 110 005a D4E90030 		ldrd	r3, r0, [r4]
+ 111              		.loc 1 56 3 view .LVU32
+ 112 005e 5B69     		ldr	r3, [r3, #20]
+ 113 0060 2830     		adds	r0, r0, #40
+ 114 0062 9847     		blx	r3
+ 115              	.LVL8:
+  57:HelloWorld.c  **** 		if(!HAL.IOs->config->isHigh(&HAL.IOs->pins->ID_CLK))
+ 116              		.loc 1 57 3 is_stmt 1 view .LVU33
+ 117              		.loc 1 57 22 is_stmt 0 view .LVU34
+ 118 0064 D4E90030 		ldrd	r3, r0, [r4]
+ 119              		.loc 1 57 7 view .LVU35
+ 120 0068 5B6A     		ldr	r3, [r3, #36]
+ 121 006a 0830     		adds	r0, r0, #8
+ 122 006c 9847     		blx	r3
+ 123              	.LVL9:
+ 124              		.loc 1 57 5 view .LVU36
+ 125 006e 70B1     		cbz	r0, .L1
+  58:HelloWorld.c  **** 			return;
+  59:HelloWorld.c  **** 
+  60:HelloWorld.c  **** 		HAL.IOs->config->setLow(&HAL.IOs->pins->ID_CH0);
+ 126              		.loc 1 60 3 is_stmt 1 view .LVU37
+ 127              		.loc 1 60 18 is_stmt 0 view .LVU38
+ 128 0070 D4E90030 		ldrd	r3, r0, [r4]
+ 129              		.loc 1 60 3 view .LVU39
+ 130 0074 9B69     		ldr	r3, [r3, #24]
+ 131 0076 2830     		adds	r0, r0, #40
+ 132 0078 9847     		blx	r3
+ 133              	.LVL10:
+  61:HelloWorld.c  **** 		if(HAL.IOs->config->isHigh(&HAL.IOs->pins->ID_CLK))
+ 134              		.loc 1 61 3 is_stmt 1 view .LVU40
+ 135              		.loc 1 61 21 is_stmt 0 view .LVU41
+ 136 007a D4E90030 		ldrd	r3, r0, [r4]
+ 137              		.loc 1 61 6 view .LVU42
+ 138 007e 5B6A     		ldr	r3, [r3, #36]
+ 139 0080 0830     		adds	r0, r0, #8
+ 140 0082 9847     		blx	r3
+ 141              	.LVL11:
+ 142              		.loc 1 61 5 view .LVU43
+ 143 0084 18B9     		cbnz	r0, .L1
+  62:HelloWorld.c  **** 			return;
+  63:HelloWorld.c  **** 
+  64:HelloWorld.c  **** 		// not returned, this means pins are tied together
+  65:HelloWorld.c  **** 		tmcl_boot();
+ 144              		.loc 1 65 3 is_stmt 1 view .LVU44
+  66:HelloWorld.c  **** 	}
+ 145              		.loc 1 66 2 is_stmt 0 view .LVU45
+ 146 0086 BDE81040 		pop	{r4, lr}
+ 147              	.LCFI1:
+ 148              		.cfi_remember_state
+ 149              		.cfi_restore 14
+ 150              		.cfi_restore 4
+ 151              		.cfi_def_cfa_offset 0
+  65:HelloWorld.c  **** 	}
+ 152              		.loc 1 65 3 view .LVU46
+ 153 008a FFF7FEBF 		b	tmcl_boot
+ 154              	.LVL12:
+ 155              	.L1:
+ 156              	.LCFI2:
+ 157              		.cfi_restore_state
+ 158              		.loc 1 66 2 view .LVU47
+ 159 008e 10BD     		pop	{r4, pc}
+ 160              	.L9:
+ 161              		.align	2
+ 162              	.L8:
+ 163 0090 00000000 		.word	HAL
+ 164              		.cfi_endproc
+ 165              	.LFE1:
+ 167              		.align	1
+ 168              		.global	init_reg
+ 169              		.syntax unified
+ 170              		.thumb
+ 171              		.thumb_func
+ 172              		.fpu softvfp
+ 174              	init_reg:
+ 175              	.LFB2:
+  67:HelloWorld.c  **** 
+  68:HelloWorld.c  **** void init_reg(){
+ 176              		.loc 1 68 16 is_stmt 1 view -0
+ 177              		.cfi_startproc
+ 178              		@ args = 0, pretend = 0, frame = 40
+ 179              		@ frame_needed = 0, uses_anonymous_args = 0
+  69:HelloWorld.c  **** 
+  70:HelloWorld.c  **** #if defined(Landungsbruecke)
+  71:HelloWorld.c  **** 	// Default value: Driver enable gets set high by the bootloader
+  72:HelloWorld.c  **** 	BLConfig.drvEnableResetValue = 1;
+ 180              		.loc 1 72 2 view .LVU49
+  68:HelloWorld.c  **** 
+ 181              		.loc 1 68 16 is_stmt 0 view .LVU50
+ 182 0094 70B5     		push	{r4, r5, r6, lr}
+ 183              	.LCFI3:
+ 184              		.cfi_def_cfa_offset 16
+ 185              		.cfi_offset 4, -16
+ 186              		.cfi_offset 5, -12
+ 187              		.cfi_offset 6, -8
+ 188              		.cfi_offset 14, -4
+ 189              		.loc 1 72 31 view .LVU51
+ 190 0096 5C4B     		ldr	r3, .L12
+  73:HelloWorld.c  **** #endif
+  74:HelloWorld.c  **** 
+  75:HelloWorld.c  **** 	HAL.init();                  // Initialize Hardware Abstraction Layer
+ 191              		.loc 1 75 5 view .LVU52
+ 192 0098 5C4E     		ldr	r6, .L12+4
+  76:HelloWorld.c  **** 	IDDetection_init();          // Initialize board detection
+  77:HelloWorld.c  **** 	tmcl_init();                 // Initialize TMCL communication
+  78:HelloWorld.c  **** 
+  79:HelloWorld.c  **** 	tmcdriver_init();            // Initialize dummy driver board --> preset EvalBoards.ch2
+  80:HelloWorld.c  **** 	tmcmotioncontroller_init();  // Initialize dummy motion controller board  --> preset EvalBoards.ch
+  81:HelloWorld.c  **** 
+  82:HelloWorld.c  **** 	VitalSignsMonitor.busy = 1;  // Put state to busy
+ 193              		.loc 1 82 25 view .LVU53
+ 194 009a 5D4D     		ldr	r5, .L12+8
+  72:HelloWorld.c  **** #endif
+ 195              		.loc 1 72 31 view .LVU54
+ 196 009c 0124     		movs	r4, #1
+  68:HelloWorld.c  **** 
+ 197              		.loc 1 68 16 view .LVU55
+ 198 009e 8AB0     		sub	sp, sp, #40
+ 199              	.LCFI4:
+ 200              		.cfi_def_cfa_offset 56
+  72:HelloWorld.c  **** #endif
+ 201              		.loc 1 72 31 view .LVU56
+ 202 00a0 5C60     		str	r4, [r3, #4]
+  75:HelloWorld.c  **** 	IDDetection_init();          // Initialize board detection
+ 203              		.loc 1 75 2 is_stmt 1 view .LVU57
+ 204 00a2 3368     		ldr	r3, [r6]
+ 205 00a4 9847     		blx	r3
+ 206              	.LVL13:
+  76:HelloWorld.c  **** 	tmcl_init();                 // Initialize TMCL communication
+ 207              		.loc 1 76 2 view .LVU58
+ 208 00a6 FFF7FEFF 		bl	IDDetection_init
+ 209              	.LVL14:
+  77:HelloWorld.c  **** 
+ 210              		.loc 1 77 2 view .LVU59
+ 211 00aa FFF7FEFF 		bl	tmcl_init
+ 212              	.LVL15:
+  79:HelloWorld.c  **** 	tmcmotioncontroller_init();  // Initialize dummy motion controller board  --> preset EvalBoards.ch
+ 213              		.loc 1 79 2 view .LVU60
+ 214 00ae FFF7FEFF 		bl	tmcdriver_init
+ 215              	.LVL16:
+  80:HelloWorld.c  **** 
+ 216              		.loc 1 80 2 view .LVU61
+ 217 00b2 FFF7FEFF 		bl	tmcmotioncontroller_init
+ 218              	.LVL17:
+ 219              		.loc 1 82 2 view .LVU62
+  83:HelloWorld.c  **** 	Evalboards.driverEnable = DRIVER_ENABLE;
+ 220              		.loc 1 83 26 is_stmt 0 view .LVU63
+ 221 00b6 574B     		ldr	r3, .L12+12
+  82:HelloWorld.c  **** 	Evalboards.driverEnable = DRIVER_ENABLE;
+ 222              		.loc 1 82 25 view .LVU64
+ 223 00b8 6C70     		strb	r4, [r5, #1]
+ 224              		.loc 1 83 2 is_stmt 1 view .LVU65
+  84:HelloWorld.c  **** 	Evalboards.ch1.id = 0;       // preset id for driver board to 0 --> error/not found
+ 225              		.loc 1 84 20 is_stmt 0 view .LVU66
+ 226 00ba 0022     		movs	r2, #0
+  83:HelloWorld.c  **** 	Evalboards.driverEnable = DRIVER_ENABLE;
+ 227              		.loc 1 83 26 view .LVU67
+ 228 00bc 83F8F040 		strb	r4, [r3, #240]
+ 229              		.loc 1 84 2 is_stmt 1 view .LVU68
+  85:HelloWorld.c  **** 	Evalboards.ch2.id = 0;       // preset id for driver board to 0 --> error/not found
+  86:HelloWorld.c  **** 
+  87:HelloWorld.c  **** 	// We disable the drivers before configurating anything
+  88:HelloWorld.c  **** 	HAL.IOs->config->toOutput(&HAL.IOs->pins->DIO0);
+ 230              		.loc 1 88 5 is_stmt 0 view .LVU69
+ 231 00c0 F468     		ldr	r4, [r6, #12]
+  84:HelloWorld.c  **** 	Evalboards.ch1.id = 0;       // preset id for driver board to 0 --> error/not found
+ 232              		.loc 1 84 20 view .LVU70
+ 233 00c2 1A71     		strb	r2, [r3, #4]
+  85:HelloWorld.c  **** 	Evalboards.ch2.id = 0;       // preset id for driver board to 0 --> error/not found
+ 234              		.loc 1 85 2 is_stmt 1 view .LVU71
+  85:HelloWorld.c  **** 	Evalboards.ch2.id = 0;       // preset id for driver board to 0 --> error/not found
+ 235              		.loc 1 85 20 is_stmt 0 view .LVU72
+ 236 00c4 83F87C20 		strb	r2, [r3, #124]
+ 237              		.loc 1 88 2 is_stmt 1 view .LVU73
+ 238              		.loc 1 88 17 is_stmt 0 view .LVU74
+ 239 00c8 D4E90030 		ldrd	r3, r0, [r4]
+ 240              		.loc 1 88 2 view .LVU75
+ 241 00cc DB68     		ldr	r3, [r3, #12]
+ 242 00ce 6830     		adds	r0, r0, #104
+ 243 00d0 9847     		blx	r3
+ 244              	.LVL18:
+  89:HelloWorld.c  **** 	HAL.IOs->config->setHigh(&HAL.IOs->pins->DIO0);
+ 245              		.loc 1 89 2 is_stmt 1 view .LVU76
+ 246              		.loc 1 89 17 is_stmt 0 view .LVU77
+ 247 00d2 D4E90030 		ldrd	r3, r0, [r4]
+ 248              		.loc 1 89 2 view .LVU78
+ 249 00d6 5B69     		ldr	r3, [r3, #20]
+ 250 00d8 6830     		adds	r0, r0, #104
+ 251 00da 9847     		blx	r3
+ 252              	.LVL19:
+  90:HelloWorld.c  **** 
+  91:HelloWorld.c  **** 	IdAssignmentTypeDef ids;
+ 253              		.loc 1 91 2 is_stmt 1 view .LVU79
+  92:HelloWorld.c  **** 	IDDetection_initialScan(&ids);  // start initial board detection
+ 254              		.loc 1 92 2 view .LVU80
+ 255 00dc 6846     		mov	r0, sp
+ 256 00de FFF7FEFF 		bl	IDDetection_initialScan
+ 257              	.LVL20:
+  93:HelloWorld.c  **** 	IDDetection_initialScan(&ids);  // start second time, first time not 100% reliable, not sure why -
+ 258              		.loc 1 93 2 view .LVU81
+ 259 00e2 6846     		mov	r0, sp
+ 260 00e4 FFF7FEFF 		bl	IDDetection_initialScan
+ 261              	.LVL21:
+  94:HelloWorld.c  **** 	if(!ids.ch1.id && !ids.ch2.id)
+ 262              		.loc 1 94 2 view .LVU82
+ 263              		.loc 1 94 17 is_stmt 0 view .LVU83
+ 264 00e8 9DF80120 		ldrb	r2, [sp, #1]	@ zero_extendqisi2
+ 265 00ec 9DF81530 		ldrb	r3, [sp, #21]	@ zero_extendqisi2
+ 266 00f0 1343     		orrs	r3, r2, r3
+ 267 00f2 0BD1     		bne	.L11
+  95:HelloWorld.c  **** 	{
+  96:HelloWorld.c  **** 		shallForceBoot();           // only checking to force jump into bootloader if there are no boards
+ 268              		.loc 1 96 3 is_stmt 1 view .LVU84
+ 269 00f4 FFF7FEFF 		bl	shallForceBoot
+ 270              	.LVL22:
+  97:HelloWorld.c  **** 		// todo CHECK 2: Workaround: shallForceBoot() changes pin settings - change them again here, sinc
+  98:HelloWorld.c  **** 		HAL.IOs->config->toOutput(&HAL.IOs->pins->ID_CLK);
+ 271              		.loc 1 98 3 view .LVU85
+ 272              		.loc 1 98 18 is_stmt 0 view .LVU86
+ 273 00f8 D4E90030 		ldrd	r3, r0, [r4]
+ 274              		.loc 1 98 3 view .LVU87
+ 275 00fc DB68     		ldr	r3, [r3, #12]
+ 276 00fe 0830     		adds	r0, r0, #8
+ 277 0100 9847     		blx	r3
+ 278              	.LVL23:
+  99:HelloWorld.c  **** 		HAL.IOs->config->toInput(&HAL.IOs->pins->ID_CH0);
+ 279              		.loc 1 99 3 is_stmt 1 view .LVU88
+ 280              		.loc 1 99 18 is_stmt 0 view .LVU89
+ 281 0102 D4E90030 		ldrd	r3, r0, [r4]
+ 282              		.loc 1 99 3 view .LVU90
+ 283 0106 1B69     		ldr	r3, [r3, #16]
+ 284 0108 2830     		adds	r0, r0, #40
+ 285 010a 9847     		blx	r3
+ 286              	.LVL24:
+ 287              	.L11:
+ 100:HelloWorld.c  **** 	}
+ 101:HelloWorld.c  **** 	Board_assign(&ids);             // assign boards with detected id
+ 288              		.loc 1 101 2 is_stmt 1 view .LVU91
+ 102:HelloWorld.c  **** 
+ 103:HelloWorld.c  **** 	VitalSignsMonitor.busy 	= 0;    // not busy any more!
+ 289              		.loc 1 103 26 is_stmt 0 view .LVU92
+ 290 010c 0024     		movs	r4, #0
+ 101:HelloWorld.c  **** 
+ 291              		.loc 1 101 2 view .LVU93
+ 292 010e 6846     		mov	r0, sp
+ 293 0110 FFF7FEFF 		bl	Board_assign
+ 294              	.LVL25:
+ 295              		.loc 1 103 2 is_stmt 1 view .LVU94
+ 104:HelloWorld.c  **** 
+ 105:HelloWorld.c  **** 	// Motor type &  PWM configuration
+ 106:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_MOTOR_TYPE_N_POLE_PAIRS, 0x00030004);
+ 296              		.loc 1 106 2 is_stmt 0 view .LVU95
+ 297 0114 2046     		mov	r0, r4
+ 298 0116 404A     		ldr	r2, .L12+16
+ 103:HelloWorld.c  **** 
+ 299              		.loc 1 103 26 view .LVU96
+ 300 0118 6C70     		strb	r4, [r5, #1]
+ 301              		.loc 1 106 2 is_stmt 1 view .LVU97
+ 302 011a 1B21     		movs	r1, #27
+ 303 011c FFF7FEFF 		bl	tmc4671_writeInt
+ 304              	.LVL26:
+ 107:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_PWM_POLARITIES, 0x00000000);
+ 305              		.loc 1 107 2 view .LVU98
+ 306 0120 2246     		mov	r2, r4
+ 307 0122 2046     		mov	r0, r4
+ 308 0124 1721     		movs	r1, #23
+ 309 0126 FFF7FEFF 		bl	tmc4671_writeInt
+ 310              	.LVL27:
+ 108:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_PWM_MAXCNT, 0x00000F9F);
+ 311              		.loc 1 108 2 view .LVU99
+ 312 012a 2046     		mov	r0, r4
+ 313 012c 40F69F72 		movw	r2, #3999
+ 314 0130 1821     		movs	r1, #24
+ 315 0132 FFF7FEFF 		bl	tmc4671_writeInt
+ 316              	.LVL28:
+ 109:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_PWM_BBM_H_BBM_L, 0x00000A0A);
+ 317              		.loc 1 109 2 view .LVU100
+ 318 0136 2046     		mov	r0, r4
+ 319 0138 40F60A22 		movw	r2, #2570
+ 320 013c 1921     		movs	r1, #25
+ 321 013e FFF7FEFF 		bl	tmc4671_writeInt
+ 322              	.LVL29:
+ 110:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_PWM_SV_CHOP, 0x00000007);
+ 323              		.loc 1 110 2 view .LVU101
+ 324 0142 2046     		mov	r0, r4
+ 325 0144 0722     		movs	r2, #7
+ 326 0146 1A21     		movs	r1, #26
+ 327 0148 FFF7FEFF 		bl	tmc4671_writeInt
+ 328              	.LVL30:
+ 111:HelloWorld.c  **** 
+ 112:HelloWorld.c  **** 	// ADC configuration
+ 113:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_ADC_I_SELECT, 0x18000100); // @suppress("Invalid arguments")
+ 329              		.loc 1 113 2 view .LVU102
+ 330 014c 2046     		mov	r0, r4
+ 331 014e 334A     		ldr	r2, .L12+20
+ 332 0150 0A21     		movs	r1, #10
+ 333 0152 FFF7FEFF 		bl	tmc4671_writeInt
+ 334              	.LVL31:
+ 114:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_dsADC_MCFG_B_MCFG_A, 0x00100010); // @suppress("Invalid arguments")
+ 335              		.loc 1 114 2 view .LVU103
+ 336 0156 2046     		mov	r0, r4
+ 337 0158 4FF01012 		mov	r2, #1048592
+ 338 015c 0421     		movs	r1, #4
+ 339 015e FFF7FEFF 		bl	tmc4671_writeInt
+ 340              	.LVL32:
+ 115:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_dsADC_MCLK_A, 0x20000000); // @suppress("Invalid arguments")
+ 341              		.loc 1 115 2 view .LVU104
+ 342 0162 2046     		mov	r0, r4
+ 343 0164 4FF00052 		mov	r2, #536870912
+ 344 0168 0521     		movs	r1, #5
+ 345 016a FFF7FEFF 		bl	tmc4671_writeInt
+ 346              	.LVL33:
+ 116:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_dsADC_MCLK_B, 0x00000000); // @suppress("Invalid arguments")
+ 347              		.loc 1 116 2 view .LVU105
+ 348 016e 2246     		mov	r2, r4
+ 349 0170 2046     		mov	r0, r4
+ 350 0172 0621     		movs	r1, #6
+ 351 0174 FFF7FEFF 		bl	tmc4671_writeInt
+ 352              	.LVL34:
+ 117:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_dsADC_MDEC_B_MDEC_A, 0x014E014E); // @suppress("Invalid arguments")
+ 353              		.loc 1 117 2 view .LVU106
+ 354 0178 2046     		mov	r0, r4
+ 355 017a 294A     		ldr	r2, .L12+24
+ 356 017c 0721     		movs	r1, #7
+ 357 017e FFF7FEFF 		bl	tmc4671_writeInt
+ 358              	.LVL35:
+ 118:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_ADC_I0_SCALE_OFFSET, 0x0100815B); // @suppress("Invalid arguments")
+ 359              		.loc 1 118 2 view .LVU107
+ 360 0182 2046     		mov	r0, r4
+ 361 0184 274A     		ldr	r2, .L12+28
+ 362 0186 0921     		movs	r1, #9
+ 363 0188 FFF7FEFF 		bl	tmc4671_writeInt
+ 364              	.LVL36:
+ 119:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_ADC_I1_SCALE_OFFSET, 0x010081CE); // @suppress("Invalid arguments")
+ 365              		.loc 1 119 2 view .LVU108
+ 366 018c 2046     		mov	r0, r4
+ 367 018e 264A     		ldr	r2, .L12+32
+ 368 0190 0821     		movs	r1, #8
+ 369 0192 FFF7FEFF 		bl	tmc4671_writeInt
+ 370              	.LVL37:
+ 120:HelloWorld.c  **** 
+ 121:HelloWorld.c  **** 	// ABN encoder settings
+ 122:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_ABN_DECODER_MODE, 0x00000000); // @suppress("Invalid arguments")
+ 371              		.loc 1 122 2 view .LVU109
+ 372 0196 2246     		mov	r2, r4
+ 373 0198 2046     		mov	r0, r4
+ 374 019a 2521     		movs	r1, #37
+ 375 019c FFF7FEFF 		bl	tmc4671_writeInt
+ 376              	.LVL38:
+ 123:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_ABN_DECODER_PPR, 0x00001000); // @suppress("Invalid arguments")
+ 377              		.loc 1 123 2 view .LVU110
+ 378 01a0 2046     		mov	r0, r4
+ 379 01a2 4FF48052 		mov	r2, #4096
+ 380 01a6 2621     		movs	r1, #38
+ 381 01a8 FFF7FEFF 		bl	tmc4671_writeInt
+ 382              	.LVL39:
+ 124:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_ABN_DECODER_COUNT, 0x00000CAD); // @suppress("Invalid arguments")
+ 383              		.loc 1 124 2 view .LVU111
+ 384 01ac 2046     		mov	r0, r4
+ 385 01ae 40F6AD42 		movw	r2, #3245
+ 386 01b2 2721     		movs	r1, #39
+ 387 01b4 FFF7FEFF 		bl	tmc4671_writeInt
+ 388              	.LVL40:
+ 125:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_ABN_DECODER_PHI_E_PHI_M_OFFSET, 0x00000000); // @suppress("Invalid arg
+ 389              		.loc 1 125 2 view .LVU112
+ 390 01b8 2246     		mov	r2, r4
+ 391 01ba 2046     		mov	r0, r4
+ 392 01bc 2921     		movs	r1, #41
+ 393 01be FFF7FEFF 		bl	tmc4671_writeInt
+ 394              	.LVL41:
+ 126:HelloWorld.c  **** 
+ 127:HelloWorld.c  **** 	// Limits
+ 128:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_PID_TORQUE_FLUX_LIMITS, 0x00000BB8); // @suppress("Invalid arguments")
+ 395              		.loc 1 128 2 view .LVU113
+ 396 01c2 2046     		mov	r0, r4
+ 397 01c4 40F6B832 		movw	r2, #3000
+ 398 01c8 5E21     		movs	r1, #94
+ 399 01ca FFF7FEFF 		bl	tmc4671_writeInt
+ 400              	.LVL42:
+ 129:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_PID_VELOCITY_LIMIT, 0x00000064);
+ 401              		.loc 1 129 2 view .LVU114
+ 402 01ce 2046     		mov	r0, r4
+ 403 01d0 6422     		movs	r2, #100
+ 404 01d2 6021     		movs	r1, #96
+ 405 01d4 FFF7FEFF 		bl	tmc4671_writeInt
+ 406              	.LVL43:
+ 130:HelloWorld.c  **** 	// PI settings
+ 131:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_PID_TORQUE_P_TORQUE_I, 0x01000100); // @suppress("Invalid arguments")
+ 407              		.loc 1 131 2 view .LVU115
+ 408 01d8 2046     		mov	r0, r4
+ 409 01da 4FF00122 		mov	r2, #16777472
+ 410 01de 5621     		movs	r1, #86
+ 411 01e0 FFF7FEFF 		bl	tmc4671_writeInt
+ 412              	.LVL44:
+ 132:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_PID_FLUX_P_FLUX_I, 0x01000100); // @suppress("Invalid arguments")
+ 413              		.loc 1 132 2 view .LVU116
+ 414 01e4 2046     		mov	r0, r4
+ 415 01e6 4FF00122 		mov	r2, #16777472
+ 416 01ea 5421     		movs	r1, #84
+ 417 01ec FFF7FEFF 		bl	tmc4671_writeInt
+ 418              	.LVL45:
+ 133:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_PID_VELOCITY_P_VELOCITY_I, 0x271005DC);
+ 419              		.loc 1 133 2 view .LVU117
+ 420 01f0 2046     		mov	r0, r4
+ 421 01f2 0E4A     		ldr	r2, .L12+36
+ 422 01f4 5821     		movs	r1, #88
+ 423 01f6 FFF7FEFF 		bl	tmc4671_writeInt
+ 424              	.LVL46:
+ 134:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_PID_POSITION_P_POSITION_I, 0x000F0002);
+ 425              		.loc 1 134 2 view .LVU118
+ 426 01fa 0D4A     		ldr	r2, .L12+40
+ 427 01fc 5A21     		movs	r1, #90
+ 428 01fe 2046     		mov	r0, r4
+ 429 0200 FFF7FEFF 		bl	tmc4671_writeInt
+ 430              	.LVL47:
+ 135:HelloWorld.c  **** 
+ 136:HelloWorld.c  **** 
+ 137:HelloWorld.c  **** }
+ 431              		.loc 1 137 1 is_stmt 0 view .LVU119
+ 432 0204 0AB0     		add	sp, sp, #40
+ 433              	.LCFI5:
+ 434              		.cfi_def_cfa_offset 16
+ 435              		@ sp needed
+ 436 0206 70BD     		pop	{r4, r5, r6, pc}
+ 437              	.L13:
+ 438              		.align	2
+ 439              	.L12:
+ 440 0208 00000000 		.word	.LANCHOR0
+ 441 020c 00000000 		.word	HAL
+ 442 0210 00000000 		.word	VitalSignsMonitor
+ 443 0214 00000000 		.word	Evalboards
+ 444 0218 04000300 		.word	196612
+ 445 021c 00010018 		.word	402653440
+ 446 0220 4E014E01 		.word	21889358
+ 447 0224 5B810001 		.word	16810331
+ 448 0228 CE810001 		.word	16810446
+ 449 022c DC051027 		.word	655361500
+ 450 0230 02000F00 		.word	983042
+ 451              		.cfi_endproc
+ 452              	.LFE2:
+ 454              		.section	.text.startup,"ax",%progbits
+ 455              		.align	1
+ 456              		.global	main
+ 457              		.syntax unified
+ 458              		.thumb
+ 459              		.thumb_func
+ 460              		.fpu softvfp
+ 462              	main:
+ 463              	.LFB3:
+ 138:HelloWorld.c  **** 
+ 139:HelloWorld.c  **** 
+ 140:HelloWorld.c  **** int main(void) {
+ 464              		.loc 1 140 16 is_stmt 1 view -0
+ 465              		.cfi_startproc
+ 466              		@ args = 0, pretend = 0, frame = 8
+ 467              		@ frame_needed = 0, uses_anonymous_args = 0
+ 141:HelloWorld.c  **** 	init_reg();
+ 468              		.loc 1 141 2 view .LVU121
+ 140:HelloWorld.c  **** 	init_reg();
+ 469              		.loc 1 140 16 is_stmt 0 view .LVU122
+ 470 0000 37B5     		push	{r0, r1, r2, r4, r5, lr}
+ 471              	.LCFI6:
+ 472              		.cfi_def_cfa_offset 24
+ 473              		.cfi_offset 4, -12
+ 474              		.cfi_offset 5, -8
+ 475              		.cfi_offset 14, -4
+ 476              		.loc 1 141 2 view .LVU123
+ 477 0002 FFF7FEFF 		bl	init_reg
+ 478              	.LVL48:
+ 142:HelloWorld.c  **** 
+ 143:HelloWorld.c  **** 	// ===== ABN encoder test drive =====
+ 144:HelloWorld.c  **** 
+ 145:HelloWorld.c  **** 	// Init encoder (mode 0)
+ 146:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_MODE_RAMP_MODE_MOTION, 0x00000008); // @suppress("Invalid arguments")
+ 479              		.loc 1 146 2 is_stmt 1 view .LVU124
+ 480 0006 0822     		movs	r2, #8
+ 481 0008 6321     		movs	r1, #99
+ 482 000a 0020     		movs	r0, #0
+ 483 000c FFF7FEFF 		bl	tmc4671_writeInt
+ 484              	.LVL49:
+ 147:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_ABN_DECODER_PHI_E_PHI_M_OFFSET, 0x00000000); // @suppress("Invalid arg
+ 485              		.loc 1 147 2 view .LVU125
+ 486 0010 0022     		movs	r2, #0
+ 487 0012 1046     		mov	r0, r2
+ 488 0014 2921     		movs	r1, #41
+ 489 0016 FFF7FEFF 		bl	tmc4671_writeInt
+ 490              	.LVL50:
+ 148:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_PHI_E_SELECTION, 0x00000001); // @suppress("Invalid arguments")
+ 491              		.loc 1 148 2 view .LVU126
+ 492 001a 0122     		movs	r2, #1
+ 493 001c 5221     		movs	r1, #82
+ 494 001e 0020     		movs	r0, #0
+ 495 0020 FFF7FEFF 		bl	tmc4671_writeInt
+ 496              	.LVL51:
+ 149:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_PHI_E_EXT, 0x00000000); // @suppress("Invalid arguments")
+ 497              		.loc 1 149 2 view .LVU127
+ 498 0024 0022     		movs	r2, #0
+ 499 0026 1046     		mov	r0, r2
+ 500 0028 1C21     		movs	r1, #28
+ 501 002a FFF7FEFF 		bl	tmc4671_writeInt
+ 502              	.LVL52:
+ 150:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_UQ_UD_EXT, 0x000007D0);
+ 503              		.loc 1 150 2 view .LVU128
+ 504 002e 4FF4FA62 		mov	r2, #2000
+ 505 0032 2421     		movs	r1, #36
+ 506 0034 0020     		movs	r0, #0
+ 507 0036 FFF7FEFF 		bl	tmc4671_writeInt
+ 508              	.LVL53:
+ 151:HelloWorld.c  **** 	wait(1000);
+ 509              		.loc 1 151 2 view .LVU129
+ 510 003a 4FF47A70 		mov	r0, #1000
+ 511 003e FFF7FEFF 		bl	wait
+ 512              	.LVL54:
+ 152:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_ABN_DECODER_COUNT, 0x00000000);
+ 513              		.loc 1 152 2 view .LVU130
+ 514 0042 0022     		movs	r2, #0
+ 515 0044 1046     		mov	r0, r2
+ 516 0046 2721     		movs	r1, #39
+ 517 0048 FFF7FEFF 		bl	tmc4671_writeInt
+ 518              	.LVL55:
+ 153:HelloWorld.c  **** 
+ 154:HelloWorld.c  **** 	// Feedback selection
+ 155:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_PHI_E_SELECTION, 0x00000003);
+ 519              		.loc 1 155 2 view .LVU131
+ 520 004c 0322     		movs	r2, #3
+ 521 004e 5221     		movs	r1, #82
+ 522 0050 0020     		movs	r0, #0
+ 523 0052 FFF7FEFF 		bl	tmc4671_writeInt
+ 524              	.LVL56:
+ 156:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_VELOCITY_SELECTION, 0x00000009);
+ 525              		.loc 1 156 2 view .LVU132
+ 526 0056 0922     		movs	r2, #9
+ 527 0058 5021     		movs	r1, #80
+ 528 005a 0020     		movs	r0, #0
+ 529 005c FFF7FEFF 		bl	tmc4671_writeInt
+ 530              	.LVL57:
+ 157:HelloWorld.c  **** 
+ 158:HelloWorld.c  **** 	// Switch to position mode
+ 159:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_PID_POSITION_TARGET, 0x00000000);
+ 531              		.loc 1 159 2 view .LVU133
+ 532 0060 0022     		movs	r2, #0
+ 533 0062 1046     		mov	r0, r2
+ 534 0064 6821     		movs	r1, #104
+ 535 0066 FFF7FEFF 		bl	tmc4671_writeInt
+ 536              	.LVL58:
+ 160:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_MODE_RAMP_MODE_MOTION, 0x00000003);
+ 537              		.loc 1 160 2 view .LVU134
+ 538 006a 0322     		movs	r2, #3
+ 539 006c 6321     		movs	r1, #99
+ 540 006e 0020     		movs	r0, #0
+ 541 0070 FFF7FEFF 		bl	tmc4671_writeInt
+ 542              	.LVL59:
+ 161:HelloWorld.c  **** 
+ 162:HelloWorld.c  **** 	//uint8_t time = 1;
+ 163:HelloWorld.c  **** 	uint8_t pos_target[4];
+ 164:HelloWorld.c  **** 	uint8_t enc[4];
+ 165:HelloWorld.c  **** 	int32_t target;
+ 166:HelloWorld.c  **** 	int32_t current_pos;
+ 167:HelloWorld.c  **** 	while(1){
+ 168:HelloWorld.c  **** 		//if(time % 100 == 0)
+ 169:HelloWorld.c  **** 		//	break;
+ 170:HelloWorld.c  **** 		//time+=1;
+ 171:HelloWorld.c  **** 		current_pos = tmc4671_readInt(0, TMC4671_PID_POSITION_ACTUAL);
+ 172:HelloWorld.c  **** 		enc[0] = ( current_pos & 0xFF000000 ) >> 24;
+ 173:HelloWorld.c  **** 		enc[1] = ( current_pos & 0x00FF0000 ) >> 16;
+ 174:HelloWorld.c  **** 		enc[2] = ( current_pos & 0x0000FF00 ) >> 8;
+ 175:HelloWorld.c  **** 		enc[3] = ( current_pos & 0x000000FF ) ;
+ 176:HelloWorld.c  **** 
+ 177:HelloWorld.c  **** 		HAL.USB->txN(enc,4);
+ 543              		.loc 1 177 6 is_stmt 0 view .LVU135
+ 544 0074 134D     		ldr	r5, .L20
+ 545              	.L16:
+ 163:HelloWorld.c  **** 	uint8_t enc[4];
+ 546              		.loc 1 163 2 is_stmt 1 view .LVU136
+ 164:HelloWorld.c  **** 	int32_t target;
+ 547              		.loc 1 164 2 view .LVU137
+ 165:HelloWorld.c  **** 	int32_t current_pos;
+ 548              		.loc 1 165 2 view .LVU138
+ 166:HelloWorld.c  **** 	while(1){
+ 549              		.loc 1 166 2 view .LVU139
+ 167:HelloWorld.c  **** 		//if(time % 100 == 0)
+ 550              		.loc 1 167 2 view .LVU140
+ 171:HelloWorld.c  **** 		enc[0] = ( current_pos & 0xFF000000 ) >> 24;
+ 551              		.loc 1 171 3 view .LVU141
+ 171:HelloWorld.c  **** 		enc[0] = ( current_pos & 0xFF000000 ) >> 24;
+ 552              		.loc 1 171 17 is_stmt 0 view .LVU142
+ 553 0076 6B21     		movs	r1, #107
+ 554 0078 0020     		movs	r0, #0
+ 555 007a FFF7FEFF 		bl	tmc4671_readInt
+ 556              	.LVL60:
+ 172:HelloWorld.c  **** 		enc[1] = ( current_pos & 0x00FF0000 ) >> 16;
+ 557              		.loc 1 172 3 is_stmt 1 view .LVU143
+ 173:HelloWorld.c  **** 		enc[2] = ( current_pos & 0x0000FF00 ) >> 8;
+ 558              		.loc 1 173 3 view .LVU144
+ 174:HelloWorld.c  **** 		enc[3] = ( current_pos & 0x000000FF ) ;
+ 559              		.loc 1 174 3 view .LVU145
+ 175:HelloWorld.c  **** 
+ 560              		.loc 1 175 3 view .LVU146
+ 561              		.loc 1 177 6 is_stmt 0 view .LVU147
+ 562 007e 6C69     		ldr	r4, [r5, #20]
+ 563              		.loc 1 177 3 view .LVU148
+ 564 0080 0421     		movs	r1, #4
+ 565 0082 00BA     		rev	r0, r0
+ 566              	.LVL61:
+ 567              		.loc 1 177 3 view .LVU149
+ 568 0084 2369     		ldr	r3, [r4, #16]
+ 172:HelloWorld.c  **** 		enc[1] = ( current_pos & 0x00FF0000 ) >> 16;
+ 569              		.loc 1 172 10 view .LVU150
+ 570 0086 0190     		str	r0, [sp, #4]
+ 571              		.loc 1 177 3 is_stmt 1 view .LVU151
+ 572 0088 0DEB0100 		add	r0, sp, r1
+ 573 008c 9847     		blx	r3
+ 574              	.LVL62:
+ 178:HelloWorld.c  **** 
+ 179:HelloWorld.c  **** 		if(HAL.USB->rxN(pos_target,4)){
+ 575              		.loc 1 179 3 view .LVU152
+ 576              		.loc 1 179 6 is_stmt 0 view .LVU153
+ 577 008e 6369     		ldr	r3, [r4, #20]
+ 578 0090 0421     		movs	r1, #4
+ 579 0092 6846     		mov	r0, sp
+ 580 0094 9847     		blx	r3
+ 581              	.LVL63:
+ 582              		.loc 1 179 5 view .LVU154
+ 583 0096 88B1     		cbz	r0, .L15
+ 180:HelloWorld.c  **** 			target = ( pos_target[0] << 24 ) + ( pos_target[1] << 16 ) + ( pos_target[2] << 8 ) + pos_target
+ 584              		.loc 1 180 4 is_stmt 1 view .LVU155
+ 585              	.LVL64:
+ 181:HelloWorld.c  **** 			tmc4671_writeInt(0, TMC4671_PID_POSITION_TARGET, target);  //
+ 586              		.loc 1 181 4 view .LVU156
+ 180:HelloWorld.c  **** 			target = ( pos_target[0] << 24 ) + ( pos_target[1] << 16 ) + ( pos_target[2] << 8 ) + pos_target
+ 587              		.loc 1 180 51 is_stmt 0 view .LVU157
+ 588 0098 9DF80130 		ldrb	r3, [sp, #1]	@ zero_extendqisi2
+ 589              	.LVL65:
+ 180:HelloWorld.c  **** 			target = ( pos_target[0] << 24 ) + ( pos_target[1] << 16 ) + ( pos_target[2] << 8 ) + pos_target
+ 590              		.loc 1 180 25 view .LVU158
+ 591 009c 9DF80020 		ldrb	r2, [sp]	@ zero_extendqisi2
+ 592              	.LVL66:
+ 180:HelloWorld.c  **** 			target = ( pos_target[0] << 24 ) + ( pos_target[1] << 16 ) + ( pos_target[2] << 8 ) + pos_target
+ 593              		.loc 1 180 55 view .LVU159
+ 594 00a0 1B04     		lsls	r3, r3, #16
+ 595              	.LVL67:
+ 180:HelloWorld.c  **** 			target = ( pos_target[0] << 24 ) + ( pos_target[1] << 16 ) + ( pos_target[2] << 8 ) + pos_target
+ 596              		.loc 1 180 37 view .LVU160
+ 597 00a2 03EB0263 		add	r3, r3, r2, lsl #24
+ 180:HelloWorld.c  **** 			target = ( pos_target[0] << 24 ) + ( pos_target[1] << 16 ) + ( pos_target[2] << 8 ) + pos_target
+ 598              		.loc 1 180 77 view .LVU161
+ 599 00a6 9DF80220 		ldrb	r2, [sp, #2]	@ zero_extendqisi2
+ 600              	.LVL68:
+ 180:HelloWorld.c  **** 			target = ( pos_target[0] << 24 ) + ( pos_target[1] << 16 ) + ( pos_target[2] << 8 ) + pos_target
+ 601              		.loc 1 180 63 view .LVU162
+ 602 00aa 03EB0223 		add	r3, r3, r2, lsl #8
+ 180:HelloWorld.c  **** 			target = ( pos_target[0] << 24 ) + ( pos_target[1] << 16 ) + ( pos_target[2] << 8 ) + pos_target
+ 603              		.loc 1 180 100 view .LVU163
+ 604 00ae 9DF80320 		ldrb	r2, [sp, #3]	@ zero_extendqisi2
+ 605              		.loc 1 181 4 view .LVU164
+ 606 00b2 6821     		movs	r1, #104
+ 607 00b4 1A44     		add	r2, r2, r3
+ 608 00b6 0020     		movs	r0, #0
+ 609 00b8 FFF7FEFF 		bl	tmc4671_writeInt
+ 610              	.LVL69:
+ 611              	.L15:
+ 182:HelloWorld.c  **** 		}
+ 183:HelloWorld.c  **** 
+ 184:HelloWorld.c  **** 		wait(1);
+ 612              		.loc 1 184 3 is_stmt 1 view .LVU165
+ 613 00bc 0120     		movs	r0, #1
+ 614 00be FFF7FEFF 		bl	wait
+ 615              	.LVL70:
+ 167:HelloWorld.c  **** 		//if(time % 100 == 0)
+ 616              		.loc 1 167 7 view .LVU166
+ 171:HelloWorld.c  **** 		enc[0] = ( current_pos & 0xFF000000 ) >> 24;
+ 617              		.loc 1 171 15 is_stmt 0 view .LVU167
+ 618 00c2 D8E7     		b	.L16
+ 619              	.L21:
+ 620              		.align	2
+ 621              	.L20:
+ 622 00c4 00000000 		.word	HAL
+ 623              		.cfi_endproc
+ 624              	.LFE3:
+ 626              		.global	BLConfig
+ 627              		.global	Protection
+ 628              		.global	VersionString
+ 629              		.section	.rodata.str1.1,"aMS",%progbits,1
+ 630              	.LC0:
+ 631 0000 30303132 		.ascii	"0012V307\000"
+ 631      56333037 
+ 631      00
+ 632              		.comm	IdState,40,4
+ 633              		.comm	TMCMotionController,532,4
+ 634              		.comm	TMCDriver,532,4
+ 635              		.comm	Evalboards,244,4
+ 636              		.comm	VitalSignsMonitor,20,4
+ 637              		.comm	hwid,1,1
+ 638              		.comm	HAL,48,4
+ 639              		.comm	UART,40,4
+ 640              		.comm	Timer,16,4
+ 641              		.comm	WLAN,36,4
+ 642              		.comm	RS232,36,4
+ 643              		.comm	LEDs,28,4
+ 644              		.comm	USB,36,4
+ 645              		.comm	uart0_interrupt,1,1
+ 646              		.comm	ADCs,32,4
+ 647              		.comm	SPI,44,4
+ 648              		.comm	IOMap,2088,4
+ 649              		.comm	IOs,52,4
+ 650              		.comm	Cpu,8,4
+ 651              		.data
+ 652              		.align	2
+ 655              	VersionString:
+ 656 0000 00000000 		.word	.LC0
+ 657              		.bss
+ 658              		.align	1
+ 661              	ADCValue:
+ 662 0000 00000000 		.space	12
+ 662      00000000 
+ 662      00000000 
+ 663              		.section	.bldata,"aw"
+ 664              		.align	2
+ 665              		.set	.LANCHOR0,. + 0
+ 668              	BLConfig:
+ 669 0000 00000000 		.space	8
+ 669      00000000 
+ 670              		.section	.cfmconfig,"a"
+ 673              	Protection:
+ 674 0000 FFFFFFFF 		.ascii	"\377\377\377\377\377\377\377\377\377\377\377\377~\371"
+ 674      FFFFFFFF 
+ 674      FFFFFFFF 
+ 674      7EF9
+ 675 000e FFFF     		.ascii	"\377\377"
+ 676              		.text
+ 677              	.Letext0:
+ 678              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 679              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 680              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 681              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 682              		.file 6 "TMC-API/tmc/helpers/Config.h"
+ 683              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 684              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 685              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 686              		.file 10 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\in
+ 687              		.file 11 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 688              		.file 12 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 689              		.file 13 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 690              		.file 14 "./hal/IOs.h"
+ 691              		.file 15 "./hal/IOMap.h"
+ 692              		.file 16 "./hal/SPI.h"
+ 693              		.file 17 "./hal/ADCs.h"
+ 694              		.file 18 "./hal/RXTX.h"
+ 695              		.file 19 "./hal/USB.h"
+ 696              		.file 20 "./hal/LEDs.h"
+ 697              		.file 21 "./hal/RS232.h"
+ 698              		.file 22 "./hal/WLAN.h"
+ 699              		.file 23 "./hal/Timer.h"
+ 700              		.file 24 "./hal/UART.h"
+ 701              		.file 25 "./hal/HAL.h"
+ 702              		.file 26 "./tmc/VitalSignsMonitor.h"
+ 703              		.file 27 "boards/Board.h"
+ 704              		.file 28 "boards/TMCDriver.h"
+ 705              		.file 29 "boards/TMCMotionController.h"
+ 706              		.file 30 "tmc/BoardAssignment.h"
+ 707              		.file 31 "TMC-API/tmc/ic/TMC4671/TMC4671.h"
+ 708              		.file 32 "./hal/SysTick.h"
+ 709              		.file 33 "tmc/IdDetection.h"
+ 710              		.file 34 "tmc/TMCL.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 HelloWorld.c
+C:\Users\Shubham\AppData\Local\Temp\cct71glj.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\cct71glj.s:23     .text:00000000 shallForceBoot
+C:\Users\Shubham\AppData\Local\Temp\cct71glj.s:163    .text:00000090 $d
+                            *COM*:00000030 HAL
+C:\Users\Shubham\AppData\Local\Temp\cct71glj.s:167    .text:00000094 $t
+C:\Users\Shubham\AppData\Local\Temp\cct71glj.s:174    .text:00000094 init_reg
+C:\Users\Shubham\AppData\Local\Temp\cct71glj.s:440    .text:00000208 $d
+                            *COM*:00000014 VitalSignsMonitor
+                            *COM*:000000f4 Evalboards
+C:\Users\Shubham\AppData\Local\Temp\cct71glj.s:455    .text.startup:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\cct71glj.s:462    .text.startup:00000000 main
+C:\Users\Shubham\AppData\Local\Temp\cct71glj.s:622    .text.startup:000000c4 $d
+C:\Users\Shubham\AppData\Local\Temp\cct71glj.s:668    .bldata:00000000 BLConfig
+C:\Users\Shubham\AppData\Local\Temp\cct71glj.s:673    .cfmconfig:00000000 Protection
+C:\Users\Shubham\AppData\Local\Temp\cct71glj.s:655    .data:00000000 VersionString
+                            *COM*:00000028 IdState
+                            *COM*:00000214 TMCMotionController
+                            *COM*:00000214 TMCDriver
+                            *COM*:00000001 hwid
+                            *COM*:00000028 UART
+                            *COM*:00000010 Timer
+                            *COM*:00000024 WLAN
+                            *COM*:00000024 RS232
+                            *COM*:0000001c LEDs
+                            *COM*:00000024 USB
+                            *COM*:00000001 uart0_interrupt
+                            *COM*:00000020 ADCs
+                            *COM*:0000002c SPI
+                            *COM*:00000828 IOMap
+                            *COM*:00000034 IOs
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\cct71glj.s:652    .data:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\cct71glj.s:658    .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\cct71glj.s:661    .bss:00000000 ADCValue
+C:\Users\Shubham\AppData\Local\Temp\cct71glj.s:664    .bldata:00000000 $d
+
+UNDEFINED SYMBOLS
+tmcl_boot
+IDDetection_init
+tmcl_init
+tmcdriver_init
+tmcmotioncontroller_init
+IDDetection_initialScan
+Board_assign
+tmc4671_writeInt
+wait
+tmc4671_readInt

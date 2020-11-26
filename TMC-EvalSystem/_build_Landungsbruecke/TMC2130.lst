@@ -1,0 +1,1194 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"TMC2130.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.global	tmc2130_writeDatagram
+  17              		.arch armv7e-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	tmc2130_writeDatagram:
+  24              	.LVL0:
+  25              	.LFB0:
+  26              		.file 1 "TMC-API/tmc/ic/TMC2130/TMC2130.c"
+   1:TMC-API/tmc/ic/TMC2130/TMC2130.c **** /*
+   2:TMC-API/tmc/ic/TMC2130/TMC2130.c ****  * TMC2130.c
+   3:TMC-API/tmc/ic/TMC2130/TMC2130.c ****  *
+   4:TMC-API/tmc/ic/TMC2130/TMC2130.c ****  *  Created on: 26.01.2017
+   5:TMC-API/tmc/ic/TMC2130/TMC2130.c ****  *      Author: BS / ED
+   6:TMC-API/tmc/ic/TMC2130/TMC2130.c ****  */
+   7:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+   8:TMC-API/tmc/ic/TMC2130/TMC2130.c **** #include "TMC2130.h"
+   9:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+  10:TMC-API/tmc/ic/TMC2130/TMC2130.c **** // => SPI wrapper
+  11:TMC-API/tmc/ic/TMC2130/TMC2130.c **** // Send [length] bytes stored in the [data] array over SPI and overwrite [data]
+  12:TMC-API/tmc/ic/TMC2130/TMC2130.c **** // with the reply. The first byte sent/received is data[0].
+  13:TMC-API/tmc/ic/TMC2130/TMC2130.c **** extern void tmc2130_readWriteArray(uint8_t channel, uint8_t *data, size_t length);
+  14:TMC-API/tmc/ic/TMC2130/TMC2130.c **** // <= SPI wrapper
+  15:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+  16:TMC-API/tmc/ic/TMC2130/TMC2130.c **** // Writes (x1 << 24) | (x2 << 16) | (x3 << 8) | x4 to the given address
+  17:TMC-API/tmc/ic/TMC2130/TMC2130.c **** void tmc2130_writeDatagram(TMC2130TypeDef *tmc2130, uint8_t address, uint8_t x1, uint8_t x2, uint8_
+  18:TMC-API/tmc/ic/TMC2130/TMC2130.c **** {
+  27              		.loc 1 18 1 view -0
+  28              		.cfi_startproc
+  29              		@ args = 8, pretend = 0, frame = 8
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  19:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	uint8_t data[5] = { address | TMC2130_WRITE_BIT, x1, x2, x3, x4 };
+  31              		.loc 1 19 2 view .LVU1
+  18:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	uint8_t data[5] = { address | TMC2130_WRITE_BIT, x1, x2, x3, x4 };
+  32              		.loc 1 18 1 is_stmt 0 view .LVU2
+  33 0000 2DE9F743 		push	{r0, r1, r2, r4, r5, r6, r7, r8, r9, lr}
+  34              	.LCFI0:
+  35              		.cfi_def_cfa_offset 40
+  36              		.cfi_offset 4, -28
+  37              		.cfi_offset 5, -24
+  38              		.cfi_offset 6, -20
+  39              		.cfi_offset 7, -16
+  40              		.cfi_offset 8, -12
+  41              		.cfi_offset 9, -8
+  42              		.cfi_offset 14, -4
+  18:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	uint8_t data[5] = { address | TMC2130_WRITE_BIT, x1, x2, x3, x4 };
+  43              		.loc 1 18 1 view .LVU3
+  44 0004 9846     		mov	r8, r3
+  45              		.loc 1 19 10 view .LVU4
+  46 0006 61F07F03 		orn	r3, r1, #127
+  47              	.LVL1:
+  48              		.loc 1 19 10 view .LVU5
+  49 000a 8DF80030 		strb	r3, [sp]
+  20:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130_readWriteArray(tmc2130->config->channel, &data[0], 5);
+  50              		.loc 1 20 2 view .LVU6
+  51 000e 0368     		ldr	r3, [r0]
+  18:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	uint8_t data[5] = { address | TMC2130_WRITE_BIT, x1, x2, x3, x4 };
+  52              		.loc 1 18 1 view .LVU7
+  53 0010 9DF82890 		ldrb	r9, [sp, #40]	@ zero_extendqisi2
+  54 0014 9DF82C50 		ldrb	r5, [sp, #44]	@ zero_extendqisi2
+  19:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	uint8_t data[5] = { address | TMC2130_WRITE_BIT, x1, x2, x3, x4 };
+  55              		.loc 1 19 10 view .LVU8
+  56 0018 8DF80120 		strb	r2, [sp, #1]
+  18:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	uint8_t data[5] = { address | TMC2130_WRITE_BIT, x1, x2, x3, x4 };
+  57              		.loc 1 18 1 view .LVU9
+  58 001c 0446     		mov	r4, r0
+  59 001e 1746     		mov	r7, r2
+  60              		.loc 1 20 2 view .LVU10
+  61 0020 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+  62              	.LVL2:
+  19:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	uint8_t data[5] = { address | TMC2130_WRITE_BIT, x1, x2, x3, x4 };
+  63              		.loc 1 19 10 view .LVU11
+  64 0024 8DF80450 		strb	r5, [sp, #4]
+  65              		.loc 1 20 2 is_stmt 1 view .LVU12
+  18:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	uint8_t data[5] = { address | TMC2130_WRITE_BIT, x1, x2, x3, x4 };
+  66              		.loc 1 18 1 is_stmt 0 view .LVU13
+  67 0028 0E46     		mov	r6, r1
+  68              		.loc 1 20 2 view .LVU14
+  69 002a 0522     		movs	r2, #5
+  70              	.LVL3:
+  71              		.loc 1 20 2 view .LVU15
+  72 002c 6946     		mov	r1, sp
+  73              	.LVL4:
+  19:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	uint8_t data[5] = { address | TMC2130_WRITE_BIT, x1, x2, x3, x4 };
+  74              		.loc 1 19 10 view .LVU16
+  75 002e 8DF80280 		strb	r8, [sp, #2]
+  76 0032 8DF80390 		strb	r9, [sp, #3]
+  77              		.loc 1 20 2 view .LVU17
+  78 0036 FFF7FEFF 		bl	tmc2130_readWriteArray
+  79              	.LVL5:
+  21:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+  22:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	int32_t value = (x1 << 24) | (x2 << 16) | (x3 << 8) | x4;
+  80              		.loc 1 22 2 is_stmt 1 view .LVU18
+  23:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+  24:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	// Write to the shadow register and mark the register dirty
+  25:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	address = TMC_ADDRESS(address);
+  81              		.loc 1 25 2 view .LVU19
+  26:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130->config->shadowRegister[address] = value;
+  82              		.loc 1 26 2 view .LVU20
+  83              		.loc 1 26 43 is_stmt 0 view .LVU21
+  84 003a 2268     		ldr	r2, [r4]
+  85              		.loc 1 26 33 view .LVU22
+  86 003c 06F07F06 		and	r6, r6, #127
+  87              	.LVL6:
+  22:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+  88              		.loc 1 22 10 view .LVU23
+  89 0040 45EA0925 		orr	r5, r5, r9, lsl #8
+  90              	.LVL7:
+  91              		.loc 1 26 43 view .LVU24
+  92 0044 02EB8601 		add	r1, r2, r6, lsl #2
+  22:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+  93              		.loc 1 22 10 view .LVU25
+  94 0048 45EA0843 		orr	r3, r5, r8, lsl #16
+  95 004c 43EA0763 		orr	r3, r3, r7, lsl #24
+  27:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130->registerAccess[address] |= TMC_ACCESS_DIRTY;
+  96              		.loc 1 27 35 view .LVU26
+  97 0050 3444     		add	r4, r4, r6
+  98              	.LVL8:
+  26:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130->config->shadowRegister[address] = value;
+  99              		.loc 1 26 43 view .LVU27
+ 100 0052 4B60     		str	r3, [r1, #4]
+ 101              		.loc 1 27 2 is_stmt 1 view .LVU28
+ 102              		.loc 1 27 35 is_stmt 0 view .LVU29
+ 103 0054 94F80432 		ldrb	r3, [r4, #516]	@ zero_extendqisi2
+ 104 0058 43F00803 		orr	r3, r3, #8
+ 105 005c 84F80432 		strb	r3, [r4, #516]
+  28:TMC-API/tmc/ic/TMC2130/TMC2130.c **** }
+ 106              		.loc 1 28 1 view .LVU30
+ 107 0060 03B0     		add	sp, sp, #12
+ 108              	.LCFI1:
+ 109              		.cfi_def_cfa_offset 28
+ 110              		@ sp needed
+ 111 0062 BDE8F083 		pop	{r4, r5, r6, r7, r8, r9, pc}
+ 112              		.loc 1 28 1 view .LVU31
+ 113              		.cfi_endproc
+ 114              	.LFE0:
+ 116              		.align	1
+ 117              		.global	tmc2130_writeInt
+ 118              		.syntax unified
+ 119              		.thumb
+ 120              		.thumb_func
+ 121              		.fpu softvfp
+ 123              	tmc2130_writeInt:
+ 124              	.LVL9:
+ 125              	.LFB1:
+  29:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+  30:TMC-API/tmc/ic/TMC2130/TMC2130.c **** // Write an integer to the given address
+  31:TMC-API/tmc/ic/TMC2130/TMC2130.c **** void tmc2130_writeInt(TMC2130TypeDef *tmc2130, uint8_t address, int32_t value)
+  32:TMC-API/tmc/ic/TMC2130/TMC2130.c **** {
+ 126              		.loc 1 32 1 is_stmt 1 view -0
+ 127              		.cfi_startproc
+ 128              		@ args = 0, pretend = 0, frame = 0
+ 129              		@ frame_needed = 0, uses_anonymous_args = 0
+  33:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130_writeDatagram(tmc2130, address, BYTE(value, 3), BYTE(value, 2), BYTE(value, 1), BYTE(value
+ 130              		.loc 1 33 2 view .LVU33
+  32:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130_writeDatagram(tmc2130, address, BYTE(value, 3), BYTE(value, 2), BYTE(value, 1), BYTE(value
+ 131              		.loc 1 32 1 is_stmt 0 view .LVU34
+ 132 0066 07B5     		push	{r0, r1, r2, lr}
+ 133              	.LCFI2:
+ 134              		.cfi_def_cfa_offset 16
+ 135              		.cfi_offset 14, -4
+ 136              		.loc 1 33 2 view .LVU35
+ 137 0068 D3B2     		uxtb	r3, r2
+ 138 006a 0193     		str	r3, [sp, #4]
+ 139 006c C2F30723 		ubfx	r3, r2, #8, #8
+ 140 0070 0093     		str	r3, [sp]
+ 141 0072 C2F30743 		ubfx	r3, r2, #16, #8
+ 142 0076 120E     		lsrs	r2, r2, #24
+ 143              	.LVL10:
+ 144              		.loc 1 33 2 view .LVU36
+ 145 0078 FFF7FEFF 		bl	tmc2130_writeDatagram
+ 146              	.LVL11:
+  34:TMC-API/tmc/ic/TMC2130/TMC2130.c **** }
+ 147              		.loc 1 34 1 view .LVU37
+ 148 007c 03B0     		add	sp, sp, #12
+ 149              	.LCFI3:
+ 150              		.cfi_def_cfa_offset 4
+ 151              		@ sp needed
+ 152 007e 5DF804FB 		ldr	pc, [sp], #4
+ 153              		.cfi_endproc
+ 154              	.LFE1:
+ 156              		.align	1
+ 157              		.global	tmc2130_readInt
+ 158              		.syntax unified
+ 159              		.thumb
+ 160              		.thumb_func
+ 161              		.fpu softvfp
+ 163              	tmc2130_readInt:
+ 164              	.LVL12:
+ 165              	.LFB2:
+  35:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+  36:TMC-API/tmc/ic/TMC2130/TMC2130.c **** // Read an integer from the given address
+  37:TMC-API/tmc/ic/TMC2130/TMC2130.c **** int32_t tmc2130_readInt(TMC2130TypeDef *tmc2130, uint8_t address)
+  38:TMC-API/tmc/ic/TMC2130/TMC2130.c **** {
+ 166              		.loc 1 38 1 is_stmt 1 view -0
+ 167              		.cfi_startproc
+ 168              		@ args = 0, pretend = 0, frame = 8
+ 169              		@ frame_needed = 0, uses_anonymous_args = 0
+  39:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	address = TMC_ADDRESS(address);
+ 170              		.loc 1 39 2 view .LVU39
+  38:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	address = TMC_ADDRESS(address);
+ 171              		.loc 1 38 1 is_stmt 0 view .LVU40
+ 172 0082 37B5     		push	{r0, r1, r2, r4, r5, lr}
+ 173              	.LCFI4:
+ 174              		.cfi_def_cfa_offset 24
+ 175              		.cfi_offset 4, -12
+ 176              		.cfi_offset 5, -8
+ 177              		.cfi_offset 14, -4
+ 178              		.loc 1 39 10 view .LVU41
+ 179 0084 01F07F04 		and	r4, r1, #127
+ 180              	.LVL13:
+  40:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+  41:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	// register not readable -> shadow register copy
+  42:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	if(!TMC_IS_READABLE(tmc2130->registerAccess[address]))
+ 181              		.loc 1 42 2 is_stmt 1 view .LVU42
+ 182              		.loc 1 42 6 is_stmt 0 view .LVU43
+ 183 0088 0219     		adds	r2, r0, r4
+ 184 008a 0368     		ldr	r3, [r0]
+ 185              		.loc 1 42 4 view .LVU44
+ 186 008c 92F80422 		ldrb	r2, [r2, #516]	@ zero_extendqisi2
+ 187 0090 D207     		lsls	r2, r2, #31
+  38:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	address = TMC_ADDRESS(address);
+ 188              		.loc 1 38 1 view .LVU45
+ 189 0092 0546     		mov	r5, r0
+ 190              		.loc 1 42 4 view .LVU46
+ 191 0094 04D4     		bmi	.L4
+  43:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		return tmc2130->config->shadowRegister[address];
+ 192              		.loc 1 43 3 is_stmt 1 view .LVU47
+ 193              		.loc 1 43 41 is_stmt 0 view .LVU48
+ 194 0096 03EB8404 		add	r4, r3, r4, lsl #2
+ 195              	.LVL14:
+ 196              		.loc 1 43 41 view .LVU49
+ 197 009a 6068     		ldr	r0, [r4, #4]
+ 198              	.LVL15:
+ 199              	.L3:
+  44:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+  45:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	uint8_t data[5] = { 0, 0, 0, 0, 0 };
+  46:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+  47:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	data[0] = address;
+  48:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130_readWriteArray(tmc2130->config->channel, &data[0], 5);
+  49:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+  50:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	data[0] = address;
+  51:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130_readWriteArray(tmc2130->config->channel, &data[0], 5);
+  52:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+  53:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	return (data[1] << 24) | (data[2] << 16) | (data[3] << 8) | data[4];
+  54:TMC-API/tmc/ic/TMC2130/TMC2130.c **** }
+ 200              		.loc 1 54 1 view .LVU50
+ 201 009c 03B0     		add	sp, sp, #12
+ 202              	.LCFI5:
+ 203              		.cfi_remember_state
+ 204              		.cfi_def_cfa_offset 12
+ 205              		@ sp needed
+ 206 009e 30BD     		pop	{r4, r5, pc}
+ 207              	.LVL16:
+ 208              	.L4:
+ 209              	.LCFI6:
+ 210              		.cfi_restore_state
+  45:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 211              		.loc 1 45 2 is_stmt 1 view .LVU51
+  45:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 212              		.loc 1 45 10 is_stmt 0 view .LVU52
+ 213 00a0 0D4A     		ldr	r2, .L6
+ 214 00a2 1068     		ldr	r0, [r2]	@ unaligned
+ 215              	.LVL17:
+  45:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 216              		.loc 1 45 10 view .LVU53
+ 217 00a4 1279     		ldrb	r2, [r2, #4]	@ zero_extendqisi2
+ 218 00a6 0090     		str	r0, [sp]
+ 219 00a8 8DF80420 		strb	r2, [sp, #4]
+  47:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130_readWriteArray(tmc2130->config->channel, &data[0], 5);
+ 220              		.loc 1 47 2 is_stmt 1 view .LVU54
+  48:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 221              		.loc 1 48 2 is_stmt 0 view .LVU55
+ 222 00ac 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+  47:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130_readWriteArray(tmc2130->config->channel, &data[0], 5);
+ 223              		.loc 1 47 10 view .LVU56
+ 224 00b0 8DF80040 		strb	r4, [sp]
+  48:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 225              		.loc 1 48 2 is_stmt 1 view .LVU57
+ 226 00b4 0522     		movs	r2, #5
+ 227 00b6 6946     		mov	r1, sp
+ 228 00b8 FFF7FEFF 		bl	tmc2130_readWriteArray
+ 229              	.LVL18:
+  50:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130_readWriteArray(tmc2130->config->channel, &data[0], 5);
+ 230              		.loc 1 50 2 view .LVU58
+  51:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 231              		.loc 1 51 2 is_stmt 0 view .LVU59
+ 232 00bc 2B68     		ldr	r3, [r5]
+  50:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130_readWriteArray(tmc2130->config->channel, &data[0], 5);
+ 233              		.loc 1 50 10 view .LVU60
+ 234 00be 8DF80040 		strb	r4, [sp]
+  51:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 235              		.loc 1 51 2 is_stmt 1 view .LVU61
+ 236 00c2 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+ 237 00c6 0522     		movs	r2, #5
+ 238 00c8 6946     		mov	r1, sp
+ 239 00ca FFF7FEFF 		bl	tmc2130_readWriteArray
+ 240              	.LVL19:
+  53:TMC-API/tmc/ic/TMC2130/TMC2130.c **** }
+ 241              		.loc 1 53 2 view .LVU62
+ 242 00ce DDF80100 		ldr	r0, [sp, #1]	@ unaligned
+ 243 00d2 00BA     		rev	r0, r0
+  53:TMC-API/tmc/ic/TMC2130/TMC2130.c **** }
+ 244              		.loc 1 53 60 is_stmt 0 view .LVU63
+ 245 00d4 E2E7     		b	.L3
+ 246              	.L7:
+ 247 00d6 00BF     		.align	2
+ 248              	.L6:
+ 249 00d8 00000000 		.word	.LANCHOR0
+ 250              		.cfi_endproc
+ 251              	.LFE2:
+ 253              		.align	1
+ 254              		.global	tmc2130_init
+ 255              		.syntax unified
+ 256              		.thumb
+ 257              		.thumb_func
+ 258              		.fpu softvfp
+ 260              	tmc2130_init:
+ 261              	.LVL20:
+ 262              	.LFB3:
+  55:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+  56:TMC-API/tmc/ic/TMC2130/TMC2130.c **** // Initialize a TMC2130 IC.
+  57:TMC-API/tmc/ic/TMC2130/TMC2130.c **** // This function requires:
+  58:TMC-API/tmc/ic/TMC2130/TMC2130.c **** //     - channel: The channel index, which will be sent back in the SPI callback
+  59:TMC-API/tmc/ic/TMC2130/TMC2130.c **** //     - tmc2130_config: A ConfigurationTypeDef struct, which will be used by the IC
+  60:TMC-API/tmc/ic/TMC2130/TMC2130.c **** //     - registerResetState: An int32_t array with 128 elements. This holds the values to be used f
+  61:TMC-API/tmc/ic/TMC2130/TMC2130.c **** void tmc2130_init(TMC2130TypeDef *tmc2130, uint8_t channel, ConfigurationTypeDef *config, const int
+  62:TMC-API/tmc/ic/TMC2130/TMC2130.c **** {
+ 263              		.loc 1 62 1 is_stmt 1 view -0
+ 264              		.cfi_startproc
+ 265              		@ args = 0, pretend = 0, frame = 0
+ 266              		@ frame_needed = 0, uses_anonymous_args = 0
+  63:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130->config               = config;
+ 267              		.loc 1 63 2 view .LVU65
+  62:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130->config               = config;
+ 268              		.loc 1 62 1 is_stmt 0 view .LVU66
+ 269 00dc 30B5     		push	{r4, r5, lr}
+ 270              	.LCFI7:
+ 271              		.cfi_def_cfa_offset 12
+ 272              		.cfi_offset 4, -12
+ 273              		.cfi_offset 5, -8
+ 274              		.cfi_offset 14, -4
+  64:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130->config->callback     = NULL;
+ 275              		.loc 1 64 32 view .LVU67
+ 276 00de 0024     		movs	r4, #0
+  63:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130->config               = config;
+ 277              		.loc 1 63 32 view .LVU68
+ 278 00e0 0260     		str	r2, [r0]
+ 279              		.loc 1 64 2 is_stmt 1 view .LVU69
+ 280              		.loc 1 64 32 is_stmt 0 view .LVU70
+ 281 00e2 C2F80C42 		str	r4, [r2, #524]
+  65:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130->config->channel      = channel;
+ 282              		.loc 1 65 2 is_stmt 1 view .LVU71
+  66:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130->config->configIndex  = 0;
+  67:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130->config->state        = CONFIG_READY;
+ 283              		.loc 1 67 32 is_stmt 0 view .LVU72
+ 284 00e6 1480     		strh	r4, [r2]	@ movhi
+ 285 00e8 094C     		ldr	r4, .L11
+  65:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130->config->channel      = channel;
+ 286              		.loc 1 65 32 view .LVU73
+ 287 00ea 82F81012 		strb	r1, [r2, #528]
+  66:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130->config->configIndex  = 0;
+ 288              		.loc 1 66 2 is_stmt 1 view .LVU74
+ 289              		.loc 1 67 2 view .LVU75
+  68:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+  69:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	size_t i;
+ 290              		.loc 1 69 2 view .LVU76
+  70:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	for(i = 0; i < TMC2130_REGISTER_COUNT; i++)
+ 291              		.loc 1 70 2 view .LVU77
+ 292              	.LVL21:
+ 293              		.loc 1 70 13 view .LVU78
+ 294 00ee 043B     		subs	r3, r3, #4
+ 295              	.LVL22:
+ 296              		.loc 1 70 13 is_stmt 0 view .LVU79
+ 297 00f0 00F50172 		add	r2, r0, #516
+ 298              	.LVL23:
+ 299              		.loc 1 70 13 view .LVU80
+ 300 00f4 011D     		adds	r1, r0, #4
+ 301              	.LVL24:
+ 302              		.loc 1 70 13 view .LVU81
+ 303 00f6 00F52170 		add	r0, r0, #644
+ 304              	.LVL25:
+ 305              	.L9:
+  71:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+  72:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		tmc2130->registerAccess[i]      = tmc2130_defaultRegisterAccess[i];
+ 306              		.loc 1 72 3 is_stmt 1 discriminator 3 view .LVU82
+ 307              		.loc 1 72 66 is_stmt 0 discriminator 3 view .LVU83
+ 308 00fa 14F8015B 		ldrb	r5, [r4], #1	@ zero_extendqisi2
+ 309              	.LVL26:
+ 310              		.loc 1 72 35 discriminator 3 view .LVU84
+ 311 00fe 02F8015B 		strb	r5, [r2], #1
+  73:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		tmc2130->registerResetState[i]  = registerResetState[i];
+ 312              		.loc 1 73 3 is_stmt 1 discriminator 3 view .LVU85
+ 313              		.loc 1 73 55 is_stmt 0 discriminator 3 view .LVU86
+ 314 0102 53F8045F 		ldr	r5, [r3, #4]!
+ 315              		.loc 1 73 35 discriminator 3 view .LVU87
+ 316 0106 41F8045B 		str	r5, [r1], #4
+  70:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	for(i = 0; i < TMC2130_REGISTER_COUNT; i++)
+ 317              		.loc 1 70 41 is_stmt 1 discriminator 3 view .LVU88
+ 318              	.LVL27:
+  70:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	for(i = 0; i < TMC2130_REGISTER_COUNT; i++)
+ 319              		.loc 1 70 13 discriminator 3 view .LVU89
+  70:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	for(i = 0; i < TMC2130_REGISTER_COUNT; i++)
+ 320              		.loc 1 70 2 is_stmt 0 discriminator 3 view .LVU90
+ 321 010a 8242     		cmp	r2, r0
+ 322 010c F5D1     		bne	.L9
+  74:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	}
+  75:TMC-API/tmc/ic/TMC2130/TMC2130.c **** }
+ 323              		.loc 1 75 1 view .LVU91
+ 324 010e 30BD     		pop	{r4, r5, pc}
+ 325              	.LVL28:
+ 326              	.L12:
+ 327              		.loc 1 75 1 view .LVU92
+ 328              		.align	2
+ 329              	.L11:
+ 330 0110 05000000 		.word	.LANCHOR0+5
+ 331              		.cfi_endproc
+ 332              	.LFE3:
+ 334              		.align	1
+ 335              		.global	tmc2130_fillShadowRegisters
+ 336              		.syntax unified
+ 337              		.thumb
+ 338              		.thumb_func
+ 339              		.fpu softvfp
+ 341              	tmc2130_fillShadowRegisters:
+ 342              	.LVL29:
+ 343              	.LFB4:
+  76:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+  77:TMC-API/tmc/ic/TMC2130/TMC2130.c **** // Fill the shadow registers of hardware preset non-readable registers
+  78:TMC-API/tmc/ic/TMC2130/TMC2130.c **** // Only needed if you want to 'read' those registers e.g to display the value
+  79:TMC-API/tmc/ic/TMC2130/TMC2130.c **** // in the TMCL IDE register browser
+  80:TMC-API/tmc/ic/TMC2130/TMC2130.c **** void tmc2130_fillShadowRegisters(TMC2130TypeDef *tmc2130)
+  81:TMC-API/tmc/ic/TMC2130/TMC2130.c **** {
+ 344              		.loc 1 81 1 is_stmt 1 view -0
+ 345              		.cfi_startproc
+ 346              		@ args = 0, pretend = 0, frame = 0
+ 347              		@ frame_needed = 0, uses_anonymous_args = 0
+  82:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	// Check if we have constants defined
+  83:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	if(ARRAY_SIZE(tmc2130_RegisterConstants) == 0)
+ 348              		.loc 1 83 2 view .LVU94
+  84:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		return;
+  85:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+  86:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	size_t i, j;
+ 349              		.loc 1 86 2 view .LVU95
+  87:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	for(i = 0, j = 0; i < TMC2130_REGISTER_COUNT; i++)
+ 350              		.loc 1 87 2 view .LVU96
+ 351              		.loc 1 87 20 view .LVU97
+  81:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	// Check if we have constants defined
+ 352              		.loc 1 81 1 is_stmt 0 view .LVU98
+ 353 0114 F0B5     		push	{r4, r5, r6, r7, lr}
+ 354              	.LCFI8:
+ 355              		.cfi_def_cfa_offset 20
+ 356              		.cfi_offset 4, -20
+ 357              		.cfi_offset 5, -16
+ 358              		.cfi_offset 6, -12
+ 359              		.cfi_offset 7, -8
+ 360              		.cfi_offset 14, -4
+  88:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+  89:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		// We only need to worry about hardware preset, write-only registers
+  90:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		// that have not yet been written (no dirty bit) here.
+  91:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		if(tmc2130->registerAccess[i] != TMC_ACCESS_W_PRESET)
+  92:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 			continue;
+  93:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+  94:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		// Search the constant list for the current address. With the constant
+  95:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		// list being sorted in ascended order, we can walk through the list
+  96:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		// until the entry with an address equal or greater than i
+  97:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		while(j < ARRAY_SIZE(tmc2130_RegisterConstants) && (tmc2130_RegisterConstants[j].address < i))
+ 361              		.loc 1 97 83 view .LVU99
+ 362 0116 134D     		ldr	r5, .L26
+  87:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+ 363              		.loc 1 87 15 view .LVU100
+ 364 0118 0023     		movs	r3, #0
+ 365 011a 00F50174 		add	r4, r0, #516
+  87:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+ 366              		.loc 1 87 8 view .LVU101
+ 367 011e 1A46     		mov	r2, r3
+  98:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 			j++;
+  99:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 100:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		// Abort when we reach the end of the constant list
+ 101:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		if (j == ARRAY_SIZE(tmc2130_RegisterConstants))
+ 102:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 			break;
+ 103:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 104:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		// If we have an entry for our current address, write the constant
+ 105:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		if(tmc2130_RegisterConstants[j].address == i)
+ 368              		.loc 1 105 34 view .LVU102
+ 369 0120 A5F18807 		sub	r7, r5, #136
+ 370              	.LVL30:
+ 371              	.L20:
+  91:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 			continue;
+ 372              		.loc 1 91 3 is_stmt 1 view .LVU103
+  91:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 			continue;
+ 373              		.loc 1 91 29 is_stmt 0 view .LVU104
+ 374 0124 14F8011B 		ldrb	r1, [r4], #1	@ zero_extendqisi2
+  91:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 			continue;
+ 375              		.loc 1 91 5 view .LVU105
+ 376 0128 4229     		cmp	r1, #66
+ 377 012a 11D1     		bne	.L14
+ 378              	.L15:
+  97:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 			j++;
+ 379              		.loc 1 97 8 is_stmt 1 view .LVU106
+ 380 012c 0A2B     		cmp	r3, #10
+ 381 012e 15D8     		bhi	.L16
+  97:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 			j++;
+ 382              		.loc 1 97 83 is_stmt 0 discriminator 1 view .LVU107
+ 383 0130 15F83310 		ldrb	r1, [r5, r3, lsl #3]	@ zero_extendqisi2
+  97:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 			j++;
+ 384              		.loc 1 97 51 discriminator 1 view .LVU108
+ 385 0134 9142     		cmp	r1, r2
+ 386 0136 0FD3     		bcc	.L17
+ 387              	.L18:
+ 388              		.loc 1 105 3 is_stmt 1 view .LVU109
+ 389              		.loc 1 105 34 is_stmt 0 view .LVU110
+ 390 0138 07EBC306 		add	r6, r7, r3, lsl #3
+ 391 013c 96F88810 		ldrb	r1, [r6, #136]	@ zero_extendqisi2
+ 392              		.loc 1 105 5 view .LVU111
+ 393 0140 9142     		cmp	r1, r2
+ 106:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		{
+ 107:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 			tmc2130->config->shadowRegister[i] = tmc2130_RegisterConstants[j].value;
+ 394              		.loc 1 107 4 is_stmt 1 view .LVU112
+ 395              		.loc 1 107 39 is_stmt 0 view .LVU113
+ 396 0142 01BF     		itttt	eq
+ 397 0144 0168     		ldreq	r1, [r0]
+ 398 0146 D6F88C60 		ldreq	r6, [r6, #140]
+ 399 014a 01EB8201 		addeq	r1, r1, r2, lsl #2
+ 400 014e 4E60     		streq	r6, [r1, #4]
+ 401              	.L14:
+  87:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+ 402              		.loc 1 87 48 is_stmt 1 discriminator 2 view .LVU114
+  87:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+ 403              		.loc 1 87 49 is_stmt 0 discriminator 2 view .LVU115
+ 404 0150 0132     		adds	r2, r2, #1
+ 405              	.LVL31:
+  87:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+ 406              		.loc 1 87 20 is_stmt 1 discriminator 2 view .LVU116
+  87:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+ 407              		.loc 1 87 2 is_stmt 0 discriminator 2 view .LVU117
+ 408 0152 802A     		cmp	r2, #128
+ 409 0154 E6D1     		bne	.L20
+  87:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+ 410              		.loc 1 87 2 discriminator 2 view .LVU118
+ 411 0156 03E0     		b	.L13
+ 412              	.L17:
+  98:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 413              		.loc 1 98 4 is_stmt 1 view .LVU119
+  98:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 414              		.loc 1 98 5 is_stmt 0 view .LVU120
+ 415 0158 0133     		adds	r3, r3, #1
+ 416              	.LVL32:
+  98:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 417              		.loc 1 98 5 view .LVU121
+ 418 015a E7E7     		b	.L15
+ 419              	.L16:
+ 101:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 			break;
+ 420              		.loc 1 101 3 is_stmt 1 view .LVU122
+ 101:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 			break;
+ 421              		.loc 1 101 6 is_stmt 0 view .LVU123
+ 422 015c 0B2B     		cmp	r3, #11
+ 423 015e EBD1     		bne	.L18
+ 424              	.L13:
+ 108:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		}
+ 109:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	}
+ 110:TMC-API/tmc/ic/TMC2130/TMC2130.c **** }
+ 425              		.loc 1 110 1 view .LVU124
+ 426 0160 F0BD     		pop	{r4, r5, r6, r7, pc}
+ 427              	.L27:
+ 428 0162 00BF     		.align	2
+ 429              	.L26:
+ 430 0164 88000000 		.word	.LANCHOR0+136
+ 431              		.cfi_endproc
+ 432              	.LFE4:
+ 434              		.align	1
+ 435              		.global	tmc2130_reset
+ 436              		.syntax unified
+ 437              		.thumb
+ 438              		.thumb_func
+ 439              		.fpu softvfp
+ 441              	tmc2130_reset:
+ 442              	.LVL33:
+ 443              	.LFB5:
+ 111:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 112:TMC-API/tmc/ic/TMC2130/TMC2130.c **** // Reset the TMC5130
+ 113:TMC-API/tmc/ic/TMC2130/TMC2130.c **** uint8_t tmc2130_reset(TMC2130TypeDef *tmc2130)
+ 114:TMC-API/tmc/ic/TMC2130/TMC2130.c **** {
+ 444              		.loc 1 114 1 is_stmt 1 view -0
+ 445              		.cfi_startproc
+ 446              		@ args = 0, pretend = 0, frame = 0
+ 447              		@ frame_needed = 0, uses_anonymous_args = 0
+ 115:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	if(tmc2130->config->state != CONFIG_READY)
+ 448              		.loc 1 115 2 view .LVU126
+ 114:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	if(tmc2130->config->state != CONFIG_READY)
+ 449              		.loc 1 114 1 is_stmt 0 view .LVU127
+ 450 0168 30B5     		push	{r4, r5, lr}
+ 451              	.LCFI9:
+ 452              		.cfi_def_cfa_offset 12
+ 453              		.cfi_offset 4, -12
+ 454              		.cfi_offset 5, -8
+ 455              		.cfi_offset 14, -4
+ 456              		.loc 1 115 12 view .LVU128
+ 457 016a 0168     		ldr	r1, [r0]
+ 458              		.loc 1 115 4 view .LVU129
+ 459 016c 0A78     		ldrb	r2, [r1]	@ zero_extendqisi2
+ 460 016e 82B9     		cbnz	r2, .L31
+ 461 0170 00F50173 		add	r3, r0, #516
+ 462 0174 0D1D     		adds	r5, r1, #4
+ 463 0176 00F52170 		add	r0, r0, #644
+ 464              	.LVL34:
+ 465              	.L30:
+ 116:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		return false;
+ 117:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 118:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	// Reset the dirty bits
+ 119:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	size_t i;
+ 120:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	for(i = 0; i < TMC2130_REGISTER_COUNT; i++)
+ 121:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+ 122:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		tmc2130->registerAccess[i] &= ~TMC_ACCESS_DIRTY;
+ 466              		.loc 1 122 3 is_stmt 1 discriminator 3 view .LVU130
+ 467              		.loc 1 122 30 is_stmt 0 discriminator 3 view .LVU131
+ 468 017a 1C78     		ldrb	r4, [r3]	@ zero_extendqisi2
+ 469 017c 24F00804 		bic	r4, r4, #8
+ 470 0180 03F8014B 		strb	r4, [r3], #1
+ 471              	.LVL35:
+ 123:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		tmc2130->config->shadowRegister[i] = 0;
+ 472              		.loc 1 123 3 is_stmt 1 discriminator 3 view .LVU132
+ 120:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+ 473              		.loc 1 120 2 is_stmt 0 discriminator 3 view .LVU133
+ 474 0184 8342     		cmp	r3, r0
+ 475              		.loc 1 123 38 discriminator 3 view .LVU134
+ 476 0186 45F8042B 		str	r2, [r5], #4
+ 120:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+ 477              		.loc 1 120 41 is_stmt 1 discriminator 3 view .LVU135
+ 478              	.LVL36:
+ 120:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+ 479              		.loc 1 120 13 discriminator 3 view .LVU136
+ 120:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+ 480              		.loc 1 120 2 is_stmt 0 discriminator 3 view .LVU137
+ 481 018a F6D1     		bne	.L30
+ 124:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	}
+ 125:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 126:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130->config->state        = CONFIG_RESET;
+ 482              		.loc 1 126 2 is_stmt 1 view .LVU138
+ 127:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130->config->configIndex  = 0;
+ 483              		.loc 1 127 2 view .LVU139
+ 126:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130->config->configIndex  = 0;
+ 484              		.loc 1 126 32 is_stmt 0 view .LVU140
+ 485 018c 0120     		movs	r0, #1
+ 486              	.LVL37:
+ 126:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130->config->configIndex  = 0;
+ 487              		.loc 1 126 32 view .LVU141
+ 488 018e 0880     		strh	r0, [r1]	@ movhi
+ 128:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 129:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	return true;
+ 489              		.loc 1 129 2 is_stmt 1 view .LVU142
+ 490              	.LVL38:
+ 491              	.L29:
+ 130:TMC-API/tmc/ic/TMC2130/TMC2130.c **** }
+ 492              		.loc 1 130 1 is_stmt 0 view .LVU143
+ 493 0190 30BD     		pop	{r4, r5, pc}
+ 494              	.LVL39:
+ 495              	.L31:
+ 116:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 496              		.loc 1 116 10 view .LVU144
+ 497 0192 0020     		movs	r0, #0
+ 498              	.LVL40:
+ 116:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 499              		.loc 1 116 10 view .LVU145
+ 500 0194 FCE7     		b	.L29
+ 501              		.cfi_endproc
+ 502              	.LFE5:
+ 504              		.align	1
+ 505              		.global	tmc2130_restore
+ 506              		.syntax unified
+ 507              		.thumb
+ 508              		.thumb_func
+ 509              		.fpu softvfp
+ 511              	tmc2130_restore:
+ 512              	.LVL41:
+ 513              	.LFB6:
+ 131:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 132:TMC-API/tmc/ic/TMC2130/TMC2130.c **** // Restore the TMC5130 to the state stored in the shadow registers.
+ 133:TMC-API/tmc/ic/TMC2130/TMC2130.c **** // This can be used to recover the IC configuration after a VM power loss.
+ 134:TMC-API/tmc/ic/TMC2130/TMC2130.c **** uint8_t tmc2130_restore(TMC2130TypeDef *tmc2130)
+ 135:TMC-API/tmc/ic/TMC2130/TMC2130.c **** {
+ 514              		.loc 1 135 1 is_stmt 1 view -0
+ 515              		.cfi_startproc
+ 516              		@ args = 0, pretend = 0, frame = 0
+ 517              		@ frame_needed = 0, uses_anonymous_args = 0
+ 518              		@ link register save eliminated.
+ 136:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	if(tmc2130->config->state != CONFIG_READY)
+ 519              		.loc 1 136 2 view .LVU147
+ 520              		.loc 1 136 12 is_stmt 0 view .LVU148
+ 521 0196 0368     		ldr	r3, [r0]
+ 522              		.loc 1 136 4 view .LVU149
+ 523 0198 1A78     		ldrb	r2, [r3]	@ zero_extendqisi2
+ 524 019a 1AB9     		cbnz	r2, .L35
+ 137:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		return false;
+ 138:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 139:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130->config->state        = CONFIG_RESTORE;
+ 525              		.loc 1 139 2 is_stmt 1 view .LVU150
+ 140:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130->config->configIndex  = 0;
+ 526              		.loc 1 140 2 view .LVU151
+ 139:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130->config->configIndex  = 0;
+ 527              		.loc 1 139 32 is_stmt 0 view .LVU152
+ 528 019c 0222     		movs	r2, #2
+ 529 019e 1A80     		strh	r2, [r3]	@ movhi
+ 141:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 142:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	return true;
+ 530              		.loc 1 142 2 is_stmt 1 view .LVU153
+ 531              		.loc 1 142 9 is_stmt 0 view .LVU154
+ 532 01a0 0120     		movs	r0, #1
+ 533              	.LVL42:
+ 534              		.loc 1 142 9 view .LVU155
+ 535 01a2 7047     		bx	lr
+ 536              	.LVL43:
+ 537              	.L35:
+ 137:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 538              		.loc 1 137 10 view .LVU156
+ 539 01a4 0020     		movs	r0, #0
+ 540              	.LVL44:
+ 143:TMC-API/tmc/ic/TMC2130/TMC2130.c **** }
+ 541              		.loc 1 143 1 view .LVU157
+ 542 01a6 7047     		bx	lr
+ 543              		.cfi_endproc
+ 544              	.LFE6:
+ 546              		.align	1
+ 547              		.global	tmc2130_setRegisterResetState
+ 548              		.syntax unified
+ 549              		.thumb
+ 550              		.thumb_func
+ 551              		.fpu softvfp
+ 553              	tmc2130_setRegisterResetState:
+ 554              	.LVL45:
+ 555              	.LFB7:
+ 144:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 145:TMC-API/tmc/ic/TMC2130/TMC2130.c **** // Change the values the IC will be configured with when performing a reset.
+ 146:TMC-API/tmc/ic/TMC2130/TMC2130.c **** void tmc2130_setRegisterResetState(TMC2130TypeDef *tmc2130, const int32_t *resetState)
+ 147:TMC-API/tmc/ic/TMC2130/TMC2130.c **** {
+ 556              		.loc 1 147 1 is_stmt 1 view -0
+ 557              		.cfi_startproc
+ 558              		@ args = 0, pretend = 0, frame = 0
+ 559              		@ frame_needed = 0, uses_anonymous_args = 0
+ 560              		@ link register save eliminated.
+ 148:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	size_t i;
+ 561              		.loc 1 148 2 view .LVU159
+ 149:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	for(i = 0; i < TMC2130_REGISTER_COUNT; i++)
+ 562              		.loc 1 149 2 view .LVU160
+ 563              		.loc 1 149 13 view .LVU161
+ 564 01a8 0B1F     		subs	r3, r1, #4
+ 565 01aa 0430     		adds	r0, r0, #4
+ 566              	.LVL46:
+ 567              		.loc 1 149 13 is_stmt 0 view .LVU162
+ 568 01ac 01F5FE71 		add	r1, r1, #508
+ 569              	.LVL47:
+ 570              	.L37:
+ 150:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+ 151:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		tmc2130->registerResetState[i] = resetState[i];
+ 571              		.loc 1 151 3 is_stmt 1 discriminator 3 view .LVU163
+ 572              		.loc 1 151 46 is_stmt 0 discriminator 3 view .LVU164
+ 573 01b0 53F8042F 		ldr	r2, [r3, #4]!
+ 574              		.loc 1 151 34 discriminator 3 view .LVU165
+ 575 01b4 40F8042B 		str	r2, [r0], #4
+ 149:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	for(i = 0; i < TMC2130_REGISTER_COUNT; i++)
+ 576              		.loc 1 149 41 is_stmt 1 discriminator 3 view .LVU166
+ 149:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	for(i = 0; i < TMC2130_REGISTER_COUNT; i++)
+ 577              		.loc 1 149 13 discriminator 3 view .LVU167
+ 149:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	for(i = 0; i < TMC2130_REGISTER_COUNT; i++)
+ 578              		.loc 1 149 2 is_stmt 0 discriminator 3 view .LVU168
+ 579 01b8 8B42     		cmp	r3, r1
+ 580 01ba F9D1     		bne	.L37
+ 152:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	}
+ 153:TMC-API/tmc/ic/TMC2130/TMC2130.c **** }
+ 581              		.loc 1 153 1 view .LVU169
+ 582 01bc 7047     		bx	lr
+ 583              		.cfi_endproc
+ 584              	.LFE7:
+ 586              		.align	1
+ 587              		.global	tmc2130_setCallback
+ 588              		.syntax unified
+ 589              		.thumb
+ 590              		.thumb_func
+ 591              		.fpu softvfp
+ 593              	tmc2130_setCallback:
+ 594              	.LVL48:
+ 595              	.LFB8:
+ 154:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 155:TMC-API/tmc/ic/TMC2130/TMC2130.c **** // Register a function to be called after completion of the configuration mechanism
+ 156:TMC-API/tmc/ic/TMC2130/TMC2130.c **** void tmc2130_setCallback(TMC2130TypeDef *tmc2130, tmc2130_callback callback)
+ 157:TMC-API/tmc/ic/TMC2130/TMC2130.c **** {
+ 596              		.loc 1 157 1 is_stmt 1 view -0
+ 597              		.cfi_startproc
+ 598              		@ args = 0, pretend = 0, frame = 0
+ 599              		@ frame_needed = 0, uses_anonymous_args = 0
+ 600              		@ link register save eliminated.
+ 158:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	tmc2130->config->callback = (tmc_callback_config) callback;
+ 601              		.loc 1 158 2 view .LVU171
+ 602              		.loc 1 158 28 is_stmt 0 view .LVU172
+ 603 01be 0368     		ldr	r3, [r0]
+ 604 01c0 C3F80C12 		str	r1, [r3, #524]
+ 159:TMC-API/tmc/ic/TMC2130/TMC2130.c **** }
+ 605              		.loc 1 159 1 view .LVU173
+ 606 01c4 7047     		bx	lr
+ 607              		.cfi_endproc
+ 608              	.LFE8:
+ 610              		.align	1
+ 611              		.global	tmc2130_periodicJob
+ 612              		.syntax unified
+ 613              		.thumb
+ 614              		.thumb_func
+ 615              		.fpu softvfp
+ 617              	tmc2130_periodicJob:
+ 618              	.LVL49:
+ 619              	.LFB10:
+ 160:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 161:TMC-API/tmc/ic/TMC2130/TMC2130.c **** // Helper function: Configure the next register.
+ 162:TMC-API/tmc/ic/TMC2130/TMC2130.c **** static void writeConfiguration(TMC2130TypeDef *tmc2130)
+ 163:TMC-API/tmc/ic/TMC2130/TMC2130.c **** {
+ 164:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	uint8_t *ptr = &tmc2130->config->configIndex;
+ 165:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	const int32_t *settings;
+ 166:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 167:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	if(tmc2130->config->state == CONFIG_RESTORE)
+ 168:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+ 169:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		settings = tmc2130->config->shadowRegister;
+ 170:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		// Find the next restorable register
+ 171:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		while((*ptr < TMC2130_REGISTER_COUNT) && !TMC_IS_RESTORABLE(tmc2130->registerAccess[*ptr]))
+ 172:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		{
+ 173:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 			(*ptr)++;
+ 174:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		}
+ 175:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	}
+ 176:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	else
+ 177:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+ 178:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		settings = tmc2130->registerResetState;
+ 179:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		// Find the next resettable register
+ 180:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		while((*ptr < TMC2130_REGISTER_COUNT) && !TMC_IS_RESETTABLE(tmc2130->registerAccess[*ptr]))
+ 181:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		{
+ 182:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 			(*ptr)++;
+ 183:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		}
+ 184:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	}
+ 185:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 186:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	if(*ptr < TMC2130_REGISTER_COUNT)
+ 187:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+ 188:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		tmc2130_writeInt(tmc2130, *ptr, settings[*ptr]);
+ 189:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		(*ptr)++;
+ 190:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	}
+ 191:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	else // Finished configuration
+ 192:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+ 193:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		if(tmc2130->config->callback)
+ 194:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		{
+ 195:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 			((tmc2130_callback)tmc2130->config->callback)(tmc2130, tmc2130->config->state);
+ 196:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		}
+ 197:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 198:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		tmc2130->config->state = CONFIG_READY;
+ 199:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	}
+ 200:TMC-API/tmc/ic/TMC2130/TMC2130.c **** }
+ 201:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 202:TMC-API/tmc/ic/TMC2130/TMC2130.c **** // Call this periodically
+ 203:TMC-API/tmc/ic/TMC2130/TMC2130.c **** void tmc2130_periodicJob(TMC2130TypeDef *tmc2130, uint32_t tick)
+ 204:TMC-API/tmc/ic/TMC2130/TMC2130.c **** {
+ 620              		.loc 1 204 1 is_stmt 1 view -0
+ 621              		.cfi_startproc
+ 622              		@ args = 0, pretend = 0, frame = 0
+ 623              		@ frame_needed = 0, uses_anonymous_args = 0
+ 205:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	UNUSED(tick);
+ 624              		.loc 1 205 2 view .LVU175
+ 206:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 207:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	if(tmc2130->config->state != CONFIG_READY)
+ 625              		.loc 1 207 2 view .LVU176
+ 204:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	UNUSED(tick);
+ 626              		.loc 1 204 1 is_stmt 0 view .LVU177
+ 627 01c6 38B5     		push	{r3, r4, r5, lr}
+ 628              	.LCFI10:
+ 629              		.cfi_def_cfa_offset 16
+ 630              		.cfi_offset 3, -16
+ 631              		.cfi_offset 4, -12
+ 632              		.cfi_offset 5, -8
+ 633              		.cfi_offset 14, -4
+ 634              		.loc 1 207 12 view .LVU178
+ 635 01c8 0468     		ldr	r4, [r0]
+ 636              		.loc 1 207 20 view .LVU179
+ 637 01ca 2378     		ldrb	r3, [r4]	@ zero_extendqisi2
+ 204:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	UNUSED(tick);
+ 638              		.loc 1 204 1 view .LVU180
+ 639 01cc 0546     		mov	r5, r0
+ 640              		.loc 1 207 4 view .LVU181
+ 641 01ce EBB1     		cbz	r3, .L40
+ 208:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+ 209:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		writeConfiguration(tmc2130);
+ 642              		.loc 1 209 3 is_stmt 1 view .LVU182
+ 643              	.LVL50:
+ 644              	.LBB4:
+ 645              	.LBI4:
+ 162:TMC-API/tmc/ic/TMC2130/TMC2130.c **** {
+ 646              		.loc 1 162 13 view .LVU183
+ 647              	.LBB5:
+ 164:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	const int32_t *settings;
+ 648              		.loc 1 164 2 view .LVU184
+ 165:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 
+ 649              		.loc 1 165 2 view .LVU185
+ 167:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+ 650              		.loc 1 167 2 view .LVU186
+ 167:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+ 651              		.loc 1 167 4 is_stmt 0 view .LVU187
+ 652 01d0 022B     		cmp	r3, #2
+ 653 01d2 1FD1     		bne	.L42
+ 169:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		// Find the next restorable register
+ 654              		.loc 1 169 3 is_stmt 1 view .LVU188
+ 169:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		// Find the next restorable register
+ 655              		.loc 1 169 12 is_stmt 0 view .LVU189
+ 656 01d4 201D     		adds	r0, r4, #4
+ 657              	.LVL51:
+ 171:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		{
+ 658              		.loc 1 171 3 is_stmt 1 view .LVU190
+ 659              	.L43:
+ 171:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		{
+ 660              		.loc 1 171 8 view .LVU191
+ 661 01d6 94F90130 		ldrsb	r3, [r4, #1]
+ 171:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		{
+ 662              		.loc 1 171 10 is_stmt 0 view .LVU192
+ 663 01da 6278     		ldrb	r2, [r4, #1]	@ zero_extendqisi2
+ 171:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		{
+ 664              		.loc 1 171 8 view .LVU193
+ 665 01dc 002B     		cmp	r3, #0
+ 666 01de 08DB     		blt	.L44
+ 171:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		{
+ 667              		.loc 1 171 45 view .LVU194
+ 668 01e0 AB18     		adds	r3, r5, r2
+ 669 01e2 93F80432 		ldrb	r3, [r3, #516]	@ zero_extendqisi2
+ 171:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		{
+ 670              		.loc 1 171 41 view .LVU195
+ 671 01e6 9907     		lsls	r1, r3, #30
+ 672 01e8 11D5     		bpl	.L45
+ 171:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		{
+ 673              		.loc 1 171 44 view .LVU196
+ 674 01ea 03F04803 		and	r3, r3, #72
+ 675 01ee 402B     		cmp	r3, #64
+ 676 01f0 0DD0     		beq	.L45
+ 677              	.L44:
+ 186:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+ 678              		.loc 1 186 2 is_stmt 1 view .LVU197
+ 186:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+ 679              		.loc 1 186 4 is_stmt 0 view .LVU198
+ 680 01f2 94F90130 		ldrsb	r3, [r4, #1]
+ 186:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+ 681              		.loc 1 186 5 view .LVU199
+ 682 01f6 6178     		ldrb	r1, [r4, #1]	@ zero_extendqisi2
+ 186:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	{
+ 683              		.loc 1 186 4 view .LVU200
+ 684 01f8 002B     		cmp	r3, #0
+ 685 01fa 1BDB     		blt	.L48
+ 188:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		(*ptr)++;
+ 686              		.loc 1 188 3 is_stmt 1 view .LVU201
+ 687 01fc 50F82120 		ldr	r2, [r0, r1, lsl #2]
+ 688 0200 2846     		mov	r0, r5
+ 689              	.LVL52:
+ 188:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		(*ptr)++;
+ 690              		.loc 1 188 3 is_stmt 0 view .LVU202
+ 691 0202 FFF7FEFF 		bl	tmc2130_writeInt
+ 692              	.LVL53:
+ 189:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	}
+ 693              		.loc 1 189 3 is_stmt 1 view .LVU203
+ 189:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	}
+ 694              		.loc 1 189 9 is_stmt 0 view .LVU204
+ 695 0206 6378     		ldrb	r3, [r4, #1]	@ zero_extendqisi2
+ 696 0208 0133     		adds	r3, r3, #1
+ 697 020a 6370     		strb	r3, [r4, #1]
+ 698              	.LVL54:
+ 699              	.L40:
+ 189:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	}
+ 700              		.loc 1 189 9 view .LVU205
+ 701              	.LBE5:
+ 702              	.LBE4:
+ 210:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	}
+ 211:TMC-API/tmc/ic/TMC2130/TMC2130.c **** }
+ 703              		.loc 1 211 1 view .LVU206
+ 704 020c 38BD     		pop	{r3, r4, r5, pc}
+ 705              	.LVL55:
+ 706              	.L45:
+ 707              	.LBB7:
+ 708              	.LBB6:
+ 173:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		}
+ 709              		.loc 1 173 4 is_stmt 1 view .LVU207
+ 173:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		}
+ 710              		.loc 1 173 10 is_stmt 0 view .LVU208
+ 711 020e 0132     		adds	r2, r2, #1
+ 712 0210 6270     		strb	r2, [r4, #1]
+ 713 0212 E0E7     		b	.L43
+ 714              	.LVL56:
+ 715              	.L42:
+ 178:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		// Find the next resettable register
+ 716              		.loc 1 178 3 is_stmt 1 view .LVU209
+ 178:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		// Find the next resettable register
+ 717              		.loc 1 178 12 is_stmt 0 view .LVU210
+ 718 0214 0430     		adds	r0, r0, #4
+ 719              	.LVL57:
+ 180:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		{
+ 720              		.loc 1 180 3 is_stmt 1 view .LVU211
+ 721              	.L46:
+ 180:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		{
+ 722              		.loc 1 180 8 view .LVU212
+ 723 0216 94F90120 		ldrsb	r2, [r4, #1]
+ 180:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		{
+ 724              		.loc 1 180 10 is_stmt 0 view .LVU213
+ 725 021a 6378     		ldrb	r3, [r4, #1]	@ zero_extendqisi2
+ 180:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		{
+ 726              		.loc 1 180 8 view .LVU214
+ 727 021c 002A     		cmp	r2, #0
+ 728 021e E8DB     		blt	.L44
+ 180:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		{
+ 729              		.loc 1 180 45 view .LVU215
+ 730 0220 EA18     		adds	r2, r5, r3
+ 180:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		{
+ 731              		.loc 1 180 41 view .LVU216
+ 732 0222 92F80422 		ldrb	r2, [r2, #516]	@ zero_extendqisi2
+ 733 0226 02F04202 		and	r2, r2, #66
+ 734 022a 022A     		cmp	r2, #2
+ 735 022c E1D0     		beq	.L44
+ 182:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		}
+ 736              		.loc 1 182 4 is_stmt 1 view .LVU217
+ 182:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		}
+ 737              		.loc 1 182 10 is_stmt 0 view .LVU218
+ 738 022e 0133     		adds	r3, r3, #1
+ 739 0230 6370     		strb	r3, [r4, #1]
+ 740 0232 F0E7     		b	.L46
+ 741              	.LVL58:
+ 742              	.L48:
+ 193:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		{
+ 743              		.loc 1 193 3 is_stmt 1 view .LVU219
+ 193:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		{
+ 744              		.loc 1 193 13 is_stmt 0 view .LVU220
+ 745 0234 2A68     		ldr	r2, [r5]
+ 193:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		{
+ 746              		.loc 1 193 21 view .LVU221
+ 747 0236 D2F80C32 		ldr	r3, [r2, #524]
+ 193:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		{
+ 748              		.loc 1 193 5 view .LVU222
+ 749 023a 13B1     		cbz	r3, .L49
+ 195:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		}
+ 750              		.loc 1 195 4 is_stmt 1 view .LVU223
+ 195:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		}
+ 751              		.loc 1 195 5 is_stmt 0 view .LVU224
+ 752 023c 1178     		ldrb	r1, [r2]	@ zero_extendqisi2
+ 753 023e 2846     		mov	r0, r5
+ 754              	.LVL59:
+ 195:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 		}
+ 755              		.loc 1 195 5 view .LVU225
+ 756 0240 9847     		blx	r3
+ 757              	.LVL60:
+ 758              	.L49:
+ 198:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	}
+ 759              		.loc 1 198 3 is_stmt 1 view .LVU226
+ 198:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	}
+ 760              		.loc 1 198 26 is_stmt 0 view .LVU227
+ 761 0242 2B68     		ldr	r3, [r5]
+ 762 0244 0022     		movs	r2, #0
+ 763 0246 1A70     		strb	r2, [r3]
+ 764              	.LVL61:
+ 198:TMC-API/tmc/ic/TMC2130/TMC2130.c **** 	}
+ 765              		.loc 1 198 26 view .LVU228
+ 766              	.LBE6:
+ 767              	.LBE7:
+ 768              		.loc 1 211 1 view .LVU229
+ 769 0248 E0E7     		b	.L40
+ 770              		.cfi_endproc
+ 771              	.LFE10:
+ 773              		.section	.rodata
+ 774              		.align	2
+ 775              		.set	.LANCHOR0,. + 0
+ 776              	.LC0:
+ 777 0000 00000000 		.ascii	"\000\000\000\000\000"
+ 777      00
+ 780              	tmc2130_defaultRegisterAccess:
+ 781 0005 03210000 		.ascii	"\003!\000\000\001\000\000\000\000\000\000\000\000\000"
+ 781      01000000 
+ 781      00000000 
+ 781      0000
+ 782 0013 00000202 		.ascii	"\000\000\002\002\001\002\002\002\000\000\000\000\000"
+ 782      01020202 
+ 782      00000000 
+ 782      00
+ 783 0020 00000000 		.ascii	"\000\000\000\000\000\000\000\000\000\000\000\000\000"
+ 783      00000000 
+ 783      00000000 
+ 783      00
+ 784 002d 00000000 		.ascii	"\000\000\000\000\000\003\000\000\000\000\000\002\000"
+ 784      00030000 
+ 784      00000002 
+ 784      00
+ 785 003a 00000000 		.ascii	"\000\000\000\000\000\000\000\000\000\000\000\000\000"
+ 785      00000000 
+ 785      00000000 
+ 785      00
+ 786 0047 00000000 		.ascii	"\000\000\000\000\000\000\000\000\000\000\000\000\000"
+ 786      00000000 
+ 786      00000000 
+ 786      00
+ 787 0054 00000000 		.ascii	"\000\000\000\000\000\000\000\000\000\000\000\000\000"
+ 787      00000000 
+ 787      00000000 
+ 787      00
+ 788 0061 00000000 		.ascii	"\000\000\000\000BBBBBBBBBB\001\001\003\002\002\001B"
+ 788      42424242 
+ 788      42424242 
+ 788      42420101 
+ 788      03020201 
+ 789 0076 01020100 		.ascii	"\001\002\001\000\000\000\000\000\000\000\000\000\000"
+ 789      00000000 
+ 789      00000000 
+ 789      00
+ 790 0083 0000     		.ascii	"\000\000"
+ 791 0085 000000   		.space	3
+ 794              	tmc2130_RegisterConstants:
+ 795 0088 60       		.byte	96
+ 796 0089 000000   		.space	3
+ 797 008c 54B5AAAA 		.word	-1431653036
+ 798 0090 61       		.byte	97
+ 799 0091 000000   		.space	3
+ 800 0094 AA54954A 		.word	1251300522
+ 801 0098 62       		.byte	98
+ 802 0099 000000   		.space	3
+ 803 009c 29294924 		.word	608774441
+ 804 00a0 63       		.byte	99
+ 805 00a1 000000   		.space	3
+ 806 00a4 22421010 		.word	269500962
+ 807 00a8 64       		.byte	100
+ 808 00a9 000000   		.space	3
+ 809 00ac FFFFFFFB 		.word	-67108865
+ 810 00b0 65       		.byte	101
+ 811 00b1 000000   		.space	3
+ 812 00b4 7D77BBB5 		.word	-1246005379
+ 813 00b8 66       		.byte	102
+ 814 00b9 000000   		.space	3
+ 815 00bc 56552949 		.word	1227445590
+ 816 00c0 67       		.byte	103
+ 817 00c1 000000   		.space	3
+ 818 00c4 22424000 		.word	4211234
+ 819 00c8 68       		.byte	104
+ 820 00c9 000000   		.space	3
+ 821 00cc 5680FFFF 		.word	-32682
+ 822 00d0 69       		.byte	105
+ 823 00d1 000000   		.space	3
+ 824 00d4 0000F700 		.word	16187392
+ 825 00d8 70       		.byte	112
+ 826 00d9 000000   		.space	3
+ 827 00dc 80040500 		.word	328832
+ 828              		.text
+ 829              	.Letext0:
+ 830              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 831              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 832              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 833              		.file 5 "TMC-API/tmc/helpers/Config.h"
+ 834              		.file 6 "TMC-API/tmc/helpers/RegisterAccess.h"
+ 835              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 836              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 837              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 838              		.file 10 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\in
+ 839              		.file 11 "TMC-API/tmc/ic/TMC2130/TMC2130.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 TMC2130.c
+C:\Users\Shubham\AppData\Local\Temp\cca8OeKE.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\cca8OeKE.s:23     .text:00000000 tmc2130_writeDatagram
+C:\Users\Shubham\AppData\Local\Temp\cca8OeKE.s:123    .text:00000066 tmc2130_writeInt
+C:\Users\Shubham\AppData\Local\Temp\cca8OeKE.s:163    .text:00000082 tmc2130_readInt
+C:\Users\Shubham\AppData\Local\Temp\cca8OeKE.s:249    .text:000000d8 $d
+C:\Users\Shubham\AppData\Local\Temp\cca8OeKE.s:253    .text:000000dc $t
+C:\Users\Shubham\AppData\Local\Temp\cca8OeKE.s:260    .text:000000dc tmc2130_init
+C:\Users\Shubham\AppData\Local\Temp\cca8OeKE.s:330    .text:00000110 $d
+C:\Users\Shubham\AppData\Local\Temp\cca8OeKE.s:334    .text:00000114 $t
+C:\Users\Shubham\AppData\Local\Temp\cca8OeKE.s:341    .text:00000114 tmc2130_fillShadowRegisters
+C:\Users\Shubham\AppData\Local\Temp\cca8OeKE.s:430    .text:00000164 $d
+C:\Users\Shubham\AppData\Local\Temp\cca8OeKE.s:434    .text:00000168 $t
+C:\Users\Shubham\AppData\Local\Temp\cca8OeKE.s:441    .text:00000168 tmc2130_reset
+C:\Users\Shubham\AppData\Local\Temp\cca8OeKE.s:511    .text:00000196 tmc2130_restore
+C:\Users\Shubham\AppData\Local\Temp\cca8OeKE.s:553    .text:000001a8 tmc2130_setRegisterResetState
+C:\Users\Shubham\AppData\Local\Temp\cca8OeKE.s:593    .text:000001be tmc2130_setCallback
+C:\Users\Shubham\AppData\Local\Temp\cca8OeKE.s:617    .text:000001c6 tmc2130_periodicJob
+C:\Users\Shubham\AppData\Local\Temp\cca8OeKE.s:774    .rodata:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\cca8OeKE.s:780    .rodata:00000005 tmc2130_defaultRegisterAccess
+C:\Users\Shubham\AppData\Local\Temp\cca8OeKE.s:794    .rodata:00000088 tmc2130_RegisterConstants
+
+UNDEFINED SYMBOLS
+tmc2130_readWriteArray

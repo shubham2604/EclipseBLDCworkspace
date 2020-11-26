@@ -1,0 +1,1878 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"TMC5072.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.global	tmc5072_writeDatagram
+  17              		.arch armv7e-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	tmc5072_writeDatagram:
+  24              	.LVL0:
+  25              	.LFB0:
+  26              		.file 1 "TMC-API/tmc/ic/TMC5072/TMC5072.c"
+   1:TMC-API/tmc/ic/TMC5072/TMC5072.c **** /*
+   2:TMC-API/tmc/ic/TMC5072/TMC5072.c ****  * TMC5072.c
+   3:TMC-API/tmc/ic/TMC5072/TMC5072.c ****  *
+   4:TMC-API/tmc/ic/TMC5072/TMC5072.c ****  *  Created on: 06.07.2017
+   5:TMC-API/tmc/ic/TMC5072/TMC5072.c ****  *      Author: LK
+   6:TMC-API/tmc/ic/TMC5072/TMC5072.c ****  *    Based on: TMC562-MKL.h (26.01.2012 OK)
+   7:TMC-API/tmc/ic/TMC5072/TMC5072.c ****  */
+   8:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+   9:TMC-API/tmc/ic/TMC5072/TMC5072.c **** #include "TMC5072.h"
+  10:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+  11:TMC-API/tmc/ic/TMC5072/TMC5072.c **** // => SPI wrapper
+  12:TMC-API/tmc/ic/TMC5072/TMC5072.c **** extern void tmc5072_readWriteArray(uint8_t channel, uint8_t *data, size_t length);
+  13:TMC-API/tmc/ic/TMC5072/TMC5072.c **** // <= SPI wrapper
+  14:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+  15:TMC-API/tmc/ic/TMC5072/TMC5072.c **** void tmc5072_writeDatagram(TMC5072TypeDef *tmc5072, uint8_t address, uint8_t x1, uint8_t x2, uint8_
+  16:TMC-API/tmc/ic/TMC5072/TMC5072.c **** {
+  27              		.loc 1 16 1 view -0
+  28              		.cfi_startproc
+  29              		@ args = 8, pretend = 0, frame = 8
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  17:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	uint8_t data[5] = { address | TMC5072_WRITE_BIT, x1, x2, x3, x4 };
+  31              		.loc 1 17 2 view .LVU1
+  16:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	uint8_t data[5] = { address | TMC5072_WRITE_BIT, x1, x2, x3, x4 };
+  32              		.loc 1 16 1 is_stmt 0 view .LVU2
+  33 0000 2DE9F743 		push	{r0, r1, r2, r4, r5, r6, r7, r8, r9, lr}
+  34              	.LCFI0:
+  35              		.cfi_def_cfa_offset 40
+  36              		.cfi_offset 4, -28
+  37              		.cfi_offset 5, -24
+  38              		.cfi_offset 6, -20
+  39              		.cfi_offset 7, -16
+  40              		.cfi_offset 8, -12
+  41              		.cfi_offset 9, -8
+  42              		.cfi_offset 14, -4
+  16:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	uint8_t data[5] = { address | TMC5072_WRITE_BIT, x1, x2, x3, x4 };
+  43              		.loc 1 16 1 view .LVU3
+  44 0004 9846     		mov	r8, r3
+  45              		.loc 1 17 10 view .LVU4
+  46 0006 61F07F03 		orn	r3, r1, #127
+  47              	.LVL1:
+  48              		.loc 1 17 10 view .LVU5
+  49 000a 8DF80030 		strb	r3, [sp]
+  18:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072_readWriteArray(tmc5072->config->channel, &data[0], 5);
+  50              		.loc 1 18 2 view .LVU6
+  51 000e 0368     		ldr	r3, [r0]
+  16:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	uint8_t data[5] = { address | TMC5072_WRITE_BIT, x1, x2, x3, x4 };
+  52              		.loc 1 16 1 view .LVU7
+  53 0010 9DF82890 		ldrb	r9, [sp, #40]	@ zero_extendqisi2
+  54 0014 9DF82C50 		ldrb	r5, [sp, #44]	@ zero_extendqisi2
+  17:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	uint8_t data[5] = { address | TMC5072_WRITE_BIT, x1, x2, x3, x4 };
+  55              		.loc 1 17 10 view .LVU8
+  56 0018 8DF80120 		strb	r2, [sp, #1]
+  16:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	uint8_t data[5] = { address | TMC5072_WRITE_BIT, x1, x2, x3, x4 };
+  57              		.loc 1 16 1 view .LVU9
+  58 001c 0446     		mov	r4, r0
+  59 001e 1746     		mov	r7, r2
+  60              		.loc 1 18 2 view .LVU10
+  61 0020 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+  62              	.LVL2:
+  17:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	uint8_t data[5] = { address | TMC5072_WRITE_BIT, x1, x2, x3, x4 };
+  63              		.loc 1 17 10 view .LVU11
+  64 0024 8DF80450 		strb	r5, [sp, #4]
+  65              		.loc 1 18 2 is_stmt 1 view .LVU12
+  16:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	uint8_t data[5] = { address | TMC5072_WRITE_BIT, x1, x2, x3, x4 };
+  66              		.loc 1 16 1 is_stmt 0 view .LVU13
+  67 0028 0E46     		mov	r6, r1
+  68              		.loc 1 18 2 view .LVU14
+  69 002a 0522     		movs	r2, #5
+  70              	.LVL3:
+  71              		.loc 1 18 2 view .LVU15
+  72 002c 6946     		mov	r1, sp
+  73              	.LVL4:
+  17:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	uint8_t data[5] = { address | TMC5072_WRITE_BIT, x1, x2, x3, x4 };
+  74              		.loc 1 17 10 view .LVU16
+  75 002e 8DF80280 		strb	r8, [sp, #2]
+  76 0032 8DF80390 		strb	r9, [sp, #3]
+  77              		.loc 1 18 2 view .LVU17
+  78 0036 FFF7FEFF 		bl	tmc5072_readWriteArray
+  79              	.LVL5:
+  19:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+  20:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	int32_t value = (x1 << 24) | (x2 << 16) | (x3 << 8) | x4;
+  80              		.loc 1 20 2 is_stmt 1 view .LVU18
+  21:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+  22:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	// Write to the shadow register and mark the register dirty
+  23:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	address = TMC_ADDRESS(address);
+  81              		.loc 1 23 2 view .LVU19
+  24:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072->config->shadowRegister[address] = value;
+  82              		.loc 1 24 2 view .LVU20
+  83              		.loc 1 24 43 is_stmt 0 view .LVU21
+  84 003a 2268     		ldr	r2, [r4]
+  85              		.loc 1 24 33 view .LVU22
+  86 003c 06F07F06 		and	r6, r6, #127
+  87              	.LVL6:
+  20:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+  88              		.loc 1 20 10 view .LVU23
+  89 0040 45EA0925 		orr	r5, r5, r9, lsl #8
+  90              	.LVL7:
+  91              		.loc 1 24 43 view .LVU24
+  92 0044 02EB8601 		add	r1, r2, r6, lsl #2
+  20:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+  93              		.loc 1 20 10 view .LVU25
+  94 0048 45EA0843 		orr	r3, r5, r8, lsl #16
+  95 004c 43EA0763 		orr	r3, r3, r7, lsl #24
+  25:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072->registerAccess[address] |= TMC_ACCESS_DIRTY;
+  96              		.loc 1 25 35 view .LVU26
+  97 0050 3444     		add	r4, r4, r6
+  98              	.LVL8:
+  24:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072->config->shadowRegister[address] = value;
+  99              		.loc 1 24 43 view .LVU27
+ 100 0052 4B60     		str	r3, [r1, #4]
+ 101              		.loc 1 25 2 is_stmt 1 view .LVU28
+ 102              		.loc 1 25 35 is_stmt 0 view .LVU29
+ 103 0054 94F81832 		ldrb	r3, [r4, #536]	@ zero_extendqisi2
+ 104 0058 43F00803 		orr	r3, r3, #8
+ 105 005c 84F81832 		strb	r3, [r4, #536]
+  26:TMC-API/tmc/ic/TMC5072/TMC5072.c **** }
+ 106              		.loc 1 26 1 view .LVU30
+ 107 0060 03B0     		add	sp, sp, #12
+ 108              	.LCFI1:
+ 109              		.cfi_def_cfa_offset 28
+ 110              		@ sp needed
+ 111 0062 BDE8F083 		pop	{r4, r5, r6, r7, r8, r9, pc}
+ 112              		.loc 1 26 1 view .LVU31
+ 113              		.cfi_endproc
+ 114              	.LFE0:
+ 116              		.align	1
+ 117              		.global	tmc5072_writeInt
+ 118              		.syntax unified
+ 119              		.thumb
+ 120              		.thumb_func
+ 121              		.fpu softvfp
+ 123              	tmc5072_writeInt:
+ 124              	.LVL9:
+ 125              	.LFB1:
+  27:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+  28:TMC-API/tmc/ic/TMC5072/TMC5072.c **** void tmc5072_writeInt(TMC5072TypeDef *tmc5072, uint8_t address, int32_t value)
+  29:TMC-API/tmc/ic/TMC5072/TMC5072.c **** {
+ 126              		.loc 1 29 1 is_stmt 1 view -0
+ 127              		.cfi_startproc
+ 128              		@ args = 0, pretend = 0, frame = 0
+ 129              		@ frame_needed = 0, uses_anonymous_args = 0
+  30:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072_writeDatagram(tmc5072, address, BYTE(value, 3), BYTE(value, 2), BYTE(value, 1), BYTE(value
+ 130              		.loc 1 30 2 view .LVU33
+  29:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072_writeDatagram(tmc5072, address, BYTE(value, 3), BYTE(value, 2), BYTE(value, 1), BYTE(value
+ 131              		.loc 1 29 1 is_stmt 0 view .LVU34
+ 132 0066 07B5     		push	{r0, r1, r2, lr}
+ 133              	.LCFI2:
+ 134              		.cfi_def_cfa_offset 16
+ 135              		.cfi_offset 14, -4
+ 136              		.loc 1 30 2 view .LVU35
+ 137 0068 D3B2     		uxtb	r3, r2
+ 138 006a 0193     		str	r3, [sp, #4]
+ 139 006c C2F30723 		ubfx	r3, r2, #8, #8
+ 140 0070 0093     		str	r3, [sp]
+ 141 0072 C2F30743 		ubfx	r3, r2, #16, #8
+ 142 0076 120E     		lsrs	r2, r2, #24
+ 143              	.LVL10:
+ 144              		.loc 1 30 2 view .LVU36
+ 145 0078 FFF7FEFF 		bl	tmc5072_writeDatagram
+ 146              	.LVL11:
+  31:TMC-API/tmc/ic/TMC5072/TMC5072.c **** }
+ 147              		.loc 1 31 1 view .LVU37
+ 148 007c 03B0     		add	sp, sp, #12
+ 149              	.LCFI3:
+ 150              		.cfi_def_cfa_offset 4
+ 151              		@ sp needed
+ 152 007e 5DF804FB 		ldr	pc, [sp], #4
+ 153              		.cfi_endproc
+ 154              	.LFE1:
+ 156              		.align	1
+ 157              		.global	tmc5072_readInt
+ 158              		.syntax unified
+ 159              		.thumb
+ 160              		.thumb_func
+ 161              		.fpu softvfp
+ 163              	tmc5072_readInt:
+ 164              	.LVL12:
+ 165              	.LFB2:
+  32:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+  33:TMC-API/tmc/ic/TMC5072/TMC5072.c **** int32_t tmc5072_readInt(TMC5072TypeDef *tmc5072, uint8_t address)
+  34:TMC-API/tmc/ic/TMC5072/TMC5072.c **** {
+ 166              		.loc 1 34 1 is_stmt 1 view -0
+ 167              		.cfi_startproc
+ 168              		@ args = 0, pretend = 0, frame = 8
+ 169              		@ frame_needed = 0, uses_anonymous_args = 0
+  35:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	address = TMC_ADDRESS(address);
+ 170              		.loc 1 35 2 view .LVU39
+  34:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	address = TMC_ADDRESS(address);
+ 171              		.loc 1 34 1 is_stmt 0 view .LVU40
+ 172 0082 37B5     		push	{r0, r1, r2, r4, r5, lr}
+ 173              	.LCFI4:
+ 174              		.cfi_def_cfa_offset 24
+ 175              		.cfi_offset 4, -12
+ 176              		.cfi_offset 5, -8
+ 177              		.cfi_offset 14, -4
+ 178              		.loc 1 35 10 view .LVU41
+ 179 0084 01F07F04 		and	r4, r1, #127
+ 180              	.LVL13:
+  36:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+  37:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	// register not readable -> shadow register copy
+  38:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	if(!TMC_IS_READABLE(tmc5072->registerAccess[address]))
+ 181              		.loc 1 38 2 is_stmt 1 view .LVU42
+ 182              		.loc 1 38 6 is_stmt 0 view .LVU43
+ 183 0088 0219     		adds	r2, r0, r4
+ 184 008a 0368     		ldr	r3, [r0]
+ 185              		.loc 1 38 4 view .LVU44
+ 186 008c 92F81822 		ldrb	r2, [r2, #536]	@ zero_extendqisi2
+ 187 0090 D207     		lsls	r2, r2, #31
+  34:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	address = TMC_ADDRESS(address);
+ 188              		.loc 1 34 1 view .LVU45
+ 189 0092 0546     		mov	r5, r0
+ 190              		.loc 1 38 4 view .LVU46
+ 191 0094 04D4     		bmi	.L4
+  39:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		return tmc5072->config->shadowRegister[address];
+ 192              		.loc 1 39 3 is_stmt 1 view .LVU47
+ 193              		.loc 1 39 41 is_stmt 0 view .LVU48
+ 194 0096 03EB8404 		add	r4, r3, r4, lsl #2
+ 195              	.LVL14:
+ 196              		.loc 1 39 41 view .LVU49
+ 197 009a 6068     		ldr	r0, [r4, #4]
+ 198              	.LVL15:
+ 199              	.L3:
+  40:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+  41:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	uint8_t data[5] = { 0, 0, 0, 0, 0 };
+  42:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+  43:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	data[0] = address;
+  44:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072_readWriteArray(tmc5072->config->channel, &data[0], 5);
+  45:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+  46:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	data[0] = address;
+  47:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072_readWriteArray(tmc5072->config->channel, &data[0], 5);
+  48:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+  49:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	return (data[1] << 24) | (data[2] << 16) | (data[3] << 8) | data[4];
+  50:TMC-API/tmc/ic/TMC5072/TMC5072.c **** }
+ 200              		.loc 1 50 1 view .LVU50
+ 201 009c 03B0     		add	sp, sp, #12
+ 202              	.LCFI5:
+ 203              		.cfi_remember_state
+ 204              		.cfi_def_cfa_offset 12
+ 205              		@ sp needed
+ 206 009e 30BD     		pop	{r4, r5, pc}
+ 207              	.LVL16:
+ 208              	.L4:
+ 209              	.LCFI6:
+ 210              		.cfi_restore_state
+  41:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 211              		.loc 1 41 2 is_stmt 1 view .LVU51
+  41:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 212              		.loc 1 41 10 is_stmt 0 view .LVU52
+ 213 00a0 0D4A     		ldr	r2, .L6
+ 214 00a2 1068     		ldr	r0, [r2]	@ unaligned
+ 215              	.LVL17:
+  41:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 216              		.loc 1 41 10 view .LVU53
+ 217 00a4 1279     		ldrb	r2, [r2, #4]	@ zero_extendqisi2
+ 218 00a6 0090     		str	r0, [sp]
+ 219 00a8 8DF80420 		strb	r2, [sp, #4]
+  43:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072_readWriteArray(tmc5072->config->channel, &data[0], 5);
+ 220              		.loc 1 43 2 is_stmt 1 view .LVU54
+  44:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 221              		.loc 1 44 2 is_stmt 0 view .LVU55
+ 222 00ac 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+  43:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072_readWriteArray(tmc5072->config->channel, &data[0], 5);
+ 223              		.loc 1 43 10 view .LVU56
+ 224 00b0 8DF80040 		strb	r4, [sp]
+  44:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 225              		.loc 1 44 2 is_stmt 1 view .LVU57
+ 226 00b4 0522     		movs	r2, #5
+ 227 00b6 6946     		mov	r1, sp
+ 228 00b8 FFF7FEFF 		bl	tmc5072_readWriteArray
+ 229              	.LVL18:
+  46:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072_readWriteArray(tmc5072->config->channel, &data[0], 5);
+ 230              		.loc 1 46 2 view .LVU58
+  47:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 231              		.loc 1 47 2 is_stmt 0 view .LVU59
+ 232 00bc 2B68     		ldr	r3, [r5]
+  46:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072_readWriteArray(tmc5072->config->channel, &data[0], 5);
+ 233              		.loc 1 46 10 view .LVU60
+ 234 00be 8DF80040 		strb	r4, [sp]
+  47:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 235              		.loc 1 47 2 is_stmt 1 view .LVU61
+ 236 00c2 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+ 237 00c6 0522     		movs	r2, #5
+ 238 00c8 6946     		mov	r1, sp
+ 239 00ca FFF7FEFF 		bl	tmc5072_readWriteArray
+ 240              	.LVL19:
+  49:TMC-API/tmc/ic/TMC5072/TMC5072.c **** }
+ 241              		.loc 1 49 2 view .LVU62
+ 242 00ce DDF80100 		ldr	r0, [sp, #1]	@ unaligned
+ 243 00d2 00BA     		rev	r0, r0
+  49:TMC-API/tmc/ic/TMC5072/TMC5072.c **** }
+ 244              		.loc 1 49 60 is_stmt 0 view .LVU63
+ 245 00d4 E2E7     		b	.L3
+ 246              	.L7:
+ 247 00d6 00BF     		.align	2
+ 248              	.L6:
+ 249 00d8 00000000 		.word	.LANCHOR0
+ 250              		.cfi_endproc
+ 251              	.LFE2:
+ 253              		.align	1
+ 254              		.global	tmc5072_init
+ 255              		.syntax unified
+ 256              		.thumb
+ 257              		.thumb_func
+ 258              		.fpu softvfp
+ 260              	tmc5072_init:
+ 261              	.LVL20:
+ 262              	.LFB3:
+  51:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+  52:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //void tmc5072_writeDatagram(TMC5072TypeDef *tmc5072, uint8_t address, uint8_t x1, uint8_t x2, uint
+  53:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //{
+  54:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	tmc5072_readWrite(tmc5072->channel, address | TMC5072_WRITE_BIT, false);
+  55:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	tmc5072_readWrite(tmc5072->channel, x1, false);
+  56:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	tmc5072_readWrite(tmc5072->channel, x2, false);
+  57:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	tmc5072_readWrite(tmc5072->channel, x3, false);
+  58:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	tmc5072_readWrite(tmc5072->channel, x4, true);
+  59:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //
+  60:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	int value = x1;
+  61:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	value <<= 8;
+  62:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	value |= x2;
+  63:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	value <<= 8;
+  64:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	value |= x3;
+  65:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	value <<= 8;
+  66:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	value |= x4;
+  67:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //
+  68:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	tmc5072->shadowRegister[address & 0x7F] = value;
+  69:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //}
+  70:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //
+  71:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //void tmc5072_writeInt(TMC5072TypeDef *tmc5072, uint8_t address, int32_t value)
+  72:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //{
+  73:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	tmc5072_writeDatagram(tmc5072,  address, 0xFF & (value>>24), 0xFF & (value>>16), 0xFF & (value>>
+  74:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //}
+  75:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //
+  76:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //int32_t tmc5072_readInt(TMC5072TypeDef *tmc5072, uint8_t address)
+  77:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //{
+  78:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	address &= 0x7F;
+  79:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //
+  80:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	// register not readable -> shadow register copy
+  81:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	if(!TMC_IS_READABLE(tmc5072->registerAccess[address]))
+  82:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //		return tmc5072->shadowRegister[address];
+  83:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //
+  84:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	tmc5072_readWrite(tmc5072->channel, address, false);
+  85:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	tmc5072_readWrite(tmc5072->channel, 0, false);
+  86:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	tmc5072_readWrite(tmc5072->channel, 0, false);
+  87:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	tmc5072_readWrite(tmc5072->channel ,0, false);
+  88:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	tmc5072_readWrite(tmc5072->channel, 0, true);
+  89:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //
+  90:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	tmc5072_readWrite(tmc5072->channel, address, false);
+  91:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	int value = tmc5072_readWrite(tmc5072->channel, 0, false);
+  92:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	value <<= 8;
+  93:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	value |= tmc5072_readWrite(tmc5072->channel, 0, false);
+  94:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	value <<= 8;
+  95:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	value |= tmc5072_readWrite(tmc5072->channel, 0, false);
+  96:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	value <<= 8;
+  97:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	value |= tmc5072_readWrite(tmc5072->channel, 0, true);
+  98:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //
+  99:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	return value;
+ 100:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //}
+ 101:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 102:TMC-API/tmc/ic/TMC5072/TMC5072.c **** // Provide the init function with a channel index (sent back in the SPI callback), a pointer to a C
+ 103:TMC-API/tmc/ic/TMC5072/TMC5072.c **** // and a pointer to a int32_t array (size 128) holding the reset values that shall be used.
+ 104:TMC-API/tmc/ic/TMC5072/TMC5072.c **** void tmc5072_init(TMC5072TypeDef *tmc5072, uint8_t channel, ConfigurationTypeDef *tmc5072_config, c
+ 105:TMC-API/tmc/ic/TMC5072/TMC5072.c **** {
+ 263              		.loc 1 105 1 is_stmt 1 view -0
+ 264              		.cfi_startproc
+ 265              		@ args = 0, pretend = 0, frame = 0
+ 266              		@ frame_needed = 0, uses_anonymous_args = 0
+ 106:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	for(uint8_t motor = 0; motor < TMC5072_MOTORS; motor++)
+ 267              		.loc 1 106 2 view .LVU65
+ 268              	.LBB2:
+ 269              		.loc 1 106 6 view .LVU66
+ 270              		.loc 1 106 25 view .LVU67
+ 107:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 108:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		tmc5072->velocity[motor] = 0;
+ 271              		.loc 1 108 3 view .LVU68
+ 272              	.LBE2:
+ 105:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	for(uint8_t motor = 0; motor < TMC5072_MOTORS; motor++)
+ 273              		.loc 1 105 1 is_stmt 0 view .LVU69
+ 274 00dc 30B5     		push	{r4, r5, lr}
+ 275              	.LCFI7:
+ 276              		.cfi_def_cfa_offset 12
+ 277              		.cfi_offset 4, -12
+ 278              		.cfi_offset 5, -8
+ 279              		.cfi_offset 14, -4
+ 280              	.LBB3:
+ 281              		.loc 1 108 28 view .LVU70
+ 282 00de 0024     		movs	r4, #0
+ 283 00e0 C460     		str	r4, [r0, #12]
+ 109:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		tmc5072->oldX[motor] = 0;
+ 284              		.loc 1 109 3 is_stmt 1 view .LVU71
+ 285              		.loc 1 109 24 is_stmt 0 view .LVU72
+ 286 00e2 4460     		str	r4, [r0, #4]
+ 106:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 287              		.loc 1 106 49 is_stmt 1 view .LVU73
+ 288              	.LVL21:
+ 106:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 289              		.loc 1 106 25 view .LVU74
+ 108:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		tmc5072->oldX[motor] = 0;
+ 290              		.loc 1 108 3 view .LVU75
+ 108:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		tmc5072->oldX[motor] = 0;
+ 291              		.loc 1 108 28 is_stmt 0 view .LVU76
+ 292 00e4 0461     		str	r4, [r0, #16]
+ 293              		.loc 1 109 3 is_stmt 1 view .LVU77
+ 294              		.loc 1 109 24 is_stmt 0 view .LVU78
+ 295 00e6 8460     		str	r4, [r0, #8]
+ 106:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 296              		.loc 1 106 49 is_stmt 1 view .LVU79
+ 297              	.LVL22:
+ 106:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 298              		.loc 1 106 25 view .LVU80
+ 299              	.LBE3:
+ 110:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	}
+ 111:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 112:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072->oldTick     = 0;
+ 300              		.loc 1 112 2 view .LVU81
+ 301              		.loc 1 112 23 is_stmt 0 view .LVU82
+ 302 00e8 4461     		str	r4, [r0, #20]
+ 113:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072->config   = tmc5072_config;
+ 303              		.loc 1 113 2 is_stmt 1 view .LVU83
+ 304              		.loc 1 113 20 is_stmt 0 view .LVU84
+ 305 00ea 0260     		str	r2, [r0]
+ 114:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 115:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	/*
+ 116:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	 * TODO: Config initialization
+ 117:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	 * We can either explicitly initialize in each IC's init respectively,
+ 118:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	 * or do that with a seperate function config_init where also the channel is set.
+ 119:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	 */
+ 120:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072->config->callback     = NULL;
+ 306              		.loc 1 120 2 is_stmt 1 view .LVU85
+ 307              		.loc 1 120 32 is_stmt 0 view .LVU86
+ 308 00ec C2F80C42 		str	r4, [r2, #524]
+ 121:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072->config->channel      = channel;
+ 309              		.loc 1 121 2 is_stmt 1 view .LVU87
+ 122:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072->config->configIndex  = 0;
+ 123:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072->config->state        = CONFIG_READY;
+ 310              		.loc 1 123 32 is_stmt 0 view .LVU88
+ 311 00f0 1480     		strh	r4, [r2]	@ movhi
+ 312 00f2 0A4C     		ldr	r4, .L11
+ 121:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072->config->channel      = channel;
+ 313              		.loc 1 121 32 view .LVU89
+ 314 00f4 82F81012 		strb	r1, [r2, #528]
+ 122:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072->config->configIndex  = 0;
+ 315              		.loc 1 122 2 is_stmt 1 view .LVU90
+ 316              		.loc 1 123 2 view .LVU91
+ 124:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 125:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	uint32_t i;
+ 317              		.loc 1 125 2 view .LVU92
+ 126:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	for(i = 0; i < TMC5072_REGISTER_COUNT; i++)
+ 318              		.loc 1 126 2 view .LVU93
+ 319              	.LVL23:
+ 320              		.loc 1 126 13 view .LVU94
+ 321 00f8 043B     		subs	r3, r3, #4
+ 322              	.LVL24:
+ 323              		.loc 1 126 13 is_stmt 0 view .LVU95
+ 324 00fa 00F50672 		add	r2, r0, #536
+ 325              	.LVL25:
+ 326              		.loc 1 126 13 view .LVU96
+ 327 00fe 00F11801 		add	r1, r0, #24
+ 328              	.LVL26:
+ 329              		.loc 1 126 13 view .LVU97
+ 330 0102 00F52670 		add	r0, r0, #664
+ 331              	.LVL27:
+ 332              	.L9:
+ 127:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 128:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		tmc5072->registerAccess[i]      = tmc5072_defaultRegisterAccess[i];
+ 333              		.loc 1 128 3 is_stmt 1 discriminator 3 view .LVU98
+ 334              		.loc 1 128 66 is_stmt 0 discriminator 3 view .LVU99
+ 335 0106 14F8015B 		ldrb	r5, [r4], #1	@ zero_extendqisi2
+ 336              	.LVL28:
+ 337              		.loc 1 128 35 discriminator 3 view .LVU100
+ 338 010a 02F8015B 		strb	r5, [r2], #1
+ 129:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		tmc5072->registerResetState[i]  = registerResetState[i];
+ 339              		.loc 1 129 3 is_stmt 1 discriminator 3 view .LVU101
+ 340              		.loc 1 129 55 is_stmt 0 discriminator 3 view .LVU102
+ 341 010e 53F8045F 		ldr	r5, [r3, #4]!
+ 342              		.loc 1 129 35 discriminator 3 view .LVU103
+ 343 0112 41F8045B 		str	r5, [r1], #4
+ 126:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	for(i = 0; i < TMC5072_REGISTER_COUNT; i++)
+ 344              		.loc 1 126 41 is_stmt 1 discriminator 3 view .LVU104
+ 345              	.LVL29:
+ 126:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	for(i = 0; i < TMC5072_REGISTER_COUNT; i++)
+ 346              		.loc 1 126 13 discriminator 3 view .LVU105
+ 126:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	for(i = 0; i < TMC5072_REGISTER_COUNT; i++)
+ 347              		.loc 1 126 2 is_stmt 0 discriminator 3 view .LVU106
+ 348 0116 8242     		cmp	r2, r0
+ 349 0118 F5D1     		bne	.L9
+ 130:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	}
+ 131:TMC-API/tmc/ic/TMC5072/TMC5072.c **** }
+ 350              		.loc 1 131 1 view .LVU107
+ 351 011a 30BD     		pop	{r4, r5, pc}
+ 352              	.LVL30:
+ 353              	.L12:
+ 354              		.loc 1 131 1 view .LVU108
+ 355              		.align	2
+ 356              	.L11:
+ 357 011c 05000000 		.word	.LANCHOR0+5
+ 358              		.cfi_endproc
+ 359              	.LFE3:
+ 361              		.align	1
+ 362              		.global	tmc5072_fillShadowRegisters
+ 363              		.syntax unified
+ 364              		.thumb
+ 365              		.thumb_func
+ 366              		.fpu softvfp
+ 368              	tmc5072_fillShadowRegisters:
+ 369              	.LVL31:
+ 370              	.LFB4:
+ 132:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 133:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //void tmc5072_initConfig(TMC5072TypeDef *tmc5072)
+ 134:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //{
+ 135:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	tmc5072->velocity[0]      = 0;
+ 136:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	tmc5072->velocity[1]      = 0;
+ 137:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	tmc5072->oldTick          = 0;
+ 138:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	tmc5072->oldX[0]          = 0;
+ 139:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	tmc5072->oldX[1]          = 0;
+ 140:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	tmc5072->vMaxModified[0]  = false;
+ 141:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	tmc5072->vMaxModified[1]  = false;
+ 142:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //
+ 143:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	int i;
+ 144:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	for(i=0; i < TMC5072_REGISTER_COUNT; i++)
+ 145:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	{
+ 146:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //		tmc5072->registerAccess[i]      = tmc5072_defaultRegisterAccess[i];
+ 147:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //		tmc5072->registerResetState[i]  = tmc5072_defaultRegisterResetState[i];
+ 148:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	}
+ 149:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //}
+ 150:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 151:TMC-API/tmc/ic/TMC5072/TMC5072.c **** void tmc5072_fillShadowRegisters(TMC5072TypeDef *tmc5072)
+ 152:TMC-API/tmc/ic/TMC5072/TMC5072.c **** {
+ 371              		.loc 1 152 1 is_stmt 1 view -0
+ 372              		.cfi_startproc
+ 373              		@ args = 0, pretend = 0, frame = 0
+ 374              		@ frame_needed = 0, uses_anonymous_args = 0
+ 153:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	// Check if we have constants defined
+ 154:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	if(ARRAY_SIZE(tmc5072_RegisterConstants) == 0)
+ 375              		.loc 1 154 2 view .LVU110
+ 155:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		return;
+ 156:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 157:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	for(size_t i = 0, j = 0; i < TMC5072_REGISTER_COUNT; i++)
+ 376              		.loc 1 157 2 view .LVU111
+ 377              	.LBB4:
+ 378              		.loc 1 157 6 view .LVU112
+ 379              		.loc 1 157 27 view .LVU113
+ 380              	.LBE4:
+ 152:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	// Check if we have constants defined
+ 381              		.loc 1 152 1 is_stmt 0 view .LVU114
+ 382 0120 F0B5     		push	{r4, r5, r6, r7, lr}
+ 383              	.LCFI8:
+ 384              		.cfi_def_cfa_offset 20
+ 385              		.cfi_offset 4, -20
+ 386              		.cfi_offset 5, -16
+ 387              		.cfi_offset 6, -12
+ 388              		.cfi_offset 7, -8
+ 389              		.cfi_offset 14, -4
+ 390 0122 104D     		ldr	r5, .L21
+ 391              	.LBB5:
+ 392              		.loc 1 157 20 view .LVU115
+ 393 0124 0022     		movs	r2, #0
+ 394 0126 00F50674 		add	r4, r0, #536
+ 395              		.loc 1 157 13 view .LVU116
+ 396 012a 1346     		mov	r3, r2
+ 158:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 159:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		// We only need to worry about hardware preset, write-only registers
+ 160:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		// that have not yet been written (no dirty bit) here.
+ 161:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		if(tmc5072->registerAccess[i] != TMC_ACCESS_W_PRESET)
+ 162:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			continue;
+ 163:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 164:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		// Search the constant list for the current address. With the constant
+ 165:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		// list being sorted in ascended order, we can walk through the list
+ 166:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		// until the entry with an address equal or greater than i
+ 167:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		while(j < ARRAY_SIZE(tmc5072_RegisterConstants) && (tmc5072_RegisterConstants[j].address < i))
+ 168:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			j++;
+ 169:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 170:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		// If we have an entry for our current address, write the constant
+ 171:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		if(tmc5072_RegisterConstants[j].address == i)
+ 172:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->config->shadowRegister[i] = tmc5072_RegisterConstants[j].value;
+ 397              		.loc 1 172 69 view .LVU117
+ 398 012c A5F18806 		sub	r6, r5, #136
+ 399              	.LVL32:
+ 400              	.L18:
+ 161:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			continue;
+ 401              		.loc 1 161 3 is_stmt 1 view .LVU118
+ 161:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			continue;
+ 402              		.loc 1 161 29 is_stmt 0 view .LVU119
+ 403 0130 14F8011B 		ldrb	r1, [r4], #1	@ zero_extendqisi2
+ 161:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			continue;
+ 404              		.loc 1 161 5 view .LVU120
+ 405 0134 4229     		cmp	r1, #66
+ 406 0136 0FD1     		bne	.L14
+ 407              	.L15:
+ 167:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			j++;
+ 408              		.loc 1 167 8 is_stmt 1 view .LVU121
+ 409 0138 092A     		cmp	r2, #9
+ 410 013a 15F83210 		ldrb	r1, [r5, r2, lsl #3]	@ zero_extendqisi2
+ 411 013e 01D8     		bhi	.L16
+ 167:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			j++;
+ 412              		.loc 1 167 51 is_stmt 0 discriminator 1 view .LVU122
+ 413 0140 9942     		cmp	r1, r3
+ 414 0142 0DD3     		bcc	.L17
+ 415              	.L16:
+ 416              	.LVL33:
+ 171:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->config->shadowRegister[i] = tmc5072_RegisterConstants[j].value;
+ 417              		.loc 1 171 3 is_stmt 1 view .LVU123
+ 171:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->config->shadowRegister[i] = tmc5072_RegisterConstants[j].value;
+ 418              		.loc 1 171 5 is_stmt 0 view .LVU124
+ 419 0144 9942     		cmp	r1, r3
+ 420 0146 07D1     		bne	.L14
+ 421              		.loc 1 172 4 is_stmt 1 view .LVU125
+ 422              		.loc 1 172 39 is_stmt 0 view .LVU126
+ 423 0148 0168     		ldr	r1, [r0]
+ 424              		.loc 1 172 69 view .LVU127
+ 425 014a 06EBC207 		add	r7, r6, r2, lsl #3
+ 426              		.loc 1 172 39 view .LVU128
+ 427 014e 01EB8301 		add	r1, r1, r3, lsl #2
+ 428 0152 D7F88C70 		ldr	r7, [r7, #140]
+ 429 0156 4F60     		str	r7, [r1, #4]
+ 430              	.L14:
+ 431              	.LVL34:
+ 157:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 432              		.loc 1 157 55 is_stmt 1 discriminator 2 view .LVU129
+ 157:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 433              		.loc 1 157 56 is_stmt 0 discriminator 2 view .LVU130
+ 434 0158 0133     		adds	r3, r3, #1
+ 435              	.LVL35:
+ 157:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 436              		.loc 1 157 27 is_stmt 1 discriminator 2 view .LVU131
+ 157:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 437              		.loc 1 157 2 is_stmt 0 discriminator 2 view .LVU132
+ 438 015a 802B     		cmp	r3, #128
+ 439 015c E8D1     		bne	.L18
+ 440              	.LBE5:
+ 173:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	}
+ 174:TMC-API/tmc/ic/TMC5072/TMC5072.c **** }
+ 441              		.loc 1 174 1 view .LVU133
+ 442 015e F0BD     		pop	{r4, r5, r6, r7, pc}
+ 443              	.L17:
+ 444              	.LBB6:
+ 168:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 445              		.loc 1 168 4 is_stmt 1 view .LVU134
+ 168:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 446              		.loc 1 168 5 is_stmt 0 view .LVU135
+ 447 0160 0132     		adds	r2, r2, #1
+ 448              	.LVL36:
+ 168:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 449              		.loc 1 168 5 view .LVU136
+ 450 0162 E9E7     		b	.L15
+ 451              	.L22:
+ 452              		.align	2
+ 453              	.L21:
+ 454 0164 88000000 		.word	.LANCHOR0+136
+ 455              	.LBE6:
+ 456              		.cfi_endproc
+ 457              	.LFE4:
+ 459              		.global	__aeabi_ui2f
+ 460              		.global	__aeabi_i2f
+ 461              		.global	__aeabi_fdiv
+ 462              		.global	__aeabi_fmul
+ 463              		.global	__aeabi_f2uiz
+ 464              		.align	1
+ 465              		.global	tmc5072_periodicJob
+ 466              		.syntax unified
+ 467              		.thumb
+ 468              		.thumb_func
+ 469              		.fpu softvfp
+ 471              	tmc5072_periodicJob:
+ 472              	.LVL37:
+ 473              	.LFB6:
+ 175:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 176:TMC-API/tmc/ic/TMC5072/TMC5072.c **** static void writeConfiguration(TMC5072TypeDef *tmc5072)
+ 177:TMC-API/tmc/ic/TMC5072/TMC5072.c **** {
+ 178:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	uint8_t *ptr = &tmc5072->config->configIndex;
+ 179:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	const int32_t *settings;
+ 180:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 181:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	if(tmc5072->config->state == CONFIG_RESTORE)
+ 182:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 183:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		settings = tmc5072->config->shadowRegister;
+ 184:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		// Find the next restorable register
+ 185:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		while((*ptr < TMC5072_REGISTER_COUNT) && !TMC_IS_RESTORABLE(tmc5072->registerAccess[*ptr]))
+ 186:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			(*ptr)++;
+ 187:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	}
+ 188:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	else
+ 189:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 190:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		settings = tmc5072->registerResetState;
+ 191:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		// Find the next resettable register
+ 192:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		while((*ptr < TMC5072_REGISTER_COUNT) && !TMC_IS_RESETTABLE(tmc5072->registerAccess[*ptr]))
+ 193:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			(*ptr)++;
+ 194:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 195:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	}
+ 196:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 197:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	if(*ptr < TMC5072_REGISTER_COUNT)
+ 198:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 199:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		tmc5072_writeInt(tmc5072, *ptr, settings[*ptr]);
+ 200:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		(*ptr)++;
+ 201:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	}
+ 202:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	else // Finished configuration
+ 203:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 204:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		if(tmc5072->config->callback)
+ 205:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		{
+ 206:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			((tmc5072_callback)tmc5072->config->callback)(tmc5072, tmc5072->config->state);
+ 207:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		}
+ 208:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 209:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		tmc5072->config->state = CONFIG_READY;
+ 210:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	}
+ 211:TMC-API/tmc/ic/TMC5072/TMC5072.c **** }
+ 212:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 213:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //void tmc5072_writeConfiguration(TMC5072TypeDef *tmc5072, ConfigurationTypeDef *TMC5072_config)
+ 214:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //{
+ 215:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	uint8_t *ptr = &TMC5072_config->configIndex;
+ 216:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	const int32_t *settings = (TMC5072_config->state == CONFIG_RESTORE) ? TMC5072_config->shadowRegi
+ 217:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	tmc5072->shadowRegister = TMC5072_config->shadowRegister; // TODO API 2: Find better position (L
+ 218:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //
+ 219:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	while((*ptr < TMC5072_REGISTER_COUNT) && !TMC_IS_WRITABLE(tmc5072->registerAccess[*ptr]))
+ 220:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //		(*ptr)++;
+ 221:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //
+ 222:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	if(*ptr < TMC5072_REGISTER_COUNT)
+ 223:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	{
+ 224:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //		tmc5072_writeInt(tmc5072, *ptr, settings[*ptr]);
+ 225:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //		(*ptr)++;
+ 226:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	}
+ 227:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	else
+ 228:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	{
+ 229:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //		TMC5072_config->state = CONFIG_READY;
+ 230:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	}
+ 231:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //}
+ 232:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 233:TMC-API/tmc/ic/TMC5072/TMC5072.c **** void tmc5072_periodicJob(TMC5072TypeDef *tmc5072, uint32_t tick)
+ 234:TMC-API/tmc/ic/TMC5072/TMC5072.c **** {
+ 474              		.loc 1 234 1 is_stmt 1 view -0
+ 475              		.cfi_startproc
+ 476              		@ args = 0, pretend = 0, frame = 0
+ 477              		@ frame_needed = 0, uses_anonymous_args = 0
+ 235:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	uint32_t tickDiff;
+ 478              		.loc 1 235 2 view .LVU138
+ 236:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 237:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	if(tmc5072->config->state != CONFIG_READY)
+ 479              		.loc 1 237 2 view .LVU139
+ 234:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	uint32_t tickDiff;
+ 480              		.loc 1 234 1 is_stmt 0 view .LVU140
+ 481 0168 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 482              	.LCFI9:
+ 483              		.cfi_def_cfa_offset 24
+ 484              		.cfi_offset 3, -24
+ 485              		.cfi_offset 4, -20
+ 486              		.cfi_offset 5, -16
+ 487              		.cfi_offset 6, -12
+ 488              		.cfi_offset 7, -8
+ 489              		.cfi_offset 14, -4
+ 490              		.loc 1 237 12 view .LVU141
+ 491 016a 0568     		ldr	r5, [r0]
+ 492              		.loc 1 237 20 view .LVU142
+ 493 016c 2B78     		ldrb	r3, [r5]	@ zero_extendqisi2
+ 234:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	uint32_t tickDiff;
+ 494              		.loc 1 234 1 view .LVU143
+ 495 016e 0446     		mov	r4, r0
+ 496 0170 0E46     		mov	r6, r1
+ 497              		.loc 1 237 4 view .LVU144
+ 498 0172 002B     		cmp	r3, #0
+ 499 0174 3CD0     		beq	.L24
+ 238:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 239:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		writeConfiguration(tmc5072);
+ 500              		.loc 1 239 3 is_stmt 1 view .LVU145
+ 501              	.LVL38:
+ 502              	.LBB10:
+ 503              	.LBI10:
+ 176:TMC-API/tmc/ic/TMC5072/TMC5072.c **** {
+ 504              		.loc 1 176 13 view .LVU146
+ 505              	.LBB11:
+ 178:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	const int32_t *settings;
+ 506              		.loc 1 178 2 view .LVU147
+ 179:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 507              		.loc 1 179 2 view .LVU148
+ 181:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 508              		.loc 1 181 2 view .LVU149
+ 181:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 509              		.loc 1 181 4 is_stmt 0 view .LVU150
+ 510 0176 022B     		cmp	r3, #2
+ 511 0178 1FD1     		bne	.L25
+ 183:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		// Find the next restorable register
+ 512              		.loc 1 183 3 is_stmt 1 view .LVU151
+ 183:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		// Find the next restorable register
+ 513              		.loc 1 183 12 is_stmt 0 view .LVU152
+ 514 017a 281D     		adds	r0, r5, #4
+ 515              	.LVL39:
+ 185:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			(*ptr)++;
+ 516              		.loc 1 185 3 is_stmt 1 view .LVU153
+ 517              	.L26:
+ 185:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			(*ptr)++;
+ 518              		.loc 1 185 8 view .LVU154
+ 519 017c 95F90130 		ldrsb	r3, [r5, #1]
+ 185:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			(*ptr)++;
+ 520              		.loc 1 185 10 is_stmt 0 view .LVU155
+ 521 0180 6A78     		ldrb	r2, [r5, #1]	@ zero_extendqisi2
+ 185:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			(*ptr)++;
+ 522              		.loc 1 185 8 view .LVU156
+ 523 0182 002B     		cmp	r3, #0
+ 524 0184 08DB     		blt	.L27
+ 185:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			(*ptr)++;
+ 525              		.loc 1 185 45 view .LVU157
+ 526 0186 A318     		adds	r3, r4, r2
+ 527 0188 93F81832 		ldrb	r3, [r3, #536]	@ zero_extendqisi2
+ 185:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			(*ptr)++;
+ 528              		.loc 1 185 41 view .LVU158
+ 529 018c 9907     		lsls	r1, r3, #30
+ 530 018e 11D5     		bpl	.L28
+ 185:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			(*ptr)++;
+ 531              		.loc 1 185 44 view .LVU159
+ 532 0190 03F04803 		and	r3, r3, #72
+ 533 0194 402B     		cmp	r3, #64
+ 534 0196 0DD0     		beq	.L28
+ 535              	.L27:
+ 197:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 536              		.loc 1 197 2 is_stmt 1 view .LVU160
+ 197:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 537              		.loc 1 197 4 is_stmt 0 view .LVU161
+ 538 0198 95F90130 		ldrsb	r3, [r5, #1]
+ 197:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 539              		.loc 1 197 5 view .LVU162
+ 540 019c 6978     		ldrb	r1, [r5, #1]	@ zero_extendqisi2
+ 197:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 541              		.loc 1 197 4 view .LVU163
+ 542 019e 002B     		cmp	r3, #0
+ 543 01a0 1BDB     		blt	.L31
+ 199:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		(*ptr)++;
+ 544              		.loc 1 199 3 is_stmt 1 view .LVU164
+ 545 01a2 50F82120 		ldr	r2, [r0, r1, lsl #2]
+ 546 01a6 2046     		mov	r0, r4
+ 547              	.LVL40:
+ 199:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		(*ptr)++;
+ 548              		.loc 1 199 3 is_stmt 0 view .LVU165
+ 549 01a8 FFF7FEFF 		bl	tmc5072_writeInt
+ 550              	.LVL41:
+ 200:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	}
+ 551              		.loc 1 200 3 is_stmt 1 view .LVU166
+ 200:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	}
+ 552              		.loc 1 200 9 is_stmt 0 view .LVU167
+ 553 01ac 6B78     		ldrb	r3, [r5, #1]	@ zero_extendqisi2
+ 554 01ae 0133     		adds	r3, r3, #1
+ 555 01b0 6B70     		strb	r3, [r5, #1]
+ 556              	.LVL42:
+ 557              	.L23:
+ 200:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	}
+ 558              		.loc 1 200 9 view .LVU168
+ 559              	.LBE11:
+ 560              	.LBE10:
+ 240:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		return;
+ 241:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	}
+ 242:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 243:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	int32_t x;
+ 244:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 245:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	// Calculate velocity v = dx/dt
+ 246:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	if((tickDiff = tick - tmc5072->oldTick) >= 5)
+ 247:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 248:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		for(uint8_t motor = 0; motor < TMC5072_MOTORS; motor++)
+ 249:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		{
+ 250:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			x = tmc5072_readInt(tmc5072, TMC5072_XACTUAL(motor));
+ 251:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->velocity[motor] = (uint32_t) ((float32_t) (abs(x - tmc5072->oldX[motor]) / (float32_t) 
+ 252:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->oldX[motor] = x;
+ 253:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		}
+ 254:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		tmc5072->oldTick  = tick;
+ 255:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	}
+ 256:TMC-API/tmc/ic/TMC5072/TMC5072.c **** }
+ 561              		.loc 1 256 1 view .LVU169
+ 562 01b2 F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 563              	.LVL43:
+ 564              	.L28:
+ 565              	.LBB13:
+ 566              	.LBB12:
+ 186:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	}
+ 567              		.loc 1 186 4 is_stmt 1 view .LVU170
+ 186:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	}
+ 568              		.loc 1 186 10 is_stmt 0 view .LVU171
+ 569 01b4 0132     		adds	r2, r2, #1
+ 570 01b6 6A70     		strb	r2, [r5, #1]
+ 571 01b8 E0E7     		b	.L26
+ 572              	.LVL44:
+ 573              	.L25:
+ 190:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		// Find the next resettable register
+ 574              		.loc 1 190 3 is_stmt 1 view .LVU172
+ 190:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		// Find the next resettable register
+ 575              		.loc 1 190 12 is_stmt 0 view .LVU173
+ 576 01ba 1830     		adds	r0, r0, #24
+ 577              	.LVL45:
+ 192:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			(*ptr)++;
+ 578              		.loc 1 192 3 is_stmt 1 view .LVU174
+ 579              	.L29:
+ 192:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			(*ptr)++;
+ 580              		.loc 1 192 8 view .LVU175
+ 581 01bc 95F90120 		ldrsb	r2, [r5, #1]
+ 192:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			(*ptr)++;
+ 582              		.loc 1 192 10 is_stmt 0 view .LVU176
+ 583 01c0 6B78     		ldrb	r3, [r5, #1]	@ zero_extendqisi2
+ 192:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			(*ptr)++;
+ 584              		.loc 1 192 8 view .LVU177
+ 585 01c2 002A     		cmp	r2, #0
+ 586 01c4 E8DB     		blt	.L27
+ 192:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			(*ptr)++;
+ 587              		.loc 1 192 45 view .LVU178
+ 588 01c6 E218     		adds	r2, r4, r3
+ 192:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			(*ptr)++;
+ 589              		.loc 1 192 41 view .LVU179
+ 590 01c8 92F81822 		ldrb	r2, [r2, #536]	@ zero_extendqisi2
+ 591 01cc 02F04202 		and	r2, r2, #66
+ 592 01d0 022A     		cmp	r2, #2
+ 593 01d2 E1D0     		beq	.L27
+ 193:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 594              		.loc 1 193 4 is_stmt 1 view .LVU180
+ 193:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 595              		.loc 1 193 10 is_stmt 0 view .LVU181
+ 596 01d4 0133     		adds	r3, r3, #1
+ 597 01d6 6B70     		strb	r3, [r5, #1]
+ 598 01d8 F0E7     		b	.L29
+ 599              	.LVL46:
+ 600              	.L31:
+ 204:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		{
+ 601              		.loc 1 204 3 is_stmt 1 view .LVU182
+ 204:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		{
+ 602              		.loc 1 204 13 is_stmt 0 view .LVU183
+ 603 01da 2268     		ldr	r2, [r4]
+ 204:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		{
+ 604              		.loc 1 204 21 view .LVU184
+ 605 01dc D2F80C32 		ldr	r3, [r2, #524]
+ 204:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		{
+ 606              		.loc 1 204 5 view .LVU185
+ 607 01e0 13B1     		cbz	r3, .L33
+ 206:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		}
+ 608              		.loc 1 206 4 is_stmt 1 view .LVU186
+ 206:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		}
+ 609              		.loc 1 206 5 is_stmt 0 view .LVU187
+ 610 01e2 1178     		ldrb	r1, [r2]	@ zero_extendqisi2
+ 611 01e4 2046     		mov	r0, r4
+ 612              	.LVL47:
+ 206:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		}
+ 613              		.loc 1 206 5 view .LVU188
+ 614 01e6 9847     		blx	r3
+ 615              	.LVL48:
+ 616              	.L33:
+ 209:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	}
+ 617              		.loc 1 209 3 is_stmt 1 view .LVU189
+ 209:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	}
+ 618              		.loc 1 209 26 is_stmt 0 view .LVU190
+ 619 01e8 2368     		ldr	r3, [r4]
+ 620 01ea 0022     		movs	r2, #0
+ 621 01ec 1A70     		strb	r2, [r3]
+ 622 01ee E0E7     		b	.L23
+ 623              	.LVL49:
+ 624              	.L24:
+ 209:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	}
+ 625              		.loc 1 209 26 view .LVU191
+ 626              	.LBE12:
+ 627              	.LBE13:
+ 243:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 628              		.loc 1 243 2 is_stmt 1 view .LVU192
+ 246:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 629              		.loc 1 246 2 view .LVU193
+ 246:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 630              		.loc 1 246 15 is_stmt 0 view .LVU194
+ 631 01f0 4769     		ldr	r7, [r0, #20]
+ 632 01f2 CF1B     		subs	r7, r1, r7
+ 633              	.LVL50:
+ 246:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 634              		.loc 1 246 4 view .LVU195
+ 635 01f4 042F     		cmp	r7, #4
+ 636 01f6 DCD9     		bls	.L23
+ 637              	.LVL51:
+ 638              	.LBB14:
+ 248:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		{
+ 639              		.loc 1 248 26 is_stmt 1 view .LVU196
+ 250:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->velocity[motor] = (uint32_t) ((float32_t) (abs(x - tmc5072->oldX[motor]) / (float32_t) 
+ 640              		.loc 1 250 4 view .LVU197
+ 250:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->velocity[motor] = (uint32_t) ((float32_t) (abs(x - tmc5072->oldX[motor]) / (float32_t) 
+ 641              		.loc 1 250 8 is_stmt 0 view .LVU198
+ 642 01f8 2121     		movs	r1, #33
+ 643              	.LVL52:
+ 250:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->velocity[motor] = (uint32_t) ((float32_t) (abs(x - tmc5072->oldX[motor]) / (float32_t) 
+ 644              		.loc 1 250 8 view .LVU199
+ 645 01fa FFF7FEFF 		bl	tmc5072_readInt
+ 646              	.LVL53:
+ 250:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->velocity[motor] = (uint32_t) ((float32_t) (abs(x - tmc5072->oldX[motor]) / (float32_t) 
+ 647              		.loc 1 250 8 view .LVU200
+ 648 01fe 0546     		mov	r5, r0
+ 649              	.LVL54:
+ 251:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->oldX[motor] = x;
+ 650              		.loc 1 251 4 is_stmt 1 view .LVU201
+ 251:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->oldX[motor] = x;
+ 651              		.loc 1 251 88 is_stmt 0 view .LVU202
+ 652 0200 3846     		mov	r0, r7
+ 653              	.LVL55:
+ 251:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->oldX[motor] = x;
+ 654              		.loc 1 251 88 view .LVU203
+ 655 0202 FFF7FEFF 		bl	__aeabi_ui2f
+ 656              	.LVL56:
+ 657 0206 0746     		mov	r7, r0
+ 658              	.LVL57:
+ 251:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->oldX[motor] = x;
+ 659              		.loc 1 251 62 view .LVU204
+ 660 0208 6068     		ldr	r0, [r4, #4]
+ 661 020a 281A     		subs	r0, r5, r0
+ 251:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->oldX[motor] = x;
+ 662              		.loc 1 251 43 view .LVU205
+ 663 020c 0028     		cmp	r0, #0
+ 664 020e B8BF     		it	lt
+ 665 0210 4042     		rsblt	r0, r0, #0
+ 666 0212 FFF7FEFF 		bl	__aeabi_i2f
+ 667              	.LVL58:
+ 668 0216 3946     		mov	r1, r7
+ 669 0218 FFF7FEFF 		bl	__aeabi_fdiv
+ 670              	.LVL59:
+ 251:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->oldX[motor] = x;
+ 671              		.loc 1 251 110 view .LVU206
+ 672 021c 0F49     		ldr	r1, .L43
+ 673 021e FFF7FEFF 		bl	__aeabi_fmul
+ 674              	.LVL60:
+ 251:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->oldX[motor] = x;
+ 675              		.loc 1 251 31 view .LVU207
+ 676 0222 FFF7FEFF 		bl	__aeabi_f2uiz
+ 677              	.LVL61:
+ 250:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->velocity[motor] = (uint32_t) ((float32_t) (abs(x - tmc5072->oldX[motor]) / (float32_t) 
+ 678              		.loc 1 250 8 view .LVU208
+ 679 0226 4121     		movs	r1, #65
+ 251:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->oldX[motor] = x;
+ 680              		.loc 1 251 31 view .LVU209
+ 681 0228 E060     		str	r0, [r4, #12]
+ 252:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		}
+ 682              		.loc 1 252 4 is_stmt 1 view .LVU210
+ 252:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		}
+ 683              		.loc 1 252 25 is_stmt 0 view .LVU211
+ 684 022a 6560     		str	r5, [r4, #4]
+ 248:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		{
+ 685              		.loc 1 248 50 is_stmt 1 view .LVU212
+ 686              	.LVL62:
+ 248:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		{
+ 687              		.loc 1 248 26 view .LVU213
+ 250:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->velocity[motor] = (uint32_t) ((float32_t) (abs(x - tmc5072->oldX[motor]) / (float32_t) 
+ 688              		.loc 1 250 4 view .LVU214
+ 250:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->velocity[motor] = (uint32_t) ((float32_t) (abs(x - tmc5072->oldX[motor]) / (float32_t) 
+ 689              		.loc 1 250 8 is_stmt 0 view .LVU215
+ 690 022c 2046     		mov	r0, r4
+ 691 022e FFF7FEFF 		bl	tmc5072_readInt
+ 692              	.LVL63:
+ 693 0232 0546     		mov	r5, r0
+ 694              	.LVL64:
+ 251:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->oldX[motor] = x;
+ 695              		.loc 1 251 4 is_stmt 1 view .LVU216
+ 251:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->oldX[motor] = x;
+ 696              		.loc 1 251 62 is_stmt 0 view .LVU217
+ 697 0234 A068     		ldr	r0, [r4, #8]
+ 698              	.LVL65:
+ 251:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->oldX[motor] = x;
+ 699              		.loc 1 251 62 view .LVU218
+ 700 0236 281A     		subs	r0, r5, r0
+ 251:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->oldX[motor] = x;
+ 701              		.loc 1 251 43 view .LVU219
+ 702 0238 0028     		cmp	r0, #0
+ 703 023a B8BF     		it	lt
+ 704 023c 4042     		rsblt	r0, r0, #0
+ 705 023e FFF7FEFF 		bl	__aeabi_i2f
+ 706              	.LVL66:
+ 707 0242 3946     		mov	r1, r7
+ 708 0244 FFF7FEFF 		bl	__aeabi_fdiv
+ 709              	.LVL67:
+ 251:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->oldX[motor] = x;
+ 710              		.loc 1 251 110 view .LVU220
+ 711 0248 0449     		ldr	r1, .L43
+ 712 024a FFF7FEFF 		bl	__aeabi_fmul
+ 713              	.LVL68:
+ 251:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->oldX[motor] = x;
+ 714              		.loc 1 251 31 view .LVU221
+ 715 024e FFF7FEFF 		bl	__aeabi_f2uiz
+ 716              	.LVL69:
+ 252:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		}
+ 717              		.loc 1 252 25 view .LVU222
+ 718 0252 A560     		str	r5, [r4, #8]
+ 251:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 			tmc5072->oldX[motor] = x;
+ 719              		.loc 1 251 31 view .LVU223
+ 720 0254 2061     		str	r0, [r4, #16]
+ 252:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		}
+ 721              		.loc 1 252 4 is_stmt 1 view .LVU224
+ 248:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		{
+ 722              		.loc 1 248 50 view .LVU225
+ 723              	.LVL70:
+ 248:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		{
+ 724              		.loc 1 248 26 view .LVU226
+ 725              	.LBE14:
+ 254:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	}
+ 726              		.loc 1 254 3 view .LVU227
+ 254:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	}
+ 727              		.loc 1 254 21 is_stmt 0 view .LVU228
+ 728 0256 6661     		str	r6, [r4, #20]
+ 729 0258 ABE7     		b	.L23
+ 730              	.L44:
+ 731 025a 00BF     		.align	2
+ 732              	.L43:
+ 733 025c 6F128344 		.word	1149440623
+ 734              		.cfi_endproc
+ 735              	.LFE6:
+ 737              		.align	1
+ 738              		.global	tmc5072_reset
+ 739              		.syntax unified
+ 740              		.thumb
+ 741              		.thumb_func
+ 742              		.fpu softvfp
+ 744              	tmc5072_reset:
+ 745              	.LVL71:
+ 746              	.LFB7:
+ 257:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 258:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //void tmc5072_periodicJob(uint8_t motor, uint32_t tick, TMC5072TypeDef *tmc5072, ConfigurationType
+ 259:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //{
+ 260:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	int xActual;
+ 261:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	uint32_t tickDiff;
+ 262:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //
+ 263:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	if(TMC5072_config->state != CONFIG_READY)
+ 264:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	{
+ 265:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //		tmc5072_writeConfiguration(tmc5072, TMC5072_config);
+ 266:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //		return;
+ 267:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	}
+ 268:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //
+ 269:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	if((tickDiff = tick - tmc5072->oldTick) >= 5)
+ 270:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	{
+ 271:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //
+ 272:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //		xActual = tmc5072_readInt(0, TMC5072_XACTUAL(motor));
+ 273:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //		TMC5072_config->shadowRegister[TMC5072_XACTUAL(motor)] = xActual;
+ 274:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //		tmc5072->velocity[motor] = (int) ((float) (abs(xActual-tmc5072->oldX[motor]) / (float) tickDiff
+ 275:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //		tmc5072->oldX[motor] = xActual;
+ 276:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //
+ 277:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //		// Not per motor:
+ 278:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //		/*xActual = tmc5072_readInt(motor, TMC5072_XACTUAL_1);
+ 279:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //		TMC562v3_config->shadowRegister[TMC5072_XACTUAL_1] = xActual;
+ 280:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //		TMC562V3.velocityMotor1 = (int) ((float) (abs(xActual-oldX[0]) / (float) t) * (float) 1048.576)
+ 281:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //		tmc5072->oldX = xActual;
+ 282:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //
+ 283:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //		xActual = readInt(TMC5072_XACTUAL_2);
+ 284:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //		TMC562v3_config->shadowRegister[TMC5072_XACTUAL_2] = xActual;
+ 285:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //		TMC562V3.velocityMotor2 = (int) ((float) (abs(xActual-oldX[1]) / (float) t) * (float) 1048.576)
+ 286:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //		tmc5072->oldX = xActual;*/
+ 287:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //
+ 288:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //		tmc5072->oldTick = tick;
+ 289:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	}
+ 290:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //}
+ 291:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 292:TMC-API/tmc/ic/TMC5072/TMC5072.c **** uint8_t tmc5072_reset(TMC5072TypeDef *tmc5072)
+ 293:TMC-API/tmc/ic/TMC5072/TMC5072.c **** {
+ 747              		.loc 1 293 1 is_stmt 1 view -0
+ 748              		.cfi_startproc
+ 749              		@ args = 0, pretend = 0, frame = 0
+ 750              		@ frame_needed = 0, uses_anonymous_args = 0
+ 294:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	if(tmc5072->config->state != CONFIG_READY)
+ 751              		.loc 1 294 2 view .LVU230
+ 293:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	if(tmc5072->config->state != CONFIG_READY)
+ 752              		.loc 1 293 1 is_stmt 0 view .LVU231
+ 753 0260 30B5     		push	{r4, r5, lr}
+ 754              	.LCFI10:
+ 755              		.cfi_def_cfa_offset 12
+ 756              		.cfi_offset 4, -12
+ 757              		.cfi_offset 5, -8
+ 758              		.cfi_offset 14, -4
+ 759              		.loc 1 294 12 view .LVU232
+ 760 0262 0168     		ldr	r1, [r0]
+ 761              		.loc 1 294 4 view .LVU233
+ 762 0264 0A78     		ldrb	r2, [r1]	@ zero_extendqisi2
+ 763 0266 82B9     		cbnz	r2, .L48
+ 764 0268 00F50673 		add	r3, r0, #536
+ 765 026c 0D1D     		adds	r5, r1, #4
+ 766 026e 00F52670 		add	r0, r0, #664
+ 767              	.LVL72:
+ 768              	.L47:
+ 769              	.LBB15:
+ 295:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		return false;
+ 296:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 297:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	// Reset the dirty bits and wipe the shadow registers
+ 298:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	for(size_t i = 0; i < TMC5072_REGISTER_COUNT; i++)
+ 299:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 300:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		tmc5072->registerAccess[i] &= ~TMC_ACCESS_DIRTY;
+ 770              		.loc 1 300 3 is_stmt 1 discriminator 3 view .LVU234
+ 771              		.loc 1 300 30 is_stmt 0 discriminator 3 view .LVU235
+ 772 0272 1C78     		ldrb	r4, [r3]	@ zero_extendqisi2
+ 773 0274 24F00804 		bic	r4, r4, #8
+ 774 0278 03F8014B 		strb	r4, [r3], #1
+ 775              	.LVL73:
+ 301:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		tmc5072->config->shadowRegister[i] = 0;
+ 776              		.loc 1 301 3 is_stmt 1 discriminator 3 view .LVU236
+ 298:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 777              		.loc 1 298 2 is_stmt 0 discriminator 3 view .LVU237
+ 778 027c 8342     		cmp	r3, r0
+ 779              		.loc 1 301 38 discriminator 3 view .LVU238
+ 780 027e 45F8042B 		str	r2, [r5], #4
+ 298:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 781              		.loc 1 298 48 is_stmt 1 discriminator 3 view .LVU239
+ 782              	.LVL74:
+ 298:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 783              		.loc 1 298 20 discriminator 3 view .LVU240
+ 298:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	{
+ 784              		.loc 1 298 2 is_stmt 0 discriminator 3 view .LVU241
+ 785 0282 F6D1     		bne	.L47
+ 786              	.LBE15:
+ 302:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	}
+ 303:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 304:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072->config->state        = CONFIG_RESET;
+ 787              		.loc 1 304 2 is_stmt 1 view .LVU242
+ 305:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072->config->configIndex  = 0;
+ 788              		.loc 1 305 2 view .LVU243
+ 304:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072->config->configIndex  = 0;
+ 789              		.loc 1 304 32 is_stmt 0 view .LVU244
+ 790 0284 0120     		movs	r0, #1
+ 791              	.LVL75:
+ 304:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072->config->configIndex  = 0;
+ 792              		.loc 1 304 32 view .LVU245
+ 793 0286 0880     		strh	r0, [r1]	@ movhi
+ 306:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 307:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	return true;
+ 794              		.loc 1 307 2 is_stmt 1 view .LVU246
+ 795              	.LVL76:
+ 796              	.L46:
+ 308:TMC-API/tmc/ic/TMC5072/TMC5072.c **** }
+ 797              		.loc 1 308 1 is_stmt 0 view .LVU247
+ 798 0288 30BD     		pop	{r4, r5, pc}
+ 799              	.LVL77:
+ 800              	.L48:
+ 295:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 801              		.loc 1 295 10 view .LVU248
+ 802 028a 0020     		movs	r0, #0
+ 803              	.LVL78:
+ 295:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 804              		.loc 1 295 10 view .LVU249
+ 805 028c FCE7     		b	.L46
+ 806              		.cfi_endproc
+ 807              	.LFE7:
+ 809              		.align	1
+ 810              		.global	tmc5072_restore
+ 811              		.syntax unified
+ 812              		.thumb
+ 813              		.thumb_func
+ 814              		.fpu softvfp
+ 816              	tmc5072_restore:
+ 817              	.LVL79:
+ 818              	.LFB8:
+ 309:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 310:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //uint8_t tmc5072_reset(ConfigurationTypeDef *TMC5072_config)
+ 311:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //{
+ 312:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	if(TMC5072_config->state != CONFIG_READY)
+ 313:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //		return 0;
+ 314:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //
+ 315:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	TMC5072_config->state        = CONFIG_RESET;
+ 316:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	TMC5072_config->configIndex  = 0;
+ 317:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //
+ 318:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //	return 1;
+ 319:TMC-API/tmc/ic/TMC5072/TMC5072.c **** //}
+ 320:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 321:TMC-API/tmc/ic/TMC5072/TMC5072.c **** uint8_t tmc5072_restore(TMC5072TypeDef *tmc5072)
+ 322:TMC-API/tmc/ic/TMC5072/TMC5072.c **** {
+ 819              		.loc 1 322 1 is_stmt 1 view -0
+ 820              		.cfi_startproc
+ 821              		@ args = 0, pretend = 0, frame = 0
+ 822              		@ frame_needed = 0, uses_anonymous_args = 0
+ 823              		@ link register save eliminated.
+ 323:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	if(tmc5072->config->state != CONFIG_READY)
+ 824              		.loc 1 323 2 view .LVU251
+ 825              		.loc 1 323 12 is_stmt 0 view .LVU252
+ 826 028e 0368     		ldr	r3, [r0]
+ 827              		.loc 1 323 4 view .LVU253
+ 828 0290 1A78     		ldrb	r2, [r3]	@ zero_extendqisi2
+ 829 0292 1AB9     		cbnz	r2, .L52
+ 324:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		return 0;
+ 325:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 326:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072->config->state        = CONFIG_RESTORE;
+ 830              		.loc 1 326 2 is_stmt 1 view .LVU254
+ 327:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072->config->configIndex  = 0;
+ 831              		.loc 1 327 2 view .LVU255
+ 326:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072->config->configIndex  = 0;
+ 832              		.loc 1 326 32 is_stmt 0 view .LVU256
+ 833 0294 0222     		movs	r2, #2
+ 834 0296 1A80     		strh	r2, [r3]	@ movhi
+ 328:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 329:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	return 1;
+ 835              		.loc 1 329 2 is_stmt 1 view .LVU257
+ 836              		.loc 1 329 9 is_stmt 0 view .LVU258
+ 837 0298 0120     		movs	r0, #1
+ 838              	.LVL80:
+ 839              		.loc 1 329 9 view .LVU259
+ 840 029a 7047     		bx	lr
+ 841              	.LVL81:
+ 842              	.L52:
+ 324:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 843              		.loc 1 324 10 view .LVU260
+ 844 029c 0020     		movs	r0, #0
+ 845              	.LVL82:
+ 330:TMC-API/tmc/ic/TMC5072/TMC5072.c **** }
+ 846              		.loc 1 330 1 view .LVU261
+ 847 029e 7047     		bx	lr
+ 848              		.cfi_endproc
+ 849              	.LFE8:
+ 851              		.align	1
+ 852              		.global	tmc5072_setRegisterResetState
+ 853              		.syntax unified
+ 854              		.thumb
+ 855              		.thumb_func
+ 856              		.fpu softvfp
+ 858              	tmc5072_setRegisterResetState:
+ 859              	.LVL83:
+ 860              	.LFB9:
+ 331:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 332:TMC-API/tmc/ic/TMC5072/TMC5072.c **** void tmc5072_setRegisterResetState(TMC5072TypeDef *tmc5072, const int32_t *resetState)
+ 333:TMC-API/tmc/ic/TMC5072/TMC5072.c **** {
+ 861              		.loc 1 333 1 is_stmt 1 view -0
+ 862              		.cfi_startproc
+ 863              		@ args = 0, pretend = 0, frame = 0
+ 864              		@ frame_needed = 0, uses_anonymous_args = 0
+ 865              		@ link register save eliminated.
+ 334:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	for(size_t i = 0; i < TMC5072_REGISTER_COUNT; i++)
+ 866              		.loc 1 334 2 view .LVU263
+ 867              	.LBB16:
+ 868              		.loc 1 334 6 view .LVU264
+ 869              		.loc 1 334 20 view .LVU265
+ 870 02a0 0B1F     		subs	r3, r1, #4
+ 871 02a2 1830     		adds	r0, r0, #24
+ 872              	.LVL84:
+ 873              		.loc 1 334 20 is_stmt 0 view .LVU266
+ 874 02a4 01F5FE71 		add	r1, r1, #508
+ 875              	.LVL85:
+ 876              	.L54:
+ 335:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		tmc5072->registerResetState[i] = resetState[i];
+ 877              		.loc 1 335 3 is_stmt 1 discriminator 3 view .LVU267
+ 878              		.loc 1 335 46 is_stmt 0 discriminator 3 view .LVU268
+ 879 02a8 53F8042F 		ldr	r2, [r3, #4]!
+ 880              		.loc 1 335 34 discriminator 3 view .LVU269
+ 881 02ac 40F8042B 		str	r2, [r0], #4
+ 334:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	for(size_t i = 0; i < TMC5072_REGISTER_COUNT; i++)
+ 882              		.loc 1 334 48 is_stmt 1 discriminator 3 view .LVU270
+ 334:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	for(size_t i = 0; i < TMC5072_REGISTER_COUNT; i++)
+ 883              		.loc 1 334 20 discriminator 3 view .LVU271
+ 334:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	for(size_t i = 0; i < TMC5072_REGISTER_COUNT; i++)
+ 884              		.loc 1 334 2 is_stmt 0 discriminator 3 view .LVU272
+ 885 02b0 8B42     		cmp	r3, r1
+ 886 02b2 F9D1     		bne	.L54
+ 887              	.LBE16:
+ 336:TMC-API/tmc/ic/TMC5072/TMC5072.c **** }
+ 888              		.loc 1 336 1 view .LVU273
+ 889 02b4 7047     		bx	lr
+ 890              		.cfi_endproc
+ 891              	.LFE9:
+ 893              		.align	1
+ 894              		.global	tmc5072_setCallback
+ 895              		.syntax unified
+ 896              		.thumb
+ 897              		.thumb_func
+ 898              		.fpu softvfp
+ 900              	tmc5072_setCallback:
+ 901              	.LVL86:
+ 902              	.LFB10:
+ 337:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 338:TMC-API/tmc/ic/TMC5072/TMC5072.c **** void tmc5072_setCallback(TMC5072TypeDef *tmc5072, tmc5072_callback callback)
+ 339:TMC-API/tmc/ic/TMC5072/TMC5072.c **** {
+ 903              		.loc 1 339 1 is_stmt 1 view -0
+ 904              		.cfi_startproc
+ 905              		@ args = 0, pretend = 0, frame = 0
+ 906              		@ frame_needed = 0, uses_anonymous_args = 0
+ 907              		@ link register save eliminated.
+ 340:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072->config->callback = (tmc_callback_config) callback;
+ 908              		.loc 1 340 2 view .LVU275
+ 909              		.loc 1 340 28 is_stmt 0 view .LVU276
+ 910 02b6 0368     		ldr	r3, [r0]
+ 911 02b8 C3F80C12 		str	r1, [r3, #524]
+ 341:TMC-API/tmc/ic/TMC5072/TMC5072.c **** }
+ 912              		.loc 1 341 1 view .LVU277
+ 913 02bc 7047     		bx	lr
+ 914              		.cfi_endproc
+ 915              	.LFE10:
+ 917              		.align	1
+ 918              		.global	tmc5072_rotate
+ 919              		.syntax unified
+ 920              		.thumb
+ 921              		.thumb_func
+ 922              		.fpu softvfp
+ 924              	tmc5072_rotate:
+ 925              	.LVL87:
+ 926              	.LFB11:
+ 342:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 343:TMC-API/tmc/ic/TMC5072/TMC5072.c **** void tmc5072_rotate(TMC5072TypeDef *tmc5072, uint8_t motor, int32_t velocity)
+ 344:TMC-API/tmc/ic/TMC5072/TMC5072.c **** {
+ 927              		.loc 1 344 1 is_stmt 1 view -0
+ 928              		.cfi_startproc
+ 929              		@ args = 0, pretend = 0, frame = 0
+ 930              		@ frame_needed = 0, uses_anonymous_args = 0
+ 345:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	if(motor >= TMC5072_MOTORS)
+ 931              		.loc 1 345 2 view .LVU279
+ 932              		.loc 1 345 4 is_stmt 0 view .LVU280
+ 933 02be 0129     		cmp	r1, #1
+ 344:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	if(motor >= TMC5072_MOTORS)
+ 934              		.loc 1 344 1 view .LVU281
+ 935 02c0 73B5     		push	{r0, r1, r4, r5, r6, lr}
+ 936              	.LCFI11:
+ 937              		.cfi_def_cfa_offset 24
+ 938              		.cfi_offset 4, -16
+ 939              		.cfi_offset 5, -12
+ 940              		.cfi_offset 6, -8
+ 941              		.cfi_offset 14, -4
+ 344:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	if(motor >= TMC5072_MOTORS)
+ 942              		.loc 1 344 1 view .LVU282
+ 943 02c2 0646     		mov	r6, r0
+ 944 02c4 1546     		mov	r5, r2
+ 945              		.loc 1 345 4 view .LVU283
+ 946 02c6 16D8     		bhi	.L57
+ 947              	.LVL88:
+ 948              	.LBB19:
+ 949              	.LBI19:
+ 343:TMC-API/tmc/ic/TMC5072/TMC5072.c **** {
+ 950              		.loc 1 343 6 is_stmt 1 view .LVU284
+ 951              	.LBB20:
+ 346:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		return;
+ 347:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 348:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072_writeInt(tmc5072, TMC5072_VMAX(motor), abs(velocity));
+ 952              		.loc 1 348 2 view .LVU285
+ 953              		.loc 1 348 28 is_stmt 0 view .LVU286
+ 954 02c8 2024     		movs	r4, #32
+ 955 02ca 8C40     		lsls	r4, r4, r1
+ 956 02cc 44F00701 		orr	r1, r4, #7
+ 957              	.LVL89:
+ 958              		.loc 1 348 2 view .LVU287
+ 959 02d0 82EAE272 		eor	r2, r2, r2, asr #31
+ 960              	.LVL90:
+ 961              		.loc 1 348 2 view .LVU288
+ 962 02d4 A2EBE572 		sub	r2, r2, r5, asr #31
+ 963 02d8 C9B2     		uxtb	r1, r1
+ 964 02da FFF7FEFF 		bl	tmc5072_writeInt
+ 965              	.LVL91:
+ 349:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072_writeDatagram(tmc5072, TMC5072_RAMPMODE(motor), 0, 0, 0, (velocity >= 0) ? TMC5072_MODE_VE
+ 966              		.loc 1 349 2 is_stmt 1 view .LVU289
+ 967 02de 002D     		cmp	r5, #0
+ 968 02e0 ACBF     		ite	ge
+ 969 02e2 0123     		movge	r3, #1
+ 970 02e4 0223     		movlt	r3, #2
+ 971 02e6 0193     		str	r3, [sp, #4]
+ 972 02e8 0023     		movs	r3, #0
+ 973 02ea 0093     		str	r3, [sp]
+ 974 02ec 1A46     		mov	r2, r3
+ 975 02ee E1B2     		uxtb	r1, r4
+ 976 02f0 3046     		mov	r0, r6
+ 977 02f2 FFF7FEFF 		bl	tmc5072_writeDatagram
+ 978              	.LVL92:
+ 979              	.L57:
+ 980              		.loc 1 349 2 is_stmt 0 view .LVU290
+ 981              	.LBE20:
+ 982              	.LBE19:
+ 350:TMC-API/tmc/ic/TMC5072/TMC5072.c **** }
+ 983              		.loc 1 350 1 view .LVU291
+ 984 02f6 02B0     		add	sp, sp, #8
+ 985              	.LCFI12:
+ 986              		.cfi_def_cfa_offset 16
+ 987              		@ sp needed
+ 988 02f8 70BD     		pop	{r4, r5, r6, pc}
+ 989              		.loc 1 350 1 view .LVU292
+ 990              		.cfi_endproc
+ 991              	.LFE11:
+ 993              		.align	1
+ 994              		.global	tmc5072_right
+ 995              		.syntax unified
+ 996              		.thumb
+ 997              		.thumb_func
+ 998              		.fpu softvfp
+ 1000              	tmc5072_right:
+ 1001              	.LVL93:
+ 1002              	.LFB12:
+ 351:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 352:TMC-API/tmc/ic/TMC5072/TMC5072.c **** void tmc5072_right(TMC5072TypeDef *tmc5072, uint8_t motor, int32_t velocity)
+ 353:TMC-API/tmc/ic/TMC5072/TMC5072.c **** {
+ 1003              		.loc 1 353 1 is_stmt 1 view -0
+ 1004              		.cfi_startproc
+ 1005              		@ args = 0, pretend = 0, frame = 0
+ 1006              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1007              		@ link register save eliminated.
+ 354:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	return tmc5072_rotate(tmc5072, motor, velocity);
+ 1008              		.loc 1 354 2 view .LVU294
+ 1009              		.loc 1 354 9 is_stmt 0 view .LVU295
+ 1010 02fa FFF7FEBF 		b	tmc5072_rotate
+ 1011              	.LVL94:
+ 1012              		.loc 1 354 9 view .LVU296
+ 1013              		.cfi_endproc
+ 1014              	.LFE12:
+ 1016              		.align	1
+ 1017              		.global	tmc5072_left
+ 1018              		.syntax unified
+ 1019              		.thumb
+ 1020              		.thumb_func
+ 1021              		.fpu softvfp
+ 1023              	tmc5072_left:
+ 1024              	.LVL95:
+ 1025              	.LFB13:
+ 355:TMC-API/tmc/ic/TMC5072/TMC5072.c **** }
+ 356:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 357:TMC-API/tmc/ic/TMC5072/TMC5072.c **** void tmc5072_left(TMC5072TypeDef *tmc5072, uint8_t motor, int32_t velocity)
+ 358:TMC-API/tmc/ic/TMC5072/TMC5072.c **** {
+ 1026              		.loc 1 358 1 is_stmt 1 view -0
+ 1027              		.cfi_startproc
+ 1028              		@ args = 0, pretend = 0, frame = 0
+ 1029              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1030              		@ link register save eliminated.
+ 359:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	return tmc5072_rotate(tmc5072, motor, -velocity);
+ 1031              		.loc 1 359 2 view .LVU298
+ 1032              		.loc 1 359 9 is_stmt 0 view .LVU299
+ 1033 02fe 5242     		rsbs	r2, r2, #0
+ 1034              	.LVL96:
+ 1035              		.loc 1 359 9 view .LVU300
+ 1036 0300 FFF7FEBF 		b	tmc5072_rotate
+ 1037              	.LVL97:
+ 1038              		.loc 1 359 9 view .LVU301
+ 1039              		.cfi_endproc
+ 1040              	.LFE13:
+ 1042              		.align	1
+ 1043              		.global	tmc5072_stop
+ 1044              		.syntax unified
+ 1045              		.thumb
+ 1046              		.thumb_func
+ 1047              		.fpu softvfp
+ 1049              	tmc5072_stop:
+ 1050              	.LVL98:
+ 1051              	.LFB14:
+ 360:TMC-API/tmc/ic/TMC5072/TMC5072.c **** }
+ 361:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 362:TMC-API/tmc/ic/TMC5072/TMC5072.c **** void tmc5072_stop(TMC5072TypeDef *tmc5072, uint8_t motor)
+ 363:TMC-API/tmc/ic/TMC5072/TMC5072.c **** {
+ 1052              		.loc 1 363 1 is_stmt 1 view -0
+ 1053              		.cfi_startproc
+ 1054              		@ args = 0, pretend = 0, frame = 0
+ 1055              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1056              		@ link register save eliminated.
+ 364:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	return tmc5072_rotate(tmc5072, motor, 0);
+ 1057              		.loc 1 364 2 view .LVU303
+ 1058              		.loc 1 364 9 is_stmt 0 view .LVU304
+ 1059 0304 0022     		movs	r2, #0
+ 1060 0306 FFF7FEBF 		b	tmc5072_rotate
+ 1061              	.LVL99:
+ 1062              		.loc 1 364 9 view .LVU305
+ 1063              		.cfi_endproc
+ 1064              	.LFE14:
+ 1066              		.align	1
+ 1067              		.global	tmc5072_moveTo
+ 1068              		.syntax unified
+ 1069              		.thumb
+ 1070              		.thumb_func
+ 1071              		.fpu softvfp
+ 1073              	tmc5072_moveTo:
+ 1074              	.LVL100:
+ 1075              	.LFB15:
+ 365:TMC-API/tmc/ic/TMC5072/TMC5072.c **** }
+ 366:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 367:TMC-API/tmc/ic/TMC5072/TMC5072.c **** void tmc5072_moveTo(TMC5072TypeDef *tmc5072, uint8_t motor, int32_t position, uint32_t velocityMax)
+ 368:TMC-API/tmc/ic/TMC5072/TMC5072.c **** {
+ 1076              		.loc 1 368 1 is_stmt 1 view -0
+ 1077              		.cfi_startproc
+ 1078              		@ args = 0, pretend = 0, frame = 0
+ 1079              		@ frame_needed = 0, uses_anonymous_args = 0
+ 369:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	if(motor >= TMC5072_MOTORS)
+ 1080              		.loc 1 369 2 view .LVU307
+ 1081              		.loc 1 369 4 is_stmt 0 view .LVU308
+ 1082 030a 0129     		cmp	r1, #1
+ 368:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	if(motor >= TMC5072_MOTORS)
+ 1083              		.loc 1 368 1 view .LVU309
+ 1084 030c F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 1085              	.LCFI13:
+ 1086              		.cfi_def_cfa_offset 24
+ 1087              		.cfi_offset 3, -24
+ 1088              		.cfi_offset 4, -20
+ 1089              		.cfi_offset 5, -16
+ 1090              		.cfi_offset 6, -12
+ 1091              		.cfi_offset 7, -8
+ 1092              		.cfi_offset 14, -4
+ 368:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	if(motor >= TMC5072_MOTORS)
+ 1093              		.loc 1 368 1 view .LVU310
+ 1094 030e 0546     		mov	r5, r0
+ 1095 0310 1646     		mov	r6, r2
+ 1096 0312 1F46     		mov	r7, r3
+ 1097              		.loc 1 369 4 view .LVU311
+ 1098 0314 16D8     		bhi	.L64
+ 1099              	.LVL101:
+ 1100              	.LBB23:
+ 1101              	.LBI23:
+ 367:TMC-API/tmc/ic/TMC5072/TMC5072.c **** {
+ 1102              		.loc 1 367 6 is_stmt 1 view .LVU312
+ 1103              	.LBB24:
+ 370:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 		return;
+ 371:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 372:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072_writeInt(tmc5072, TMC5072_RAMPMODE(motor), TMC5072_MODE_POSITION);
+ 1104              		.loc 1 372 2 view .LVU313
+ 1105              		.loc 1 372 28 is_stmt 0 view .LVU314
+ 1106 0316 2024     		movs	r4, #32
+ 1107 0318 8C40     		lsls	r4, r4, r1
+ 1108              		.loc 1 372 2 view .LVU315
+ 1109 031a E1B2     		uxtb	r1, r4
+ 1110              	.LVL102:
+ 1111              		.loc 1 372 2 view .LVU316
+ 1112 031c 0022     		movs	r2, #0
+ 1113              	.LVL103:
+ 373:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072_writeInt(tmc5072, TMC5072_VMAX(motor), velocityMax);
+ 1114              		.loc 1 373 28 view .LVU317
+ 1115 031e 64B2     		sxtb	r4, r4
+ 372:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072_writeInt(tmc5072, TMC5072_VMAX(motor), velocityMax);
+ 1116              		.loc 1 372 2 view .LVU318
+ 1117 0320 FFF7FEFF 		bl	tmc5072_writeInt
+ 1118              	.LVL104:
+ 1119              		.loc 1 373 2 is_stmt 1 view .LVU319
+ 1120              		.loc 1 373 28 is_stmt 0 view .LVU320
+ 1121 0324 44F00701 		orr	r1, r4, #7
+ 1122              		.loc 1 373 2 view .LVU321
+ 1123 0328 3A46     		mov	r2, r7
+ 1124 032a 2846     		mov	r0, r5
+ 1125 032c C9B2     		uxtb	r1, r1
+ 1126 032e FFF7FEFF 		bl	tmc5072_writeInt
+ 1127              	.LVL105:
+ 374:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072_writeInt(tmc5072, TMC5072_XTARGET(motor), position);
+ 1128              		.loc 1 374 2 is_stmt 1 view .LVU322
+ 1129              		.loc 1 374 28 is_stmt 0 view .LVU323
+ 1130 0332 44F00D01 		orr	r1, r4, #13
+ 1131              		.loc 1 374 2 view .LVU324
+ 1132 0336 3246     		mov	r2, r6
+ 1133 0338 2846     		mov	r0, r5
+ 1134 033a C9B2     		uxtb	r1, r1
+ 1135              	.LBE24:
+ 1136              	.LBE23:
+ 375:TMC-API/tmc/ic/TMC5072/TMC5072.c **** }
+ 1137              		.loc 1 375 1 view .LVU325
+ 1138 033c BDE8F840 		pop	{r3, r4, r5, r6, r7, lr}
+ 1139              	.LCFI14:
+ 1140              		.cfi_remember_state
+ 1141              		.cfi_restore 14
+ 1142              		.cfi_restore 7
+ 1143              		.cfi_restore 6
+ 1144              		.cfi_restore 5
+ 1145              		.cfi_restore 4
+ 1146              		.cfi_restore 3
+ 1147              		.cfi_def_cfa_offset 0
+ 1148              	.LVL106:
+ 1149              	.LBB26:
+ 1150              	.LBB25:
+ 374:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072_writeInt(tmc5072, TMC5072_XTARGET(motor), position);
+ 1151              		.loc 1 374 2 view .LVU326
+ 1152 0340 FFF7FEBF 		b	tmc5072_writeInt
+ 1153              	.LVL107:
+ 1154              	.L64:
+ 1155              	.LCFI15:
+ 1156              		.cfi_restore_state
+ 374:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	tmc5072_writeInt(tmc5072, TMC5072_XTARGET(motor), position);
+ 1157              		.loc 1 374 2 view .LVU327
+ 1158              	.LBE25:
+ 1159              	.LBE26:
+ 1160              		.loc 1 375 1 view .LVU328
+ 1161 0344 F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 1162              		.loc 1 375 1 view .LVU329
+ 1163              		.cfi_endproc
+ 1164              	.LFE15:
+ 1166              		.align	1
+ 1167              		.global	tmc5072_moveBy
+ 1168              		.syntax unified
+ 1169              		.thumb
+ 1170              		.thumb_func
+ 1171              		.fpu softvfp
+ 1173              	tmc5072_moveBy:
+ 1174              	.LVL108:
+ 1175              	.LFB16:
+ 376:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 377:TMC-API/tmc/ic/TMC5072/TMC5072.c **** void tmc5072_moveBy(TMC5072TypeDef *tmc5072, uint8_t motor, uint32_t velocityMax, int32_t *ticks)
+ 378:TMC-API/tmc/ic/TMC5072/TMC5072.c **** {
+ 1176              		.loc 1 378 1 is_stmt 1 view -0
+ 1177              		.cfi_startproc
+ 1178              		@ args = 0, pretend = 0, frame = 0
+ 1179              		@ frame_needed = 0, uses_anonymous_args = 0
+ 379:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	// determine actual position and add numbers of ticks to move
+ 380:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	*ticks += tmc5072_readInt(tmc5072, TMC5072_XACTUAL(motor));
+ 1180              		.loc 1 380 2 view .LVU331
+ 378:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	// determine actual position and add numbers of ticks to move
+ 1181              		.loc 1 378 1 is_stmt 0 view .LVU332
+ 1182 0346 2DE9F041 		push	{r4, r5, r6, r7, r8, lr}
+ 1183              	.LCFI16:
+ 1184              		.cfi_def_cfa_offset 24
+ 1185              		.cfi_offset 4, -24
+ 1186              		.cfi_offset 5, -20
+ 1187              		.cfi_offset 6, -16
+ 1188              		.cfi_offset 7, -12
+ 1189              		.cfi_offset 8, -8
+ 1190              		.cfi_offset 14, -4
+ 1191              		.loc 1 380 37 view .LVU333
+ 1192 034a 2024     		movs	r4, #32
+ 1193 034c 8C40     		lsls	r4, r4, r1
+ 1194 034e 44F00104 		orr	r4, r4, #1
+ 378:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	// determine actual position and add numbers of ticks to move
+ 1195              		.loc 1 378 1 view .LVU334
+ 1196 0352 1E46     		mov	r6, r3
+ 1197 0354 0D46     		mov	r5, r1
+ 1198              		.loc 1 380 12 view .LVU335
+ 1199 0356 E1B2     		uxtb	r1, r4
+ 1200              	.LVL109:
+ 378:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	// determine actual position and add numbers of ticks to move
+ 1201              		.loc 1 378 1 view .LVU336
+ 1202 0358 9046     		mov	r8, r2
+ 1203 035a 0746     		mov	r7, r0
+ 1204              		.loc 1 380 12 view .LVU337
+ 1205 035c FFF7FEFF 		bl	tmc5072_readInt
+ 1206              	.LVL110:
+ 1207              		.loc 1 380 9 view .LVU338
+ 1208 0360 3268     		ldr	r2, [r6]
+ 1209 0362 0244     		add	r2, r2, r0
+ 1210 0364 3260     		str	r2, [r6]
+ 381:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 
+ 382:TMC-API/tmc/ic/TMC5072/TMC5072.c **** 	return tmc5072_moveTo(tmc5072, motor, *ticks, velocityMax);
+ 1211              		.loc 1 382 2 is_stmt 1 view .LVU339
+ 1212              		.loc 1 382 9 is_stmt 0 view .LVU340
+ 1213 0366 4346     		mov	r3, r8
+ 1214 0368 2946     		mov	r1, r5
+ 1215 036a 3846     		mov	r0, r7
+ 383:TMC-API/tmc/ic/TMC5072/TMC5072.c **** }
+ 1216              		.loc 1 383 1 view .LVU341
+ 1217 036c BDE8F041 		pop	{r4, r5, r6, r7, r8, lr}
+ 1218              	.LCFI17:
+ 1219              		.cfi_restore 14
+ 1220              		.cfi_restore 8
+ 1221              		.cfi_restore 7
+ 1222              		.cfi_restore 6
+ 1223              		.cfi_restore 5
+ 1224              		.cfi_restore 4
+ 1225              		.cfi_def_cfa_offset 0
+ 1226              	.LVL111:
+ 382:TMC-API/tmc/ic/TMC5072/TMC5072.c **** }
+ 1227              		.loc 1 382 9 view .LVU342
+ 1228 0370 FFF7FEBF 		b	tmc5072_moveTo
+ 1229              	.LVL112:
+ 382:TMC-API/tmc/ic/TMC5072/TMC5072.c **** }
+ 1230              		.loc 1 382 9 view .LVU343
+ 1231              		.cfi_endproc
+ 1232              	.LFE16:
+ 1234              		.section	.rodata
+ 1235              		.align	2
+ 1236              		.set	.LANCHOR0,. + 0
+ 1237              	.LC0:
+ 1238 0000 00000000 		.ascii	"\000\000\000\000\000"
+ 1238      00
+ 1241              	tmc5072_defaultRegisterAccess:
+ 1242 0005 03010102 		.ascii	"\003\001\001\002\023\002\000\000\000\000\000\000\000"
+ 1242      13020000 
+ 1242      00000000 
+ 1242      00
+ 1243 0012 00000002 		.ascii	"\000\000\000\002\001\000\000\000\000\000\000\002\001"
+ 1243      01000000 
+ 1243      00000002 
+ 1243      01
+ 1244 001f 00000000 		.ascii	"\000\000\000\000\000\000\003\003\001\002\002\002\002"
+ 1244      00000303 
+ 1244      01020202 
+ 1244      02
+ 1245 002c 02020002 		.ascii	"\002\002\000\002\002\002\003\000\000\002\002\002\002"
+ 1245      02020300 
+ 1245      00020202 
+ 1245      02
+ 1246 0039 03010100 		.ascii	"\003\001\001\000\003\003\002\001\001\000\000\000\003"
+ 1246      03030201 
+ 1246      01000000 
+ 1246      03
+ 1247 0046 03010202 		.ascii	"\003\001\002\002\002\002\002\002\000\002\002\002\003"
+ 1247      02020202 
+ 1247      00020202 
+ 1247      03
+ 1248 0053 00000202 		.ascii	"\000\000\002\002\002\002\003\001\001\000\003\003\002"
+ 1248      02020301 
+ 1248      01000303 
+ 1248      02
+ 1249 0060 01010000 		.ascii	"\001\001\000\000\000BBBBBBBBBB\001\001\003\002\002\001"
+ 1249      00424242 
+ 1249      42424242 
+ 1249      42424201 
+ 1249      01030202 
+ 1250 0075 00000000 		.ascii	"\000\000\000\000\000\000\000\000\000\000\001\001\003"
+ 1250      00000000 
+ 1250      00000101 
+ 1250      03
+ 1251 0082 020201   		.ascii	"\002\002\001"
+ 1252 0085 000000   		.space	3
+ 1255              	tmc5072_RegisterConstants:
+ 1256 0088 60       		.byte	96
+ 1257 0089 000000   		.space	3
+ 1258 008c 54B5AAAA 		.word	-1431653036
+ 1259 0090 61       		.byte	97
+ 1260 0091 000000   		.space	3
+ 1261 0094 AA54954A 		.word	1251300522
+ 1262 0098 62       		.byte	98
+ 1263 0099 000000   		.space	3
+ 1264 009c 29294924 		.word	608774441
+ 1265 00a0 63       		.byte	99
+ 1266 00a1 000000   		.space	3
+ 1267 00a4 22421010 		.word	269500962
+ 1268 00a8 64       		.byte	100
+ 1269 00a9 000000   		.space	3
+ 1270 00ac FFFFFFFB 		.word	-67108865
+ 1271 00b0 65       		.byte	101
+ 1272 00b1 000000   		.space	3
+ 1273 00b4 7D77BBB5 		.word	-1246005379
+ 1274 00b8 66       		.byte	102
+ 1275 00b9 000000   		.space	3
+ 1276 00bc 56552949 		.word	1227445590
+ 1277 00c0 67       		.byte	103
+ 1278 00c1 000000   		.space	3
+ 1279 00c4 22424000 		.word	4211234
+ 1280 00c8 68       		.byte	104
+ 1281 00c9 000000   		.space	3
+ 1282 00cc 5680FFFF 		.word	-32682
+ 1283 00d0 69       		.byte	105
+ 1284 00d1 000000   		.space	3
+ 1285 00d4 0000F700 		.word	16187392
+ 1286              		.text
+ 1287              	.Letext0:
+ 1288              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 1289              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1290              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1291              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 1292              		.file 6 "TMC-API/tmc/helpers/Config.h"
+ 1293              		.file 7 "TMC-API/tmc/helpers/RegisterAccess.h"
+ 1294              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1295              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1296              		.file 10 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\in
+ 1297              		.file 11 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\in
+ 1298              		.file 12 "TMC-API/tmc/ic/TMC5072/TMC5072.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 TMC5072.c
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:23     .text:00000000 tmc5072_writeDatagram
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:123    .text:00000066 tmc5072_writeInt
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:163    .text:00000082 tmc5072_readInt
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:249    .text:000000d8 $d
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:253    .text:000000dc $t
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:260    .text:000000dc tmc5072_init
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:357    .text:0000011c $d
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:361    .text:00000120 $t
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:368    .text:00000120 tmc5072_fillShadowRegisters
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:454    .text:00000164 $d
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:464    .text:00000168 $t
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:471    .text:00000168 tmc5072_periodicJob
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:733    .text:0000025c $d
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:737    .text:00000260 $t
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:744    .text:00000260 tmc5072_reset
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:816    .text:0000028e tmc5072_restore
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:858    .text:000002a0 tmc5072_setRegisterResetState
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:900    .text:000002b6 tmc5072_setCallback
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:924    .text:000002be tmc5072_rotate
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:1000   .text:000002fa tmc5072_right
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:1023   .text:000002fe tmc5072_left
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:1049   .text:00000304 tmc5072_stop
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:1073   .text:0000030a tmc5072_moveTo
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:1173   .text:00000346 tmc5072_moveBy
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:1235   .rodata:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:1241   .rodata:00000005 tmc5072_defaultRegisterAccess
+C:\Users\Shubham\AppData\Local\Temp\ccsiBXeg.s:1255   .rodata:00000088 tmc5072_RegisterConstants
+
+UNDEFINED SYMBOLS
+tmc5072_readWriteArray
+__aeabi_ui2f
+__aeabi_i2f
+__aeabi_fdiv
+__aeabi_fmul
+__aeabi_f2uiz

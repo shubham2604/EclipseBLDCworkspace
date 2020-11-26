@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename resource &apos;TMC-EvalSystem/plain&apos; to &apos;plain.c&apos;" description="Rename resource &apos;plain&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="plain" name="plain.c" stamp="1600823848441" updateReferences="true"/>
+</session>

@@ -1,0 +1,1030 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"usb_cdc_pstn.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.global	USB_Class_CDC_Pstn_Init
+  17              		.arch armv7e-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	USB_Class_CDC_Pstn_Init:
+  24              	.LVL0:
+  25              	.LFB0:
+  26              		.file 1 "hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c"
+   1:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** /******************************************************************************
+   2:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+   3:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * Freescale Semiconductor Inc.
+   4:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * (c) Copyright 2004-2009 Freescale Semiconductor, Inc.
+   5:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * ALL RIGHTS RESERVED.
+   6:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+   7:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  ******************************************************************************
+   8:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+   9:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * THIS SOFTWARE IS PROVIDED BY FREESCALE "AS IS" AND ANY EXPRESSED OR
+  10:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+  11:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+  12:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * IN NO EVENT SHALL FREESCALE OR ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+  13:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+  14:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+  15:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+  16:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+  17:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+  18:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+  19:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * THE POSSIBILITY OF SUCH DAMAGE.
+  20:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+  21:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  **************************************************************************//*!
+  22:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+  23:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @file usb_cdc_pstn.c
+  24:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+  25:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @author
+  26:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+  27:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @version
+  28:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+  29:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @date May-28-2009
+  30:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+  31:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @brief The file contains USB CDC_PSTN Sub Class implementation.
+  32:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+  33:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *****************************************************************************/
+  34:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+  35:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** /******************************************************************************
+  36:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * Includes
+  37:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *****************************************************************************/
+  38:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  #include "usb_cdc_pstn.h"  /* USB CDC PSTN Sub Class Header File */
+  39:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+  40:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  /*****************************************************************************
+  41:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * Constant and Macro's
+  42:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *****************************************************************************/
+  43:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+  44:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** /*****************************************************************************
+  45:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * Global Functions Prototypes
+  46:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *****************************************************************************/
+  47:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+  48:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** /****************************************************************************
+  49:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * Global Variables
+  50:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  ****************************************************************************/
+  51:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+  52:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** /*****************************************************************************
+  53:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * Local Types - None
+  54:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *****************************************************************************/
+  55:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+  56:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** /*****************************************************************************
+  57:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * Local Functions Prototypes
+  58:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *****************************************************************************/
+  59:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+  60:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** /*****************************************************************************
+  61:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * Local Variables
+  62:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *****************************************************************************/
+  63:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** /* PSTN subclass callback pointer */
+  64:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** static USB_CLASS_CALLBACK g_pstn_callback = NULL;
+  65:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** /* data terminal equipment present or not */
+  66:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** static boolean g_dte_present = FALSE;
+  67:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** static uint_8 g_dte_status = 0; /* Status of DATA TERMINAL EQUIPMENT */
+  68:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** static uint_16 g_break_duration = 0; /* Length of time in milliseconds of the
+  69:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****                                                               break signal */
+  70:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** static uint_8 g_current_interface = 0;
+  71:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** static UART_BITMAP g_uart_bitmap;
+  72:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+  73:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** #if CIC_NOTIF_ELEM_SUPPORT
+  74:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** static uint_8 g_serial_state_buf[NOTIF_PACKET_SIZE+UART_BITMAP_SIZE] =
+  75:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** {
+  76:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     NOTIF_REQUEST_TYPE,SERIAL_STATE_NOTIF,
+  77:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     0x00,0x00,/*wValue*/
+  78:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     0x00,0x00,/*interface - modifies*/
+  79:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     UART_BITMAP_SIZE,0x00,/* wlength*/
+  80:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     0x00,0x00 /*data initialized - modifies*/
+  81:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** };/*uart bitmap*/
+  82:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** #endif
+  83:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  /*****************************************************************************
+  84:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * Local Functions
+  85:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *****************************************************************************/
+  86:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+  87:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** /*****************************************************************************
+  88:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * Global Functions
+  89:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *****************************************************************************/
+  90:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+  91:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** /**************************************************************************//*!
+  92:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+  93:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @name  USB_Class_CDC_Pstn_Init
+  94:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+  95:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @brief The function initializes the PSTN Module
+  96:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+  97:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param controller_ID     : Controller ID
+  98:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param callback          : PSTN Callback
+  99:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 100:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @return error
+ 101:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *         USB_OK           : Always
+ 102:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  ******************************************************************************
+ 103:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * PSTN Sub Class Initialization routine
+ 104:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *****************************************************************************/
+ 105:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** uint_8 USB_Class_CDC_Pstn_Init (
+ 106:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     uint_8    controller_ID,        /* [IN] Controller ID */
+ 107:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     USB_CLASS_CALLBACK callback     /* [IN] PSTN Callback */
+ 108:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** )
+ 109:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** {
+  27              		.loc 1 109 1 view -0
+  28              		.cfi_startproc
+  29              		@ args = 0, pretend = 0, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  31              		@ link register save eliminated.
+ 110:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     uint_8 error = USB_OK;
+  32              		.loc 1 110 5 view .LVU1
+ 111:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     UNUSED (controller_ID);
+  33              		.loc 1 111 5 view .LVU2
+  34              		.loc 1 111 27 view .LVU3
+ 112:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+ 113:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     /* save input parameters */
+ 114:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     g_pstn_callback = callback;
+  35              		.loc 1 114 5 view .LVU4
+  36              		.loc 1 114 21 is_stmt 0 view .LVU5
+  37 0000 014B     		ldr	r3, .L2
+ 115:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     return error;
+ 116:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** }
+  38              		.loc 1 116 1 view .LVU6
+  39 0002 0020     		movs	r0, #0
+  40              	.LVL1:
+ 114:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     return error;
+  41              		.loc 1 114 21 view .LVU7
+  42 0004 1960     		str	r1, [r3]
+ 115:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     return error;
+  43              		.loc 1 115 5 is_stmt 1 view .LVU8
+  44              		.loc 1 116 1 is_stmt 0 view .LVU9
+  45 0006 7047     		bx	lr
+  46              	.L3:
+  47              		.align	2
+  48              	.L2:
+  49 0008 00000000 		.word	.LANCHOR0
+  50              		.cfi_endproc
+  51              	.LFE0:
+  53              		.align	1
+  54              		.global	USB_Class_CDC_PSTN_Get_Line_Coding
+  55              		.syntax unified
+  56              		.thumb
+  57              		.thumb_func
+  58              		.fpu softvfp
+  60              	USB_Class_CDC_PSTN_Get_Line_Coding:
+  61              	.LVL2:
+  62              	.LFB1:
+ 117:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** /**************************************************************************//*!
+ 118:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 119:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @name  USB_Class_CDC_PSTN_Get_Line_Coding
+ 120:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 121:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @brief  This function is called in response to GetLineCoding request
+ 122:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 123:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param controller_ID   : Controller ID
+ 124:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param setup_packet    : Pointer to setup packet
+ 125:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param data            : Pointer to Data to be send
+ 126:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param size            : Pointer to Size of Data
+ 127:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 128:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @return status:
+ 129:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *          USB_OK : When Successfull
+ 130:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *          USBERR_INVALID_REQ_TYPE: When  request for
+ 131:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *                                   invalid Interface is presented
+ 132:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  ******************************************************************************
+ 133:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * Calls application to receive Line Coding Information
+ 134:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *****************************************************************************/
+ 135:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** uint_8 USB_Class_CDC_PSTN_Get_Line_Coding (
+ 136:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     uint_8 controller_ID,               /* [IN] Controller ID */
+ 137:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     USB_SETUP_STRUCT * setup_packet,    /* [IN] Pointer to setup packet */
+ 138:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     uint_8_ptr *data,                   /* [OUT] Pointer to Data to be send */
+ 139:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     USB_PACKET_SIZE *size               /* [OUT] Pointer to Size of Data */
+ 140:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** )
+ 141:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** {
+  63              		.loc 1 141 1 is_stmt 1 view -0
+  64              		.cfi_startproc
+  65              		@ args = 0, pretend = 0, frame = 0
+  66              		@ frame_needed = 0, uses_anonymous_args = 0
+  67              		@ link register save eliminated.
+ 142:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     uint_8 status;
+  68              		.loc 1 142 5 view .LVU11
+ 143:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     UNUSED (size);
+  69              		.loc 1 143 5 view .LVU12
+  70              		.loc 1 143 18 view .LVU13
+ 144:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     g_current_interface = (uint_8)setup_packet->index ;
+  71              		.loc 1 144 5 view .LVU14
+  72              		.loc 1 144 25 is_stmt 0 view .LVU15
+  73 000c 024B     		ldr	r3, .L5
+  74              	.LVL3:
+  75              		.loc 1 144 27 view .LVU16
+  76 000e 0979     		ldrb	r1, [r1, #4]	@ zero_extendqisi2
+  77              	.LVL4:
+  78              		.loc 1 144 25 view .LVU17
+  79 0010 1971     		strb	r1, [r3, #4]
+ 145:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     status = USB_Desc_Get_Line_Coding(controller_ID, g_current_interface,
+  80              		.loc 1 145 5 is_stmt 1 view .LVU18
+  81              		.loc 1 145 14 is_stmt 0 view .LVU19
+  82 0012 FFF7FEBF 		b	USB_Desc_Get_Line_Coding
+  83              	.LVL5:
+  84              	.L6:
+  85              		.loc 1 145 14 view .LVU20
+  86 0016 00BF     		.align	2
+  87              	.L5:
+  88 0018 00000000 		.word	.LANCHOR0
+  89              		.cfi_endproc
+  90              	.LFE1:
+  92              		.align	1
+  93              		.global	USB_Class_CDC_PSTN_Set_Line_Coding
+  94              		.syntax unified
+  95              		.thumb
+  96              		.thumb_func
+  97              		.fpu softvfp
+  99              	USB_Class_CDC_PSTN_Set_Line_Coding:
+ 100              	.LVL6:
+ 101              	.LFB2:
+ 146:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         data);
+ 147:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+ 148:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     return status;
+ 149:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** }
+ 150:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+ 151:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** /**************************************************************************//*!
+ 152:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 153:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @name  USB_Class_CDC_PSTN_Set_Line_Coding
+ 154:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 155:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @brief  This function is called in response to SetLineCoding request
+ 156:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 157:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param controller_ID   : Controller ID
+ 158:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param setup_packet    : Pointer to setup packet
+ 159:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param data            : Pointer to Data
+ 160:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param size            : Pointer to Size of Data
+ 161:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 162:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @return status:
+ 163:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *      USB_OK                  : When Successfull
+ 164:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *      USBERR_INVALID_REQ_TYPE : When  request for invalid
+ 165:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *                                Interface is presented
+ 166:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  ******************************************************************************
+ 167:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * Calls Applciation to update Line Coding Information
+ 168:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *****************************************************************************/
+ 169:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** uint_8 USB_Class_CDC_PSTN_Set_Line_Coding (
+ 170:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     uint_8 controller_ID,               /* [IN] Controller ID */
+ 171:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     USB_SETUP_STRUCT * setup_packet,    /* [IN] Pointer to setup packet */
+ 172:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     uint_8_ptr *data,                   /* [OUT] Pointer to Data */
+ 173:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     USB_PACKET_SIZE *size               /* [OUT] Pointer to Size of Data */
+ 174:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** )
+ 175:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** {
+ 102              		.loc 1 175 1 is_stmt 1 view -0
+ 103              		.cfi_startproc
+ 104              		@ args = 0, pretend = 0, frame = 8
+ 105              		@ frame_needed = 0, uses_anonymous_args = 0
+ 176:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     uint_8 status;
+ 106              		.loc 1 176 5 view .LVU22
+ 177:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     UNUSED(data);
+ 107              		.loc 1 177 5 view .LVU23
+ 108              		.loc 1 177 17 view .LVU24
+ 178:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+ 179:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     *size = 0;
+ 109              		.loc 1 179 5 view .LVU25
+ 175:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     uint_8 status;
+ 110              		.loc 1 175 1 is_stmt 0 view .LVU26
+ 111 001c 07B5     		push	{r0, r1, r2, lr}
+ 112              	.LCFI0:
+ 113              		.cfi_def_cfa_offset 16
+ 114              		.cfi_offset 14, -4
+ 115              		.loc 1 179 11 view .LVU27
+ 116 001e 0022     		movs	r2, #0
+ 117              	.LVL7:
+ 118              		.loc 1 179 11 view .LVU28
+ 119 0020 1A80     		strh	r2, [r3]	@ movhi
+ 180:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+ 181:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     g_current_interface = (uint_8)setup_packet->index ;
+ 120              		.loc 1 181 5 is_stmt 1 view .LVU29
+ 121              		.loc 1 181 25 is_stmt 0 view .LVU30
+ 122 0022 054B     		ldr	r3, .L8
+ 123              	.LVL8:
+ 175:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     uint_8 status;
+ 124              		.loc 1 175 1 view .LVU31
+ 125 0024 0191     		str	r1, [sp, #4]
+ 182:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     status = USB_Desc_Set_Line_Coding(controller_ID, g_current_interface,
+ 126              		.loc 1 182 14 view .LVU32
+ 127 0026 01AA     		add	r2, sp, #4
+ 181:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     status = USB_Desc_Set_Line_Coding(controller_ID, g_current_interface,
+ 128              		.loc 1 181 27 view .LVU33
+ 129 0028 0979     		ldrb	r1, [r1, #4]	@ zero_extendqisi2
+ 130              	.LVL9:
+ 181:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     status = USB_Desc_Set_Line_Coding(controller_ID, g_current_interface,
+ 131              		.loc 1 181 25 view .LVU34
+ 132 002a 1971     		strb	r1, [r3, #4]
+ 133              		.loc 1 182 5 is_stmt 1 view .LVU35
+ 134              		.loc 1 182 14 is_stmt 0 view .LVU36
+ 135 002c FFF7FEFF 		bl	USB_Desc_Set_Line_Coding
+ 136              	.LVL10:
+ 183:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         (uint_8_ptr *)&setup_packet);
+ 184:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+ 185:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     return status;
+ 137              		.loc 1 185 5 is_stmt 1 view .LVU37
+ 186:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** }
+ 138              		.loc 1 186 1 is_stmt 0 view .LVU38
+ 139 0030 03B0     		add	sp, sp, #12
+ 140              	.LCFI1:
+ 141              		.cfi_def_cfa_offset 4
+ 142              		@ sp needed
+ 143 0032 5DF804FB 		ldr	pc, [sp], #4
+ 144              	.L9:
+ 145 0036 00BF     		.align	2
+ 146              	.L8:
+ 147 0038 00000000 		.word	.LANCHOR0
+ 148              		.cfi_endproc
+ 149              	.LFE2:
+ 151              		.align	1
+ 152              		.global	USB_Class_CDC_PSTN_Send_Break
+ 153              		.syntax unified
+ 154              		.thumb
+ 155              		.thumb_func
+ 156              		.fpu softvfp
+ 158              	USB_Class_CDC_PSTN_Send_Break:
+ 159              	.LVL11:
+ 160              	.LFB4:
+ 187:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+ 188:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** /**************************************************************************//*!
+ 189:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 190:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @name  USB_Class_CDC_PSTN_Set_Ctrl_Line_State
+ 191:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 192:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @brief  This function is called in response to Set Control Line State
+ 193:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 194:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param controller_ID   : Controller ID
+ 195:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param setup_packet    : Pointer to setup packet
+ 196:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param data            : Pointer to Data
+ 197:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param size            : Pointer to Size of Data
+ 198:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 199:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @return status:
+ 200:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *                        USB_OK : Always
+ 201:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  ******************************************************************************
+ 202:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * Updates Control Line State
+ 203:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *****************************************************************************/
+ 204:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** uint_8 USB_Class_CDC_PSTN_Set_Ctrl_Line_State (
+ 205:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     uint_8 controller_ID,               /* [IN] Controller ID */
+ 206:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     USB_SETUP_STRUCT * setup_packet,    /* [IN] Pointer to setup packet */
+ 207:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     uint_8_ptr *data,                   /* [OUT] Pointer to Data  */
+ 208:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     USB_PACKET_SIZE *size               /* [OUT] Pointer to Size of Data */
+ 209:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** )
+ 210:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** {
+ 211:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     UNUSED(data);
+ 212:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     *size = 0;
+ 213:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+ 214:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     g_dte_status = (uint_8)setup_packet->value ;
+ 215:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     g_uart_bitmap._byte = 0x00; /* initialize */
+ 216:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     /* activate/deactivate Tx carrier */
+ 217:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     g_uart_bitmap.Bitmap_Uart.bTxCarrier = (g_dte_status &
+ 218:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         CARRIER_ACTIVATION_CHECK) ? 1 : 0 ;
+ 219:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****      /* activate carrier and DTE */
+ 220:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     g_uart_bitmap.Bitmap_Uart.bRxCarrier = (g_dte_status &
+ 221:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         CARRIER_ACTIVATION_CHECK) ? 1 : 0 ;
+ 222:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+ 223:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     /* Indicates to DCE if DTE is present or not */
+ 224:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     g_dte_present = (boolean)((g_dte_status & DTE_PRESENCE_CHECK) ?
+ 225:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         TRUE : FALSE);
+ 226:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     UNUSED(g_dte_present);
+ 227:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** #if CIC_NOTIF_ELEM_SUPPORT
+ 228:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     /* Send Notification to Host - Parameter on Device side has changed */
+ 229:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     USB_Class_CDC_PSTN_Send_Serial_State(controller_ID);
+ 230:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** #endif
+ 231:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     if(g_pstn_callback != NULL)
+ 232:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     {
+ 233:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         if(g_dte_status & CARRIER_ACTIVATION_CHECK)
+ 234:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         {
+ 235:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****             g_pstn_callback(controller_ID, USB_APP_CDC_CARRIER_ACTIVATED,
+ 236:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****                 NULL);
+ 237:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         }
+ 238:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         else
+ 239:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         {
+ 240:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****             g_pstn_callback(controller_ID, USB_APP_CDC_CARRIER_DEACTIVATED,
+ 241:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****                 NULL);
+ 242:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         }
+ 243:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     }
+ 244:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     return USB_OK;
+ 245:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** }
+ 246:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+ 247:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** /**************************************************************************//*!
+ 248:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 249:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @name  USB_Class_CDC_PSTN_Send_Break
+ 250:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 251:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @brief  This function is called in response to Set Config request
+ 252:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 253:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param controller_ID   : Controller ID
+ 254:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param setup_packet    : Pointer to setup packet
+ 255:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param data            : Pointer to Data
+ 256:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param size            : Pointer to Size of Data
+ 257:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 258:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @return status:
+ 259:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *                        USB_OK : Always
+ 260:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  ******************************************************************************
+ 261:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * Updates Break Duration Information from Host
+ 262:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *****************************************************************************/
+ 263:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** uint_8 USB_Class_CDC_PSTN_Send_Break (
+ 264:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     uint_8 controller_ID,               /* [IN] Controller ID */
+ 265:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     USB_SETUP_STRUCT * setup_packet,    /* [IN] Pointer to setup packet */
+ 266:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     uint_8_ptr *data,                   /* [OUT] Pointer to Data  */
+ 267:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     USB_PACKET_SIZE *size               /* [OUT] Pointer to Size of Data */
+ 268:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** )
+ 269:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** {
+ 161              		.loc 1 269 1 is_stmt 1 view -0
+ 162              		.cfi_startproc
+ 163              		@ args = 0, pretend = 0, frame = 0
+ 164              		@ frame_needed = 0, uses_anonymous_args = 0
+ 165              		@ link register save eliminated.
+ 270:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     UNUSED (controller_ID);
+ 166              		.loc 1 270 5 view .LVU40
+ 167              		.loc 1 270 27 view .LVU41
+ 271:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     UNUSED (data);
+ 168              		.loc 1 271 5 view .LVU42
+ 169              		.loc 1 271 18 view .LVU43
+ 272:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     *size = 0;
+ 170              		.loc 1 272 5 view .LVU44
+ 171              		.loc 1 272 11 is_stmt 0 view .LVU45
+ 172 003c 0020     		movs	r0, #0
+ 173              	.LVL12:
+ 174              		.loc 1 272 11 view .LVU46
+ 175 003e 1880     		strh	r0, [r3]	@ movhi
+ 273:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+ 274:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     g_break_duration = setup_packet->value;
+ 176              		.loc 1 274 5 is_stmt 1 view .LVU47
+ 275:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     UNUSED(g_break_duration);
+ 177              		.loc 1 275 5 view .LVU48
+ 178              		.loc 1 275 29 view .LVU49
+ 276:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+ 277:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     return USB_OK;
+ 179              		.loc 1 277 5 view .LVU50
+ 278:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** }
+ 180              		.loc 1 278 1 is_stmt 0 view .LVU51
+ 181 0040 7047     		bx	lr
+ 182              		.cfi_endproc
+ 183              	.LFE4:
+ 185              		.align	1
+ 186              		.global	USB_Class_CDC_PSTN_Get_Comm_Feature
+ 187              		.syntax unified
+ 188              		.thumb
+ 189              		.thumb_func
+ 190              		.fpu softvfp
+ 192              	USB_Class_CDC_PSTN_Get_Comm_Feature:
+ 193              	.LVL13:
+ 194              	.LFB5:
+ 279:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+ 280:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** /**************************************************************************//*!
+ 281:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 282:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @name  USB_Class_CDC_PSTN_Get_Comm_Feature
+ 283:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 284:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @brief  This function is called in response to GetCommFeature request
+ 285:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 286:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param controller_ID   : Controller ID
+ 287:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param setup_packet    : Pointer to setup packet
+ 288:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param data            : Pointer to Data to be send
+ 289:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param size            : Pointer to Size of Data
+ 290:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 291:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @return status:
+ 292:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *      USB_OK                  : When Successfull
+ 293:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *      USBERR_INVALID_REQ_TYPE : When  request for invalid
+ 294:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *                                Interface is presented
+ 295:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  ******************************************************************************
+ 296:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * Returns the status of the get comm feature request
+ 297:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *****************************************************************************/
+ 298:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** uint_8 USB_Class_CDC_PSTN_Get_Comm_Feature (
+ 299:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     uint_8 controller_ID,               /* [IN] Controller ID */
+ 300:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     USB_SETUP_STRUCT * setup_packet,    /* [IN] Pointer to setup packet */
+ 301:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     uint_8_ptr *data,                   /* [OUT] Pointer to Data to send */
+ 302:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     USB_PACKET_SIZE *size               /* [OUT] Pointer to Size of Data */
+ 303:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** )
+ 304:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** {   uint_8 status;
+ 195              		.loc 1 304 1 is_stmt 1 view -0
+ 196              		.cfi_startproc
+ 197              		@ args = 0, pretend = 0, frame = 0
+ 198              		@ frame_needed = 0, uses_anonymous_args = 0
+ 199              		@ link register save eliminated.
+ 200              		.loc 1 304 5 view .LVU53
+ 305:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+ 306:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     status = USB_OK;
+ 201              		.loc 1 306 5 view .LVU54
+ 307:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     *size = COMM_FEATURE_DATA_SIZE;
+ 202              		.loc 1 307 5 view .LVU55
+ 304:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+ 203              		.loc 1 304 1 is_stmt 0 view .LVU56
+ 204 0042 30B4     		push	{r4, r5}
+ 205              	.LCFI2:
+ 206              		.cfi_def_cfa_offset 8
+ 207              		.cfi_offset 4, -8
+ 208              		.cfi_offset 5, -4
+ 304:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+ 209              		.loc 1 304 1 view .LVU57
+ 210 0044 0C46     		mov	r4, r1
+ 211              		.loc 1 307 11 view .LVU58
+ 212 0046 0221     		movs	r1, #2
+ 213              	.LVL14:
+ 214              		.loc 1 307 11 view .LVU59
+ 215 0048 1980     		strh	r1, [r3]	@ movhi
+ 308:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     g_current_interface = (uint_8)setup_packet->index ;
+ 216              		.loc 1 308 5 is_stmt 1 view .LVU60
+ 217              		.loc 1 308 27 is_stmt 0 view .LVU61
+ 218 004a 2179     		ldrb	r1, [r4, #4]	@ zero_extendqisi2
+ 309:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     if(setup_packet->value == ABSTRACT_STATE_FEATURE)
+ 219              		.loc 1 309 20 view .LVU62
+ 220 004c 6488     		ldrh	r4, [r4, #2]
+ 221              	.LVL15:
+ 308:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     g_current_interface = (uint_8)setup_packet->index ;
+ 222              		.loc 1 308 25 view .LVU63
+ 223 004e 084D     		ldr	r5, .L14
+ 224              		.loc 1 309 7 view .LVU64
+ 225 0050 012C     		cmp	r4, #1
+ 308:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     g_current_interface = (uint_8)setup_packet->index ;
+ 226              		.loc 1 308 25 view .LVU65
+ 227 0052 2971     		strb	r1, [r5, #4]
+ 228              		.loc 1 309 5 is_stmt 1 view .LVU66
+ 229              		.loc 1 309 7 is_stmt 0 view .LVU67
+ 230 0054 02D1     		bne	.L12
+ 310:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     {
+ 311:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         status = USB_Desc_Get_Abstract_State(controller_ID,
+ 231              		.loc 1 311 9 is_stmt 1 view .LVU68
+ 312:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****             g_current_interface, data);
+ 313:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     }
+ 314:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     else if(setup_packet->value == COUNTRY_SETTING_FEATURE)
+ 315:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     {
+ 316:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         status = USB_Desc_Get_Country_Setting(controller_ID,
+ 317:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****             g_current_interface, data);
+ 318:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     }
+ 319:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     else
+ 320:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     {
+ 321:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         *size = 0; /* for Reserved/Invalid Feature Selector Value */
+ 322:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     }
+ 323:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     return status;
+ 324:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** }
+ 232              		.loc 1 324 1 is_stmt 0 view .LVU69
+ 233 0056 30BC     		pop	{r4, r5}
+ 234              	.LCFI3:
+ 235              		.cfi_remember_state
+ 236              		.cfi_restore 5
+ 237              		.cfi_restore 4
+ 238              		.cfi_def_cfa_offset 0
+ 311:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****             g_current_interface, data);
+ 239              		.loc 1 311 18 view .LVU70
+ 240 0058 FFF7FEBF 		b	USB_Desc_Get_Abstract_State
+ 241              	.LVL16:
+ 242              	.L12:
+ 243              	.LCFI4:
+ 244              		.cfi_restore_state
+ 314:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     {
+ 245              		.loc 1 314 10 is_stmt 1 view .LVU71
+ 314:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     {
+ 246              		.loc 1 314 12 is_stmt 0 view .LVU72
+ 247 005c 022C     		cmp	r4, #2
+ 248 005e 02D1     		bne	.L13
+ 316:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****             g_current_interface, data);
+ 249              		.loc 1 316 9 is_stmt 1 view .LVU73
+ 250              		.loc 1 324 1 is_stmt 0 view .LVU74
+ 251 0060 30BC     		pop	{r4, r5}
+ 252              	.LCFI5:
+ 253              		.cfi_remember_state
+ 254              		.cfi_restore 5
+ 255              		.cfi_restore 4
+ 256              		.cfi_def_cfa_offset 0
+ 316:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****             g_current_interface, data);
+ 257              		.loc 1 316 18 view .LVU75
+ 258 0062 FFF7FEBF 		b	USB_Desc_Get_Country_Setting
+ 259              	.LVL17:
+ 260              	.L13:
+ 261              	.LCFI6:
+ 262              		.cfi_restore_state
+ 321:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     }
+ 263              		.loc 1 321 9 is_stmt 1 view .LVU76
+ 321:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     }
+ 264              		.loc 1 321 15 is_stmt 0 view .LVU77
+ 265 0066 0020     		movs	r0, #0
+ 266              	.LVL18:
+ 267              		.loc 1 324 1 view .LVU78
+ 268 0068 30BC     		pop	{r4, r5}
+ 269              	.LCFI7:
+ 270              		.cfi_restore 5
+ 271              		.cfi_restore 4
+ 272              		.cfi_def_cfa_offset 0
+ 321:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     }
+ 273              		.loc 1 321 15 view .LVU79
+ 274 006a 1880     		strh	r0, [r3]	@ movhi
+ 323:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** }
+ 275              		.loc 1 323 5 is_stmt 1 view .LVU80
+ 276              		.loc 1 324 1 is_stmt 0 view .LVU81
+ 277 006c 7047     		bx	lr
+ 278              	.L15:
+ 279 006e 00BF     		.align	2
+ 280              	.L14:
+ 281 0070 00000000 		.word	.LANCHOR0
+ 282              		.cfi_endproc
+ 283              	.LFE5:
+ 285              		.align	1
+ 286              		.global	USB_Class_CDC_PSTN_Set_Comm_Feature
+ 287              		.syntax unified
+ 288              		.thumb
+ 289              		.thumb_func
+ 290              		.fpu softvfp
+ 292              	USB_Class_CDC_PSTN_Set_Comm_Feature:
+ 293              	.LVL19:
+ 294              	.LFB6:
+ 325:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+ 326:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** /**************************************************************************//*!
+ 327:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 328:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @name  USB_Class_CDC_PSTN_Set_Comm_Feature
+ 329:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 330:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @brief  This function is called in response to SetCommFeature request
+ 331:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 332:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param controller_ID   : Controller ID
+ 333:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param setup_packet    : Pointer to setup packet
+ 334:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param data            : Pointer to Data
+ 335:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param size            : Pointer to Size of Data
+ 336:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 337:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @return status:
+ 338:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *      USB_OK                  : When Successfull
+ 339:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *      USBERR_INVALID_REQ_TYPE : When  request for invalid
+ 340:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *                                Interface is presented
+ 341:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  ******************************************************************************
+ 342:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * Sets the comm feature specified by Host
+ 343:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *****************************************************************************/
+ 344:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** uint_8 USB_Class_CDC_PSTN_Set_Comm_Feature (
+ 345:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     uint_8 controller_ID,               /* [IN] Controller ID */
+ 346:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     USB_SETUP_STRUCT * setup_packet,    /* [IN] Pointer to setup packet */
+ 347:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     uint_8_ptr *data,                   /* [OUT] Pointer to Data */
+ 348:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     USB_PACKET_SIZE *size               /* [OUT] Pointer to Size of Data */
+ 349:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** )
+ 350:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** {
+ 295              		.loc 1 350 1 is_stmt 1 view -0
+ 296              		.cfi_startproc
+ 297              		@ args = 0, pretend = 0, frame = 0
+ 298              		@ frame_needed = 0, uses_anonymous_args = 0
+ 299              		@ link register save eliminated.
+ 351:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     uint_8 status;
+ 300              		.loc 1 351 5 view .LVU83
+ 352:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     status = USB_OK;
+ 301              		.loc 1 352 5 view .LVU84
+ 353:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     *size = COMM_FEATURE_DATA_SIZE;
+ 302              		.loc 1 353 5 view .LVU85
+ 350:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     uint_8 status;
+ 303              		.loc 1 350 1 is_stmt 0 view .LVU86
+ 304 0074 30B4     		push	{r4, r5}
+ 305              	.LCFI8:
+ 306              		.cfi_def_cfa_offset 8
+ 307              		.cfi_offset 4, -8
+ 308              		.cfi_offset 5, -4
+ 350:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     uint_8 status;
+ 309              		.loc 1 350 1 view .LVU87
+ 310 0076 0C46     		mov	r4, r1
+ 311              		.loc 1 353 11 view .LVU88
+ 312 0078 0221     		movs	r1, #2
+ 313              	.LVL20:
+ 314              		.loc 1 353 11 view .LVU89
+ 315 007a 1980     		strh	r1, [r3]	@ movhi
+ 354:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     g_current_interface = (uint_8)setup_packet->index ;
+ 316              		.loc 1 354 5 is_stmt 1 view .LVU90
+ 317              		.loc 1 354 27 is_stmt 0 view .LVU91
+ 318 007c 2179     		ldrb	r1, [r4, #4]	@ zero_extendqisi2
+ 355:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     if(setup_packet->value == ABSTRACT_STATE_FEATURE)
+ 319              		.loc 1 355 20 view .LVU92
+ 320 007e 6488     		ldrh	r4, [r4, #2]
+ 321              	.LVL21:
+ 354:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     g_current_interface = (uint_8)setup_packet->index ;
+ 322              		.loc 1 354 25 view .LVU93
+ 323 0080 074D     		ldr	r5, .L19
+ 324              		.loc 1 355 7 view .LVU94
+ 325 0082 012C     		cmp	r4, #1
+ 354:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     g_current_interface = (uint_8)setup_packet->index ;
+ 326              		.loc 1 354 25 view .LVU95
+ 327 0084 2971     		strb	r1, [r5, #4]
+ 328              		.loc 1 355 5 is_stmt 1 view .LVU96
+ 329              		.loc 1 355 7 is_stmt 0 view .LVU97
+ 330 0086 02D1     		bne	.L17
+ 356:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     {
+ 357:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         status = USB_Desc_Set_Abstract_State(controller_ID,
+ 331              		.loc 1 357 9 is_stmt 1 view .LVU98
+ 358:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****             g_current_interface, data);
+ 359:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     }
+ 360:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     else if(setup_packet->value == COUNTRY_SETTING_FEATURE)
+ 361:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     {
+ 362:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         status = USB_Desc_Set_Country_Setting(controller_ID,
+ 363:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****             g_current_interface, data);
+ 364:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     }
+ 365:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     else
+ 366:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     {
+ 367:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         *size = 0; /* for Reserved/Invalid Feature Selector Value */
+ 368:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     }
+ 369:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     return status;
+ 370:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** }
+ 332              		.loc 1 370 1 is_stmt 0 view .LVU99
+ 333 0088 30BC     		pop	{r4, r5}
+ 334              	.LCFI9:
+ 335              		.cfi_remember_state
+ 336              		.cfi_restore 5
+ 337              		.cfi_restore 4
+ 338              		.cfi_def_cfa_offset 0
+ 357:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****             g_current_interface, data);
+ 339              		.loc 1 357 18 view .LVU100
+ 340 008a FFF7FEBF 		b	USB_Desc_Set_Abstract_State
+ 341              	.LVL22:
+ 342              	.L17:
+ 343              	.LCFI10:
+ 344              		.cfi_restore_state
+ 360:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     {
+ 345              		.loc 1 360 10 is_stmt 1 view .LVU101
+ 360:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     {
+ 346              		.loc 1 360 12 is_stmt 0 view .LVU102
+ 347 008e 022C     		cmp	r4, #2
+ 348 0090 02D1     		bne	.L18
+ 362:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****             g_current_interface, data);
+ 349              		.loc 1 362 9 is_stmt 1 view .LVU103
+ 350              		.loc 1 370 1 is_stmt 0 view .LVU104
+ 351 0092 30BC     		pop	{r4, r5}
+ 352              	.LCFI11:
+ 353              		.cfi_remember_state
+ 354              		.cfi_restore 5
+ 355              		.cfi_restore 4
+ 356              		.cfi_def_cfa_offset 0
+ 362:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****             g_current_interface, data);
+ 357              		.loc 1 362 18 view .LVU105
+ 358 0094 FFF7FEBF 		b	USB_Desc_Set_Country_Setting
+ 359              	.LVL23:
+ 360              	.L18:
+ 361              	.LCFI12:
+ 362              		.cfi_restore_state
+ 367:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     }
+ 363              		.loc 1 367 9 is_stmt 1 view .LVU106
+ 367:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     }
+ 364              		.loc 1 367 15 is_stmt 0 view .LVU107
+ 365 0098 0020     		movs	r0, #0
+ 366              	.LVL24:
+ 367              		.loc 1 370 1 view .LVU108
+ 368 009a 30BC     		pop	{r4, r5}
+ 369              	.LCFI13:
+ 370              		.cfi_restore 5
+ 371              		.cfi_restore 4
+ 372              		.cfi_def_cfa_offset 0
+ 367:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     }
+ 373              		.loc 1 367 15 view .LVU109
+ 374 009c 1880     		strh	r0, [r3]	@ movhi
+ 369:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** }
+ 375              		.loc 1 369 5 is_stmt 1 view .LVU110
+ 376              		.loc 1 370 1 is_stmt 0 view .LVU111
+ 377 009e 7047     		bx	lr
+ 378              	.L20:
+ 379              		.align	2
+ 380              	.L19:
+ 381 00a0 00000000 		.word	.LANCHOR0
+ 382              		.cfi_endproc
+ 383              	.LFE6:
+ 385              		.align	1
+ 386              		.global	USB_Class_CDC_PSTN_Send_Serial_State
+ 387              		.syntax unified
+ 388              		.thumb
+ 389              		.thumb_func
+ 390              		.fpu softvfp
+ 392              	USB_Class_CDC_PSTN_Send_Serial_State:
+ 393              	.LVL25:
+ 394              	.LFB7:
+ 371:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+ 372:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** #if CIC_NOTIF_ELEM_SUPPORT
+ 373:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** /**************************************************************************//*!
+ 374:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 375:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @name  USB_Class_CDC_PSTN_Send_Serial_State
+ 376:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 377:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @brief  This function is called to send serial state notification
+ 378:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 379:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @param controller_ID : Controller ID
+ 380:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *
+ 381:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * @return NONE
+ 382:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  ******************************************************************************
+ 383:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  * Returns the Serial State
+ 384:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****  *****************************************************************************/
+ 385:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** void USB_Class_CDC_PSTN_Send_Serial_State (
+ 386:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     uint_8 controller_ID               /* [IN] Controller ID */
+ 387:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** )
+ 388:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** {
+ 395              		.loc 1 388 1 is_stmt 1 view -0
+ 396              		.cfi_startproc
+ 397              		@ args = 0, pretend = 0, frame = 0
+ 398              		@ frame_needed = 0, uses_anonymous_args = 0
+ 399              		@ link register save eliminated.
+ 389:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     /* update array for current interface */
+ 390:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     g_serial_state_buf[4] = g_current_interface;
+ 400              		.loc 1 390 5 view .LVU113
+ 401              		.loc 1 390 27 is_stmt 0 view .LVU114
+ 402 00a4 044B     		ldr	r3, .L22
+ 403 00a6 054A     		ldr	r2, .L22+4
+ 404 00a8 1979     		ldrb	r1, [r3, #4]	@ zero_extendqisi2
+ 391:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     /* Lower byte of UART BITMAP */
+ 392:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     g_serial_state_buf[NOTIF_PACKET_SIZE+UART_BITMAP_SIZE-2] =
+ 405              		.loc 1 392 62 view .LVU115
+ 406 00aa 5B79     		ldrb	r3, [r3, #5]	@ zero_extendqisi2
+ 390:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     /* Lower byte of UART BITMAP */
+ 407              		.loc 1 390 27 view .LVU116
+ 408 00ac 1171     		strb	r1, [r2, #4]
+ 409              		.loc 1 392 5 is_stmt 1 view .LVU117
+ 410              		.loc 1 392 62 is_stmt 0 view .LVU118
+ 411 00ae 1372     		strb	r3, [r2, #8]
+ 393:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         g_uart_bitmap._byte;
+ 394:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     (void)USB_Class_CDC_Interface_CIC_Send_Data(controller_ID,
+ 412              		.loc 1 394 5 is_stmt 1 view .LVU119
+ 413              		.loc 1 394 11 is_stmt 0 view .LVU120
+ 414 00b0 0321     		movs	r1, #3
+ 415 00b2 0A23     		movs	r3, #10
+ 416 00b4 FFF7FEBF 		b	USB_Class_CDC_Send_Data
+ 417              	.LVL26:
+ 418              	.L23:
+ 419              		.loc 1 394 11 view .LVU121
+ 420              		.align	2
+ 421              	.L22:
+ 422 00b8 00000000 		.word	.LANCHOR0
+ 423 00bc 00000000 		.word	.LANCHOR1
+ 424              		.cfi_endproc
+ 425              	.LFE7:
+ 427              		.align	1
+ 428              		.global	USB_Class_CDC_PSTN_Set_Ctrl_Line_State
+ 429              		.syntax unified
+ 430              		.thumb
+ 431              		.thumb_func
+ 432              		.fpu softvfp
+ 434              	USB_Class_CDC_PSTN_Set_Ctrl_Line_State:
+ 435              	.LVL27:
+ 436              	.LFB3:
+ 210:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     UNUSED(data);
+ 437              		.loc 1 210 1 is_stmt 1 view -0
+ 438              		.cfi_startproc
+ 439              		@ args = 0, pretend = 0, frame = 0
+ 440              		@ frame_needed = 0, uses_anonymous_args = 0
+ 211:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     *size = 0;
+ 441              		.loc 1 211 5 view .LVU123
+ 211:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     *size = 0;
+ 442              		.loc 1 211 17 view .LVU124
+ 212:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+ 443              		.loc 1 212 5 view .LVU125
+ 210:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     UNUSED(data);
+ 444              		.loc 1 210 1 is_stmt 0 view .LVU126
+ 445 00c0 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 446              	.LCFI14:
+ 447              		.cfi_def_cfa_offset 24
+ 448              		.cfi_offset 3, -24
+ 449              		.cfi_offset 4, -20
+ 450              		.cfi_offset 5, -16
+ 451              		.cfi_offset 6, -12
+ 452              		.cfi_offset 7, -8
+ 453              		.cfi_offset 14, -4
+ 212:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+ 454              		.loc 1 212 11 view .LVU127
+ 455 00c2 0027     		movs	r7, #0
+ 456 00c4 1F80     		strh	r7, [r3]	@ movhi
+ 214:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     g_uart_bitmap._byte = 0x00; /* initialize */
+ 457              		.loc 1 214 5 is_stmt 1 view .LVU128
+ 214:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     g_uart_bitmap._byte = 0x00; /* initialize */
+ 458              		.loc 1 214 20 is_stmt 0 view .LVU129
+ 459 00c6 8B78     		ldrb	r3, [r1, #2]	@ zero_extendqisi2
+ 460              	.LVL28:
+ 214:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     g_uart_bitmap._byte = 0x00; /* initialize */
+ 461              		.loc 1 214 18 view .LVU130
+ 462 00c8 0C4D     		ldr	r5, .L31
+ 218:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****      /* activate carrier and DTE */
+ 463              		.loc 1 218 39 view .LVU131
+ 464 00ca C3F34002 		ubfx	r2, r3, #1, #1
+ 465              	.LVL29:
+ 214:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     g_uart_bitmap._byte = 0x00; /* initialize */
+ 466              		.loc 1 214 18 view .LVU132
+ 467 00ce AB71     		strb	r3, [r5, #6]
+ 215:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     /* activate/deactivate Tx carrier */
+ 468              		.loc 1 215 5 is_stmt 1 view .LVU133
+ 217:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         CARRIER_ACTIVATION_CHECK) ? 1 : 0 ;
+ 469              		.loc 1 217 5 view .LVU134
+ 220:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         CARRIER_ACTIVATION_CHECK) ? 1 : 0 ;
+ 470              		.loc 1 220 5 view .LVU135
+ 220:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         CARRIER_ACTIVATION_CHECK) ? 1 : 0 ;
+ 471              		.loc 1 220 42 is_stmt 0 view .LVU136
+ 472 00d0 03F00203 		and	r3, r3, #2
+ 473 00d4 62F30003 		bfi	r3, r2, #0, #1
+ 210:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     UNUSED(data);
+ 474              		.loc 1 210 1 view .LVU137
+ 475 00d8 0446     		mov	r4, r0
+ 220:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         CARRIER_ACTIVATION_CHECK) ? 1 : 0 ;
+ 476              		.loc 1 220 42 view .LVU138
+ 477 00da 6B71     		strb	r3, [r5, #5]
+ 224:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         TRUE : FALSE);
+ 478              		.loc 1 224 5 is_stmt 1 view .LVU139
+ 226:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** #if CIC_NOTIF_ELEM_SUPPORT
+ 479              		.loc 1 226 5 view .LVU140
+ 226:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** #if CIC_NOTIF_ELEM_SUPPORT
+ 480              		.loc 1 226 26 view .LVU141
+ 229:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** #endif
+ 481              		.loc 1 229 5 view .LVU142
+ 482 00dc FFF7FEFF 		bl	USB_Class_CDC_PSTN_Send_Serial_State
+ 483              	.LVL30:
+ 231:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     {
+ 484              		.loc 1 231 5 view .LVU143
+ 231:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     {
+ 485              		.loc 1 231 24 is_stmt 0 view .LVU144
+ 486 00e0 2E68     		ldr	r6, [r5]
+ 231:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****     {
+ 487              		.loc 1 231 7 view .LVU145
+ 488 00e2 46B1     		cbz	r6, .L25
+ 233:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         {
+ 489              		.loc 1 233 9 is_stmt 1 view .LVU146
+ 233:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****         {
+ 490              		.loc 1 233 11 is_stmt 0 view .LVU147
+ 491 00e4 AB79     		ldrb	r3, [r5, #6]	@ zero_extendqisi2
+ 492 00e6 13F00202 		ands	r2, r3, #2
+ 235:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****                 NULL);
+ 493              		.loc 1 235 13 is_stmt 1 view .LVU148
+ 494 00ea 1ABF     		itte	ne
+ 495 00ec 3A46     		movne	r2, r7
+ 496 00ee 2221     		movne	r1, #34
+ 240:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c ****                 NULL);
+ 497              		.loc 1 240 13 view .LVU149
+ 498 00f0 2121     		moveq	r1, #33
+ 499 00f2 2046     		mov	r0, r4
+ 500 00f4 B047     		blx	r6
+ 501              	.LVL31:
+ 502              	.L25:
+ 244:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** }
+ 503              		.loc 1 244 5 view .LVU150
+ 245:hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.c **** 
+ 504              		.loc 1 245 1 is_stmt 0 view .LVU151
+ 505 00f6 0020     		movs	r0, #0
+ 506 00f8 F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 507              	.L32:
+ 508 00fa 00BF     		.align	2
+ 509              	.L31:
+ 510 00fc 00000000 		.word	.LANCHOR0
+ 511              		.cfi_endproc
+ 512              	.LFE3:
+ 514              		.comm	Cpu,8,4
+ 515              		.data
+ 516              		.set	.LANCHOR1,. + 0
+ 519              	g_serial_state_buf:
+ 520 0000 A1200000 		.ascii	"\241 \000\000\000\000\002\000\000\000"
+ 520      00000200 
+ 520      0000
+ 521              		.bss
+ 522              		.align	2
+ 523              		.set	.LANCHOR0,. + 0
+ 526              	g_pstn_callback:
+ 527 0000 00000000 		.space	4
+ 530              	g_current_interface:
+ 531 0004 00       		.space	1
+ 534              	g_uart_bitmap:
+ 535 0005 00       		.space	1
+ 538              	g_dte_status:
+ 539 0006 00       		.space	1
+ 540              		.text
+ 541              	.Letext0:
+ 542              		.file 2 "hal/Landungsbruecke/freescale/USB_CDC/types.h"
+ 543              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 544              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 545              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 546              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 547              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 548              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 549              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 550              		.file 10 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\in
+ 551              		.file 11 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 552              		.file 12 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 553              		.file 13 "hal/Landungsbruecke/freescale/USB_CDC/usb_devapi.h"
+ 554              		.file 14 "hal/Landungsbruecke/freescale/USB_CDC/usb_class.h"
+ 555              		.file 15 "hal/Landungsbruecke/freescale/USB_CDC/usb_cdc_pstn.h"
+ 556              		.file 16 "hal/Landungsbruecke/freescale/USB_CDC/usb_cdc.h"
+ 557              		.file 17 "hal/Landungsbruecke/freescale/USB_CDC/usb_descriptor.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 usb_cdc_pstn.c
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:23     .text:00000000 USB_Class_CDC_Pstn_Init
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:49     .text:00000008 $d
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:53     .text:0000000c $t
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:60     .text:0000000c USB_Class_CDC_PSTN_Get_Line_Coding
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:88     .text:00000018 $d
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:92     .text:0000001c $t
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:99     .text:0000001c USB_Class_CDC_PSTN_Set_Line_Coding
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:147    .text:00000038 $d
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:151    .text:0000003c $t
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:158    .text:0000003c USB_Class_CDC_PSTN_Send_Break
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:192    .text:00000042 USB_Class_CDC_PSTN_Get_Comm_Feature
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:281    .text:00000070 $d
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:285    .text:00000074 $t
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:292    .text:00000074 USB_Class_CDC_PSTN_Set_Comm_Feature
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:381    .text:000000a0 $d
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:385    .text:000000a4 $t
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:392    .text:000000a4 USB_Class_CDC_PSTN_Send_Serial_State
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:422    .text:000000b8 $d
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:427    .text:000000c0 $t
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:434    .text:000000c0 USB_Class_CDC_PSTN_Set_Ctrl_Line_State
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:510    .text:000000fc $d
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:519    .data:00000000 g_serial_state_buf
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:522    .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:526    .bss:00000000 g_pstn_callback
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:530    .bss:00000004 g_current_interface
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:534    .bss:00000005 g_uart_bitmap
+C:\Users\Shubham\AppData\Local\Temp\ccxMHB9D.s:538    .bss:00000006 g_dte_status
+
+UNDEFINED SYMBOLS
+USB_Desc_Get_Line_Coding
+USB_Desc_Set_Line_Coding
+USB_Desc_Get_Abstract_State
+USB_Desc_Get_Country_Setting
+USB_Desc_Set_Abstract_State
+USB_Desc_Set_Country_Setting
+USB_Class_CDC_Send_Data

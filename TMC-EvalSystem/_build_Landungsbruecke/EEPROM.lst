@@ -1,0 +1,1594 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"EEPROM.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.global	eeprom_write_byte
+  17              		.arch armv7e-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	eeprom_write_byte:
+  24              	.LVL0:
+  25              	.LFB2:
+  26              		.file 1 "tmc/EEPROM.c"
+   1:tmc/EEPROM.c  **** /*
+   2:tmc/EEPROM.c  ****  * EEPROM.c
+   3:tmc/EEPROM.c  ****  *
+   4:tmc/EEPROM.c  ****  *  Created on: 13.04.2017
+   5:tmc/EEPROM.c  ****  *      Author: je
+   6:tmc/EEPROM.c  ****  *  Modified on: 26.02.2019
+   7:tmc/EEPROM.c  ****  *      Author: LK
+   8:tmc/EEPROM.c  ****  */
+   9:tmc/EEPROM.c  **** 
+  10:tmc/EEPROM.c  **** #include "EEPROM.h"
+  11:tmc/EEPROM.c  **** #include <string.h>
+  12:tmc/EEPROM.c  **** 
+  13:tmc/EEPROM.c  **** EEPROM_Channels EEPROM =
+  14:tmc/EEPROM.c  **** {
+  15:tmc/EEPROM.c  **** 	.ch1 =
+  16:tmc/EEPROM.c  **** 	{
+  17:tmc/EEPROM.c  **** 		.init = false,
+  18:tmc/EEPROM.c  **** 		.name = { 0 },
+  19:tmc/EEPROM.c  **** 		.id = 0,
+  20:tmc/EEPROM.c  **** 		.hw = 0,
+  21:tmc/EEPROM.c  **** 		.magic = 0
+  22:tmc/EEPROM.c  **** 	},
+  23:tmc/EEPROM.c  **** 	.ch2 =
+  24:tmc/EEPROM.c  **** 	{
+  25:tmc/EEPROM.c  **** 		.init = false,
+  26:tmc/EEPROM.c  **** 		.name = { 0 },
+  27:tmc/EEPROM.c  **** 		.id = 0,
+  28:tmc/EEPROM.c  **** 		.hw = 0,
+  29:tmc/EEPROM.c  **** 		.magic = 0
+  30:tmc/EEPROM.c  **** 	}
+  31:tmc/EEPROM.c  **** };
+  32:tmc/EEPROM.c  **** 
+  33:tmc/EEPROM.c  **** // Perform initial scan and store to struct
+  34:tmc/EEPROM.c  **** void eeprom_init(SPIChannelTypeDef *SPIChannel)
+  35:tmc/EEPROM.c  **** {
+  36:tmc/EEPROM.c  **** 	uint8_t buffer[EEPROM_SIZE_META] = { 0 };
+  37:tmc/EEPROM.c  **** 	EEPROM_Data *eep = (SPIChannel == &SPI.ch1) ? &EEPROM.ch1 : &EEPROM.ch2;
+  38:tmc/EEPROM.c  **** 	eeprom_read_array(SPIChannel, EEPROM_ADDR_META, buffer, EEPROM_SIZE_META);
+  39:tmc/EEPROM.c  **** 	memcpy(eep->name, &buffer[EEPROM_ADDR_NAME - EEPROM_ADDR_META], EEPROM_SIZE_NAME);
+  40:tmc/EEPROM.c  **** 	eep->id = _8_16(buffer[EEPROM_ADDR_ID - EEPROM_ADDR_META], buffer[(EEPROM_ADDR_ID + 1) - EEPROM_AD
+  41:tmc/EEPROM.c  **** 	eep->hw = _8_16(buffer[EEPROM_ADDR_HW - EEPROM_ADDR_META], buffer[(EEPROM_ADDR_HW + 1) - EEPROM_AD
+  42:tmc/EEPROM.c  **** 	eep->magic = _8_16(buffer[EEPROM_ADDR_MAGIC - EEPROM_ADDR_META], buffer[(EEPROM_ADDR_MAGIC + 1) - 
+  43:tmc/EEPROM.c  **** 	eep->init = true;
+  44:tmc/EEPROM.c  **** //	eeprom_read_array(&SPI.ch2, EEPROM_ADDR_META, buffer, EEPROM_SIZE_META);
+  45:tmc/EEPROM.c  **** //	memcpy(EEPROM.ch2.name, &buffer[EEPROM_ADDR_NAME - EEPROM_ADDR_META], EEPROM_SIZE_NAME);
+  46:tmc/EEPROM.c  **** //	EEPROM.ch2.id = _8_16(buffer[EEPROM_ADDR_ID - EEPROM_ADDR_META], buffer[(EEPROM_ADDR_ID + 1) - E
+  47:tmc/EEPROM.c  **** //	EEPROM.ch2.hw = _8_16(buffer[EEPROM_ADDR_HW - EEPROM_ADDR_META], buffer[(EEPROM_ADDR_HW + 1) - E
+  48:tmc/EEPROM.c  **** //	EEPROM.ch2.magic = _8_16(buffer[EEPROM_ADDR_MAGIC - EEPROM_ADDR_META], buffer[(EEPROM_ADDR_MAGIC
+  49:tmc/EEPROM.c  **** //	EEPROM.ch2.init = true;
+  50:tmc/EEPROM.c  **** }
+  51:tmc/EEPROM.c  **** 
+  52:tmc/EEPROM.c  **** /*******************************************************************
+  53:tmc/EEPROM.c  **** 	Function: eeprom_check
+  54:tmc/EEPROM.c  **** 	Parameters: SPI channel the Eeprom should be checked on
+  55:tmc/EEPROM.c  **** 
+  56:tmc/EEPROM.c  **** 	Returns: false when an Eeprom has been successfully detected and is in ready status
+  57:tmc/EEPROM.c  **** 			The status of the eeprom otherwise
+  58:tmc/EEPROM.c  **** 
+  59:tmc/EEPROM.c  **** 	Purpose: checking whether Eeprom is connected and ready
+  60:tmc/EEPROM.c  **** ********************************************************************/
+  61:tmc/EEPROM.c  **** uint8_t eeprom_check(SPIChannelTypeDef *SPIChannel)
+  62:tmc/EEPROM.c  **** {
+  63:tmc/EEPROM.c  **** 	// Prüfen, ob der SPI-Bus schon funktioniert: Im Status-Register des EEPROMs
+  64:tmc/EEPROM.c  **** 	// müssen Bit 6, 5, 4 und 0 auf jedem Fall 0 sein und nicht 1.
+  65:tmc/EEPROM.c  **** 	// Watchdog darf an dieser Stelle ruhig zuschlagen.
+  66:tmc/EEPROM.c  **** 
+  67:tmc/EEPROM.c  **** 	// select CSN of eeprom
+  68:tmc/EEPROM.c  **** 	IOPinTypeDef* io = SPIChannel->CSN;
+  69:tmc/EEPROM.c  **** 	if(SPIChannel == &SPI.ch1)
+  70:tmc/EEPROM.c  **** 		SPIChannel->CSN = &HAL.IOs->pins->ID_CH0;
+  71:tmc/EEPROM.c  **** 	else
+  72:tmc/EEPROM.c  **** 		SPIChannel->CSN = &HAL.IOs->pins->ID_CH1;
+  73:tmc/EEPROM.c  **** 
+  74:tmc/EEPROM.c  **** 	IOs.toOutput(SPIChannel->CSN);
+  75:tmc/EEPROM.c  **** 
+  76:tmc/EEPROM.c  **** 	SPIChannel->readWrite(0x05, false);  // Befehl "Get Status"
+  77:tmc/EEPROM.c  **** 	uint8_t out = SPIChannel->readWrite(0x00, true);
+  78:tmc/EEPROM.c  **** 	// check whether bits 6, 5, 4 and 0 are cleared
+  79:tmc/EEPROM.c  **** 	if((out & 0x71) != 0)
+  80:tmc/EEPROM.c  **** 		goto end;
+  81:tmc/EEPROM.c  **** 
+  82:tmc/EEPROM.c  **** 	out = 0;
+  83:tmc/EEPROM.c  **** 
+  84:tmc/EEPROM.c  **** 	//check for magic number in eeprom
+  85:tmc/EEPROM.c  **** 	uint8_t number[2];
+  86:tmc/EEPROM.c  **** 
+  87:tmc/EEPROM.c  **** 	eeprom_read_array(SPIChannel, EEPROM_ADDR_MAGIC, number, 2);
+  88:tmc/EEPROM.c  **** 
+  89:tmc/EEPROM.c  **** 	if(number[0] != MAGICNUMBER_LOW || number[1] != MAGICNUMBER_HIGH)
+  90:tmc/EEPROM.c  **** 	{
+  91:tmc/EEPROM.c  **** 		out = ID_CHECKERROR_MAGICNUMBER;
+  92:tmc/EEPROM.c  **** 	}
+  93:tmc/EEPROM.c  **** 
+  94:tmc/EEPROM.c  **** 	end:
+  95:tmc/EEPROM.c  **** 	HAL.IOs->config->toInput(SPIChannel->CSN);
+  96:tmc/EEPROM.c  **** 	SPIChannel->CSN = io;
+  97:tmc/EEPROM.c  **** 
+  98:tmc/EEPROM.c  **** 	if(out && ((SPIChannel == &SPI.ch1 && !EEPROM.ch1.init)
+  99:tmc/EEPROM.c  **** 			|| (SPIChannel == &SPI.ch2 && !EEPROM.ch2.init))) {
+ 100:tmc/EEPROM.c  **** 		eeprom_init(SPIChannel);
+ 101:tmc/EEPROM.c  **** 	}
+ 102:tmc/EEPROM.c  **** 
+ 103:tmc/EEPROM.c  **** 	return out;
+ 104:tmc/EEPROM.c  **** }
+ 105:tmc/EEPROM.c  **** 
+ 106:tmc/EEPROM.c  **** 
+ 107:tmc/EEPROM.c  **** /*******************************************************************
+ 108:tmc/EEPROM.c  **** 	Funktion: eeprom_write_byte
+ 109:tmc/EEPROM.c  **** 	Parameter: 	Channel: EEP_CH1 oder EEP_CH2
+ 110:tmc/EEPROM.c  **** 				address: Adresse im EEPROM (0..16383)
+ 111:tmc/EEPROM.c  **** 				value: der zu schreibende Wert
+ 112:tmc/EEPROM.c  **** 
+ 113:tmc/EEPROM.c  **** 	Rückgabewert: ---
+ 114:tmc/EEPROM.c  **** 
+ 115:tmc/EEPROM.c  **** 	Zweck: Schreiben eines Bytes in das EEPROM auf dem Evalboard.
+ 116:tmc/EEPROM.c  **** ********************************************************************/
+ 117:tmc/EEPROM.c  **** void eeprom_write_byte(SPIChannelTypeDef *SPIChannel, uint16_t address, uint8_t value)
+ 118:tmc/EEPROM.c  **** {
+  27              		.loc 1 118 1 view -0
+  28              		.cfi_startproc
+  29              		@ args = 0, pretend = 0, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+ 119:tmc/EEPROM.c  **** 	// select CSN of eeprom
+ 120:tmc/EEPROM.c  **** 	IOPinTypeDef* io = SPIChannel->CSN;
+  31              		.loc 1 120 2 view .LVU1
+  32 0000 2B4B     		ldr	r3, .L9
+ 118:tmc/EEPROM.c  **** 	// select CSN of eeprom
+  33              		.loc 1 118 1 is_stmt 0 view .LVU2
+  34 0002 2DE9F041 		push	{r4, r5, r6, r7, r8, lr}
+  35              	.LCFI0:
+  36              		.cfi_def_cfa_offset 24
+  37              		.cfi_offset 4, -24
+  38              		.cfi_offset 5, -20
+  39              		.cfi_offset 6, -16
+  40              		.cfi_offset 7, -12
+  41              		.cfi_offset 8, -8
+  42              		.cfi_offset 14, -4
+  43 0006 DE68     		ldr	r6, [r3, #12]
+  44              		.loc 1 120 16 view .LVU3
+  45 0008 4768     		ldr	r7, [r0, #4]
+  46              	.LVL1:
+ 121:tmc/EEPROM.c  **** 	if(SPIChannel == &SPI.ch1) {
+  47              		.loc 1 121 2 is_stmt 1 view .LVU4
+  48 000a 7368     		ldr	r3, [r6, #4]
+ 118:tmc/EEPROM.c  **** 	// select CSN of eeprom
+  49              		.loc 1 118 1 is_stmt 0 view .LVU5
+  50 000c 9046     		mov	r8, r2
+  51              		.loc 1 121 4 view .LVU6
+  52 000e 294A     		ldr	r2, .L9+4
+  53              	.LVL2:
+  54              		.loc 1 121 4 view .LVU7
+  55 0010 9042     		cmp	r0, r2
+ 122:tmc/EEPROM.c  **** 		SPIChannel->CSN = &HAL.IOs->pins->ID_CH0;
+  56              		.loc 1 122 21 view .LVU8
+  57 0012 0EBF     		itee	eq
+  58 0014 2833     		addeq	r3, r3, #40
+ 123:tmc/EEPROM.c  **** 		EEPROM.ch1.init = false;
+ 124:tmc/EEPROM.c  **** 	} else {
+ 125:tmc/EEPROM.c  **** 		SPIChannel->CSN = &HAL.IOs->pins->ID_CH1;
+  59              		.loc 1 125 21 view .LVU9
+  60 0016 4833     		addne	r3, r3, #72
+  61              		.loc 1 125 19 view .LVU10
+  62 0018 4360     		strne	r3, [r0, #4]
+  63 001a 274A     		ldr	r2, .L9+8
+ 122:tmc/EEPROM.c  **** 		SPIChannel->CSN = &HAL.IOs->pins->ID_CH0;
+  64              		.loc 1 122 19 view .LVU11
+  65 001c 08BF     		it	eq
+  66 001e 4360     		streq	r3, [r0, #4]
+ 126:tmc/EEPROM.c  **** 		EEPROM.ch2.init = false;
+ 127:tmc/EEPROM.c  **** 	}
+ 128:tmc/EEPROM.c  **** 
+ 129:tmc/EEPROM.c  **** 	IOs.toOutput(SPIChannel->CSN);
+  67              		.loc 1 129 5 view .LVU12
+  68 0020 264B     		ldr	r3, .L9+12
+ 118:tmc/EEPROM.c  **** 	// select CSN of eeprom
+  69              		.loc 1 118 1 view .LVU13
+  70 0022 0446     		mov	r4, r0
+  71 0024 0D46     		mov	r5, r1
+  72 0026 4FF00001 		mov	r1, #0
+  73              	.LVL3:
+ 122:tmc/EEPROM.c  **** 		EEPROM.ch1.init = false;
+  74              		.loc 1 122 3 is_stmt 1 view .LVU14
+ 123:tmc/EEPROM.c  **** 	} else {
+  75              		.loc 1 123 3 view .LVU15
+  76              		.loc 1 129 2 is_stmt 0 view .LVU16
+  77 002a DB68     		ldr	r3, [r3, #12]
+  78 002c 4068     		ldr	r0, [r0, #4]
+  79              	.LVL4:
+ 123:tmc/EEPROM.c  **** 	} else {
+  80              		.loc 1 123 19 view .LVU17
+  81 002e 0CBF     		ite	eq
+  82 0030 1170     		strbeq	r1, [r2]
+ 125:tmc/EEPROM.c  **** 		EEPROM.ch2.init = false;
+  83              		.loc 1 125 3 is_stmt 1 view .LVU18
+ 126:tmc/EEPROM.c  **** 	}
+  84              		.loc 1 126 3 view .LVU19
+ 126:tmc/EEPROM.c  **** 	}
+  85              		.loc 1 126 19 is_stmt 0 view .LVU20
+  86 0032 1176     		strbne	r1, [r2, #24]
+  87              		.loc 1 129 2 is_stmt 1 view .LVU21
+  88 0034 9847     		blx	r3
+  89              	.LVL5:
+ 130:tmc/EEPROM.c  **** 
+ 131:tmc/EEPROM.c  **** 	// Schreiben erlauben
+ 132:tmc/EEPROM.c  **** 	SPIChannel->readWrite(0x06, true); // Befehl "Write Enable"
+  90              		.loc 1 132 2 view .LVU22
+  91 0036 A368     		ldr	r3, [r4, #8]
+  92 0038 0121     		movs	r1, #1
+  93 003a 0620     		movs	r0, #6
+  94 003c 9847     		blx	r3
+  95              	.LVL6:
+  96              	.L4:
+ 133:tmc/EEPROM.c  **** 	do
+  97              		.loc 1 133 2 discriminator 1 view .LVU23
+ 134:tmc/EEPROM.c  **** 	{
+ 135:tmc/EEPROM.c  **** 		SPIChannel->readWrite(0x05, false); // Befehl "Get Status"
+  98              		.loc 1 135 3 discriminator 1 view .LVU24
+  99 003e A368     		ldr	r3, [r4, #8]
+ 100 0040 0021     		movs	r1, #0
+ 101 0042 0520     		movs	r0, #5
+ 102 0044 9847     		blx	r3
+ 103              	.LVL7:
+ 136:tmc/EEPROM.c  **** 	} while((SPIChannel->readWrite(0x00, true) & 0x02) == 0x00);  // Warte bis "Write Enable"-Bit gese
+ 104              		.loc 1 136 9 discriminator 1 view .LVU25
+ 105              		.loc 1 136 11 is_stmt 0 discriminator 1 view .LVU26
+ 106 0046 A368     		ldr	r3, [r4, #8]
+ 107 0048 0121     		movs	r1, #1
+ 108 004a 0020     		movs	r0, #0
+ 109 004c 9847     		blx	r3
+ 110              	.LVL8:
+ 111              		.loc 1 136 2 discriminator 1 view .LVU27
+ 112 004e 8307     		lsls	r3, r0, #30
+ 113 0050 F5D5     		bpl	.L4
+ 137:tmc/EEPROM.c  **** 
+ 138:tmc/EEPROM.c  **** 	// Eigentliches Schreiben
+ 139:tmc/EEPROM.c  **** 	SPIChannel->readWrite(0x02, false); // Befehl "Write"
+ 114              		.loc 1 139 2 is_stmt 1 view .LVU28
+ 115 0052 A368     		ldr	r3, [r4, #8]
+ 116 0054 0021     		movs	r1, #0
+ 117 0056 0220     		movs	r0, #2
+ 118 0058 9847     		blx	r3
+ 119              	.LVL9:
+ 140:tmc/EEPROM.c  **** 	SPIChannel->readWrite(address >> 8, false);
+ 120              		.loc 1 140 2 view .LVU29
+ 121 005a A368     		ldr	r3, [r4, #8]
+ 122 005c 0021     		movs	r1, #0
+ 123 005e 280A     		lsrs	r0, r5, #8
+ 124 0060 9847     		blx	r3
+ 125              	.LVL10:
+ 141:tmc/EEPROM.c  **** 	SPIChannel->readWrite(address & 0xFF, false);
+ 126              		.loc 1 141 2 view .LVU30
+ 127 0062 A368     		ldr	r3, [r4, #8]
+ 128 0064 0021     		movs	r1, #0
+ 129 0066 E8B2     		uxtb	r0, r5
+ 130 0068 9847     		blx	r3
+ 131              	.LVL11:
+ 142:tmc/EEPROM.c  **** 	SPIChannel->readWrite(value, true);
+ 132              		.loc 1 142 2 view .LVU31
+ 133 006a A368     		ldr	r3, [r4, #8]
+ 134 006c 0121     		movs	r1, #1
+ 135 006e 4046     		mov	r0, r8
+ 136 0070 9847     		blx	r3
+ 137              	.LVL12:
+ 138              	.L5:
+ 143:tmc/EEPROM.c  **** 
+ 144:tmc/EEPROM.c  **** 	// Warten bis Schreibvorgang beendet ist
+ 145:tmc/EEPROM.c  **** 	do
+ 139              		.loc 1 145 2 discriminator 1 view .LVU32
+ 146:tmc/EEPROM.c  **** 	{
+ 147:tmc/EEPROM.c  **** 		SPIChannel->readWrite(0x05, false); //Befehl "Get Status"
+ 140              		.loc 1 147 3 discriminator 1 view .LVU33
+ 141 0072 A368     		ldr	r3, [r4, #8]
+ 142 0074 0021     		movs	r1, #0
+ 143 0076 0520     		movs	r0, #5
+ 144 0078 9847     		blx	r3
+ 145              	.LVL13:
+ 148:tmc/EEPROM.c  **** 	} while(SPIChannel->readWrite(0x00, true) & 0x01);
+ 146              		.loc 1 148 9 discriminator 1 view .LVU34
+ 147              		.loc 1 148 10 is_stmt 0 discriminator 1 view .LVU35
+ 148 007a A368     		ldr	r3, [r4, #8]
+ 149 007c 0121     		movs	r1, #1
+ 150 007e 0020     		movs	r0, #0
+ 151 0080 9847     		blx	r3
+ 152              	.LVL14:
+ 153              		.loc 1 148 2 discriminator 1 view .LVU36
+ 154 0082 10F00105 		ands	r5, r0, #1
+ 155 0086 F4D1     		bne	.L5
+ 149:tmc/EEPROM.c  **** 
+ 150:tmc/EEPROM.c  **** 	//block writing
+ 151:tmc/EEPROM.c  **** 	SPIChannel->readWrite(0x04, true); //Befehl "Write Disable"
+ 156              		.loc 1 151 2 is_stmt 1 view .LVU37
+ 157 0088 A368     		ldr	r3, [r4, #8]
+ 158 008a 0121     		movs	r1, #1
+ 159 008c 0420     		movs	r0, #4
+ 160 008e 9847     		blx	r3
+ 161              	.LVL15:
+ 152:tmc/EEPROM.c  **** 	do
+ 162              		.loc 1 152 2 view .LVU38
+ 153:tmc/EEPROM.c  **** 	{
+ 154:tmc/EEPROM.c  **** 		SPIChannel->readWrite(0x05, false); //Befehl "Get Status"
+ 163              		.loc 1 154 3 view .LVU39
+ 164 0090 A368     		ldr	r3, [r4, #8]
+ 165 0092 2946     		mov	r1, r5
+ 166 0094 0520     		movs	r0, #5
+ 167 0096 9847     		blx	r3
+ 168              	.LVL16:
+ 155:tmc/EEPROM.c  **** 	} while((SPIChannel->readWrite(0x00, true) & 0x02) == 0x01); //Warte bis "Write Enable"-Bit zurüc
+ 169              		.loc 1 155 9 view .LVU40
+ 170              		.loc 1 155 11 is_stmt 0 view .LVU41
+ 171 0098 A368     		ldr	r3, [r4, #8]
+ 172 009a 0121     		movs	r1, #1
+ 173 009c 2846     		mov	r0, r5
+ 174 009e 9847     		blx	r3
+ 175              	.LVL17:
+ 156:tmc/EEPROM.c  **** 
+ 157:tmc/EEPROM.c  **** 	HAL.IOs->config->toInput(SPIChannel->CSN);
+ 176              		.loc 1 157 2 is_stmt 1 view .LVU42
+ 177              		.loc 1 157 17 is_stmt 0 view .LVU43
+ 178 00a0 3368     		ldr	r3, [r6]
+ 179              		.loc 1 157 2 view .LVU44
+ 180 00a2 6068     		ldr	r0, [r4, #4]
+ 181 00a4 1B69     		ldr	r3, [r3, #16]
+ 182 00a6 9847     		blx	r3
+ 183              	.LVL18:
+ 158:tmc/EEPROM.c  **** 	SPIChannel->CSN = io;
+ 184              		.loc 1 158 2 is_stmt 1 view .LVU45
+ 185              		.loc 1 158 18 is_stmt 0 view .LVU46
+ 186 00a8 6760     		str	r7, [r4, #4]
+ 159:tmc/EEPROM.c  **** }
+ 187              		.loc 1 159 1 view .LVU47
+ 188 00aa BDE8F081 		pop	{r4, r5, r6, r7, r8, pc}
+ 189              	.LVL19:
+ 190              	.L10:
+ 191              		.loc 1 159 1 view .LVU48
+ 192 00ae 00BF     		.align	2
+ 193              	.L9:
+ 194 00b0 00000000 		.word	HAL
+ 195 00b4 00000000 		.word	SPI
+ 196 00b8 00000000 		.word	.LANCHOR0
+ 197 00bc 00000000 		.word	IOs
+ 198              		.cfi_endproc
+ 199              	.LFE2:
+ 201              		.align	1
+ 202              		.global	eeprom_write_array
+ 203              		.syntax unified
+ 204              		.thumb
+ 205              		.thumb_func
+ 206              		.fpu softvfp
+ 208              	eeprom_write_array:
+ 209              	.LVL20:
+ 210              	.LFB3:
+ 160:tmc/EEPROM.c  **** 
+ 161:tmc/EEPROM.c  **** 
+ 162:tmc/EEPROM.c  **** /*******************************************************************
+ 163:tmc/EEPROM.c  **** 	Funktion: eeprom_write_array
+ 164:tmc/EEPROM.c  **** 	Parameter:	Channel: EEP_CH1 oder EEP_CH2
+ 165:tmc/EEPROM.c  **** 				address: Adresse im EEPROM (0..16383)
+ 166:tmc/EEPROM.c  **** 				data: Startadresse des zu schreibenden Blocks
+ 167:tmc/EEPROM.c  **** 				size: Länge des Blocks in Bytes
+ 168:tmc/EEPROM.c  **** 
+ 169:tmc/EEPROM.c  **** 	Rückgabewert: ---
+ 170:tmc/EEPROM.c  **** 
+ 171:tmc/EEPROM.c  **** 	Zweck: Schreiben mehrerer Bytes in das EEPROM auf dem Evalboard.
+ 172:tmc/EEPROM.c  **** 	Dabei können beliebig viele Bytes (also auch das gesamte EEPROM
+ 173:tmc/EEPROM.c  **** 	beschrieben werden (die speziellen Eigenschaften des 25128 werden
+ 174:tmc/EEPROM.c  **** 	dabei beachtet).
+ 175:tmc/EEPROM.c  **** ********************************************************************/
+ 176:tmc/EEPROM.c  **** void eeprom_write_array(SPIChannelTypeDef *SPIChannel, uint16_t address, uint8_t *data, uint16_t si
+ 177:tmc/EEPROM.c  **** {
+ 211              		.loc 1 177 1 is_stmt 1 view -0
+ 212              		.cfi_startproc
+ 213              		@ args = 0, pretend = 0, frame = 8
+ 214              		@ frame_needed = 0, uses_anonymous_args = 0
+ 178:tmc/EEPROM.c  **** 	uint16_t i;
+ 215              		.loc 1 178 2 view .LVU50
+ 179:tmc/EEPROM.c  **** 
+ 180:tmc/EEPROM.c  **** 	//select CSN of eeprom
+ 181:tmc/EEPROM.c  **** 	IOPinTypeDef* io = SPIChannel->CSN;
+ 216              		.loc 1 181 2 view .LVU51
+ 177:tmc/EEPROM.c  **** 	uint16_t i;
+ 217              		.loc 1 177 1 is_stmt 0 view .LVU52
+ 218 00c0 2DE9F74F 		push	{r0, r1, r2, r4, r5, r6, r7, r8, r9, r10, fp, lr}
+ 219              	.LCFI1:
+ 220              		.cfi_def_cfa_offset 48
+ 221              		.cfi_offset 4, -36
+ 222              		.cfi_offset 5, -32
+ 223              		.cfi_offset 6, -28
+ 224              		.cfi_offset 7, -24
+ 225              		.cfi_offset 8, -20
+ 226              		.cfi_offset 9, -16
+ 227              		.cfi_offset 10, -12
+ 228              		.cfi_offset 11, -8
+ 229              		.cfi_offset 14, -4
+ 177:tmc/EEPROM.c  **** 	uint16_t i;
+ 230              		.loc 1 177 1 view .LVU53
+ 231 00c4 1F46     		mov	r7, r3
+ 232 00c6 4B4B     		ldr	r3, .L29
+ 233              	.LVL21:
+ 234              		.loc 1 181 16 view .LVU54
+ 235 00c8 D0F804A0 		ldr	r10, [r0, #4]
+ 236              	.LVL22:
+ 182:tmc/EEPROM.c  **** 	if(SPIChannel == &SPI.ch1) {
+ 237              		.loc 1 182 2 is_stmt 1 view .LVU55
+ 238 00cc DB68     		ldr	r3, [r3, #12]
+ 239 00ce 0193     		str	r3, [sp, #4]
+ 177:tmc/EEPROM.c  **** 	uint16_t i;
+ 240              		.loc 1 177 1 is_stmt 0 view .LVU56
+ 241 00d0 0D46     		mov	r5, r1
+ 242 00d2 5968     		ldr	r1, [r3, #4]
+ 243              	.LVL23:
+ 244              		.loc 1 182 4 view .LVU57
+ 245 00d4 484B     		ldr	r3, .L29+4
+ 246 00d6 9842     		cmp	r0, r3
+ 247 00d8 484B     		ldr	r3, .L29+8
+ 183:tmc/EEPROM.c  **** 		SPIChannel->CSN = &HAL.IOs->pins->ID_CH0;
+ 184:tmc/EEPROM.c  **** 		EEPROM.ch1.init = false;
+ 185:tmc/EEPROM.c  **** 	} else {
+ 186:tmc/EEPROM.c  **** 		SPIChannel->CSN = &HAL.IOs->pins->ID_CH1;
+ 248              		.loc 1 186 21 view .LVU58
+ 249 00da 18BF     		it	ne
+ 250 00dc 4831     		addne	r1, r1, #72
+ 177:tmc/EEPROM.c  **** 	uint16_t i;
+ 251              		.loc 1 177 1 view .LVU59
+ 252 00de 9046     		mov	r8, r2
+ 253 00e0 4FF00002 		mov	r2, #0
+ 254              	.LVL24:
+ 183:tmc/EEPROM.c  **** 		SPIChannel->CSN = &HAL.IOs->pins->ID_CH0;
+ 255              		.loc 1 183 3 is_stmt 1 view .LVU60
+ 256              		.loc 1 186 19 is_stmt 0 view .LVU61
+ 257 00e4 13BF     		iteet	ne
+ 258 00e6 4160     		strne	r1, [r0, #4]
+ 183:tmc/EEPROM.c  **** 		SPIChannel->CSN = &HAL.IOs->pins->ID_CH0;
+ 259              		.loc 1 183 21 view .LVU62
+ 260 00e8 2831     		addeq	r1, r1, #40
+ 184:tmc/EEPROM.c  **** 	} else {
+ 261              		.loc 1 184 19 view .LVU63
+ 262 00ea 1A70     		strbeq	r2, [r3]
+ 187:tmc/EEPROM.c  **** 		EEPROM.ch2.init = false;
+ 263              		.loc 1 187 19 view .LVU64
+ 264 00ec 1A76     		strbne	r2, [r3, #24]
+ 188:tmc/EEPROM.c  **** 	}
+ 189:tmc/EEPROM.c  **** 
+ 190:tmc/EEPROM.c  **** 	IOs.toOutput(SPIChannel->CSN);
+ 265              		.loc 1 190 5 view .LVU65
+ 266 00ee 444B     		ldr	r3, .L29+12
+ 183:tmc/EEPROM.c  **** 		EEPROM.ch1.init = false;
+ 267              		.loc 1 183 19 view .LVU66
+ 268 00f0 08BF     		it	eq
+ 269 00f2 4160     		streq	r1, [r0, #4]
+ 184:tmc/EEPROM.c  **** 	} else {
+ 270              		.loc 1 184 3 is_stmt 1 view .LVU67
+ 186:tmc/EEPROM.c  **** 		EEPROM.ch2.init = false;
+ 271              		.loc 1 186 3 view .LVU68
+ 187:tmc/EEPROM.c  **** 	}
+ 272              		.loc 1 187 3 view .LVU69
+ 273              		.loc 1 190 2 view .LVU70
+ 177:tmc/EEPROM.c  **** 	uint16_t i;
+ 274              		.loc 1 177 1 is_stmt 0 view .LVU71
+ 275 00f4 0446     		mov	r4, r0
+ 276              		.loc 1 190 2 view .LVU72
+ 277 00f6 DB68     		ldr	r3, [r3, #12]
+ 278 00f8 4068     		ldr	r0, [r0, #4]
+ 279              	.LVL25:
+ 280              		.loc 1 190 2 view .LVU73
+ 281 00fa 9847     		blx	r3
+ 282              	.LVL26:
+ 191:tmc/EEPROM.c  **** 
+ 192:tmc/EEPROM.c  **** 	// Schreiben erlauben
+ 193:tmc/EEPROM.c  **** 	SPIChannel->readWrite(0x06, true); // Befehl "Write Enable"
+ 283              		.loc 1 193 2 is_stmt 1 view .LVU74
+ 284 00fc A368     		ldr	r3, [r4, #8]
+ 285 00fe 0121     		movs	r1, #1
+ 286 0100 0620     		movs	r0, #6
+ 287 0102 9847     		blx	r3
+ 288              	.LVL27:
+ 289              	.L14:
+ 194:tmc/EEPROM.c  **** 	do
+ 290              		.loc 1 194 2 discriminator 1 view .LVU75
+ 195:tmc/EEPROM.c  **** 	{
+ 196:tmc/EEPROM.c  **** 		SPIChannel->readWrite( 0x05, false); //Befehl "Get Status"
+ 291              		.loc 1 196 3 discriminator 1 view .LVU76
+ 292 0104 A368     		ldr	r3, [r4, #8]
+ 293 0106 0021     		movs	r1, #0
+ 294 0108 0520     		movs	r0, #5
+ 295 010a 9847     		blx	r3
+ 296              	.LVL28:
+ 197:tmc/EEPROM.c  **** 	} while((SPIChannel->readWrite(0x00, true) & 0x02)==0x00); //Warte bis "Write Enable"-Bit gesetzt
+ 297              		.loc 1 197 9 discriminator 1 view .LVU77
+ 298              		.loc 1 197 11 is_stmt 0 discriminator 1 view .LVU78
+ 299 010c A368     		ldr	r3, [r4, #8]
+ 300 010e 0121     		movs	r1, #1
+ 301 0110 0020     		movs	r0, #0
+ 302 0112 9847     		blx	r3
+ 303              	.LVL29:
+ 304              		.loc 1 197 2 discriminator 1 view .LVU79
+ 305 0114 8307     		lsls	r3, r0, #30
+ 306 0116 F5D5     		bpl	.L14
+ 198:tmc/EEPROM.c  **** 
+ 199:tmc/EEPROM.c  **** 	// Schreibvorgang (Startadresse)
+ 200:tmc/EEPROM.c  **** 	SPIChannel->readWrite(0x02, false); // Befehl "Write"
+ 307              		.loc 1 200 2 is_stmt 1 view .LVU80
+ 308 0118 A368     		ldr	r3, [r4, #8]
+ 309 011a 0021     		movs	r1, #0
+ 310 011c 0220     		movs	r0, #2
+ 311 011e 9847     		blx	r3
+ 312              	.LVL30:
+ 201:tmc/EEPROM.c  **** 	SPIChannel->readWrite(address >> 8, false);
+ 313              		.loc 1 201 2 view .LVU81
+ 314 0120 A368     		ldr	r3, [r4, #8]
+ 315 0122 0021     		movs	r1, #0
+ 316 0124 280A     		lsrs	r0, r5, #8
+ 317 0126 9847     		blx	r3
+ 318              	.LVL31:
+ 202:tmc/EEPROM.c  **** 	SPIChannel->readWrite(address & 0xFF, false);
+ 319              		.loc 1 202 2 view .LVU82
+ 320 0128 A368     		ldr	r3, [r4, #8]
+ 321 012a 0021     		movs	r1, #0
+ 322 012c E8B2     		uxtb	r0, r5
+ 323 012e 9847     		blx	r3
+ 324              	.LVL32:
+ 203:tmc/EEPROM.c  **** 
+ 204:tmc/EEPROM.c  **** 	// Eigentliches Schreiben der Daten
+ 205:tmc/EEPROM.c  **** 	for(i = 0; i < size; i++)
+ 325              		.loc 1 205 2 view .LVU83
+ 326              		.loc 1 205 2 is_stmt 0 view .LVU84
+ 327 0130 0026     		movs	r6, #0
+ 206:tmc/EEPROM.c  **** 	{
+ 207:tmc/EEPROM.c  **** 		// Adresse mitzählen und bei Überlauf der untersten sechs Bits das EEPROM deselektieren
+ 208:tmc/EEPROM.c  **** 		// und neuen Write-Befehl senden (bzw. beim letzten Datenbyte einfach nur EEPROM
+ 209:tmc/EEPROM.c  **** 		// deselektieren).
+ 210:tmc/EEPROM.c  **** 		// Dies ist erforderlich, da beim Beschreiben im 25128 nur die untersten sechs Bits der
+ 211:tmc/EEPROM.c  **** 		// Adresse hochgezählt werden (anders als beim Lesen).
+ 212:tmc/EEPROM.c  **** 		address++;
+ 213:tmc/EEPROM.c  **** 		SPIChannel->readWrite(*(data+i), (address & 0x0000003F)==0 || i==size-1);
+ 328              		.loc 1 213 72 view .LVU85
+ 329 0132 07F1FF3B 		add	fp, r7, #-1
+ 330              	.LVL33:
+ 331              	.L15:
+ 205:tmc/EEPROM.c  **** 	{
+ 332              		.loc 1 205 13 is_stmt 1 discriminator 1 view .LVU86
+ 205:tmc/EEPROM.c  **** 	{
+ 333              		.loc 1 205 2 is_stmt 0 discriminator 1 view .LVU87
+ 334 0136 B742     		cmp	r7, r6
+ 335 0138 A268     		ldr	r2, [r4, #8]
+ 336 013a 20D1     		bne	.L20
+ 337              	.LVL34:
+ 338              	.L21:
+ 214:tmc/EEPROM.c  **** 		if((address & 0x0000003F)==0 && i<size-1)  // Adressbits übergelaufen, aber noch Bytes zu schrei
+ 215:tmc/EEPROM.c  **** 		{
+ 216:tmc/EEPROM.c  **** 			// Warte bis Schreibvorgang beendet
+ 217:tmc/EEPROM.c  **** 			do
+ 218:tmc/EEPROM.c  **** 			{
+ 219:tmc/EEPROM.c  **** 				SPIChannel->readWrite(0x05, false);  // Befehl "Get Status"
+ 220:tmc/EEPROM.c  **** 			} while(SPIChannel->readWrite(0x00, true) & 0x01);
+ 221:tmc/EEPROM.c  **** 
+ 222:tmc/EEPROM.c  **** 			// Neuer "Write Enable"-Befehl
+ 223:tmc/EEPROM.c  **** 			SPIChannel->readWrite(0x06, true);  // Befehl "Write Enable"
+ 224:tmc/EEPROM.c  **** 			do
+ 225:tmc/EEPROM.c  **** 			{
+ 226:tmc/EEPROM.c  **** 				SPIChannel->readWrite(0x05, false);  // Befehl "Get Status"
+ 227:tmc/EEPROM.c  **** 			} while((SPIChannel->readWrite(0x00, true) & 0x02)==0x00); //Warte bis "Write Enable"-Bit gesetz
+ 228:tmc/EEPROM.c  **** 
+ 229:tmc/EEPROM.c  **** 			// Neuer "Write"-Befehl (mit der nächsten Adresse)
+ 230:tmc/EEPROM.c  **** 			SPIChannel->readWrite(0x02, false); // Befehl "Write"
+ 231:tmc/EEPROM.c  **** 			SPIChannel->readWrite(address >> 8, false);
+ 232:tmc/EEPROM.c  **** 			SPIChannel->readWrite(address & 0xFF, false);
+ 233:tmc/EEPROM.c  **** 		}
+ 234:tmc/EEPROM.c  **** 	}
+ 235:tmc/EEPROM.c  **** 
+ 236:tmc/EEPROM.c  **** 	// Warte bis Schreibvorgang beendet
+ 237:tmc/EEPROM.c  **** 	do
+ 339              		.loc 1 237 2 is_stmt 1 discriminator 1 view .LVU88
+ 238:tmc/EEPROM.c  **** 	{
+ 239:tmc/EEPROM.c  **** 		SPIChannel->readWrite(0x05, false); // Befehl "Get Status"
+ 340              		.loc 1 239 3 discriminator 1 view .LVU89
+ 341 013c A368     		ldr	r3, [r4, #8]
+ 342 013e 0021     		movs	r1, #0
+ 343 0140 0520     		movs	r0, #5
+ 344 0142 9847     		blx	r3
+ 345              	.LVL35:
+ 240:tmc/EEPROM.c  **** 	} while(SPIChannel->readWrite(0x00, true) & 0x01);
+ 346              		.loc 1 240 9 discriminator 1 view .LVU90
+ 347              		.loc 1 240 10 is_stmt 0 discriminator 1 view .LVU91
+ 348 0144 A368     		ldr	r3, [r4, #8]
+ 349 0146 0121     		movs	r1, #1
+ 350 0148 0020     		movs	r0, #0
+ 351 014a 9847     		blx	r3
+ 352              	.LVL36:
+ 353              		.loc 1 240 2 discriminator 1 view .LVU92
+ 354 014c 10F00105 		ands	r5, r0, #1
+ 355 0150 F4D1     		bne	.L21
+ 241:tmc/EEPROM.c  **** 
+ 242:tmc/EEPROM.c  **** 	// block writing
+ 243:tmc/EEPROM.c  **** 	SPIChannel->readWrite(0x04, true); // Befehl "Write Disable"
+ 356              		.loc 1 243 2 is_stmt 1 view .LVU93
+ 357 0152 A368     		ldr	r3, [r4, #8]
+ 358 0154 0121     		movs	r1, #1
+ 359 0156 0420     		movs	r0, #4
+ 360 0158 9847     		blx	r3
+ 361              	.LVL37:
+ 244:tmc/EEPROM.c  **** 	do
+ 362              		.loc 1 244 2 view .LVU94
+ 245:tmc/EEPROM.c  **** 	{
+ 246:tmc/EEPROM.c  **** 		SPIChannel->readWrite(0x05, false); // Befehl "Get Status"
+ 363              		.loc 1 246 3 view .LVU95
+ 364 015a A368     		ldr	r3, [r4, #8]
+ 365 015c 2946     		mov	r1, r5
+ 366 015e 0520     		movs	r0, #5
+ 367 0160 9847     		blx	r3
+ 368              	.LVL38:
+ 247:tmc/EEPROM.c  **** 	} while((SPIChannel->readWrite(0x00, true) & 0x02) == 0x01);  // Warte bis "Write Enable"-Bit zur�
+ 369              		.loc 1 247 9 view .LVU96
+ 370              		.loc 1 247 11 is_stmt 0 view .LVU97
+ 371 0162 A368     		ldr	r3, [r4, #8]
+ 372 0164 0121     		movs	r1, #1
+ 373 0166 2846     		mov	r0, r5
+ 374 0168 9847     		blx	r3
+ 375              	.LVL39:
+ 248:tmc/EEPROM.c  **** 
+ 249:tmc/EEPROM.c  **** 	HAL.IOs->config->toInput(SPIChannel->CSN);
+ 376              		.loc 1 249 2 is_stmt 1 view .LVU98
+ 377              		.loc 1 249 17 is_stmt 0 view .LVU99
+ 378 016a 019B     		ldr	r3, [sp, #4]
+ 379              		.loc 1 249 2 view .LVU100
+ 380 016c 6068     		ldr	r0, [r4, #4]
+ 381              		.loc 1 249 17 view .LVU101
+ 382 016e 1B68     		ldr	r3, [r3]
+ 383              		.loc 1 249 2 view .LVU102
+ 384 0170 1B69     		ldr	r3, [r3, #16]
+ 385 0172 9847     		blx	r3
+ 386              	.LVL40:
+ 250:tmc/EEPROM.c  **** 	SPIChannel->CSN = io;
+ 387              		.loc 1 250 2 is_stmt 1 view .LVU103
+ 388              		.loc 1 250 18 is_stmt 0 view .LVU104
+ 389 0174 C4F804A0 		str	r10, [r4, #4]
+ 251:tmc/EEPROM.c  **** }
+ 390              		.loc 1 251 1 view .LVU105
+ 391 0178 03B0     		add	sp, sp, #12
+ 392              	.LCFI2:
+ 393              		.cfi_remember_state
+ 394              		.cfi_def_cfa_offset 36
+ 395              		@ sp needed
+ 396 017a BDE8F08F 		pop	{r4, r5, r6, r7, r8, r9, r10, fp, pc}
+ 397              	.LVL41:
+ 398              	.L20:
+ 399              	.LCFI3:
+ 400              		.cfi_restore_state
+ 212:tmc/EEPROM.c  **** 		SPIChannel->readWrite(*(data+i), (address & 0x0000003F)==0 || i==size-1);
+ 401              		.loc 1 212 3 is_stmt 1 view .LVU106
+ 212:tmc/EEPROM.c  **** 		SPIChannel->readWrite(*(data+i), (address & 0x0000003F)==0 || i==size-1);
+ 402              		.loc 1 212 10 is_stmt 0 view .LVU107
+ 403 017e 6B1C     		adds	r3, r5, #1
+ 213:tmc/EEPROM.c  **** 		if((address & 0x0000003F)==0 && i<size-1)  // Adressbits übergelaufen, aber noch Bytes zu schrei
+ 404              		.loc 1 213 62 view .LVU108
+ 405 0180 13F03F09 		ands	r9, r3, #63
+ 213:tmc/EEPROM.c  **** 		if((address & 0x0000003F)==0 && i<size-1)  // Adressbits übergelaufen, aber noch Bytes zu schrei
+ 406              		.loc 1 213 3 view .LVU109
+ 407 0184 18F80600 		ldrb	r0, [r8, r6]	@ zero_extendqisi2
+ 212:tmc/EEPROM.c  **** 		SPIChannel->readWrite(*(data+i), (address & 0x0000003F)==0 || i==size-1);
+ 408              		.loc 1 212 10 view .LVU110
+ 409 0188 9DB2     		uxth	r5, r3
+ 410              	.LVL42:
+ 213:tmc/EEPROM.c  **** 		if((address & 0x0000003F)==0 && i<size-1)  // Adressbits übergelaufen, aber noch Bytes zu schrei
+ 411              		.loc 1 213 3 is_stmt 1 view .LVU111
+ 213:tmc/EEPROM.c  **** 		if((address & 0x0000003F)==0 && i<size-1)  // Adressbits übergelaufen, aber noch Bytes zu schrei
+ 412              		.loc 1 213 62 is_stmt 0 view .LVU112
+ 413 018a 31D0     		beq	.L22
+ 213:tmc/EEPROM.c  **** 		if((address & 0x0000003F)==0 && i<size-1)  // Adressbits übergelaufen, aber noch Bytes zu schrei
+ 414              		.loc 1 213 62 discriminator 2 view .LVU113
+ 415 018c ABEB060C 		sub	ip, fp, r6
+ 416 0190 DCF10001 		rsbs	r1, ip, #0
+ 417 0194 41EB0C01 		adc	r1, r1, ip
+ 418              	.L16:
+ 213:tmc/EEPROM.c  **** 		if((address & 0x0000003F)==0 && i<size-1)  // Adressbits übergelaufen, aber noch Bytes zu schrei
+ 419              		.loc 1 213 3 discriminator 6 view .LVU114
+ 420 0198 9047     		blx	r2
+ 421              	.LVL43:
+ 214:tmc/EEPROM.c  **** 		{
+ 422              		.loc 1 214 3 is_stmt 1 discriminator 6 view .LVU115
+ 214:tmc/EEPROM.c  **** 		{
+ 423              		.loc 1 214 5 is_stmt 0 discriminator 6 view .LVU116
+ 424 019a B9F1000F 		cmp	r9, #0
+ 425 019e 25D1     		bne	.L17
+ 214:tmc/EEPROM.c  **** 		{
+ 426              		.loc 1 214 32 discriminator 1 view .LVU117
+ 427 01a0 B345     		cmp	fp, r6
+ 428 01a2 23DD     		ble	.L17
+ 429              	.L18:
+ 217:tmc/EEPROM.c  **** 			{
+ 430              		.loc 1 217 4 is_stmt 1 discriminator 1 view .LVU118
+ 219:tmc/EEPROM.c  **** 			} while(SPIChannel->readWrite(0x00, true) & 0x01);
+ 431              		.loc 1 219 5 discriminator 1 view .LVU119
+ 432 01a4 A368     		ldr	r3, [r4, #8]
+ 433 01a6 0021     		movs	r1, #0
+ 434 01a8 0520     		movs	r0, #5
+ 435 01aa 9847     		blx	r3
+ 436              	.LVL44:
+ 220:tmc/EEPROM.c  **** 
+ 437              		.loc 1 220 11 discriminator 1 view .LVU120
+ 220:tmc/EEPROM.c  **** 
+ 438              		.loc 1 220 12 is_stmt 0 discriminator 1 view .LVU121
+ 439 01ac A368     		ldr	r3, [r4, #8]
+ 440 01ae 0121     		movs	r1, #1
+ 441 01b0 0020     		movs	r0, #0
+ 442 01b2 9847     		blx	r3
+ 443              	.LVL45:
+ 220:tmc/EEPROM.c  **** 
+ 444              		.loc 1 220 4 discriminator 1 view .LVU122
+ 445 01b4 C207     		lsls	r2, r0, #31
+ 446 01b6 F5D4     		bmi	.L18
+ 223:tmc/EEPROM.c  **** 			do
+ 447              		.loc 1 223 4 is_stmt 1 view .LVU123
+ 448 01b8 A368     		ldr	r3, [r4, #8]
+ 449 01ba 0121     		movs	r1, #1
+ 450 01bc 0620     		movs	r0, #6
+ 451 01be 9847     		blx	r3
+ 452              	.LVL46:
+ 453              	.L19:
+ 224:tmc/EEPROM.c  **** 			{
+ 454              		.loc 1 224 4 discriminator 1 view .LVU124
+ 226:tmc/EEPROM.c  **** 			} while((SPIChannel->readWrite(0x00, true) & 0x02)==0x00); //Warte bis "Write Enable"-Bit gesetz
+ 455              		.loc 1 226 5 discriminator 1 view .LVU125
+ 456 01c0 A368     		ldr	r3, [r4, #8]
+ 457 01c2 0021     		movs	r1, #0
+ 458 01c4 0520     		movs	r0, #5
+ 459 01c6 9847     		blx	r3
+ 460              	.LVL47:
+ 227:tmc/EEPROM.c  **** 
+ 461              		.loc 1 227 11 discriminator 1 view .LVU126
+ 227:tmc/EEPROM.c  **** 
+ 462              		.loc 1 227 13 is_stmt 0 discriminator 1 view .LVU127
+ 463 01c8 A368     		ldr	r3, [r4, #8]
+ 464 01ca 0121     		movs	r1, #1
+ 465 01cc 0020     		movs	r0, #0
+ 466 01ce 9847     		blx	r3
+ 467              	.LVL48:
+ 227:tmc/EEPROM.c  **** 
+ 468              		.loc 1 227 4 discriminator 1 view .LVU128
+ 469 01d0 8307     		lsls	r3, r0, #30
+ 470 01d2 F5D5     		bpl	.L19
+ 230:tmc/EEPROM.c  **** 			SPIChannel->readWrite(address >> 8, false);
+ 471              		.loc 1 230 4 is_stmt 1 view .LVU129
+ 472 01d4 A368     		ldr	r3, [r4, #8]
+ 473 01d6 0021     		movs	r1, #0
+ 474 01d8 0220     		movs	r0, #2
+ 475 01da 9847     		blx	r3
+ 476              	.LVL49:
+ 231:tmc/EEPROM.c  **** 			SPIChannel->readWrite(address & 0xFF, false);
+ 477              		.loc 1 231 4 view .LVU130
+ 478 01dc A368     		ldr	r3, [r4, #8]
+ 479 01de 0021     		movs	r1, #0
+ 480 01e0 280A     		lsrs	r0, r5, #8
+ 481 01e2 9847     		blx	r3
+ 482              	.LVL50:
+ 232:tmc/EEPROM.c  **** 		}
+ 483              		.loc 1 232 4 view .LVU131
+ 484 01e4 A368     		ldr	r3, [r4, #8]
+ 485 01e6 0021     		movs	r1, #0
+ 486 01e8 E8B2     		uxtb	r0, r5
+ 487 01ea 9847     		blx	r3
+ 488              	.LVL51:
+ 489              	.L17:
+ 205:tmc/EEPROM.c  **** 	{
+ 490              		.loc 1 205 23 discriminator 2 view .LVU132
+ 205:tmc/EEPROM.c  **** 	{
+ 491              		.loc 1 205 23 is_stmt 0 discriminator 2 view .LVU133
+ 492 01ec 0136     		adds	r6, r6, #1
+ 493 01ee A2E7     		b	.L15
+ 494              	.L22:
+ 213:tmc/EEPROM.c  **** 		if((address & 0x0000003F)==0 && i<size-1)  // Adressbits übergelaufen, aber noch Bytes zu schrei
+ 495              		.loc 1 213 62 view .LVU134
+ 496 01f0 0121     		movs	r1, #1
+ 497 01f2 D1E7     		b	.L16
+ 498              	.L30:
+ 499              		.align	2
+ 500              	.L29:
+ 501 01f4 00000000 		.word	HAL
+ 502 01f8 00000000 		.word	SPI
+ 503 01fc 00000000 		.word	.LANCHOR0
+ 504 0200 00000000 		.word	IOs
+ 505              		.cfi_endproc
+ 506              	.LFE3:
+ 508              		.align	1
+ 509              		.global	eeprom_read_byte
+ 510              		.syntax unified
+ 511              		.thumb
+ 512              		.thumb_func
+ 513              		.fpu softvfp
+ 515              	eeprom_read_byte:
+ 516              	.LVL52:
+ 517              	.LFB4:
+ 252:tmc/EEPROM.c  **** 
+ 253:tmc/EEPROM.c  **** 
+ 254:tmc/EEPROM.c  **** /*******************************************************************
+ 255:tmc/EEPROM.c  **** 	Funktion: eeprom_read_byte
+ 256:tmc/EEPROM.c  **** 	Parameter:	Channel: EEP_CH1 oder EEP_CH2
+ 257:tmc/EEPROM.c  **** 				address: Adresse im EEPROM (0..16383)
+ 258:tmc/EEPROM.c  **** 
+ 259:tmc/EEPROM.c  **** 	Rückgabewert: der gelesene Wert
+ 260:tmc/EEPROM.c  **** 
+ 261:tmc/EEPROM.c  **** 	Zweck: Lesen eines Bytes aus dem EEPROM des Evalboards.
+ 262:tmc/EEPROM.c  **** ********************************************************************/
+ 263:tmc/EEPROM.c  **** uint8_t eeprom_read_byte(SPIChannelTypeDef *SPIChannel, uint16_t address)
+ 264:tmc/EEPROM.c  **** {
+ 518              		.loc 1 264 1 is_stmt 1 view -0
+ 519              		.cfi_startproc
+ 520              		@ args = 0, pretend = 0, frame = 0
+ 521              		@ frame_needed = 0, uses_anonymous_args = 0
+ 265:tmc/EEPROM.c  **** 	//select CSN of eeprom
+ 266:tmc/EEPROM.c  **** 	IOPinTypeDef* io = SPIChannel->CSN;
+ 522              		.loc 1 266 2 view .LVU136
+ 264:tmc/EEPROM.c  **** 	//select CSN of eeprom
+ 523              		.loc 1 264 1 is_stmt 0 view .LVU137
+ 524 0204 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 525              	.LCFI4:
+ 526              		.cfi_def_cfa_offset 24
+ 527              		.cfi_offset 3, -24
+ 528              		.cfi_offset 4, -20
+ 529              		.cfi_offset 5, -16
+ 530              		.cfi_offset 6, -12
+ 531              		.cfi_offset 7, -8
+ 532              		.cfi_offset 14, -4
+ 533 0206 144B     		ldr	r3, .L35
+ 267:tmc/EEPROM.c  **** 	if(SPIChannel == &SPI.ch1)
+ 534              		.loc 1 267 4 view .LVU138
+ 535 0208 144A     		ldr	r2, .L35+4
+ 536 020a DE68     		ldr	r6, [r3, #12]
+ 266:tmc/EEPROM.c  **** 	if(SPIChannel == &SPI.ch1)
+ 537              		.loc 1 266 16 view .LVU139
+ 538 020c 4768     		ldr	r7, [r0, #4]
+ 539              	.LVL53:
+ 540              		.loc 1 267 2 is_stmt 1 view .LVU140
+ 541 020e 7368     		ldr	r3, [r6, #4]
+ 542              		.loc 1 267 4 is_stmt 0 view .LVU141
+ 543 0210 9042     		cmp	r0, r2
+ 268:tmc/EEPROM.c  **** 		SPIChannel->CSN = &HAL.IOs->pins->ID_CH0;
+ 544              		.loc 1 268 3 is_stmt 1 view .LVU142
+ 545              		.loc 1 268 21 is_stmt 0 view .LVU143
+ 546 0212 0CBF     		ite	eq
+ 547 0214 2833     		addeq	r3, r3, #40
+ 269:tmc/EEPROM.c  **** 	else
+ 270:tmc/EEPROM.c  **** 		SPIChannel->CSN = &HAL.IOs->pins->ID_CH1;
+ 548              		.loc 1 270 3 is_stmt 1 view .LVU144
+ 549              		.loc 1 270 21 is_stmt 0 view .LVU145
+ 550 0216 4833     		addne	r3, r3, #72
+ 551              		.loc 1 270 19 view .LVU146
+ 552 0218 4360     		str	r3, [r0, #4]
+ 271:tmc/EEPROM.c  **** 
+ 272:tmc/EEPROM.c  **** 	IOs.toOutput(SPIChannel->CSN);
+ 553              		.loc 1 272 2 is_stmt 1 view .LVU147
+ 554              		.loc 1 272 5 is_stmt 0 view .LVU148
+ 555 021a 114B     		ldr	r3, .L35+8
+ 264:tmc/EEPROM.c  **** 	//select CSN of eeprom
+ 556              		.loc 1 264 1 view .LVU149
+ 557 021c 0446     		mov	r4, r0
+ 558              		.loc 1 272 2 view .LVU150
+ 559 021e DB68     		ldr	r3, [r3, #12]
+ 560 0220 4068     		ldr	r0, [r0, #4]
+ 561              	.LVL54:
+ 264:tmc/EEPROM.c  **** 	//select CSN of eeprom
+ 562              		.loc 1 264 1 view .LVU151
+ 563 0222 0D46     		mov	r5, r1
+ 564              		.loc 1 272 2 view .LVU152
+ 565 0224 9847     		blx	r3
+ 566              	.LVL55:
+ 273:tmc/EEPROM.c  **** 
+ 274:tmc/EEPROM.c  **** 	SPIChannel->readWrite(0x03, false); //Befehl "Read"
+ 567              		.loc 1 274 2 is_stmt 1 view .LVU153
+ 568 0226 A368     		ldr	r3, [r4, #8]
+ 569 0228 0021     		movs	r1, #0
+ 570 022a 0320     		movs	r0, #3
+ 571 022c 9847     		blx	r3
+ 572              	.LVL56:
+ 275:tmc/EEPROM.c  **** 	SPIChannel->readWrite(address >> 8, false);
+ 573              		.loc 1 275 2 view .LVU154
+ 574 022e A368     		ldr	r3, [r4, #8]
+ 575 0230 0021     		movs	r1, #0
+ 576 0232 280A     		lsrs	r0, r5, #8
+ 577 0234 9847     		blx	r3
+ 578              	.LVL57:
+ 276:tmc/EEPROM.c  **** 	SPIChannel->readWrite(address & 0xFF, false);
+ 579              		.loc 1 276 2 view .LVU155
+ 580 0236 A368     		ldr	r3, [r4, #8]
+ 581 0238 0021     		movs	r1, #0
+ 582 023a E8B2     		uxtb	r0, r5
+ 583 023c 9847     		blx	r3
+ 584              	.LVL58:
+ 277:tmc/EEPROM.c  **** 
+ 278:tmc/EEPROM.c  **** 	uint8_t out = SPIChannel->readWrite(0, true);
+ 585              		.loc 1 278 2 view .LVU156
+ 586              		.loc 1 278 16 is_stmt 0 view .LVU157
+ 587 023e A368     		ldr	r3, [r4, #8]
+ 588 0240 0121     		movs	r1, #1
+ 589 0242 0020     		movs	r0, #0
+ 590 0244 9847     		blx	r3
+ 591              	.LVL59:
+ 279:tmc/EEPROM.c  **** 
+ 280:tmc/EEPROM.c  **** 	HAL.IOs->config->toInput(SPIChannel->CSN);
+ 592              		.loc 1 280 17 view .LVU158
+ 593 0246 3368     		ldr	r3, [r6]
+ 278:tmc/EEPROM.c  **** 
+ 594              		.loc 1 278 16 view .LVU159
+ 595 0248 0546     		mov	r5, r0
+ 596              	.LVL60:
+ 597              		.loc 1 280 2 is_stmt 1 view .LVU160
+ 598 024a 1B69     		ldr	r3, [r3, #16]
+ 599 024c 6068     		ldr	r0, [r4, #4]
+ 600 024e 9847     		blx	r3
+ 601              	.LVL61:
+ 281:tmc/EEPROM.c  **** 	SPIChannel->CSN = io;
+ 602              		.loc 1 281 2 view .LVU161
+ 603              		.loc 1 281 18 is_stmt 0 view .LVU162
+ 604 0250 6760     		str	r7, [r4, #4]
+ 282:tmc/EEPROM.c  **** 
+ 283:tmc/EEPROM.c  **** 	return out;
+ 605              		.loc 1 283 2 is_stmt 1 view .LVU163
+ 284:tmc/EEPROM.c  **** }
+ 606              		.loc 1 284 1 is_stmt 0 view .LVU164
+ 607 0252 2846     		mov	r0, r5
+ 608 0254 F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 609              	.LVL62:
+ 610              	.L36:
+ 611              		.loc 1 284 1 view .LVU165
+ 612 0256 00BF     		.align	2
+ 613              	.L35:
+ 614 0258 00000000 		.word	HAL
+ 615 025c 00000000 		.word	SPI
+ 616 0260 00000000 		.word	IOs
+ 617              		.cfi_endproc
+ 618              	.LFE4:
+ 620              		.align	1
+ 621              		.global	eeprom_read_array
+ 622              		.syntax unified
+ 623              		.thumb
+ 624              		.thumb_func
+ 625              		.fpu softvfp
+ 627              	eeprom_read_array:
+ 628              	.LVL63:
+ 629              	.LFB5:
+ 285:tmc/EEPROM.c  **** 
+ 286:tmc/EEPROM.c  **** 
+ 287:tmc/EEPROM.c  **** /*******************************************************************
+ 288:tmc/EEPROM.c  **** 	Funktion: eeprom_read_array
+ 289:tmc/EEPROM.c  **** 	Parameter:	Channel: EEP_CH1 oder EEP_CH2
+ 290:tmc/EEPROM.c  **** 				address: Adresse im EEPROM (0..16383)
+ 291:tmc/EEPROM.c  **** 				data: Startadresse des zu lesenden Blocks
+ 292:tmc/EEPROM.c  **** 				size: Länge des Blocks in Bytes
+ 293:tmc/EEPROM.c  **** 
+ 294:tmc/EEPROM.c  **** 	Rückgabewert: ---
+ 295:tmc/EEPROM.c  **** 
+ 296:tmc/EEPROM.c  **** 	Zweck: Lesen mehrerer Bytes aus dem Konfigurations-EEPROM.
+ 297:tmc/EEPROM.c  **** 	Dabei dürfen ab beliebiger Adresse beliebig viele Bytes gelesen
+ 298:tmc/EEPROM.c  **** 	werden.
+ 299:tmc/EEPROM.c  **** ********************************************************************/
+ 300:tmc/EEPROM.c  **** void eeprom_read_array(SPIChannelTypeDef *SPIChannel, uint16_t address, uint8_t *data, uint16_t siz
+ 301:tmc/EEPROM.c  **** {
+ 630              		.loc 1 301 1 is_stmt 1 view -0
+ 631              		.cfi_startproc
+ 632              		@ args = 0, pretend = 0, frame = 0
+ 633              		@ frame_needed = 0, uses_anonymous_args = 0
+ 302:tmc/EEPROM.c  **** 	uint16_t i;
+ 634              		.loc 1 302 2 view .LVU167
+ 303:tmc/EEPROM.c  **** 
+ 304:tmc/EEPROM.c  **** 	// select CSN of eeprom
+ 305:tmc/EEPROM.c  **** 	IOPinTypeDef* io = SPIChannel->CSN;
+ 635              		.loc 1 305 2 view .LVU168
+ 301:tmc/EEPROM.c  **** 	uint16_t i;
+ 636              		.loc 1 301 1 is_stmt 0 view .LVU169
+ 637 0264 2DE9F047 		push	{r4, r5, r6, r7, r8, r9, r10, lr}
+ 638              	.LCFI5:
+ 639              		.cfi_def_cfa_offset 32
+ 640              		.cfi_offset 4, -32
+ 641              		.cfi_offset 5, -28
+ 642              		.cfi_offset 6, -24
+ 643              		.cfi_offset 7, -20
+ 644              		.cfi_offset 8, -16
+ 645              		.cfi_offset 9, -12
+ 646              		.cfi_offset 10, -8
+ 647              		.cfi_offset 14, -4
+ 301:tmc/EEPROM.c  **** 	uint16_t i;
+ 648              		.loc 1 301 1 view .LVU170
+ 649 0268 1D46     		mov	r5, r3
+ 650 026a 1C4B     		ldr	r3, .L43
+ 651              	.LVL64:
+ 652              		.loc 1 305 16 view .LVU171
+ 653 026c D0F80490 		ldr	r9, [r0, #4]
+ 654              	.LVL65:
+ 306:tmc/EEPROM.c  **** 	if(SPIChannel == &SPI.ch1)
+ 655              		.loc 1 306 2 is_stmt 1 view .LVU172
+ 656 0270 D3F80C80 		ldr	r8, [r3, #12]
+ 657              		.loc 1 306 4 is_stmt 0 view .LVU173
+ 658 0274 1A4B     		ldr	r3, .L43+4
+ 301:tmc/EEPROM.c  **** 	uint16_t i;
+ 659              		.loc 1 301 1 view .LVU174
+ 660 0276 0446     		mov	r4, r0
+ 661 0278 D8F80400 		ldr	r0, [r8, #4]
+ 662              	.LVL66:
+ 663              		.loc 1 306 4 view .LVU175
+ 664 027c 9C42     		cmp	r4, r3
+ 307:tmc/EEPROM.c  **** 		SPIChannel->CSN = &HAL.IOs->pins->ID_CH0;
+ 665              		.loc 1 307 3 is_stmt 1 view .LVU176
+ 666              		.loc 1 307 21 is_stmt 0 view .LVU177
+ 667 027e 0CBF     		ite	eq
+ 668 0280 2830     		addeq	r0, r0, #40
+ 308:tmc/EEPROM.c  **** 	else
+ 309:tmc/EEPROM.c  **** 		SPIChannel->CSN = &HAL.IOs->pins->ID_CH1;
+ 669              		.loc 1 309 3 is_stmt 1 view .LVU178
+ 670              		.loc 1 309 21 is_stmt 0 view .LVU179
+ 671 0282 4830     		addne	r0, r0, #72
+ 310:tmc/EEPROM.c  **** 
+ 311:tmc/EEPROM.c  **** 	IOs.toOutput(SPIChannel->CSN);
+ 672              		.loc 1 311 5 view .LVU180
+ 673 0284 174B     		ldr	r3, .L43+8
+ 309:tmc/EEPROM.c  **** 
+ 674              		.loc 1 309 19 view .LVU181
+ 675 0286 6060     		str	r0, [r4, #4]
+ 676              		.loc 1 311 2 is_stmt 1 view .LVU182
+ 677 0288 DB68     		ldr	r3, [r3, #12]
+ 678 028a 6068     		ldr	r0, [r4, #4]
+ 301:tmc/EEPROM.c  **** 	uint16_t i;
+ 679              		.loc 1 301 1 is_stmt 0 view .LVU183
+ 680 028c 0E46     		mov	r6, r1
+ 681 028e 1746     		mov	r7, r2
+ 682              		.loc 1 311 2 view .LVU184
+ 683 0290 9847     		blx	r3
+ 684              	.LVL67:
+ 312:tmc/EEPROM.c  **** 
+ 313:tmc/EEPROM.c  **** 	SPIChannel->readWrite(0x03, false); // Befehl "Read"
+ 685              		.loc 1 313 2 is_stmt 1 view .LVU185
+ 686 0292 A368     		ldr	r3, [r4, #8]
+ 687 0294 0021     		movs	r1, #0
+ 688 0296 0320     		movs	r0, #3
+ 689 0298 9847     		blx	r3
+ 690              	.LVL68:
+ 314:tmc/EEPROM.c  **** 	SPIChannel->readWrite(address >> 8, false);
+ 691              		.loc 1 314 2 view .LVU186
+ 692 029a A368     		ldr	r3, [r4, #8]
+ 693 029c 0021     		movs	r1, #0
+ 694 029e 300A     		lsrs	r0, r6, #8
+ 695 02a0 9847     		blx	r3
+ 696              	.LVL69:
+ 315:tmc/EEPROM.c  **** 	SPIChannel->readWrite(address & 0xFF, false);
+ 697              		.loc 1 315 2 view .LVU187
+ 698 02a2 F0B2     		uxtb	r0, r6
+ 699 02a4 A368     		ldr	r3, [r4, #8]
+ 700 02a6 0021     		movs	r1, #0
+ 701 02a8 9847     		blx	r3
+ 702              	.LVL70:
+ 316:tmc/EEPROM.c  **** 
+ 317:tmc/EEPROM.c  **** 	for(i = 0; i < size; i++)
+ 703              		.loc 1 317 2 view .LVU188
+ 704              		.loc 1 317 2 is_stmt 0 view .LVU189
+ 705 02aa 0026     		movs	r6, #0
+ 318:tmc/EEPROM.c  **** 		*(data+i) = SPIChannel->readWrite(0, i == size-1); // beim letzten Byte EEPROM deselektieren
+ 706              		.loc 1 318 49 view .LVU190
+ 707 02ac 05F1FF3A 		add	r10, r5, #-1
+ 708              	.LVL71:
+ 709              	.L40:
+ 317:tmc/EEPROM.c  **** 		*(data+i) = SPIChannel->readWrite(0, i == size-1); // beim letzten Byte EEPROM deselektieren
+ 710              		.loc 1 317 13 is_stmt 1 discriminator 1 view .LVU191
+ 317:tmc/EEPROM.c  **** 		*(data+i) = SPIChannel->readWrite(0, i == size-1); // beim letzten Byte EEPROM deselektieren
+ 711              		.loc 1 317 2 is_stmt 0 discriminator 1 view .LVU192
+ 712 02b0 B542     		cmp	r5, r6
+ 713 02b2 08D1     		bne	.L41
+ 319:tmc/EEPROM.c  **** 
+ 320:tmc/EEPROM.c  **** 	HAL.IOs->config->toInput(SPIChannel->CSN);
+ 714              		.loc 1 320 2 is_stmt 1 view .LVU193
+ 715              		.loc 1 320 17 is_stmt 0 view .LVU194
+ 716 02b4 D8F80030 		ldr	r3, [r8]
+ 717              		.loc 1 320 2 view .LVU195
+ 718 02b8 6068     		ldr	r0, [r4, #4]
+ 719 02ba 1B69     		ldr	r3, [r3, #16]
+ 720 02bc 9847     		blx	r3
+ 721              	.LVL72:
+ 321:tmc/EEPROM.c  **** 	SPIChannel->CSN = io;
+ 722              		.loc 1 321 2 is_stmt 1 view .LVU196
+ 723              		.loc 1 321 18 is_stmt 0 view .LVU197
+ 724 02be C4F80490 		str	r9, [r4, #4]
+ 322:tmc/EEPROM.c  **** }
+ 725              		.loc 1 322 1 view .LVU198
+ 726 02c2 BDE8F087 		pop	{r4, r5, r6, r7, r8, r9, r10, pc}
+ 727              	.LVL73:
+ 728              	.L41:
+ 318:tmc/EEPROM.c  **** 
+ 729              		.loc 1 318 3 is_stmt 1 discriminator 3 view .LVU199
+ 318:tmc/EEPROM.c  **** 
+ 730              		.loc 1 318 15 is_stmt 0 discriminator 3 view .LVU200
+ 731 02c6 AAEB0602 		sub	r2, r10, r6
+ 732 02ca 5142     		rsbs	r1, r2, #0
+ 733 02cc A368     		ldr	r3, [r4, #8]
+ 734 02ce 5141     		adcs	r1, r1, r2
+ 735 02d0 0020     		movs	r0, #0
+ 736 02d2 9847     		blx	r3
+ 737              	.LVL74:
+ 318:tmc/EEPROM.c  **** 
+ 738              		.loc 1 318 13 discriminator 3 view .LVU201
+ 739 02d4 B855     		strb	r0, [r7, r6]
+ 317:tmc/EEPROM.c  **** 		*(data+i) = SPIChannel->readWrite(0, i == size-1); // beim letzten Byte EEPROM deselektieren
+ 740              		.loc 1 317 23 is_stmt 1 discriminator 3 view .LVU202
+ 741              	.LVL75:
+ 317:tmc/EEPROM.c  **** 		*(data+i) = SPIChannel->readWrite(0, i == size-1); // beim letzten Byte EEPROM deselektieren
+ 742              		.loc 1 317 23 is_stmt 0 discriminator 3 view .LVU203
+ 743 02d6 0136     		adds	r6, r6, #1
+ 744              	.LVL76:
+ 317:tmc/EEPROM.c  **** 		*(data+i) = SPIChannel->readWrite(0, i == size-1); // beim letzten Byte EEPROM deselektieren
+ 745              		.loc 1 317 23 discriminator 3 view .LVU204
+ 746 02d8 EAE7     		b	.L40
+ 747              	.L44:
+ 748 02da 00BF     		.align	2
+ 749              	.L43:
+ 750 02dc 00000000 		.word	HAL
+ 751 02e0 00000000 		.word	SPI
+ 752 02e4 00000000 		.word	IOs
+ 753              		.cfi_endproc
+ 754              	.LFE5:
+ 756              		.align	1
+ 757              		.global	eeprom_init
+ 758              		.syntax unified
+ 759              		.thumb
+ 760              		.thumb_func
+ 761              		.fpu softvfp
+ 763              	eeprom_init:
+ 764              	.LVL77:
+ 765              	.LFB0:
+  35:tmc/EEPROM.c  **** 	uint8_t buffer[EEPROM_SIZE_META] = { 0 };
+ 766              		.loc 1 35 1 is_stmt 1 view -0
+ 767              		.cfi_startproc
+ 768              		@ args = 0, pretend = 0, frame = 24
+ 769              		@ frame_needed = 0, uses_anonymous_args = 0
+  36:tmc/EEPROM.c  **** 	EEPROM_Data *eep = (SPIChannel == &SPI.ch1) ? &EEPROM.ch1 : &EEPROM.ch2;
+ 770              		.loc 1 36 2 view .LVU206
+  35:tmc/EEPROM.c  **** 	uint8_t buffer[EEPROM_SIZE_META] = { 0 };
+ 771              		.loc 1 35 1 is_stmt 0 view .LVU207
+ 772 02e8 70B5     		push	{r4, r5, r6, lr}
+ 773              	.LCFI6:
+ 774              		.cfi_def_cfa_offset 16
+ 775              		.cfi_offset 4, -16
+ 776              		.cfi_offset 5, -12
+ 777              		.cfi_offset 6, -8
+ 778              		.cfi_offset 14, -4
+  36:tmc/EEPROM.c  **** 	EEPROM_Data *eep = (SPIChannel == &SPI.ch1) ? &EEPROM.ch1 : &EEPROM.ch2;
+ 779              		.loc 1 36 10 view .LVU208
+ 780 02ea 0026     		movs	r6, #0
+  35:tmc/EEPROM.c  **** 	uint8_t buffer[EEPROM_SIZE_META] = { 0 };
+ 781              		.loc 1 35 1 view .LVU209
+ 782 02ec 86B0     		sub	sp, sp, #24
+ 783              	.LCFI7:
+ 784              		.cfi_def_cfa_offset 40
+  35:tmc/EEPROM.c  **** 	uint8_t buffer[EEPROM_SIZE_META] = { 0 };
+ 785              		.loc 1 35 1 view .LVU210
+ 786 02ee 0546     		mov	r5, r0
+  36:tmc/EEPROM.c  **** 	EEPROM_Data *eep = (SPIChannel == &SPI.ch1) ? &EEPROM.ch1 : &EEPROM.ch2;
+ 787              		.loc 1 36 10 view .LVU211
+ 788 02f0 3146     		mov	r1, r6
+  37:tmc/EEPROM.c  **** 	eeprom_read_array(SPIChannel, EEPROM_ADDR_META, buffer, EEPROM_SIZE_META);
+ 789              		.loc 1 37 60 view .LVU212
+ 790 02f2 1B4C     		ldr	r4, .L50
+  36:tmc/EEPROM.c  **** 	EEPROM_Data *eep = (SPIChannel == &SPI.ch1) ? &EEPROM.ch1 : &EEPROM.ch2;
+ 791              		.loc 1 36 10 view .LVU213
+ 792 02f4 0096     		str	r6, [sp]
+ 793 02f6 1222     		movs	r2, #18
+ 794 02f8 01A8     		add	r0, sp, #4
+ 795              	.LVL78:
+  36:tmc/EEPROM.c  **** 	EEPROM_Data *eep = (SPIChannel == &SPI.ch1) ? &EEPROM.ch1 : &EEPROM.ch2;
+ 796              		.loc 1 36 10 view .LVU214
+ 797 02fa FFF7FEFF 		bl	memset
+ 798              	.LVL79:
+  37:tmc/EEPROM.c  **** 	eeprom_read_array(SPIChannel, EEPROM_ADDR_META, buffer, EEPROM_SIZE_META);
+ 799              		.loc 1 37 2 is_stmt 1 view .LVU215
+  37:tmc/EEPROM.c  **** 	eeprom_read_array(SPIChannel, EEPROM_ADDR_META, buffer, EEPROM_SIZE_META);
+ 800              		.loc 1 37 60 is_stmt 0 view .LVU216
+ 801 02fe 194A     		ldr	r2, .L50+4
+ 802 0300 04F11803 		add	r3, r4, #24
+ 803 0304 9542     		cmp	r5, r2
+ 804 0306 18BF     		it	ne
+ 805 0308 1C46     		movne	r4, r3
+ 806              	.LVL80:
+  38:tmc/EEPROM.c  **** 	memcpy(eep->name, &buffer[EEPROM_ADDR_NAME - EEPROM_ADDR_META], EEPROM_SIZE_NAME);
+ 807              		.loc 1 38 2 is_stmt 1 view .LVU217
+ 808 030a 3146     		mov	r1, r6
+ 809 030c 1623     		movs	r3, #22
+ 810 030e 2846     		mov	r0, r5
+ 811 0310 6A46     		mov	r2, sp
+ 812 0312 FFF7FEFF 		bl	eeprom_read_array
+ 813              	.LVL81:
+  39:tmc/EEPROM.c  **** 	eep->id = _8_16(buffer[EEPROM_ADDR_ID - EEPROM_ADDR_META], buffer[(EEPROM_ADDR_ID + 1) - EEPROM_AD
+ 814              		.loc 1 39 2 view .LVU218
+ 815 0316 651C     		adds	r5, r4, #1
+ 816              	.LVL82:
+  39:tmc/EEPROM.c  **** 	eep->id = _8_16(buffer[EEPROM_ADDR_ID - EEPROM_ADDR_META], buffer[(EEPROM_ADDR_ID + 1) - EEPROM_AD
+ 817              		.loc 1 39 2 is_stmt 0 view .LVU219
+ 818 0318 6B46     		mov	r3, sp
+ 819 031a 04AE     		add	r6, sp, #16
+ 820              	.L47:
+  39:tmc/EEPROM.c  **** 	eep->id = _8_16(buffer[EEPROM_ADDR_ID - EEPROM_ADDR_META], buffer[(EEPROM_ADDR_ID + 1) - EEPROM_AD
+ 821              		.loc 1 39 2 discriminator 4 view .LVU220
+ 822 031c 1A46     		mov	r2, r3
+ 823 031e 03CA     		ldmia	r2!, {r0, r1}
+ 824 0320 B242     		cmp	r2, r6
+ 825 0322 2860     		str	r0, [r5]	@ unaligned
+ 826 0324 6960     		str	r1, [r5, #4]	@ unaligned
+ 827 0326 1346     		mov	r3, r2
+ 828 0328 05F10805 		add	r5, r5, #8
+ 829 032c F6D1     		bne	.L47
+  40:tmc/EEPROM.c  **** 	eep->hw = _8_16(buffer[EEPROM_ADDR_HW - EEPROM_ADDR_META], buffer[(EEPROM_ADDR_HW + 1) - EEPROM_AD
+ 830              		.loc 1 40 2 is_stmt 1 discriminator 4 view .LVU221
+  40:tmc/EEPROM.c  **** 	eep->hw = _8_16(buffer[EEPROM_ADDR_HW - EEPROM_ADDR_META], buffer[(EEPROM_ADDR_HW + 1) - EEPROM_AD
+ 831              		.loc 1 40 12 is_stmt 0 discriminator 4 view .LVU222
+ 832 032e 9DF81020 		ldrb	r2, [sp, #16]	@ zero_extendqisi2
+ 833 0332 9DF81130 		ldrb	r3, [sp, #17]	@ zero_extendqisi2
+ 834 0336 43EA0223 		orr	r3, r3, r2, lsl #8
+  40:tmc/EEPROM.c  **** 	eep->hw = _8_16(buffer[EEPROM_ADDR_HW - EEPROM_ADDR_META], buffer[(EEPROM_ADDR_HW + 1) - EEPROM_AD
+ 835              		.loc 1 40 10 discriminator 4 view .LVU223
+ 836 033a 6382     		strh	r3, [r4, #18]	@ movhi
+  41:tmc/EEPROM.c  **** 	eep->magic = _8_16(buffer[EEPROM_ADDR_MAGIC - EEPROM_ADDR_META], buffer[(EEPROM_ADDR_MAGIC + 1) - 
+ 837              		.loc 1 41 2 is_stmt 1 discriminator 4 view .LVU224
+  41:tmc/EEPROM.c  **** 	eep->magic = _8_16(buffer[EEPROM_ADDR_MAGIC - EEPROM_ADDR_META], buffer[(EEPROM_ADDR_MAGIC + 1) - 
+ 838              		.loc 1 41 12 is_stmt 0 discriminator 4 view .LVU225
+ 839 033c 9DF81220 		ldrb	r2, [sp, #18]	@ zero_extendqisi2
+ 840 0340 9DF81330 		ldrb	r3, [sp, #19]	@ zero_extendqisi2
+ 841 0344 43EA0223 		orr	r3, r3, r2, lsl #8
+  41:tmc/EEPROM.c  **** 	eep->magic = _8_16(buffer[EEPROM_ADDR_MAGIC - EEPROM_ADDR_META], buffer[(EEPROM_ADDR_MAGIC + 1) - 
+ 842              		.loc 1 41 10 discriminator 4 view .LVU226
+ 843 0348 A382     		strh	r3, [r4, #20]	@ movhi
+  42:tmc/EEPROM.c  **** 	eep->init = true;
+ 844              		.loc 1 42 2 is_stmt 1 discriminator 4 view .LVU227
+  42:tmc/EEPROM.c  **** 	eep->init = true;
+ 845              		.loc 1 42 15 is_stmt 0 discriminator 4 view .LVU228
+ 846 034a 9DF81420 		ldrb	r2, [sp, #20]	@ zero_extendqisi2
+ 847 034e 9DF81530 		ldrb	r3, [sp, #21]	@ zero_extendqisi2
+ 848 0352 43EA0223 		orr	r3, r3, r2, lsl #8
+  42:tmc/EEPROM.c  **** 	eep->init = true;
+ 849              		.loc 1 42 13 discriminator 4 view .LVU229
+ 850 0356 E382     		strh	r3, [r4, #22]	@ movhi
+  43:tmc/EEPROM.c  **** //	eeprom_read_array(&SPI.ch2, EEPROM_ADDR_META, buffer, EEPROM_SIZE_META);
+ 851              		.loc 1 43 2 is_stmt 1 discriminator 4 view .LVU230
+  43:tmc/EEPROM.c  **** //	eeprom_read_array(&SPI.ch2, EEPROM_ADDR_META, buffer, EEPROM_SIZE_META);
+ 852              		.loc 1 43 12 is_stmt 0 discriminator 4 view .LVU231
+ 853 0358 0123     		movs	r3, #1
+ 854 035a 2370     		strb	r3, [r4]
+  50:tmc/EEPROM.c  **** 
+ 855              		.loc 1 50 1 discriminator 4 view .LVU232
+ 856 035c 06B0     		add	sp, sp, #24
+ 857              	.LCFI8:
+ 858              		.cfi_def_cfa_offset 16
+ 859              		@ sp needed
+ 860 035e 70BD     		pop	{r4, r5, r6, pc}
+ 861              	.LVL83:
+ 862              	.L51:
+  50:tmc/EEPROM.c  **** 
+ 863              		.loc 1 50 1 discriminator 4 view .LVU233
+ 864              		.align	2
+ 865              	.L50:
+ 866 0360 00000000 		.word	.LANCHOR0
+ 867 0364 00000000 		.word	SPI
+ 868              		.cfi_endproc
+ 869              	.LFE0:
+ 871              		.align	1
+ 872              		.global	eeprom_check
+ 873              		.syntax unified
+ 874              		.thumb
+ 875              		.thumb_func
+ 876              		.fpu softvfp
+ 878              	eeprom_check:
+ 879              	.LVL84:
+ 880              	.LFB1:
+  62:tmc/EEPROM.c  **** 	// Prüfen, ob der SPI-Bus schon funktioniert: Im Status-Register des EEPROMs
+ 881              		.loc 1 62 1 is_stmt 1 view -0
+ 882              		.cfi_startproc
+ 883              		@ args = 0, pretend = 0, frame = 8
+ 884              		@ frame_needed = 0, uses_anonymous_args = 0
+  68:tmc/EEPROM.c  **** 	if(SPIChannel == &SPI.ch1)
+ 885              		.loc 1 68 2 view .LVU235
+ 886 0368 234B     		ldr	r3, .L67
+  69:tmc/EEPROM.c  **** 		SPIChannel->CSN = &HAL.IOs->pins->ID_CH0;
+ 887              		.loc 1 69 4 is_stmt 0 view .LVU236
+ 888 036a 244A     		ldr	r2, .L67+4
+  62:tmc/EEPROM.c  **** 	// Prüfen, ob der SPI-Bus schon funktioniert: Im Status-Register des EEPROMs
+ 889              		.loc 1 62 1 view .LVU237
+ 890 036c 2DE9F341 		push	{r0, r1, r4, r5, r6, r7, r8, lr}
+ 891              	.LCFI9:
+ 892              		.cfi_def_cfa_offset 32
+ 893              		.cfi_offset 4, -24
+ 894              		.cfi_offset 5, -20
+ 895              		.cfi_offset 6, -16
+ 896              		.cfi_offset 7, -12
+ 897              		.cfi_offset 8, -8
+ 898              		.cfi_offset 14, -4
+ 899 0370 DE68     		ldr	r6, [r3, #12]
+  68:tmc/EEPROM.c  **** 	if(SPIChannel == &SPI.ch1)
+ 900              		.loc 1 68 16 view .LVU238
+ 901 0372 4768     		ldr	r7, [r0, #4]
+ 902              	.LVL85:
+  69:tmc/EEPROM.c  **** 		SPIChannel->CSN = &HAL.IOs->pins->ID_CH0;
+ 903              		.loc 1 69 2 is_stmt 1 view .LVU239
+ 904 0374 7368     		ldr	r3, [r6, #4]
+  69:tmc/EEPROM.c  **** 		SPIChannel->CSN = &HAL.IOs->pins->ID_CH0;
+ 905              		.loc 1 69 4 is_stmt 0 view .LVU240
+ 906 0376 9042     		cmp	r0, r2
+  70:tmc/EEPROM.c  **** 	else
+ 907              		.loc 1 70 21 view .LVU241
+ 908 0378 0CBF     		ite	eq
+ 909 037a 2833     		addeq	r3, r3, #40
+  72:tmc/EEPROM.c  **** 
+ 910              		.loc 1 72 21 view .LVU242
+ 911 037c 4833     		addne	r3, r3, #72
+  72:tmc/EEPROM.c  **** 
+ 912              		.loc 1 72 19 view .LVU243
+ 913 037e 4360     		str	r3, [r0, #4]
+  74:tmc/EEPROM.c  **** 
+ 914              		.loc 1 74 5 view .LVU244
+ 915 0380 1F4B     		ldr	r3, .L67+8
+  62:tmc/EEPROM.c  **** 	// Prüfen, ob der SPI-Bus schon funktioniert: Im Status-Register des EEPROMs
+ 916              		.loc 1 62 1 view .LVU245
+ 917 0382 0446     		mov	r4, r0
+  74:tmc/EEPROM.c  **** 
+ 918              		.loc 1 74 2 view .LVU246
+ 919 0384 DB68     		ldr	r3, [r3, #12]
+ 920 0386 4068     		ldr	r0, [r0, #4]
+ 921              	.LVL86:
+  74:tmc/EEPROM.c  **** 
+ 922              		.loc 1 74 2 view .LVU247
+ 923 0388 9046     		mov	r8, r2
+  70:tmc/EEPROM.c  **** 	else
+ 924              		.loc 1 70 3 is_stmt 1 view .LVU248
+  72:tmc/EEPROM.c  **** 
+ 925              		.loc 1 72 3 view .LVU249
+  74:tmc/EEPROM.c  **** 
+ 926              		.loc 1 74 2 view .LVU250
+ 927 038a 9847     		blx	r3
+ 928              	.LVL87:
+  76:tmc/EEPROM.c  **** 	uint8_t out = SPIChannel->readWrite(0x00, true);
+ 929              		.loc 1 76 2 view .LVU251
+ 930 038c A368     		ldr	r3, [r4, #8]
+ 931 038e 0021     		movs	r1, #0
+ 932 0390 0520     		movs	r0, #5
+ 933 0392 9847     		blx	r3
+ 934              	.LVL88:
+  77:tmc/EEPROM.c  **** 	// check whether bits 6, 5, 4 and 0 are cleared
+ 935              		.loc 1 77 2 view .LVU252
+  77:tmc/EEPROM.c  **** 	// check whether bits 6, 5, 4 and 0 are cleared
+ 936              		.loc 1 77 16 is_stmt 0 view .LVU253
+ 937 0394 A368     		ldr	r3, [r4, #8]
+ 938 0396 0121     		movs	r1, #1
+ 939 0398 0020     		movs	r0, #0
+ 940 039a 9847     		blx	r3
+ 941              	.LVL89:
+  79:tmc/EEPROM.c  **** 		goto end;
+ 942              		.loc 1 79 4 view .LVU254
+ 943 039c 10F0710F 		tst	r0, #113
+  77:tmc/EEPROM.c  **** 	// check whether bits 6, 5, 4 and 0 are cleared
+ 944              		.loc 1 77 16 view .LVU255
+ 945 03a0 0546     		mov	r5, r0
+ 946              	.LVL90:
+  79:tmc/EEPROM.c  **** 		goto end;
+ 947              		.loc 1 79 2 is_stmt 1 view .LVU256
+  79:tmc/EEPROM.c  **** 		goto end;
+ 948              		.loc 1 79 4 is_stmt 0 view .LVU257
+ 949 03a2 0FD1     		bne	.L55
+  82:tmc/EEPROM.c  **** 
+ 950              		.loc 1 82 2 is_stmt 1 view .LVU258
+ 951              	.LVL91:
+  85:tmc/EEPROM.c  **** 
+ 952              		.loc 1 85 2 view .LVU259
+  87:tmc/EEPROM.c  **** 
+ 953              		.loc 1 87 2 view .LVU260
+ 954 03a4 0223     		movs	r3, #2
+ 955 03a6 01AA     		add	r2, sp, #4
+ 956 03a8 1421     		movs	r1, #20
+ 957 03aa 2046     		mov	r0, r4
+ 958 03ac FFF7FEFF 		bl	eeprom_read_array
+ 959              	.LVL92:
+  89:tmc/EEPROM.c  **** 	{
+ 960              		.loc 1 89 2 view .LVU261
+  89:tmc/EEPROM.c  **** 	{
+ 961              		.loc 1 89 4 is_stmt 0 view .LVU262
+ 962 03b0 9DF80430 		ldrb	r3, [sp, #4]	@ zero_extendqisi2
+ 963 03b4 122B     		cmp	r3, #18
+ 964 03b6 17D1     		bne	.L59
+  89:tmc/EEPROM.c  **** 	{
+ 965              		.loc 1 89 34 discriminator 1 view .LVU263
+ 966 03b8 9DF80530 		ldrb	r3, [sp, #5]	@ zero_extendqisi2
+  91:tmc/EEPROM.c  **** 	}
+ 967              		.loc 1 91 7 discriminator 1 view .LVU264
+ 968 03bc 342B     		cmp	r3, #52
+ 969 03be 0CBF     		ite	eq
+ 970 03c0 0025     		moveq	r5, #0
+ 971 03c2 0225     		movne	r5, #2
+ 972              	.LVL93:
+ 973              	.L55:
+  95:tmc/EEPROM.c  **** 	SPIChannel->CSN = io;
+ 974              		.loc 1 95 2 is_stmt 1 view .LVU265
+  95:tmc/EEPROM.c  **** 	SPIChannel->CSN = io;
+ 975              		.loc 1 95 17 is_stmt 0 view .LVU266
+ 976 03c4 3368     		ldr	r3, [r6]
+  95:tmc/EEPROM.c  **** 	SPIChannel->CSN = io;
+ 977              		.loc 1 95 2 view .LVU267
+ 978 03c6 6068     		ldr	r0, [r4, #4]
+ 979 03c8 1B69     		ldr	r3, [r3, #16]
+ 980 03ca 9847     		blx	r3
+ 981              	.LVL94:
+  96:tmc/EEPROM.c  **** 
+ 982              		.loc 1 96 2 is_stmt 1 view .LVU268
+  96:tmc/EEPROM.c  **** 
+ 983              		.loc 1 96 18 is_stmt 0 view .LVU269
+ 984 03cc 6760     		str	r7, [r4, #4]
+  98:tmc/EEPROM.c  **** 			|| (SPIChannel == &SPI.ch2 && !EEPROM.ch2.init))) {
+ 985              		.loc 1 98 2 is_stmt 1 view .LVU270
+  98:tmc/EEPROM.c  **** 			|| (SPIChannel == &SPI.ch2 && !EEPROM.ch2.init))) {
+ 986              		.loc 1 98 4 is_stmt 0 view .LVU271
+ 987 03ce 3DB1     		cbz	r5, .L56
+  98:tmc/EEPROM.c  **** 			|| (SPIChannel == &SPI.ch2 && !EEPROM.ch2.init))) {
+ 988              		.loc 1 98 9 discriminator 1 view .LVU272
+ 989 03d0 4445     		cmp	r4, r8
+ 990 03d2 0BD1     		bne	.L57
+  98:tmc/EEPROM.c  **** 			|| (SPIChannel == &SPI.ch2 && !EEPROM.ch2.init))) {
+ 991              		.loc 1 98 51 discriminator 2 view .LVU273
+ 992 03d4 0B4B     		ldr	r3, .L67+12
+  98:tmc/EEPROM.c  **** 			|| (SPIChannel == &SPI.ch2 && !EEPROM.ch2.init))) {
+ 993              		.loc 1 98 37 discriminator 2 view .LVU274
+ 994 03d6 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 995              	.L66:
+  99:tmc/EEPROM.c  **** 		eeprom_init(SPIChannel);
+ 996              		.loc 1 99 31 discriminator 1 view .LVU275
+ 997 03d8 13B9     		cbnz	r3, .L56
+ 100:tmc/EEPROM.c  **** 	}
+ 998              		.loc 1 100 3 is_stmt 1 view .LVU276
+ 999 03da 2046     		mov	r0, r4
+ 1000 03dc FFF7FEFF 		bl	eeprom_init
+ 1001              	.LVL95:
+ 1002              	.L56:
+ 103:tmc/EEPROM.c  **** }
+ 1003              		.loc 1 103 2 view .LVU277
+ 104:tmc/EEPROM.c  **** 
+ 1004              		.loc 1 104 1 is_stmt 0 view .LVU278
+ 1005 03e0 2846     		mov	r0, r5
+ 1006 03e2 02B0     		add	sp, sp, #8
+ 1007              	.LCFI10:
+ 1008              		.cfi_remember_state
+ 1009              		.cfi_def_cfa_offset 24
+ 1010              		@ sp needed
+ 1011 03e4 BDE8F081 		pop	{r4, r5, r6, r7, r8, pc}
+ 1012              	.LVL96:
+ 1013              	.L59:
+ 1014              	.LCFI11:
+ 1015              		.cfi_restore_state
+  91:tmc/EEPROM.c  **** 	}
+ 1016              		.loc 1 91 7 view .LVU279
+ 1017 03e8 0225     		movs	r5, #2
+ 1018 03ea EBE7     		b	.L55
+ 1019              	.LVL97:
+ 1020              	.L57:
+  99:tmc/EEPROM.c  **** 		eeprom_init(SPIChannel);
+ 1021              		.loc 1 99 4 view .LVU280
+ 1022 03ec 064B     		ldr	r3, .L67+16
+ 1023 03ee 9C42     		cmp	r4, r3
+ 1024 03f0 F6D1     		bne	.L56
+  99:tmc/EEPROM.c  **** 		eeprom_init(SPIChannel);
+ 1025              		.loc 1 99 45 discriminator 1 view .LVU281
+ 1026 03f2 044B     		ldr	r3, .L67+12
+  99:tmc/EEPROM.c  **** 		eeprom_init(SPIChannel);
+ 1027              		.loc 1 99 31 discriminator 1 view .LVU282
+ 1028 03f4 1B7E     		ldrb	r3, [r3, #24]	@ zero_extendqisi2
+ 1029 03f6 EFE7     		b	.L66
+ 1030              	.L68:
+ 1031              		.align	2
+ 1032              	.L67:
+ 1033 03f8 00000000 		.word	HAL
+ 1034 03fc 00000000 		.word	SPI
+ 1035 0400 00000000 		.word	IOs
+ 1036 0404 00000000 		.word	.LANCHOR0
+ 1037 0408 14000000 		.word	SPI+20
+ 1038              		.cfi_endproc
+ 1039              	.LFE1:
+ 1041              		.global	EEPROM
+ 1042              		.comm	hwid,1,1
+ 1043              		.comm	HAL,48,4
+ 1044              		.comm	UART,40,4
+ 1045              		.comm	Timer,16,4
+ 1046              		.comm	WLAN,36,4
+ 1047              		.comm	RS232,36,4
+ 1048              		.comm	LEDs,28,4
+ 1049              		.comm	USB,36,4
+ 1050              		.comm	uart0_interrupt,1,1
+ 1051              		.comm	ADCs,32,4
+ 1052              		.comm	IOMap,2088,4
+ 1053              		.comm	SPI,44,4
+ 1054              		.comm	IOs,52,4
+ 1055              		.comm	Cpu,8,4
+ 1056              		.bss
+ 1057              		.align	1
+ 1058              		.set	.LANCHOR0,. + 0
+ 1061              	EEPROM:
+ 1062 0000 00000000 		.space	48
+ 1062      00000000 
+ 1062      00000000 
+ 1062      00000000 
+ 1062      00000000 
+ 1065              	ADCValue:
+ 1066 0030 00000000 		.space	12
+ 1066      00000000 
+ 1066      00000000 
+ 1067              		.text
+ 1068              	.Letext0:
+ 1069              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 1070              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1071              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1072              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 1073              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1074              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1075              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1076              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1077              		.file 10 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 1078              		.file 11 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 1079              		.file 12 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 1080              		.file 13 "./hal/IOs.h"
+ 1081              		.file 14 "./hal/SPI.h"
+ 1082              		.file 15 "./hal/IOMap.h"
+ 1083              		.file 16 "./hal/ADCs.h"
+ 1084              		.file 17 "./hal/RXTX.h"
+ 1085              		.file 18 "./hal/USB.h"
+ 1086              		.file 19 "./hal/LEDs.h"
+ 1087              		.file 20 "./hal/RS232.h"
+ 1088              		.file 21 "./hal/WLAN.h"
+ 1089              		.file 22 "./hal/Timer.h"
+ 1090              		.file 23 "./hal/UART.h"
+ 1091              		.file 24 "./hal/HAL.h"
+ 1092              		.file 25 "tmc/EEPROM.h"
+ 1093              		.file 26 "<built-in>"
+DEFINED SYMBOLS
+                            *ABS*:00000000 EEPROM.c
+C:\Users\Shubham\AppData\Local\Temp\ccLNrNjp.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccLNrNjp.s:23     .text:00000000 eeprom_write_byte
+C:\Users\Shubham\AppData\Local\Temp\ccLNrNjp.s:194    .text:000000b0 $d
+                            *COM*:00000030 HAL
+                            *COM*:0000002c SPI
+                            *COM*:00000034 IOs
+C:\Users\Shubham\AppData\Local\Temp\ccLNrNjp.s:201    .text:000000c0 $t
+C:\Users\Shubham\AppData\Local\Temp\ccLNrNjp.s:208    .text:000000c0 eeprom_write_array
+C:\Users\Shubham\AppData\Local\Temp\ccLNrNjp.s:501    .text:000001f4 $d
+C:\Users\Shubham\AppData\Local\Temp\ccLNrNjp.s:508    .text:00000204 $t
+C:\Users\Shubham\AppData\Local\Temp\ccLNrNjp.s:515    .text:00000204 eeprom_read_byte
+C:\Users\Shubham\AppData\Local\Temp\ccLNrNjp.s:614    .text:00000258 $d
+C:\Users\Shubham\AppData\Local\Temp\ccLNrNjp.s:620    .text:00000264 $t
+C:\Users\Shubham\AppData\Local\Temp\ccLNrNjp.s:627    .text:00000264 eeprom_read_array
+C:\Users\Shubham\AppData\Local\Temp\ccLNrNjp.s:750    .text:000002dc $d
+C:\Users\Shubham\AppData\Local\Temp\ccLNrNjp.s:756    .text:000002e8 $t
+C:\Users\Shubham\AppData\Local\Temp\ccLNrNjp.s:763    .text:000002e8 eeprom_init
+C:\Users\Shubham\AppData\Local\Temp\ccLNrNjp.s:866    .text:00000360 $d
+C:\Users\Shubham\AppData\Local\Temp\ccLNrNjp.s:871    .text:00000368 $t
+C:\Users\Shubham\AppData\Local\Temp\ccLNrNjp.s:878    .text:00000368 eeprom_check
+C:\Users\Shubham\AppData\Local\Temp\ccLNrNjp.s:1033   .text:000003f8 $d
+C:\Users\Shubham\AppData\Local\Temp\ccLNrNjp.s:1061   .bss:00000000 EEPROM
+                            *COM*:00000001 hwid
+                            *COM*:00000028 UART
+                            *COM*:00000010 Timer
+                            *COM*:00000024 WLAN
+                            *COM*:00000024 RS232
+                            *COM*:0000001c LEDs
+                            *COM*:00000024 USB
+                            *COM*:00000001 uart0_interrupt
+                            *COM*:00000020 ADCs
+                            *COM*:00000828 IOMap
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\ccLNrNjp.s:1057   .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccLNrNjp.s:1065   .bss:00000030 ADCValue
+
+UNDEFINED SYMBOLS
+memset

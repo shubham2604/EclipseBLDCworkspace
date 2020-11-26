@@ -1,0 +1,1076 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"RS232.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.arch armv7e-m
+  17              		.syntax unified
+  18              		.thumb
+  19              		.thumb_func
+  20              		.fpu softvfp
+  22              	tx:
+  23              	.LVL0:
+  24              	.LFB3:
+  25              		.file 1 "hal/Landungsbruecke/tmc/RS232.c"
+   1:hal/Landungsbruecke/tmc/RS232.c **** #include "hal/HAL.h"
+   2:hal/Landungsbruecke/tmc/RS232.c **** #include "hal/RS232.h"
+   3:hal/Landungsbruecke/tmc/RS232.c **** #include "hal/Landungsbruecke/freescale/Cpu.h"
+   4:hal/Landungsbruecke/tmc/RS232.c **** 
+   5:hal/Landungsbruecke/tmc/RS232.c **** #define BUFFER_SIZE         1024
+   6:hal/Landungsbruecke/tmc/RS232.c **** #define INTR_PRI            6
+   7:hal/Landungsbruecke/tmc/RS232.c **** #define UART_TIMEOUT_VALUE  5
+   8:hal/Landungsbruecke/tmc/RS232.c **** 
+   9:hal/Landungsbruecke/tmc/RS232.c **** static void init();
+  10:hal/Landungsbruecke/tmc/RS232.c **** static void deInit();
+  11:hal/Landungsbruecke/tmc/RS232.c **** static void tx(uint8_t ch);
+  12:hal/Landungsbruecke/tmc/RS232.c **** static uint8_t rx(uint8_t *ch);
+  13:hal/Landungsbruecke/tmc/RS232.c **** static void txN(uint8_t *str, uint8_t number);
+  14:hal/Landungsbruecke/tmc/RS232.c **** static uint8_t rxN(uint8_t *ch, uint8_t number);
+  15:hal/Landungsbruecke/tmc/RS232.c **** static void clearBuffers(void);
+  16:hal/Landungsbruecke/tmc/RS232.c **** static uint32_t bytesAvailable();
+  17:hal/Landungsbruecke/tmc/RS232.c **** 
+  18:hal/Landungsbruecke/tmc/RS232.c **** static volatile uint8_t
+  19:hal/Landungsbruecke/tmc/RS232.c **** 	rxBuffer[BUFFER_SIZE],
+  20:hal/Landungsbruecke/tmc/RS232.c **** 	txBuffer[BUFFER_SIZE];
+  21:hal/Landungsbruecke/tmc/RS232.c **** 
+  22:hal/Landungsbruecke/tmc/RS232.c **** static volatile uint32_t available = 0;
+  23:hal/Landungsbruecke/tmc/RS232.c **** 
+  24:hal/Landungsbruecke/tmc/RS232.c **** RXTXTypeDef RS232 =
+  25:hal/Landungsbruecke/tmc/RS232.c **** {
+  26:hal/Landungsbruecke/tmc/RS232.c **** 	.init            = init,
+  27:hal/Landungsbruecke/tmc/RS232.c **** 	.deInit          = deInit,
+  28:hal/Landungsbruecke/tmc/RS232.c **** 	.rx              = rx,
+  29:hal/Landungsbruecke/tmc/RS232.c **** 	.tx              = tx,
+  30:hal/Landungsbruecke/tmc/RS232.c **** 	.rxN             = rxN,
+  31:hal/Landungsbruecke/tmc/RS232.c **** 	.txN             = txN,
+  32:hal/Landungsbruecke/tmc/RS232.c **** 	.clearBuffers    = clearBuffers,
+  33:hal/Landungsbruecke/tmc/RS232.c **** 	.baudRate        = 115200,
+  34:hal/Landungsbruecke/tmc/RS232.c **** 	.bytesAvailable  = bytesAvailable
+  35:hal/Landungsbruecke/tmc/RS232.c **** };
+  36:hal/Landungsbruecke/tmc/RS232.c **** 
+  37:hal/Landungsbruecke/tmc/RS232.c **** static RXTXBufferingTypeDef buffers =
+  38:hal/Landungsbruecke/tmc/RS232.c **** {
+  39:hal/Landungsbruecke/tmc/RS232.c **** 	.rx =
+  40:hal/Landungsbruecke/tmc/RS232.c **** 	{
+  41:hal/Landungsbruecke/tmc/RS232.c **** 		.read    = 0,
+  42:hal/Landungsbruecke/tmc/RS232.c **** 		.wrote   = 0,
+  43:hal/Landungsbruecke/tmc/RS232.c **** 		.buffer  = rxBuffer
+  44:hal/Landungsbruecke/tmc/RS232.c **** 	},
+  45:hal/Landungsbruecke/tmc/RS232.c **** 	.tx =
+  46:hal/Landungsbruecke/tmc/RS232.c **** 	{
+  47:hal/Landungsbruecke/tmc/RS232.c **** 		.read    = 0,
+  48:hal/Landungsbruecke/tmc/RS232.c **** 		.wrote   = 0,
+  49:hal/Landungsbruecke/tmc/RS232.c **** 		.buffer  = txBuffer
+  50:hal/Landungsbruecke/tmc/RS232.c **** 	}
+  51:hal/Landungsbruecke/tmc/RS232.c **** };
+  52:hal/Landungsbruecke/tmc/RS232.c **** 
+  53:hal/Landungsbruecke/tmc/RS232.c **** static void init()
+  54:hal/Landungsbruecke/tmc/RS232.c **** {
+  55:hal/Landungsbruecke/tmc/RS232.c **** 	register uint16_t ubd;
+  56:hal/Landungsbruecke/tmc/RS232.c **** 
+  57:hal/Landungsbruecke/tmc/RS232.c **** 	SIM_SCGC1 |= (SIM_SCGC1_UART4_MASK);
+  58:hal/Landungsbruecke/tmc/RS232.c **** 
+  59:hal/Landungsbruecke/tmc/RS232.c **** 	HAL.IOs->pins->RS232_RX.configuration.GPIO_Mode = GPIO_Mode_AF3;
+  60:hal/Landungsbruecke/tmc/RS232.c **** 	HAL.IOs->pins->RS232_TX.configuration.GPIO_Mode = GPIO_Mode_AF3;
+  61:hal/Landungsbruecke/tmc/RS232.c **** 
+  62:hal/Landungsbruecke/tmc/RS232.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->RS232_RX);
+  63:hal/Landungsbruecke/tmc/RS232.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->RS232_TX);
+  64:hal/Landungsbruecke/tmc/RS232.c **** 	/* Disable the transmitter and receiver */
+  65:hal/Landungsbruecke/tmc/RS232.c **** 	UART_C2_REG(UART4_BASE_PTR) &= ~(UART_C2_TE_MASK | UART_C2_RE_MASK);
+  66:hal/Landungsbruecke/tmc/RS232.c **** 
+  67:hal/Landungsbruecke/tmc/RS232.c **** 	/* Configure the UART for 8-bit mode, no parity */
+  68:hal/Landungsbruecke/tmc/RS232.c **** 	/* We need all default settings, so entire register is cleared */
+  69:hal/Landungsbruecke/tmc/RS232.c **** 	UART_C1_REG(UART4_BASE_PTR) = 0;
+  70:hal/Landungsbruecke/tmc/RS232.c **** 
+  71:hal/Landungsbruecke/tmc/RS232.c **** 	ubd = (CPU_BUS_CLK_HZ / 16) / (RS232.baudRate);
+  72:hal/Landungsbruecke/tmc/RS232.c **** 
+  73:hal/Landungsbruecke/tmc/RS232.c **** 	UART_BDH_REG(UART4_BASE_PTR) = (ubd >> 8) & UART_BDH_SBR_MASK;
+  74:hal/Landungsbruecke/tmc/RS232.c **** 	UART_BDL_REG(UART4_BASE_PTR) = (ubd & UART_BDL_SBR_MASK);
+  75:hal/Landungsbruecke/tmc/RS232.c **** 
+  76:hal/Landungsbruecke/tmc/RS232.c **** 	/* Enable receiver and transmitter */
+  77:hal/Landungsbruecke/tmc/RS232.c **** 	UART_C2_REG(UART4_BASE_PTR) |= (UART_C2_TE_MASK | UART_C2_RE_MASK | UART_C2_RIE_MASK);
+  78:hal/Landungsbruecke/tmc/RS232.c **** 
+  79:hal/Landungsbruecke/tmc/RS232.c **** 	enable_irq(INT_UART4_RX_TX-16);
+  80:hal/Landungsbruecke/tmc/RS232.c **** }
+  81:hal/Landungsbruecke/tmc/RS232.c **** 
+  82:hal/Landungsbruecke/tmc/RS232.c **** static void deInit()
+  83:hal/Landungsbruecke/tmc/RS232.c **** {
+  84:hal/Landungsbruecke/tmc/RS232.c **** 	SIM_SCGC1 &= ~(SIM_SCGC1_UART4_MASK);
+  85:hal/Landungsbruecke/tmc/RS232.c **** 
+  86:hal/Landungsbruecke/tmc/RS232.c **** 	HAL.IOs->pins->RS232_RX.configuration.GPIO_Mode = GPIO_Mode_IN;
+  87:hal/Landungsbruecke/tmc/RS232.c **** 	HAL.IOs->pins->RS232_TX.configuration.GPIO_Mode = GPIO_Mode_IN;
+  88:hal/Landungsbruecke/tmc/RS232.c **** 
+  89:hal/Landungsbruecke/tmc/RS232.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->RS232_RX);
+  90:hal/Landungsbruecke/tmc/RS232.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->RS232_TX);
+  91:hal/Landungsbruecke/tmc/RS232.c **** 
+  92:hal/Landungsbruecke/tmc/RS232.c **** 	disable_irq(INT_UART4_RX_TX-16);
+  93:hal/Landungsbruecke/tmc/RS232.c **** 
+  94:hal/Landungsbruecke/tmc/RS232.c **** 	clearBuffers();
+  95:hal/Landungsbruecke/tmc/RS232.c **** }
+  96:hal/Landungsbruecke/tmc/RS232.c **** 
+  97:hal/Landungsbruecke/tmc/RS232.c **** void UART4_RX_TX_IRQHandler(void)
+  98:hal/Landungsbruecke/tmc/RS232.c **** {
+  99:hal/Landungsbruecke/tmc/RS232.c **** 	uint32_t status = UART4_S1;
+ 100:hal/Landungsbruecke/tmc/RS232.c **** 
+ 101:hal/Landungsbruecke/tmc/RS232.c **** 	if(status & UART_S1_RDRF_MASK)
+ 102:hal/Landungsbruecke/tmc/RS232.c **** 	{
+ 103:hal/Landungsbruecke/tmc/RS232.c **** 		buffers.rx.buffer[buffers.rx.wrote] = UART4_D;
+ 104:hal/Landungsbruecke/tmc/RS232.c **** 		buffers.rx.wrote = (buffers.rx.wrote + 1) % BUFFER_SIZE;
+ 105:hal/Landungsbruecke/tmc/RS232.c **** 		available++;
+ 106:hal/Landungsbruecke/tmc/RS232.c **** 
+ 107:hal/Landungsbruecke/tmc/RS232.c **** 		UART4_S1 &= ~(UART_S1_RDRF_MASK);
+ 108:hal/Landungsbruecke/tmc/RS232.c **** 	}
+ 109:hal/Landungsbruecke/tmc/RS232.c **** 
+ 110:hal/Landungsbruecke/tmc/RS232.c **** 	if(status & UART_S1_TDRE_MASK)
+ 111:hal/Landungsbruecke/tmc/RS232.c **** 	{
+ 112:hal/Landungsbruecke/tmc/RS232.c **** 		if(buffers.tx.read != buffers.tx.wrote)
+ 113:hal/Landungsbruecke/tmc/RS232.c **** 		{
+ 114:hal/Landungsbruecke/tmc/RS232.c **** 			UART4_D	= buffers.tx.buffer[buffers.tx.read];
+ 115:hal/Landungsbruecke/tmc/RS232.c **** 			buffers.tx.read = (buffers.tx.read + 1) % BUFFER_SIZE;
+ 116:hal/Landungsbruecke/tmc/RS232.c **** 		}
+ 117:hal/Landungsbruecke/tmc/RS232.c **** 		else
+ 118:hal/Landungsbruecke/tmc/RS232.c **** 		{ // empty buffer -> turn off send interrupt
+ 119:hal/Landungsbruecke/tmc/RS232.c **** 			UART4_C2 &= ~UART_C2_TIE_MASK;
+ 120:hal/Landungsbruecke/tmc/RS232.c **** 		}
+ 121:hal/Landungsbruecke/tmc/RS232.c **** 		UART4_S1 &= ~(UART_S1_TDRE_MASK);
+ 122:hal/Landungsbruecke/tmc/RS232.c **** 	}
+ 123:hal/Landungsbruecke/tmc/RS232.c **** }
+ 124:hal/Landungsbruecke/tmc/RS232.c **** 
+ 125:hal/Landungsbruecke/tmc/RS232.c **** static void tx(uint8_t ch)
+ 126:hal/Landungsbruecke/tmc/RS232.c **** {
+  26              		.loc 1 126 1 view -0
+  27              		.cfi_startproc
+  28              		@ args = 0, pretend = 0, frame = 0
+  29              		@ frame_needed = 0, uses_anonymous_args = 0
+  30              		@ link register save eliminated.
+ 127:hal/Landungsbruecke/tmc/RS232.c **** 	buffers.tx.buffer[buffers.tx.wrote] = ch;
+  31              		.loc 1 127 2 view .LVU1
+  32              		.loc 1 127 30 is_stmt 0 view .LVU2
+  33 0000 064A     		ldr	r2, .L2
+  34              		.loc 1 127 19 view .LVU3
+  35 0002 D2E90131 		ldrd	r3, r1, [r2, #4]
+  36              		.loc 1 127 38 view .LVU4
+  37 0006 C854     		strb	r0, [r1, r3]
+ 128:hal/Landungsbruecke/tmc/RS232.c **** 	buffers.tx.wrote = (buffers.tx.wrote + 1) % BUFFER_SIZE;
+  38              		.loc 1 128 2 is_stmt 1 view .LVU5
+  39              		.loc 1 128 39 is_stmt 0 view .LVU6
+  40 0008 0133     		adds	r3, r3, #1
+  41              		.loc 1 128 44 view .LVU7
+  42 000a C3F30903 		ubfx	r3, r3, #0, #10
+  43              		.loc 1 128 19 view .LVU8
+  44 000e 5360     		str	r3, [r2, #4]
+ 129:hal/Landungsbruecke/tmc/RS232.c **** 
+ 130:hal/Landungsbruecke/tmc/RS232.c **** 	// enable send interrupt
+ 131:hal/Landungsbruecke/tmc/RS232.c **** 	UART4_C2 |= UART_C2_TIE_MASK;
+  45              		.loc 1 131 2 is_stmt 1 view .LVU9
+  46              		.loc 1 131 11 is_stmt 0 view .LVU10
+  47 0010 034A     		ldr	r2, .L2+4
+  48 0012 D378     		ldrb	r3, [r2, #3]	@ zero_extendqisi2
+  49 0014 43F08003 		orr	r3, r3, #128
+  50 0018 D370     		strb	r3, [r2, #3]
+ 132:hal/Landungsbruecke/tmc/RS232.c **** }
+  51              		.loc 1 132 1 view .LVU11
+  52 001a 7047     		bx	lr
+  53              	.L3:
+  54              		.align	2
+  55              	.L2:
+  56 001c 00000000 		.word	.LANCHOR0
+  57 0020 00A00E40 		.word	1074700288
+  58              		.cfi_endproc
+  59              	.LFE3:
+  61              		.align	1
+  62              		.syntax unified
+  63              		.thumb
+  64              		.thumb_func
+  65              		.fpu softvfp
+  67              	rx:
+  68              	.LVL1:
+  69              	.LFB4:
+ 133:hal/Landungsbruecke/tmc/RS232.c **** 
+ 134:hal/Landungsbruecke/tmc/RS232.c **** static uint8_t rx(uint8_t *ch)
+ 135:hal/Landungsbruecke/tmc/RS232.c **** {
+  70              		.loc 1 135 1 is_stmt 1 view -0
+  71              		.cfi_startproc
+  72              		@ args = 0, pretend = 0, frame = 0
+  73              		@ frame_needed = 0, uses_anonymous_args = 0
+  74              		@ link register save eliminated.
+ 136:hal/Landungsbruecke/tmc/RS232.c **** 	if(buffers.rx.read == buffers.rx.wrote)
+  75              		.loc 1 136 2 view .LVU13
+  76              		.loc 1 136 15 is_stmt 0 view .LVU14
+  77 0024 094A     		ldr	r2, .L7
+  78              		.loc 1 136 4 view .LVU15
+  79 0026 D2E90331 		ldrd	r3, r1, [r2, #12]
+  80 002a 8B42     		cmp	r3, r1
+  81 002c 0CD0     		beq	.L6
+ 137:hal/Landungsbruecke/tmc/RS232.c **** 		return 0;
+ 138:hal/Landungsbruecke/tmc/RS232.c **** 
+ 139:hal/Landungsbruecke/tmc/RS232.c **** 	*ch = buffers.rx.buffer[buffers.rx.read];
+  82              		.loc 1 139 2 is_stmt 1 view .LVU16
+  83              		.loc 1 139 25 is_stmt 0 view .LVU17
+  84 002e 5169     		ldr	r1, [r2, #20]
+  85 0030 C95C     		ldrb	r1, [r1, r3]	@ zero_extendqisi2
+  86              		.loc 1 139 6 view .LVU18
+  87 0032 0170     		strb	r1, [r0]
+ 140:hal/Landungsbruecke/tmc/RS232.c **** 	buffers.rx.read = (buffers.rx.read + 1) % BUFFER_SIZE;
+  88              		.loc 1 140 2 is_stmt 1 view .LVU19
+  89              		.loc 1 140 37 is_stmt 0 view .LVU20
+  90 0034 0133     		adds	r3, r3, #1
+  91              		.loc 1 140 42 view .LVU21
+  92 0036 C3F30903 		ubfx	r3, r3, #0, #10
+  93              		.loc 1 140 18 view .LVU22
+  94 003a D360     		str	r3, [r2, #12]
+ 141:hal/Landungsbruecke/tmc/RS232.c **** 	available--;
+  95              		.loc 1 141 2 is_stmt 1 view .LVU23
+  96              		.loc 1 141 11 is_stmt 0 view .LVU24
+  97 003c 044A     		ldr	r2, .L7+4
+  98 003e 1368     		ldr	r3, [r2]
+  99 0040 013B     		subs	r3, r3, #1
+ 100 0042 1360     		str	r3, [r2]
+ 142:hal/Landungsbruecke/tmc/RS232.c **** 
+ 143:hal/Landungsbruecke/tmc/RS232.c **** 	return 1;
+ 101              		.loc 1 143 2 is_stmt 1 view .LVU25
+ 102              		.loc 1 143 9 is_stmt 0 view .LVU26
+ 103 0044 0120     		movs	r0, #1
+ 104              	.LVL2:
+ 105              		.loc 1 143 9 view .LVU27
+ 106 0046 7047     		bx	lr
+ 107              	.LVL3:
+ 108              	.L6:
+ 137:hal/Landungsbruecke/tmc/RS232.c **** 
+ 109              		.loc 1 137 10 view .LVU28
+ 110 0048 0020     		movs	r0, #0
+ 111              	.LVL4:
+ 144:hal/Landungsbruecke/tmc/RS232.c **** }
+ 112              		.loc 1 144 1 view .LVU29
+ 113 004a 7047     		bx	lr
+ 114              	.L8:
+ 115              		.align	2
+ 116              	.L7:
+ 117 004c 00000000 		.word	.LANCHOR0
+ 118 0050 00000000 		.word	.LANCHOR1
+ 119              		.cfi_endproc
+ 120              	.LFE4:
+ 122              		.align	1
+ 123              		.syntax unified
+ 124              		.thumb
+ 125              		.thumb_func
+ 126              		.fpu softvfp
+ 128              	txN:
+ 129              	.LVL5:
+ 130              	.LFB5:
+ 145:hal/Landungsbruecke/tmc/RS232.c **** 
+ 146:hal/Landungsbruecke/tmc/RS232.c **** static void txN(uint8_t *str, uint8_t number)
+ 147:hal/Landungsbruecke/tmc/RS232.c **** {
+ 131              		.loc 1 147 1 is_stmt 1 view -0
+ 132              		.cfi_startproc
+ 133              		@ args = 0, pretend = 0, frame = 0
+ 134              		@ frame_needed = 0, uses_anonymous_args = 0
+ 148:hal/Landungsbruecke/tmc/RS232.c **** 	for(int32_t i = 0; i < number; i++)
+ 135              		.loc 1 148 2 view .LVU31
+ 136              	.LBB3:
+ 137              		.loc 1 148 6 view .LVU32
+ 138              		.loc 1 148 6 is_stmt 0 view .LVU33
+ 139              	.LBE3:
+ 147:hal/Landungsbruecke/tmc/RS232.c **** 	for(int32_t i = 0; i < number; i++)
+ 140              		.loc 1 147 1 view .LVU34
+ 141 0054 70B5     		push	{r4, r5, r6, lr}
+ 142              	.LCFI0:
+ 143              		.cfi_def_cfa_offset 16
+ 144              		.cfi_offset 4, -16
+ 145              		.cfi_offset 5, -12
+ 146              		.cfi_offset 6, -8
+ 147              		.cfi_offset 14, -4
+ 147:hal/Landungsbruecke/tmc/RS232.c **** 	for(int32_t i = 0; i < number; i++)
+ 148              		.loc 1 147 1 view .LVU35
+ 149 0056 0646     		mov	r6, r0
+ 150 0058 0D46     		mov	r5, r1
+ 151              	.LBB4:
+ 152              		.loc 1 148 14 view .LVU36
+ 153 005a 0024     		movs	r4, #0
+ 154              	.LVL6:
+ 155              	.L10:
+ 156              		.loc 1 148 21 is_stmt 1 discriminator 1 view .LVU37
+ 157              		.loc 1 148 2 is_stmt 0 discriminator 1 view .LVU38
+ 158 005c A542     		cmp	r5, r4
+ 159 005e 00DC     		bgt	.L11
+ 160              	.LBE4:
+ 149:hal/Landungsbruecke/tmc/RS232.c **** 		tx(str[i]);
+ 150:hal/Landungsbruecke/tmc/RS232.c **** }
+ 161              		.loc 1 150 1 view .LVU39
+ 162 0060 70BD     		pop	{r4, r5, r6, pc}
+ 163              	.LVL7:
+ 164              	.L11:
+ 165              	.LBB5:
+ 149:hal/Landungsbruecke/tmc/RS232.c **** 		tx(str[i]);
+ 166              		.loc 1 149 3 is_stmt 1 discriminator 3 view .LVU40
+ 167 0062 305D     		ldrb	r0, [r6, r4]	@ zero_extendqisi2
+ 168 0064 FFF7CCFF 		bl	tx
+ 169              	.LVL8:
+ 148:hal/Landungsbruecke/tmc/RS232.c **** 		tx(str[i]);
+ 170              		.loc 1 148 33 discriminator 3 view .LVU41
+ 148:hal/Landungsbruecke/tmc/RS232.c **** 		tx(str[i]);
+ 171              		.loc 1 148 34 is_stmt 0 discriminator 3 view .LVU42
+ 172 0068 0134     		adds	r4, r4, #1
+ 173              	.LVL9:
+ 148:hal/Landungsbruecke/tmc/RS232.c **** 		tx(str[i]);
+ 174              		.loc 1 148 34 discriminator 3 view .LVU43
+ 175 006a F7E7     		b	.L10
+ 176              	.LBE5:
+ 177              		.cfi_endproc
+ 178              	.LFE5:
+ 180              		.align	1
+ 181              		.syntax unified
+ 182              		.thumb
+ 183              		.thumb_func
+ 184              		.fpu softvfp
+ 186              	bytesAvailable:
+ 187              	.LFB8:
+ 151:hal/Landungsbruecke/tmc/RS232.c **** 
+ 152:hal/Landungsbruecke/tmc/RS232.c **** static uint8_t rxN(uint8_t *str, uint8_t number)
+ 153:hal/Landungsbruecke/tmc/RS232.c **** {
+ 154:hal/Landungsbruecke/tmc/RS232.c **** 	if(available < number)
+ 155:hal/Landungsbruecke/tmc/RS232.c **** 		return 0;
+ 156:hal/Landungsbruecke/tmc/RS232.c **** 
+ 157:hal/Landungsbruecke/tmc/RS232.c **** 	for(int32_t i = 0; i < number; i++)
+ 158:hal/Landungsbruecke/tmc/RS232.c **** 		rx(&str[i]);
+ 159:hal/Landungsbruecke/tmc/RS232.c **** 
+ 160:hal/Landungsbruecke/tmc/RS232.c **** 	return 1;
+ 161:hal/Landungsbruecke/tmc/RS232.c **** }
+ 162:hal/Landungsbruecke/tmc/RS232.c **** 
+ 163:hal/Landungsbruecke/tmc/RS232.c **** static void clearBuffers(void)
+ 164:hal/Landungsbruecke/tmc/RS232.c **** {
+ 165:hal/Landungsbruecke/tmc/RS232.c **** 	disable_irq(INT_UART4_RX_TX-16);
+ 166:hal/Landungsbruecke/tmc/RS232.c **** 	available         = 0;
+ 167:hal/Landungsbruecke/tmc/RS232.c **** 	buffers.rx.read   = 0;
+ 168:hal/Landungsbruecke/tmc/RS232.c **** 	buffers.rx.wrote  = 0;
+ 169:hal/Landungsbruecke/tmc/RS232.c **** 
+ 170:hal/Landungsbruecke/tmc/RS232.c **** 	buffers.tx.read   = 0;
+ 171:hal/Landungsbruecke/tmc/RS232.c **** 	buffers.tx.wrote  = 0;
+ 172:hal/Landungsbruecke/tmc/RS232.c **** 	enable_irq(INT_UART4_RX_TX-16);
+ 173:hal/Landungsbruecke/tmc/RS232.c **** }
+ 174:hal/Landungsbruecke/tmc/RS232.c **** 
+ 175:hal/Landungsbruecke/tmc/RS232.c **** static uint32_t bytesAvailable()
+ 176:hal/Landungsbruecke/tmc/RS232.c **** {
+ 188              		.loc 1 176 1 is_stmt 1 view -0
+ 189              		.cfi_startproc
+ 190              		@ args = 0, pretend = 0, frame = 0
+ 191              		@ frame_needed = 0, uses_anonymous_args = 0
+ 192              		@ link register save eliminated.
+ 177:hal/Landungsbruecke/tmc/RS232.c **** 	return available;
+ 193              		.loc 1 177 2 view .LVU45
+ 194              		.loc 1 177 9 is_stmt 0 view .LVU46
+ 195 006c 014B     		ldr	r3, .L13
+ 196 006e 1868     		ldr	r0, [r3]
+ 178:hal/Landungsbruecke/tmc/RS232.c **** }
+ 197              		.loc 1 178 1 view .LVU47
+ 198 0070 7047     		bx	lr
+ 199              	.L14:
+ 200 0072 00BF     		.align	2
+ 201              	.L13:
+ 202 0074 00000000 		.word	.LANCHOR1
+ 203              		.cfi_endproc
+ 204              	.LFE8:
+ 206              		.align	1
+ 207              		.syntax unified
+ 208              		.thumb
+ 209              		.thumb_func
+ 210              		.fpu softvfp
+ 212              	clearBuffers:
+ 213              	.LFB7:
+ 164:hal/Landungsbruecke/tmc/RS232.c **** 	disable_irq(INT_UART4_RX_TX-16);
+ 214              		.loc 1 164 1 is_stmt 1 view -0
+ 215              		.cfi_startproc
+ 216              		@ args = 0, pretend = 0, frame = 0
+ 217              		@ frame_needed = 0, uses_anonymous_args = 0
+ 165:hal/Landungsbruecke/tmc/RS232.c **** 	available         = 0;
+ 218              		.loc 1 165 2 view .LVU49
+ 164:hal/Landungsbruecke/tmc/RS232.c **** 	disable_irq(INT_UART4_RX_TX-16);
+ 219              		.loc 1 164 1 is_stmt 0 view .LVU50
+ 220 0078 08B5     		push	{r3, lr}
+ 221              	.LCFI1:
+ 222              		.cfi_def_cfa_offset 8
+ 223              		.cfi_offset 3, -8
+ 224              		.cfi_offset 14, -4
+ 165:hal/Landungsbruecke/tmc/RS232.c **** 	available         = 0;
+ 225              		.loc 1 165 2 view .LVU51
+ 226 007a 3520     		movs	r0, #53
+ 227 007c FFF7FEFF 		bl	disable_irq
+ 228              	.LVL10:
+ 166:hal/Landungsbruecke/tmc/RS232.c **** 	buffers.rx.read   = 0;
+ 229              		.loc 1 166 2 is_stmt 1 view .LVU52
+ 166:hal/Landungsbruecke/tmc/RS232.c **** 	buffers.rx.read   = 0;
+ 230              		.loc 1 166 20 is_stmt 0 view .LVU53
+ 231 0080 064A     		ldr	r2, .L16
+ 232 0082 0023     		movs	r3, #0
+ 233 0084 1360     		str	r3, [r2]
+ 167:hal/Landungsbruecke/tmc/RS232.c **** 	buffers.rx.wrote  = 0;
+ 234              		.loc 1 167 2 is_stmt 1 view .LVU54
+ 167:hal/Landungsbruecke/tmc/RS232.c **** 	buffers.rx.wrote  = 0;
+ 235              		.loc 1 167 20 is_stmt 0 view .LVU55
+ 236 0086 064A     		ldr	r2, .L16+4
+ 172:hal/Landungsbruecke/tmc/RS232.c **** }
+ 237              		.loc 1 172 2 view .LVU56
+ 238 0088 3520     		movs	r0, #53
+ 168:hal/Landungsbruecke/tmc/RS232.c **** 
+ 239              		.loc 1 168 20 view .LVU57
+ 240 008a C2E90333 		strd	r3, r3, [r2, #12]
+ 170:hal/Landungsbruecke/tmc/RS232.c **** 	buffers.tx.wrote  = 0;
+ 241              		.loc 1 170 2 is_stmt 1 view .LVU58
+ 171:hal/Landungsbruecke/tmc/RS232.c **** 	enable_irq(INT_UART4_RX_TX-16);
+ 242              		.loc 1 171 20 is_stmt 0 view .LVU59
+ 243 008e C2E90033 		strd	r3, r3, [r2]
+ 172:hal/Landungsbruecke/tmc/RS232.c **** }
+ 244              		.loc 1 172 2 is_stmt 1 view .LVU60
+ 173:hal/Landungsbruecke/tmc/RS232.c **** 
+ 245              		.loc 1 173 1 is_stmt 0 view .LVU61
+ 246 0092 BDE80840 		pop	{r3, lr}
+ 247              	.LCFI2:
+ 248              		.cfi_restore 14
+ 249              		.cfi_restore 3
+ 250              		.cfi_def_cfa_offset 0
+ 172:hal/Landungsbruecke/tmc/RS232.c **** }
+ 251              		.loc 1 172 2 view .LVU62
+ 252 0096 FFF7FEBF 		b	enable_irq
+ 253              	.LVL11:
+ 254              	.L17:
+ 255 009a 00BF     		.align	2
+ 256              	.L16:
+ 257 009c 00000000 		.word	.LANCHOR1
+ 258 00a0 00000000 		.word	.LANCHOR0
+ 259              		.cfi_endproc
+ 260              	.LFE7:
+ 262              		.align	1
+ 263              		.syntax unified
+ 264              		.thumb
+ 265              		.thumb_func
+ 266              		.fpu softvfp
+ 268              	deInit:
+ 269              	.LFB1:
+  83:hal/Landungsbruecke/tmc/RS232.c **** 	SIM_SCGC1 &= ~(SIM_SCGC1_UART4_MASK);
+ 270              		.loc 1 83 1 is_stmt 1 view -0
+ 271              		.cfi_startproc
+ 272              		@ args = 0, pretend = 0, frame = 0
+ 273              		@ frame_needed = 0, uses_anonymous_args = 0
+  84:hal/Landungsbruecke/tmc/RS232.c **** 
+ 274              		.loc 1 84 2 view .LVU64
+  84:hal/Landungsbruecke/tmc/RS232.c **** 
+ 275              		.loc 1 84 12 is_stmt 0 view .LVU65
+ 276 00a4 1049     		ldr	r1, .L19
+ 277 00a6 41F22802 		movw	r2, #4136
+  83:hal/Landungsbruecke/tmc/RS232.c **** 	SIM_SCGC1 &= ~(SIM_SCGC1_UART4_MASK);
+ 278              		.loc 1 83 1 view .LVU66
+ 279 00aa 10B5     		push	{r4, lr}
+ 280              	.LCFI3:
+ 281              		.cfi_def_cfa_offset 8
+ 282              		.cfi_offset 4, -8
+ 283              		.cfi_offset 14, -4
+  84:hal/Landungsbruecke/tmc/RS232.c **** 
+ 284              		.loc 1 84 12 view .LVU67
+ 285 00ac 8B58     		ldr	r3, [r1, r2]
+ 286 00ae 23F48063 		bic	r3, r3, #1024
+ 287 00b2 8B50     		str	r3, [r1, r2]
+  86:hal/Landungsbruecke/tmc/RS232.c **** 	HAL.IOs->pins->RS232_TX.configuration.GPIO_Mode = GPIO_Mode_IN;
+ 288              		.loc 1 86 2 is_stmt 1 view .LVU68
+  86:hal/Landungsbruecke/tmc/RS232.c **** 	HAL.IOs->pins->RS232_TX.configuration.GPIO_Mode = GPIO_Mode_IN;
+ 289              		.loc 1 86 5 is_stmt 0 view .LVU69
+ 290 00b4 0D4B     		ldr	r3, .L19+4
+ 291 00b6 DC68     		ldr	r4, [r3, #12]
+  86:hal/Landungsbruecke/tmc/RS232.c **** 	HAL.IOs->pins->RS232_TX.configuration.GPIO_Mode = GPIO_Mode_IN;
+ 292              		.loc 1 86 9 view .LVU70
+ 293 00b8 6068     		ldr	r0, [r4, #4]
+  86:hal/Landungsbruecke/tmc/RS232.c **** 	HAL.IOs->pins->RS232_TX.configuration.GPIO_Mode = GPIO_Mode_IN;
+ 294              		.loc 1 86 50 view .LVU71
+ 295 00ba 0823     		movs	r3, #8
+ 296 00bc 80F8DD34 		strb	r3, [r0, #1245]
+  87:hal/Landungsbruecke/tmc/RS232.c **** 
+ 297              		.loc 1 87 2 is_stmt 1 view .LVU72
+  87:hal/Landungsbruecke/tmc/RS232.c **** 
+ 298              		.loc 1 87 50 is_stmt 0 view .LVU73
+ 299 00c0 80F8BD34 		strb	r3, [r0, #1213]
+  89:hal/Landungsbruecke/tmc/RS232.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->RS232_TX);
+ 300              		.loc 1 89 2 is_stmt 1 view .LVU74
+  89:hal/Landungsbruecke/tmc/RS232.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->RS232_TX);
+ 301              		.loc 1 89 17 is_stmt 0 view .LVU75
+ 302 00c4 2368     		ldr	r3, [r4]
+  89:hal/Landungsbruecke/tmc/RS232.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->RS232_TX);
+ 303              		.loc 1 89 2 view .LVU76
+ 304 00c6 00F59960 		add	r0, r0, #1224
+ 305 00ca 1B68     		ldr	r3, [r3]
+ 306 00cc 9847     		blx	r3
+ 307              	.LVL12:
+  90:hal/Landungsbruecke/tmc/RS232.c **** 
+ 308              		.loc 1 90 2 is_stmt 1 view .LVU77
+  90:hal/Landungsbruecke/tmc/RS232.c **** 
+ 309              		.loc 1 90 17 is_stmt 0 view .LVU78
+ 310 00ce D4E90030 		ldrd	r3, r0, [r4]
+  90:hal/Landungsbruecke/tmc/RS232.c **** 
+ 311              		.loc 1 90 2 view .LVU79
+ 312 00d2 1B68     		ldr	r3, [r3]
+ 313 00d4 00F59560 		add	r0, r0, #1192
+ 314 00d8 9847     		blx	r3
+ 315              	.LVL13:
+  92:hal/Landungsbruecke/tmc/RS232.c **** 
+ 316              		.loc 1 92 2 is_stmt 1 view .LVU80
+ 317 00da 3520     		movs	r0, #53
+ 318 00dc FFF7FEFF 		bl	disable_irq
+ 319              	.LVL14:
+  94:hal/Landungsbruecke/tmc/RS232.c **** }
+ 320              		.loc 1 94 2 view .LVU81
+  95:hal/Landungsbruecke/tmc/RS232.c **** 
+ 321              		.loc 1 95 1 is_stmt 0 view .LVU82
+ 322 00e0 BDE81040 		pop	{r4, lr}
+ 323              	.LCFI4:
+ 324              		.cfi_restore 14
+ 325              		.cfi_restore 4
+ 326              		.cfi_def_cfa_offset 0
+  94:hal/Landungsbruecke/tmc/RS232.c **** }
+ 327              		.loc 1 94 2 view .LVU83
+ 328 00e4 C8E7     		b	clearBuffers
+ 329              	.LVL15:
+ 330              	.L20:
+ 331 00e6 00BF     		.align	2
+ 332              	.L19:
+ 333 00e8 00700440 		.word	1074032640
+ 334 00ec 00000000 		.word	HAL
+ 335              		.cfi_endproc
+ 336              	.LFE1:
+ 338              		.align	1
+ 339              		.syntax unified
+ 340              		.thumb
+ 341              		.thumb_func
+ 342              		.fpu softvfp
+ 344              	init:
+ 345              	.LFB0:
+  54:hal/Landungsbruecke/tmc/RS232.c **** 	register uint16_t ubd;
+ 346              		.loc 1 54 1 is_stmt 1 view -0
+ 347              		.cfi_startproc
+ 348              		@ args = 0, pretend = 0, frame = 0
+ 349              		@ frame_needed = 0, uses_anonymous_args = 0
+  55:hal/Landungsbruecke/tmc/RS232.c **** 
+ 350              		.loc 1 55 2 view .LVU85
+  57:hal/Landungsbruecke/tmc/RS232.c **** 
+ 351              		.loc 1 57 2 view .LVU86
+  57:hal/Landungsbruecke/tmc/RS232.c **** 
+ 352              		.loc 1 57 12 is_stmt 0 view .LVU87
+ 353 00f0 1A49     		ldr	r1, .L22
+ 354 00f2 41F22802 		movw	r2, #4136
+  54:hal/Landungsbruecke/tmc/RS232.c **** 	register uint16_t ubd;
+ 355              		.loc 1 54 1 view .LVU88
+ 356 00f6 10B5     		push	{r4, lr}
+ 357              	.LCFI5:
+ 358              		.cfi_def_cfa_offset 8
+ 359              		.cfi_offset 4, -8
+ 360              		.cfi_offset 14, -4
+  57:hal/Landungsbruecke/tmc/RS232.c **** 
+ 361              		.loc 1 57 12 view .LVU89
+ 362 00f8 8B58     		ldr	r3, [r1, r2]
+ 363 00fa 43F48063 		orr	r3, r3, #1024
+ 364 00fe 8B50     		str	r3, [r1, r2]
+  59:hal/Landungsbruecke/tmc/RS232.c **** 	HAL.IOs->pins->RS232_TX.configuration.GPIO_Mode = GPIO_Mode_AF3;
+ 365              		.loc 1 59 2 is_stmt 1 view .LVU90
+  59:hal/Landungsbruecke/tmc/RS232.c **** 	HAL.IOs->pins->RS232_TX.configuration.GPIO_Mode = GPIO_Mode_AF3;
+ 366              		.loc 1 59 5 is_stmt 0 view .LVU91
+ 367 0100 174B     		ldr	r3, .L22+4
+ 368 0102 DC68     		ldr	r4, [r3, #12]
+  59:hal/Landungsbruecke/tmc/RS232.c **** 	HAL.IOs->pins->RS232_TX.configuration.GPIO_Mode = GPIO_Mode_AF3;
+ 369              		.loc 1 59 9 view .LVU92
+ 370 0104 6068     		ldr	r0, [r4, #4]
+  59:hal/Landungsbruecke/tmc/RS232.c **** 	HAL.IOs->pins->RS232_TX.configuration.GPIO_Mode = GPIO_Mode_AF3;
+ 371              		.loc 1 59 50 view .LVU93
+ 372 0106 0323     		movs	r3, #3
+ 373 0108 80F8DD34 		strb	r3, [r0, #1245]
+  60:hal/Landungsbruecke/tmc/RS232.c **** 
+ 374              		.loc 1 60 2 is_stmt 1 view .LVU94
+  60:hal/Landungsbruecke/tmc/RS232.c **** 
+ 375              		.loc 1 60 50 is_stmt 0 view .LVU95
+ 376 010c 80F8BD34 		strb	r3, [r0, #1213]
+  62:hal/Landungsbruecke/tmc/RS232.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->RS232_TX);
+ 377              		.loc 1 62 2 is_stmt 1 view .LVU96
+  62:hal/Landungsbruecke/tmc/RS232.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->RS232_TX);
+ 378              		.loc 1 62 17 is_stmt 0 view .LVU97
+ 379 0110 2368     		ldr	r3, [r4]
+  62:hal/Landungsbruecke/tmc/RS232.c **** 	HAL.IOs->config->set(&HAL.IOs->pins->RS232_TX);
+ 380              		.loc 1 62 2 view .LVU98
+ 381 0112 00F59960 		add	r0, r0, #1224
+ 382 0116 1B68     		ldr	r3, [r3]
+ 383 0118 9847     		blx	r3
+ 384              	.LVL16:
+  63:hal/Landungsbruecke/tmc/RS232.c **** 	/* Disable the transmitter and receiver */
+ 385              		.loc 1 63 2 is_stmt 1 view .LVU99
+  63:hal/Landungsbruecke/tmc/RS232.c **** 	/* Disable the transmitter and receiver */
+ 386              		.loc 1 63 17 is_stmt 0 view .LVU100
+ 387 011a D4E90030 		ldrd	r3, r0, [r4]
+  63:hal/Landungsbruecke/tmc/RS232.c **** 	/* Disable the transmitter and receiver */
+ 388              		.loc 1 63 2 view .LVU101
+ 389 011e 1B68     		ldr	r3, [r3]
+ 390 0120 00F59560 		add	r0, r0, #1192
+ 391 0124 9847     		blx	r3
+ 392              	.LVL17:
+  65:hal/Landungsbruecke/tmc/RS232.c **** 
+ 393              		.loc 1 65 2 is_stmt 1 view .LVU102
+  65:hal/Landungsbruecke/tmc/RS232.c **** 
+ 394              		.loc 1 65 30 is_stmt 0 view .LVU103
+ 395 0126 0F4B     		ldr	r3, .L22+8
+ 396 0128 DA78     		ldrb	r2, [r3, #3]	@ zero_extendqisi2
+ 397 012a 02F0F302 		and	r2, r2, #243
+ 398 012e DA70     		strb	r2, [r3, #3]
+  69:hal/Landungsbruecke/tmc/RS232.c **** 
+ 399              		.loc 1 69 2 is_stmt 1 view .LVU104
+  69:hal/Landungsbruecke/tmc/RS232.c **** 
+ 400              		.loc 1 69 30 is_stmt 0 view .LVU105
+ 401 0130 0022     		movs	r2, #0
+ 402 0132 9A70     		strb	r2, [r3, #2]
+  71:hal/Landungsbruecke/tmc/RS232.c **** 
+ 403              		.loc 1 71 2 is_stmt 1 view .LVU106
+  71:hal/Landungsbruecke/tmc/RS232.c **** 
+ 404              		.loc 1 71 30 is_stmt 0 view .LVU107
+ 405 0134 0C4A     		ldr	r2, .L22+12
+ 406 0136 916B     		ldr	r1, [r2, #56]
+ 407 0138 0C4A     		ldr	r2, .L22+16
+ 408 013a B2FBF1F2 		udiv	r2, r2, r1
+ 409              	.LVL18:
+  73:hal/Landungsbruecke/tmc/RS232.c **** 	UART_BDL_REG(UART4_BASE_PTR) = (ubd & UART_BDL_SBR_MASK);
+ 410              		.loc 1 73 2 is_stmt 1 view .LVU108
+  73:hal/Landungsbruecke/tmc/RS232.c **** 	UART_BDL_REG(UART4_BASE_PTR) = (ubd & UART_BDL_SBR_MASK);
+ 411              		.loc 1 73 44 is_stmt 0 view .LVU109
+ 412 013e C2F30421 		ubfx	r1, r2, #8, #5
+  74:hal/Landungsbruecke/tmc/RS232.c **** 
+ 413              		.loc 1 74 31 view .LVU110
+ 414 0142 D2B2     		uxtb	r2, r2
+ 415              	.LVL19:
+  73:hal/Landungsbruecke/tmc/RS232.c **** 	UART_BDL_REG(UART4_BASE_PTR) = (ubd & UART_BDL_SBR_MASK);
+ 416              		.loc 1 73 31 view .LVU111
+ 417 0144 1970     		strb	r1, [r3]
+  74:hal/Landungsbruecke/tmc/RS232.c **** 
+ 418              		.loc 1 74 2 is_stmt 1 view .LVU112
+  74:hal/Landungsbruecke/tmc/RS232.c **** 
+ 419              		.loc 1 74 31 is_stmt 0 view .LVU113
+ 420 0146 5A70     		strb	r2, [r3, #1]
+  77:hal/Landungsbruecke/tmc/RS232.c **** 
+ 421              		.loc 1 77 2 is_stmt 1 view .LVU114
+  77:hal/Landungsbruecke/tmc/RS232.c **** 
+ 422              		.loc 1 77 30 is_stmt 0 view .LVU115
+ 423 0148 DA78     		ldrb	r2, [r3, #3]	@ zero_extendqisi2
+ 424 014a 42F02C02 		orr	r2, r2, #44
+ 425 014e DA70     		strb	r2, [r3, #3]
+  79:hal/Landungsbruecke/tmc/RS232.c **** }
+ 426              		.loc 1 79 2 is_stmt 1 view .LVU116
+  80:hal/Landungsbruecke/tmc/RS232.c **** 
+ 427              		.loc 1 80 1 is_stmt 0 view .LVU117
+ 428 0150 BDE81040 		pop	{r4, lr}
+ 429              	.LCFI6:
+ 430              		.cfi_restore 14
+ 431              		.cfi_restore 4
+ 432              		.cfi_def_cfa_offset 0
+  79:hal/Landungsbruecke/tmc/RS232.c **** }
+ 433              		.loc 1 79 2 view .LVU118
+ 434 0154 3520     		movs	r0, #53
+ 435 0156 FFF7FEBF 		b	enable_irq
+ 436              	.LVL20:
+ 437              	.L23:
+  79:hal/Landungsbruecke/tmc/RS232.c **** }
+ 438              		.loc 1 79 2 view .LVU119
+ 439 015a 00BF     		.align	2
+ 440              	.L22:
+ 441 015c 00700440 		.word	1074032640
+ 442 0160 00000000 		.word	HAL
+ 443 0164 00A00E40 		.word	1074700288
+ 444 0168 00000000 		.word	.LANCHOR0
+ 445 016c C0C62D00 		.word	3000000
+ 446              		.cfi_endproc
+ 447              	.LFE0:
+ 449              		.align	1
+ 450              		.syntax unified
+ 451              		.thumb
+ 452              		.thumb_func
+ 453              		.fpu softvfp
+ 455              	rxN:
+ 456              	.LVL21:
+ 457              	.LFB6:
+ 153:hal/Landungsbruecke/tmc/RS232.c **** 	if(available < number)
+ 458              		.loc 1 153 1 is_stmt 1 view -0
+ 459              		.cfi_startproc
+ 460              		@ args = 0, pretend = 0, frame = 0
+ 461              		@ frame_needed = 0, uses_anonymous_args = 0
+ 154:hal/Landungsbruecke/tmc/RS232.c **** 		return 0;
+ 462              		.loc 1 154 2 view .LVU121
+ 154:hal/Landungsbruecke/tmc/RS232.c **** 		return 0;
+ 463              		.loc 1 154 15 is_stmt 0 view .LVU122
+ 464 0170 094B     		ldr	r3, .L29
+ 465 0172 1B68     		ldr	r3, [r3]
+ 154:hal/Landungsbruecke/tmc/RS232.c **** 		return 0;
+ 466              		.loc 1 154 4 view .LVU123
+ 467 0174 9942     		cmp	r1, r3
+ 153:hal/Landungsbruecke/tmc/RS232.c **** 	if(available < number)
+ 468              		.loc 1 153 1 view .LVU124
+ 469 0176 70B5     		push	{r4, r5, r6, lr}
+ 470              	.LCFI7:
+ 471              		.cfi_def_cfa_offset 16
+ 472              		.cfi_offset 4, -16
+ 473              		.cfi_offset 5, -12
+ 474              		.cfi_offset 6, -8
+ 475              		.cfi_offset 14, -4
+ 153:hal/Landungsbruecke/tmc/RS232.c **** 	if(available < number)
+ 476              		.loc 1 153 1 view .LVU125
+ 477 0178 0646     		mov	r6, r0
+ 478 017a 0C46     		mov	r4, r1
+ 154:hal/Landungsbruecke/tmc/RS232.c **** 		return 0;
+ 479              		.loc 1 154 4 view .LVU126
+ 480 017c 09D8     		bhi	.L28
+ 481              	.LBB10:
+ 482              	.LBB11:
+ 157:hal/Landungsbruecke/tmc/RS232.c **** 		rx(&str[i]);
+ 483              		.loc 1 157 14 view .LVU127
+ 484 017e 0025     		movs	r5, #0
+ 485              	.LVL22:
+ 486              	.L26:
+ 157:hal/Landungsbruecke/tmc/RS232.c **** 		rx(&str[i]);
+ 487              		.loc 1 157 21 is_stmt 1 view .LVU128
+ 157:hal/Landungsbruecke/tmc/RS232.c **** 		rx(&str[i]);
+ 488              		.loc 1 157 2 is_stmt 0 view .LVU129
+ 489 0180 A542     		cmp	r5, r4
+ 490 0182 01DB     		blt	.L27
+ 491 0184 0120     		movs	r0, #1
+ 492              	.LVL23:
+ 493              	.L25:
+ 157:hal/Landungsbruecke/tmc/RS232.c **** 		rx(&str[i]);
+ 494              		.loc 1 157 2 view .LVU130
+ 495              	.LBE11:
+ 496              	.LBE10:
+ 161:hal/Landungsbruecke/tmc/RS232.c **** 
+ 497              		.loc 1 161 1 view .LVU131
+ 498 0186 70BD     		pop	{r4, r5, r6, pc}
+ 499              	.LVL24:
+ 500              	.L27:
+ 501              	.LBB13:
+ 502              	.LBB12:
+ 158:hal/Landungsbruecke/tmc/RS232.c **** 
+ 503              		.loc 1 158 3 is_stmt 1 view .LVU132
+ 504 0188 7019     		adds	r0, r6, r5
+ 505 018a FFF74BFF 		bl	rx
+ 506              	.LVL25:
+ 157:hal/Landungsbruecke/tmc/RS232.c **** 		rx(&str[i]);
+ 507              		.loc 1 157 33 view .LVU133
+ 157:hal/Landungsbruecke/tmc/RS232.c **** 		rx(&str[i]);
+ 508              		.loc 1 157 34 is_stmt 0 view .LVU134
+ 509 018e 0135     		adds	r5, r5, #1
+ 510              	.LVL26:
+ 157:hal/Landungsbruecke/tmc/RS232.c **** 		rx(&str[i]);
+ 511              		.loc 1 157 34 view .LVU135
+ 512 0190 F6E7     		b	.L26
+ 513              	.LVL27:
+ 514              	.L28:
+ 157:hal/Landungsbruecke/tmc/RS232.c **** 		rx(&str[i]);
+ 515              		.loc 1 157 34 view .LVU136
+ 516              	.LBE12:
+ 517              	.LBE13:
+ 155:hal/Landungsbruecke/tmc/RS232.c **** 
+ 518              		.loc 1 155 10 view .LVU137
+ 519 0192 0020     		movs	r0, #0
+ 520              	.LVL28:
+ 155:hal/Landungsbruecke/tmc/RS232.c **** 
+ 521              		.loc 1 155 10 view .LVU138
+ 522 0194 F7E7     		b	.L25
+ 523              	.L30:
+ 524 0196 00BF     		.align	2
+ 525              	.L29:
+ 526 0198 00000000 		.word	.LANCHOR1
+ 527              		.cfi_endproc
+ 528              	.LFE6:
+ 530              		.align	1
+ 531              		.global	UART4_RX_TX_IRQHandler
+ 532              		.syntax unified
+ 533              		.thumb
+ 534              		.thumb_func
+ 535              		.fpu softvfp
+ 537              	UART4_RX_TX_IRQHandler:
+ 538              	.LFB2:
+  98:hal/Landungsbruecke/tmc/RS232.c **** 	uint32_t status = UART4_S1;
+ 539              		.loc 1 98 1 is_stmt 1 view -0
+ 540              		.cfi_startproc
+ 541              		@ args = 0, pretend = 0, frame = 0
+ 542              		@ frame_needed = 0, uses_anonymous_args = 0
+  99:hal/Landungsbruecke/tmc/RS232.c **** 
+ 543              		.loc 1 99 2 view .LVU140
+  98:hal/Landungsbruecke/tmc/RS232.c **** 	uint32_t status = UART4_S1;
+ 544              		.loc 1 98 1 is_stmt 0 view .LVU141
+ 545 019c 30B5     		push	{r4, r5, lr}
+ 546              	.LCFI8:
+ 547              		.cfi_def_cfa_offset 12
+ 548              		.cfi_offset 4, -12
+ 549              		.cfi_offset 5, -8
+ 550              		.cfi_offset 14, -4
+  99:hal/Landungsbruecke/tmc/RS232.c **** 
+ 551              		.loc 1 99 20 view .LVU142
+ 552 019e 194A     		ldr	r2, .L39
+ 553 01a0 1379     		ldrb	r3, [r2, #4]	@ zero_extendqisi2
+ 101:hal/Landungsbruecke/tmc/RS232.c **** 	{
+ 554              		.loc 1 101 4 view .LVU143
+ 555 01a2 9906     		lsls	r1, r3, #26
+  99:hal/Landungsbruecke/tmc/RS232.c **** 
+ 556              		.loc 1 99 20 view .LVU144
+ 557 01a4 DCB2     		uxtb	r4, r3
+ 558              	.LVL29:
+ 101:hal/Landungsbruecke/tmc/RS232.c **** 	{
+ 559              		.loc 1 101 2 is_stmt 1 view .LVU145
+ 101:hal/Landungsbruecke/tmc/RS232.c **** 	{
+ 560              		.loc 1 101 4 is_stmt 0 view .LVU146
+ 561 01a6 11D5     		bpl	.L32
+ 103:hal/Landungsbruecke/tmc/RS232.c **** 		buffers.rx.wrote = (buffers.rx.wrote + 1) % BUFFER_SIZE;
+ 562              		.loc 1 103 3 is_stmt 1 view .LVU147
+ 103:hal/Landungsbruecke/tmc/RS232.c **** 		buffers.rx.wrote = (buffers.rx.wrote + 1) % BUFFER_SIZE;
+ 563              		.loc 1 103 31 is_stmt 0 view .LVU148
+ 564 01a8 1749     		ldr	r1, .L39+4
+ 103:hal/Landungsbruecke/tmc/RS232.c **** 		buffers.rx.wrote = (buffers.rx.wrote + 1) % BUFFER_SIZE;
+ 565              		.loc 1 103 41 view .LVU149
+ 566 01aa D079     		ldrb	r0, [r2, #7]	@ zero_extendqisi2
+ 103:hal/Landungsbruecke/tmc/RS232.c **** 		buffers.rx.wrote = (buffers.rx.wrote + 1) % BUFFER_SIZE;
+ 567              		.loc 1 103 20 view .LVU150
+ 568 01ac D1E90435 		ldrd	r3, r5, [r1, #16]
+ 103:hal/Landungsbruecke/tmc/RS232.c **** 		buffers.rx.wrote = (buffers.rx.wrote + 1) % BUFFER_SIZE;
+ 569              		.loc 1 103 41 view .LVU151
+ 570 01b0 C0B2     		uxtb	r0, r0
+ 103:hal/Landungsbruecke/tmc/RS232.c **** 		buffers.rx.wrote = (buffers.rx.wrote + 1) % BUFFER_SIZE;
+ 571              		.loc 1 103 39 view .LVU152
+ 572 01b2 E854     		strb	r0, [r5, r3]
+ 104:hal/Landungsbruecke/tmc/RS232.c **** 		available++;
+ 573              		.loc 1 104 3 is_stmt 1 view .LVU153
+ 104:hal/Landungsbruecke/tmc/RS232.c **** 		available++;
+ 574              		.loc 1 104 40 is_stmt 0 view .LVU154
+ 575 01b4 0133     		adds	r3, r3, #1
+ 104:hal/Landungsbruecke/tmc/RS232.c **** 		available++;
+ 576              		.loc 1 104 45 view .LVU155
+ 577 01b6 C3F30903 		ubfx	r3, r3, #0, #10
+ 104:hal/Landungsbruecke/tmc/RS232.c **** 		available++;
+ 578              		.loc 1 104 20 view .LVU156
+ 579 01ba 0B61     		str	r3, [r1, #16]
+ 105:hal/Landungsbruecke/tmc/RS232.c **** 
+ 580              		.loc 1 105 3 is_stmt 1 view .LVU157
+ 105:hal/Landungsbruecke/tmc/RS232.c **** 
+ 581              		.loc 1 105 12 is_stmt 0 view .LVU158
+ 582 01bc 1349     		ldr	r1, .L39+8
+ 583 01be 0B68     		ldr	r3, [r1]
+ 584 01c0 0133     		adds	r3, r3, #1
+ 585 01c2 0B60     		str	r3, [r1]
+ 107:hal/Landungsbruecke/tmc/RS232.c **** 	}
+ 586              		.loc 1 107 3 is_stmt 1 view .LVU159
+ 107:hal/Landungsbruecke/tmc/RS232.c **** 	}
+ 587              		.loc 1 107 12 is_stmt 0 view .LVU160
+ 588 01c4 1379     		ldrb	r3, [r2, #4]	@ zero_extendqisi2
+ 589 01c6 03F0DF03 		and	r3, r3, #223
+ 590 01ca 1371     		strb	r3, [r2, #4]
+ 591              	.L32:
+ 110:hal/Landungsbruecke/tmc/RS232.c **** 	{
+ 592              		.loc 1 110 2 is_stmt 1 view .LVU161
+ 110:hal/Landungsbruecke/tmc/RS232.c **** 	{
+ 593              		.loc 1 110 4 is_stmt 0 view .LVU162
+ 594 01cc 2306     		lsls	r3, r4, #24
+ 595 01ce 12D5     		bpl	.L31
+ 112:hal/Landungsbruecke/tmc/RS232.c **** 		{
+ 596              		.loc 1 112 3 is_stmt 1 view .LVU163
+ 112:hal/Landungsbruecke/tmc/RS232.c **** 		{
+ 597              		.loc 1 112 16 is_stmt 0 view .LVU164
+ 598 01d0 0D4A     		ldr	r2, .L39+4
+ 112:hal/Landungsbruecke/tmc/RS232.c **** 		{
+ 599              		.loc 1 112 5 view .LVU165
+ 600 01d2 D2E90031 		ldrd	r3, r1, [r2]
+ 601 01d6 8B42     		cmp	r3, r1
+ 602 01d8 0A49     		ldr	r1, .L39
+ 603 01da 0DD0     		beq	.L34
+ 114:hal/Landungsbruecke/tmc/RS232.c **** 			buffers.tx.read = (buffers.tx.read + 1) % BUFFER_SIZE;
+ 604              		.loc 1 114 4 is_stmt 1 view .LVU166
+ 114:hal/Landungsbruecke/tmc/RS232.c **** 			buffers.tx.read = (buffers.tx.read + 1) % BUFFER_SIZE;
+ 605              		.loc 1 114 31 is_stmt 0 view .LVU167
+ 606 01dc 9068     		ldr	r0, [r2, #8]
+ 607 01de C05C     		ldrb	r0, [r0, r3]	@ zero_extendqisi2
+ 115:hal/Landungsbruecke/tmc/RS232.c **** 		}
+ 608              		.loc 1 115 39 view .LVU168
+ 609 01e0 0133     		adds	r3, r3, #1
+ 114:hal/Landungsbruecke/tmc/RS232.c **** 			buffers.tx.read = (buffers.tx.read + 1) % BUFFER_SIZE;
+ 610              		.loc 1 114 31 view .LVU169
+ 611 01e2 C0B2     		uxtb	r0, r0
+ 115:hal/Landungsbruecke/tmc/RS232.c **** 		}
+ 612              		.loc 1 115 44 view .LVU170
+ 613 01e4 C3F30903 		ubfx	r3, r3, #0, #10
+ 114:hal/Landungsbruecke/tmc/RS232.c **** 			buffers.tx.read = (buffers.tx.read + 1) % BUFFER_SIZE;
+ 614              		.loc 1 114 12 view .LVU171
+ 615 01e8 C871     		strb	r0, [r1, #7]
+ 115:hal/Landungsbruecke/tmc/RS232.c **** 		}
+ 616              		.loc 1 115 4 is_stmt 1 view .LVU172
+ 115:hal/Landungsbruecke/tmc/RS232.c **** 		}
+ 617              		.loc 1 115 20 is_stmt 0 view .LVU173
+ 618 01ea 1360     		str	r3, [r2]
+ 619              	.L35:
+ 121:hal/Landungsbruecke/tmc/RS232.c **** 	}
+ 620              		.loc 1 121 3 is_stmt 1 view .LVU174
+ 121:hal/Landungsbruecke/tmc/RS232.c **** 	}
+ 621              		.loc 1 121 12 is_stmt 0 view .LVU175
+ 622 01ec 054A     		ldr	r2, .L39
+ 623 01ee 1379     		ldrb	r3, [r2, #4]	@ zero_extendqisi2
+ 624 01f0 03F07F03 		and	r3, r3, #127
+ 625 01f4 1371     		strb	r3, [r2, #4]
+ 626              	.L31:
+ 123:hal/Landungsbruecke/tmc/RS232.c **** 
+ 627              		.loc 1 123 1 view .LVU176
+ 628 01f6 30BD     		pop	{r4, r5, pc}
+ 629              	.LVL30:
+ 630              	.L34:
+ 119:hal/Landungsbruecke/tmc/RS232.c **** 		}
+ 631              		.loc 1 119 4 is_stmt 1 view .LVU177
+ 119:hal/Landungsbruecke/tmc/RS232.c **** 		}
+ 632              		.loc 1 119 13 is_stmt 0 view .LVU178
+ 633 01f8 CB78     		ldrb	r3, [r1, #3]	@ zero_extendqisi2
+ 634 01fa 03F07F03 		and	r3, r3, #127
+ 635 01fe CB70     		strb	r3, [r1, #3]
+ 636 0200 F4E7     		b	.L35
+ 637              	.L40:
+ 638 0202 00BF     		.align	2
+ 639              	.L39:
+ 640 0204 00A00E40 		.word	1074700288
+ 641 0208 00000000 		.word	.LANCHOR0
+ 642 020c 00000000 		.word	.LANCHOR1
+ 643              		.cfi_endproc
+ 644              	.LFE2:
+ 646              		.comm	hwid,1,1
+ 647              		.comm	HAL,48,4
+ 648              		.comm	UART,40,4
+ 649              		.comm	Timer,16,4
+ 650              		.comm	WLAN,36,4
+ 651              		.global	RS232
+ 652              		.comm	LEDs,28,4
+ 653              		.comm	USB,36,4
+ 654              		.comm	uart0_interrupt,1,1
+ 655              		.comm	ADCs,32,4
+ 656              		.comm	SPI,44,4
+ 657              		.comm	IOMap,2088,4
+ 658              		.comm	IOs,52,4
+ 659              		.comm	Cpu,8,4
+ 660              		.data
+ 661              		.align	2
+ 662              		.set	.LANCHOR0,. + 0
+ 665              	buffers:
+ 666 0000 00000000 		.word	0
+ 667 0004 00000000 		.word	0
+ 668 0008 04000000 		.word	txBuffer
+ 669 000c 00000000 		.word	0
+ 670 0010 00000000 		.word	0
+ 671 0014 04040000 		.word	rxBuffer
+ 674              	RS232:
+ 675 0018 00000000 		.word	init
+ 676 001c 00000000 		.word	deInit
+ 677 0020 00000000 		.word	tx
+ 678 0024 00000000 		.word	rx
+ 679 0028 00000000 		.word	txN
+ 680 002c 00000000 		.word	rxN
+ 681 0030 00000000 		.word	clearBuffers
+ 682 0034 00000000 		.word	bytesAvailable
+ 683 0038 00C20100 		.word	115200
+ 684              		.bss
+ 685              		.align	2
+ 686              		.set	.LANCHOR1,. + 0
+ 689              	available:
+ 690 0000 00000000 		.space	4
+ 693              	txBuffer:
+ 694 0004 00000000 		.space	1024
+ 694      00000000 
+ 694      00000000 
+ 694      00000000 
+ 694      00000000 
+ 697              	rxBuffer:
+ 698 0404 00000000 		.space	1024
+ 698      00000000 
+ 698      00000000 
+ 698      00000000 
+ 698      00000000 
+ 701              	ADCValue:
+ 702 0804 00000000 		.space	12
+ 702      00000000 
+ 702      00000000 
+ 703              		.text
+ 704              	.Letext0:
+ 705              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 706              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 707              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 708              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 709              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 710              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 711              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 712              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 713              		.file 10 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 714              		.file 11 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 715              		.file 12 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 716              		.file 13 "./hal/IOs.h"
+ 717              		.file 14 "./hal/IOMap.h"
+ 718              		.file 15 "./hal/SPI.h"
+ 719              		.file 16 "./hal/ADCs.h"
+ 720              		.file 17 "./hal/RXTX.h"
+ 721              		.file 18 "./hal/USB.h"
+ 722              		.file 19 "./hal/LEDs.h"
+ 723              		.file 20 "./hal/RS232.h"
+ 724              		.file 21 "./hal/WLAN.h"
+ 725              		.file 22 "./hal/Timer.h"
+ 726              		.file 23 "./hal/UART.h"
+ 727              		.file 24 "./hal/HAL.h"
+ 728              		.file 25 "./hal/Landungsbruecke/freescale/nvic.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 RS232.c
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:22     .text:00000000 tx
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:56     .text:0000001c $d
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:61     .text:00000024 $t
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:67     .text:00000024 rx
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:117    .text:0000004c $d
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:122    .text:00000054 $t
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:128    .text:00000054 txN
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:186    .text:0000006c bytesAvailable
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:202    .text:00000074 $d
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:206    .text:00000078 $t
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:212    .text:00000078 clearBuffers
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:257    .text:0000009c $d
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:262    .text:000000a4 $t
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:268    .text:000000a4 deInit
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:333    .text:000000e8 $d
+                            *COM*:00000030 HAL
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:338    .text:000000f0 $t
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:344    .text:000000f0 init
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:441    .text:0000015c $d
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:449    .text:00000170 $t
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:455    .text:00000170 rxN
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:526    .text:00000198 $d
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:530    .text:0000019c $t
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:537    .text:0000019c UART4_RX_TX_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:640    .text:00000204 $d
+                            *COM*:00000001 hwid
+                            *COM*:00000028 UART
+                            *COM*:00000010 Timer
+                            *COM*:00000024 WLAN
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:674    .data:00000018 RS232
+                            *COM*:0000001c LEDs
+                            *COM*:00000024 USB
+                            *COM*:00000001 uart0_interrupt
+                            *COM*:00000020 ADCs
+                            *COM*:0000002c SPI
+                            *COM*:00000828 IOMap
+                            *COM*:00000034 IOs
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:661    .data:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:665    .data:00000000 buffers
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:693    .bss:00000004 txBuffer
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:697    .bss:00000404 rxBuffer
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:685    .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:689    .bss:00000000 available
+C:\Users\Shubham\AppData\Local\Temp\ccCBc3EM.s:701    .bss:00000804 ADCValue
+
+UNDEFINED SYMBOLS
+disable_irq
+enable_irq

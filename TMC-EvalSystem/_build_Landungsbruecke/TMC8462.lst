@@ -1,0 +1,1590 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"TMC8462.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.global	tmc8462_esc_read
+  17              		.arch armv7e-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	tmc8462_esc_read:
+  24              	.LVL0:
+  25              	.LFB0:
+  26              		.file 1 "TMC-API/tmc/ic/TMC8462/TMC8462.c"
+   1:TMC-API/tmc/ic/TMC8462/TMC8462.c **** /*
+   2:TMC-API/tmc/ic/TMC8462/TMC8462.c ****  * TMC8462.c
+   3:TMC-API/tmc/ic/TMC8462/TMC8462.c ****  *
+   4:TMC-API/tmc/ic/TMC8462/TMC8462.c ****  *  Created on: 30.05.2017
+   5:TMC-API/tmc/ic/TMC8462/TMC8462.c ****  *      Author: LK
+   6:TMC-API/tmc/ic/TMC8462/TMC8462.c ****  */
+   7:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+   8:TMC-API/tmc/ic/TMC8462/TMC8462.c **** #include "TMC8462.h"
+   9:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+  10:TMC-API/tmc/ic/TMC8462/TMC8462.c **** extern uint8_t tmc8462_readWrite(uint8_t channel, uint8_t data, uint8_t lastTransfer);
+  11:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+  12:TMC-API/tmc/ic/TMC8462/TMC8462.c **** void tmc8462_esc_read(TMC8462TypeDef *tmc8462, uint16_t address)
+  13:TMC-API/tmc/ic/TMC8462/TMC8462.c **** {
+  27              		.loc 1 13 1 view -0
+  28              		.cfi_startproc
+  29              		@ args = 0, pretend = 0, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  14:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_esc->channel, address >> 5, false);
+  31              		.loc 1 14 2 view .LVU1
+  13:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_esc->channel, address >> 5, false);
+  32              		.loc 1 13 1 is_stmt 0 view .LVU2
+  33 0000 38B5     		push	{r3, r4, r5, lr}
+  34              	.LCFI0:
+  35              		.cfi_def_cfa_offset 16
+  36              		.cfi_offset 3, -16
+  37              		.cfi_offset 4, -12
+  38              		.cfi_offset 5, -8
+  39              		.cfi_offset 14, -4
+  40              		.loc 1 14 2 view .LVU3
+  41 0002 0368     		ldr	r3, [r0]
+  13:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_esc->channel, address >> 5, false);
+  42              		.loc 1 13 1 view .LVU4
+  43 0004 0546     		mov	r5, r0
+  44 0006 0C46     		mov	r4, r1
+  45              		.loc 1 14 2 view .LVU5
+  46 0008 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+  47              	.LVL1:
+  48              		.loc 1 14 2 view .LVU6
+  49 000c 0022     		movs	r2, #0
+  50 000e C1F34711 		ubfx	r1, r1, #5, #8
+  51              	.LVL2:
+  52              		.loc 1 14 2 view .LVU7
+  53 0012 FFF7FEFF 		bl	tmc8462_readWrite
+  54              	.LVL3:
+  15:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_esc->channel, (address << 3) | TMC8462_CMD_ADDR_EXT, false);
+  55              		.loc 1 15 2 is_stmt 1 view .LVU8
+  56 0016 2B68     		ldr	r3, [r5]
+  57              		.loc 1 15 59 is_stmt 0 view .LVU9
+  58 0018 E100     		lsls	r1, r4, #3
+  59              		.loc 1 15 65 view .LVU10
+  60 001a 41F00601 		orr	r1, r1, #6
+  61              		.loc 1 15 2 view .LVU11
+  62 001e 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+  63 0022 0022     		movs	r2, #0
+  64 0024 01F0FE01 		and	r1, r1, #254
+  65 0028 FFF7FEFF 		bl	tmc8462_readWrite
+  66              	.LVL4:
+  16:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_esc->channel, ((address >> 8) & 0xE0) | (TMC8462_CMD_READ_WAIT <
+  67              		.loc 1 16 2 is_stmt 1 view .LVU12
+  68 002c 2B68     		ldr	r3, [r5]
+  69              		.loc 1 16 66 is_stmt 0 view .LVU13
+  70 002e 210A     		lsrs	r1, r4, #8
+  71 0030 21F01F01 		bic	r1, r1, #31
+  72              		.loc 1 16 2 view .LVU14
+  73 0034 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+  74 0038 0022     		movs	r2, #0
+  75 003a 41F00C01 		orr	r1, r1, #12
+  76 003e FFF7FEFF 		bl	tmc8462_readWrite
+  77              	.LVL5:
+  17:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_esc->channel, 0xFF, false);
+  78              		.loc 1 17 2 is_stmt 1 view .LVU15
+  79 0042 2B68     		ldr	r3, [r5]
+  80 0044 0022     		movs	r2, #0
+  81 0046 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+  82 004a FF21     		movs	r1, #255
+  18:TMC-API/tmc/ic/TMC8462/TMC8462.c **** }
+  83              		.loc 1 18 1 is_stmt 0 view .LVU16
+  84 004c BDE83840 		pop	{r3, r4, r5, lr}
+  85              	.LCFI1:
+  86              		.cfi_restore 14
+  87              		.cfi_restore 5
+  88              		.cfi_restore 4
+  89              		.cfi_restore 3
+  90              		.cfi_def_cfa_offset 0
+  91              	.LVL6:
+  17:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_esc->channel, 0xFF, false);
+  92              		.loc 1 17 2 view .LVU17
+  93 0050 FFF7FEBF 		b	tmc8462_readWrite
+  94              	.LVL7:
+  95              		.cfi_endproc
+  96              	.LFE0:
+  98              		.align	1
+  99              		.global	tmc8462_esc_write
+ 100              		.syntax unified
+ 101              		.thumb
+ 102              		.thumb_func
+ 103              		.fpu softvfp
+ 105              	tmc8462_esc_write:
+ 106              	.LVL8:
+ 107              	.LFB1:
+  19:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+  20:TMC-API/tmc/ic/TMC8462/TMC8462.c **** void tmc8462_esc_write(TMC8462TypeDef *tmc8462, uint16_t address)
+  21:TMC-API/tmc/ic/TMC8462/TMC8462.c **** {
+ 108              		.loc 1 21 1 is_stmt 1 view -0
+ 109              		.cfi_startproc
+ 110              		@ args = 0, pretend = 0, frame = 0
+ 111              		@ frame_needed = 0, uses_anonymous_args = 0
+  22:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_esc->channel, address >> 5, false);
+ 112              		.loc 1 22 2 view .LVU19
+  21:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_esc->channel, address >> 5, false);
+ 113              		.loc 1 21 1 is_stmt 0 view .LVU20
+ 114 0054 38B5     		push	{r3, r4, r5, lr}
+ 115              	.LCFI2:
+ 116              		.cfi_def_cfa_offset 16
+ 117              		.cfi_offset 3, -16
+ 118              		.cfi_offset 4, -12
+ 119              		.cfi_offset 5, -8
+ 120              		.cfi_offset 14, -4
+ 121              		.loc 1 22 2 view .LVU21
+ 122 0056 0368     		ldr	r3, [r0]
+  21:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_esc->channel, address >> 5, false);
+ 123              		.loc 1 21 1 view .LVU22
+ 124 0058 0546     		mov	r5, r0
+ 125 005a 0C46     		mov	r4, r1
+ 126              		.loc 1 22 2 view .LVU23
+ 127 005c 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+ 128              	.LVL9:
+ 129              		.loc 1 22 2 view .LVU24
+ 130 0060 0022     		movs	r2, #0
+ 131 0062 C1F34711 		ubfx	r1, r1, #5, #8
+ 132              	.LVL10:
+ 133              		.loc 1 22 2 view .LVU25
+ 134 0066 FFF7FEFF 		bl	tmc8462_readWrite
+ 135              	.LVL11:
+  23:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_esc->channel, (address << 3) | TMC8462_CMD_ADDR_EXT, false);
+ 136              		.loc 1 23 2 is_stmt 1 view .LVU26
+ 137 006a 2B68     		ldr	r3, [r5]
+ 138              		.loc 1 23 59 is_stmt 0 view .LVU27
+ 139 006c E100     		lsls	r1, r4, #3
+ 140              		.loc 1 23 65 view .LVU28
+ 141 006e 41F00601 		orr	r1, r1, #6
+ 142              		.loc 1 23 2 view .LVU29
+ 143 0072 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+ 144 0076 0022     		movs	r2, #0
+ 145 0078 01F0FE01 		and	r1, r1, #254
+ 146 007c FFF7FEFF 		bl	tmc8462_readWrite
+ 147              	.LVL12:
+  24:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_esc->channel, ((address >> 8) & 0xE0) | (TMC8462_CMD_WRITE << 2)
+ 148              		.loc 1 24 2 is_stmt 1 view .LVU30
+ 149 0080 2B68     		ldr	r3, [r5]
+ 150              		.loc 1 24 66 is_stmt 0 view .LVU31
+ 151 0082 210A     		lsrs	r1, r4, #8
+ 152 0084 21F01F01 		bic	r1, r1, #31
+ 153              		.loc 1 24 2 view .LVU32
+ 154 0088 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+ 155 008c 0022     		movs	r2, #0
+  25:TMC-API/tmc/ic/TMC8462/TMC8462.c **** }
+ 156              		.loc 1 25 1 view .LVU33
+ 157 008e BDE83840 		pop	{r3, r4, r5, lr}
+ 158              	.LCFI3:
+ 159              		.cfi_restore 14
+ 160              		.cfi_restore 5
+ 161              		.cfi_restore 4
+ 162              		.cfi_restore 3
+ 163              		.cfi_def_cfa_offset 0
+ 164              	.LVL13:
+  24:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_esc->channel, ((address >> 8) & 0xE0) | (TMC8462_CMD_WRITE << 2)
+ 165              		.loc 1 24 2 view .LVU34
+ 166 0092 41F01001 		orr	r1, r1, #16
+ 167 0096 FFF7FEBF 		b	tmc8462_readWrite
+ 168              	.LVL14:
+ 169              		.cfi_endproc
+ 170              	.LFE1:
+ 172              		.align	1
+ 173              		.global	tmc8462_mfc_read
+ 174              		.syntax unified
+ 175              		.thumb
+ 176              		.thumb_func
+ 177              		.fpu softvfp
+ 179              	tmc8462_mfc_read:
+ 180              	.LVL15:
+ 181              	.LFB2:
+  26:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+  27:TMC-API/tmc/ic/TMC8462/TMC8462.c **** void tmc8462_mfc_read(TMC8462TypeDef *tmc8462, uint16_t address)
+  28:TMC-API/tmc/ic/TMC8462/TMC8462.c **** {
+ 182              		.loc 1 28 1 is_stmt 1 view -0
+ 183              		.cfi_startproc
+ 184              		@ args = 0, pretend = 0, frame = 0
+ 185              		@ frame_needed = 0, uses_anonymous_args = 0
+  29:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_mfc->channel, address >> 5, false);
+ 186              		.loc 1 29 2 view .LVU36
+  28:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_mfc->channel, address >> 5, false);
+ 187              		.loc 1 28 1 is_stmt 0 view .LVU37
+ 188 009a 38B5     		push	{r3, r4, r5, lr}
+ 189              	.LCFI4:
+ 190              		.cfi_def_cfa_offset 16
+ 191              		.cfi_offset 3, -16
+ 192              		.cfi_offset 4, -12
+ 193              		.cfi_offset 5, -8
+ 194              		.cfi_offset 14, -4
+ 195              		.loc 1 29 2 view .LVU38
+ 196 009c 4368     		ldr	r3, [r0, #4]
+  28:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_mfc->channel, address >> 5, false);
+ 197              		.loc 1 28 1 view .LVU39
+ 198 009e 0546     		mov	r5, r0
+ 199 00a0 0C46     		mov	r4, r1
+ 200              		.loc 1 29 2 view .LVU40
+ 201 00a2 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+ 202              	.LVL16:
+ 203              		.loc 1 29 2 view .LVU41
+ 204 00a6 0022     		movs	r2, #0
+ 205 00a8 C1F34711 		ubfx	r1, r1, #5, #8
+ 206              	.LVL17:
+ 207              		.loc 1 29 2 view .LVU42
+ 208 00ac FFF7FEFF 		bl	tmc8462_readWrite
+ 209              	.LVL18:
+  30:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_mfc->channel, (address << 3) | TMC8462_CMD_ADDR_EXT, false);
+ 210              		.loc 1 30 2 is_stmt 1 view .LVU43
+ 211 00b0 6B68     		ldr	r3, [r5, #4]
+ 212              		.loc 1 30 59 is_stmt 0 view .LVU44
+ 213 00b2 E100     		lsls	r1, r4, #3
+ 214              		.loc 1 30 65 view .LVU45
+ 215 00b4 41F00601 		orr	r1, r1, #6
+ 216              		.loc 1 30 2 view .LVU46
+ 217 00b8 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+ 218 00bc 0022     		movs	r2, #0
+ 219 00be 01F0FE01 		and	r1, r1, #254
+ 220 00c2 FFF7FEFF 		bl	tmc8462_readWrite
+ 221              	.LVL19:
+  31:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_mfc->channel, ((address >> 8) & 0xE0) | (TMC8462_CMD_READ_WAIT <
+ 222              		.loc 1 31 2 is_stmt 1 view .LVU47
+ 223 00c6 6B68     		ldr	r3, [r5, #4]
+ 224              		.loc 1 31 66 is_stmt 0 view .LVU48
+ 225 00c8 210A     		lsrs	r1, r4, #8
+ 226 00ca 21F01F01 		bic	r1, r1, #31
+ 227              		.loc 1 31 2 view .LVU49
+ 228 00ce 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+ 229 00d2 0022     		movs	r2, #0
+ 230 00d4 41F00C01 		orr	r1, r1, #12
+ 231 00d8 FFF7FEFF 		bl	tmc8462_readWrite
+ 232              	.LVL20:
+  32:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_mfc->channel, 0xFF, false);
+ 233              		.loc 1 32 2 is_stmt 1 view .LVU50
+ 234 00dc 6B68     		ldr	r3, [r5, #4]
+ 235 00de 0022     		movs	r2, #0
+ 236 00e0 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+ 237 00e4 FF21     		movs	r1, #255
+  33:TMC-API/tmc/ic/TMC8462/TMC8462.c **** }
+ 238              		.loc 1 33 1 is_stmt 0 view .LVU51
+ 239 00e6 BDE83840 		pop	{r3, r4, r5, lr}
+ 240              	.LCFI5:
+ 241              		.cfi_restore 14
+ 242              		.cfi_restore 5
+ 243              		.cfi_restore 4
+ 244              		.cfi_restore 3
+ 245              		.cfi_def_cfa_offset 0
+ 246              	.LVL21:
+  32:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_mfc->channel, 0xFF, false);
+ 247              		.loc 1 32 2 view .LVU52
+ 248 00ea FFF7FEBF 		b	tmc8462_readWrite
+ 249              	.LVL22:
+ 250              		.cfi_endproc
+ 251              	.LFE2:
+ 253              		.align	1
+ 254              		.global	tmc8462_mfc_write
+ 255              		.syntax unified
+ 256              		.thumb
+ 257              		.thumb_func
+ 258              		.fpu softvfp
+ 260              	tmc8462_mfc_write:
+ 261              	.LVL23:
+ 262              	.LFB3:
+  34:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+  35:TMC-API/tmc/ic/TMC8462/TMC8462.c **** void tmc8462_mfc_write(TMC8462TypeDef *tmc8462, uint16_t address)
+  36:TMC-API/tmc/ic/TMC8462/TMC8462.c **** {
+ 263              		.loc 1 36 1 is_stmt 1 view -0
+ 264              		.cfi_startproc
+ 265              		@ args = 0, pretend = 0, frame = 0
+ 266              		@ frame_needed = 0, uses_anonymous_args = 0
+  37:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_mfc->channel, address >> 5, false);
+ 267              		.loc 1 37 2 view .LVU54
+  36:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_mfc->channel, address >> 5, false);
+ 268              		.loc 1 36 1 is_stmt 0 view .LVU55
+ 269 00ee 38B5     		push	{r3, r4, r5, lr}
+ 270              	.LCFI6:
+ 271              		.cfi_def_cfa_offset 16
+ 272              		.cfi_offset 3, -16
+ 273              		.cfi_offset 4, -12
+ 274              		.cfi_offset 5, -8
+ 275              		.cfi_offset 14, -4
+ 276              		.loc 1 37 2 view .LVU56
+ 277 00f0 4368     		ldr	r3, [r0, #4]
+  36:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_mfc->channel, address >> 5, false);
+ 278              		.loc 1 36 1 view .LVU57
+ 279 00f2 0546     		mov	r5, r0
+ 280 00f4 0C46     		mov	r4, r1
+ 281              		.loc 1 37 2 view .LVU58
+ 282 00f6 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+ 283              	.LVL24:
+ 284              		.loc 1 37 2 view .LVU59
+ 285 00fa 0022     		movs	r2, #0
+ 286 00fc C1F34711 		ubfx	r1, r1, #5, #8
+ 287              	.LVL25:
+ 288              		.loc 1 37 2 view .LVU60
+ 289 0100 FFF7FEFF 		bl	tmc8462_readWrite
+ 290              	.LVL26:
+  38:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_mfc->channel, (address << 3) | TMC8462_CMD_ADDR_EXT, false);
+ 291              		.loc 1 38 2 is_stmt 1 view .LVU61
+ 292 0104 6B68     		ldr	r3, [r5, #4]
+ 293              		.loc 1 38 59 is_stmt 0 view .LVU62
+ 294 0106 E100     		lsls	r1, r4, #3
+ 295              		.loc 1 38 65 view .LVU63
+ 296 0108 41F00601 		orr	r1, r1, #6
+ 297              		.loc 1 38 2 view .LVU64
+ 298 010c 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+ 299 0110 0022     		movs	r2, #0
+ 300 0112 01F0FE01 		and	r1, r1, #254
+ 301 0116 FFF7FEFF 		bl	tmc8462_readWrite
+ 302              	.LVL27:
+  39:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_mfc->channel, ((address >> 8) & 0xE0) | (TMC8462_CMD_WRITE << 2)
+ 303              		.loc 1 39 2 is_stmt 1 view .LVU65
+ 304 011a 6B68     		ldr	r3, [r5, #4]
+ 305              		.loc 1 39 66 is_stmt 0 view .LVU66
+ 306 011c 210A     		lsrs	r1, r4, #8
+ 307 011e 21F01F01 		bic	r1, r1, #31
+ 308              		.loc 1 39 2 view .LVU67
+ 309 0122 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+ 310 0126 0022     		movs	r2, #0
+  40:TMC-API/tmc/ic/TMC8462/TMC8462.c **** }
+ 311              		.loc 1 40 1 view .LVU68
+ 312 0128 BDE83840 		pop	{r3, r4, r5, lr}
+ 313              	.LCFI7:
+ 314              		.cfi_restore 14
+ 315              		.cfi_restore 5
+ 316              		.cfi_restore 4
+ 317              		.cfi_restore 3
+ 318              		.cfi_def_cfa_offset 0
+ 319              	.LVL28:
+  39:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_readWrite(tmc8462->config_mfc->channel, ((address >> 8) & 0xE0) | (TMC8462_CMD_WRITE << 2)
+ 320              		.loc 1 39 2 view .LVU69
+ 321 012c 41F01001 		orr	r1, r1, #16
+ 322 0130 FFF7FEBF 		b	tmc8462_readWrite
+ 323              	.LVL29:
+ 324              		.cfi_endproc
+ 325              	.LFE3:
+ 327              		.align	1
+ 328              		.global	tmc8462_esc_read_data
+ 329              		.syntax unified
+ 330              		.thumb
+ 331              		.thumb_func
+ 332              		.fpu softvfp
+ 334              	tmc8462_esc_read_data:
+ 335              	.LVL30:
+ 336              	.LFB4:
+  41:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+  42:TMC-API/tmc/ic/TMC8462/TMC8462.c **** void tmc8462_esc_read_data(TMC8462TypeDef *tmc8462, uint8_t *data_ptr, uint16_t address, uint16_t l
+  43:TMC-API/tmc/ic/TMC8462/TMC8462.c **** {
+ 337              		.loc 1 43 1 is_stmt 1 view -0
+ 338              		.cfi_startproc
+ 339              		@ args = 0, pretend = 0, frame = 0
+ 340              		@ frame_needed = 0, uses_anonymous_args = 0
+  44:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_esc_read(tmc8462, address);
+ 341              		.loc 1 44 2 view .LVU71
+  43:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_esc_read(tmc8462, address);
+ 342              		.loc 1 43 1 is_stmt 0 view .LVU72
+ 343 0134 2DE9F041 		push	{r4, r5, r6, r7, r8, lr}
+ 344              	.LCFI8:
+ 345              		.cfi_def_cfa_offset 24
+ 346              		.cfi_offset 4, -24
+ 347              		.cfi_offset 5, -20
+ 348              		.cfi_offset 6, -16
+ 349              		.cfi_offset 7, -12
+ 350              		.cfi_offset 8, -8
+ 351              		.cfi_offset 14, -4
+  43:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_esc_read(tmc8462, address);
+ 352              		.loc 1 43 1 view .LVU73
+ 353 0138 0F46     		mov	r7, r1
+ 354              		.loc 1 44 2 view .LVU74
+ 355 013a 1146     		mov	r1, r2
+ 356              	.LVL31:
+  43:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_esc_read(tmc8462, address);
+ 357              		.loc 1 43 1 view .LVU75
+ 358 013c 1D46     		mov	r5, r3
+ 359 013e 0646     		mov	r6, r0
+ 360              		.loc 1 44 2 view .LVU76
+ 361 0140 FFF7FEFF 		bl	tmc8462_esc_read
+ 362              	.LVL32:
+  45:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+  46:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	for (uint16_t i = 0; i < len; i++)
+ 363              		.loc 1 46 2 is_stmt 1 view .LVU77
+ 364              	.LBB2:
+ 365              		.loc 1 46 7 view .LVU78
+ 366              		.loc 1 46 2 is_stmt 0 view .LVU79
+ 367 0144 0024     		movs	r4, #0
+  47:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		data_ptr[i] = tmc8462_readWrite(tmc8462->config_esc->channel, (i < len - 1) ? 0x00 : 0xFF, (i < l
+ 368              		.loc 1 47 74 view .LVU80
+ 369 0146 05F1FF38 		add	r8, r5, #-1
+ 370              	.LVL33:
+ 371              	.L6:
+  46:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		data_ptr[i] = tmc8462_readWrite(tmc8462->config_esc->channel, (i < len - 1) ? 0x00 : 0xFF, (i < l
+ 372              		.loc 1 46 23 is_stmt 1 discriminator 2 view .LVU81
+  46:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		data_ptr[i] = tmc8462_readWrite(tmc8462->config_esc->channel, (i < len - 1) ? 0x00 : 0xFF, (i < l
+ 373              		.loc 1 46 2 is_stmt 0 discriminator 2 view .LVU82
+ 374 014a AC42     		cmp	r4, r5
+ 375 014c 01D1     		bne	.L7
+ 376              	.LBE2:
+  48:TMC-API/tmc/ic/TMC8462/TMC8462.c **** }
+ 377              		.loc 1 48 1 view .LVU83
+ 378 014e BDE8F081 		pop	{r4, r5, r6, r7, r8, pc}
+ 379              	.LVL34:
+ 380              	.L7:
+ 381              	.LBB3:
+  47:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		data_ptr[i] = tmc8462_readWrite(tmc8462->config_esc->channel, (i < len - 1) ? 0x00 : 0xFF, (i < l
+ 382              		.loc 1 47 3 is_stmt 1 view .LVU84
+  47:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		data_ptr[i] = tmc8462_readWrite(tmc8462->config_esc->channel, (i < len - 1) ? 0x00 : 0xFF, (i < l
+ 383              		.loc 1 47 17 is_stmt 0 view .LVU85
+ 384 0152 A045     		cmp	r8, r4
+ 385 0154 3368     		ldr	r3, [r6]
+ 386 0156 CCBF     		ite	gt
+ 387 0158 0022     		movgt	r2, #0
+ 388 015a 0122     		movle	r2, #1
+ 389 015c 5142     		rsbs	r1, r2, #0
+ 390 015e 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+ 391 0162 C9B2     		uxtb	r1, r1
+ 392 0164 FFF7FEFF 		bl	tmc8462_readWrite
+ 393              	.LVL35:
+  47:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		data_ptr[i] = tmc8462_readWrite(tmc8462->config_esc->channel, (i < len - 1) ? 0x00 : 0xFF, (i < l
+ 394              		.loc 1 47 15 view .LVU86
+ 395 0168 3855     		strb	r0, [r7, r4]
+  46:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		data_ptr[i] = tmc8462_readWrite(tmc8462->config_esc->channel, (i < len - 1) ? 0x00 : 0xFF, (i < l
+ 396              		.loc 1 46 32 is_stmt 1 view .LVU87
+ 397              	.LVL36:
+  46:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		data_ptr[i] = tmc8462_readWrite(tmc8462->config_esc->channel, (i < len - 1) ? 0x00 : 0xFF, (i < l
+ 398              		.loc 1 46 32 is_stmt 0 view .LVU88
+ 399 016a 0134     		adds	r4, r4, #1
+ 400              	.LVL37:
+  46:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		data_ptr[i] = tmc8462_readWrite(tmc8462->config_esc->channel, (i < len - 1) ? 0x00 : 0xFF, (i < l
+ 401              		.loc 1 46 32 view .LVU89
+ 402 016c EDE7     		b	.L6
+ 403              	.LBE3:
+ 404              		.cfi_endproc
+ 405              	.LFE4:
+ 407              		.align	1
+ 408              		.global	tmc8462_esc_read_8
+ 409              		.syntax unified
+ 410              		.thumb
+ 411              		.thumb_func
+ 412              		.fpu softvfp
+ 414              	tmc8462_esc_read_8:
+ 415              	.LVL38:
+ 416              	.LFB5:
+  49:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+  50:TMC-API/tmc/ic/TMC8462/TMC8462.c **** uint8_t tmc8462_esc_read_8(TMC8462TypeDef *tmc8462, uint16_t address)
+  51:TMC-API/tmc/ic/TMC8462/TMC8462.c **** {
+ 417              		.loc 1 51 1 is_stmt 1 view -0
+ 418              		.cfi_startproc
+ 419              		@ args = 0, pretend = 0, frame = 8
+ 420              		@ frame_needed = 0, uses_anonymous_args = 0
+  52:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	uint8_t buffer = 0;
+ 421              		.loc 1 52 2 view .LVU91
+  51:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	uint8_t buffer = 0;
+ 422              		.loc 1 51 1 is_stmt 0 view .LVU92
+ 423 016e 07B5     		push	{r0, r1, r2, lr}
+ 424              	.LCFI9:
+ 425              		.cfi_def_cfa_offset 16
+ 426              		.cfi_offset 14, -4
+ 427              		.loc 1 52 10 view .LVU93
+ 428 0170 0023     		movs	r3, #0
+  51:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	uint8_t buffer = 0;
+ 429              		.loc 1 51 1 view .LVU94
+ 430 0172 0A46     		mov	r2, r1
+ 431              		.loc 1 52 10 view .LVU95
+ 432 0174 8DF80730 		strb	r3, [sp, #7]
+  53:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+  54:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_esc_read_data(tmc8462, &buffer, address, 1);
+ 433              		.loc 1 54 2 is_stmt 1 view .LVU96
+ 434 0178 0DF10701 		add	r1, sp, #7
+ 435              	.LVL39:
+ 436              		.loc 1 54 2 is_stmt 0 view .LVU97
+ 437 017c 0123     		movs	r3, #1
+ 438 017e FFF7FEFF 		bl	tmc8462_esc_read_data
+ 439              	.LVL40:
+  55:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+  56:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	return buffer;
+ 440              		.loc 1 56 2 is_stmt 1 view .LVU98
+  57:TMC-API/tmc/ic/TMC8462/TMC8462.c **** }
+ 441              		.loc 1 57 1 is_stmt 0 view .LVU99
+ 442 0182 9DF80700 		ldrb	r0, [sp, #7]	@ zero_extendqisi2
+ 443 0186 03B0     		add	sp, sp, #12
+ 444              	.LCFI10:
+ 445              		.cfi_def_cfa_offset 4
+ 446              		@ sp needed
+ 447 0188 5DF804FB 		ldr	pc, [sp], #4
+ 448              		.cfi_endproc
+ 449              	.LFE5:
+ 451              		.align	1
+ 452              		.global	tmc8462_esc_read_16
+ 453              		.syntax unified
+ 454              		.thumb
+ 455              		.thumb_func
+ 456              		.fpu softvfp
+ 458              	tmc8462_esc_read_16:
+ 459              	.LVL41:
+ 460              	.LFB6:
+  58:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+  59:TMC-API/tmc/ic/TMC8462/TMC8462.c **** uint16_t tmc8462_esc_read_16(TMC8462TypeDef *tmc8462, uint16_t address)
+  60:TMC-API/tmc/ic/TMC8462/TMC8462.c **** {
+ 461              		.loc 1 60 1 is_stmt 1 view -0
+ 462              		.cfi_startproc
+ 463              		@ args = 0, pretend = 0, frame = 8
+ 464              		@ frame_needed = 0, uses_anonymous_args = 0
+  61:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	uint8_t data[2];
+ 465              		.loc 1 61 2 view .LVU101
+  62:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+  63:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_esc_read_data(tmc8462, data, address, 2);
+ 466              		.loc 1 63 2 view .LVU102
+  60:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	uint8_t data[2];
+ 467              		.loc 1 60 1 is_stmt 0 view .LVU103
+ 468 018c 07B5     		push	{r0, r1, r2, lr}
+ 469              	.LCFI11:
+ 470              		.cfi_def_cfa_offset 16
+ 471              		.cfi_offset 14, -4
+ 472              		.loc 1 63 2 view .LVU104
+ 473 018e 0223     		movs	r3, #2
+  60:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	uint8_t data[2];
+ 474              		.loc 1 60 1 view .LVU105
+ 475 0190 0A46     		mov	r2, r1
+ 476              		.loc 1 63 2 view .LVU106
+ 477 0192 01A9     		add	r1, sp, #4
+ 478              	.LVL42:
+ 479              		.loc 1 63 2 view .LVU107
+ 480 0194 FFF7FEFF 		bl	tmc8462_esc_read_data
+ 481              	.LVL43:
+  64:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+  65:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	return _8_16(data[1], data[0]);
+ 482              		.loc 1 65 2 is_stmt 1 view .LVU108
+ 483              		.loc 1 65 9 is_stmt 0 view .LVU109
+ 484 0198 9DF80500 		ldrb	r0, [sp, #5]	@ zero_extendqisi2
+ 485 019c 9DF80430 		ldrb	r3, [sp, #4]	@ zero_extendqisi2
+  66:TMC-API/tmc/ic/TMC8462/TMC8462.c **** }
+ 486              		.loc 1 66 1 view .LVU110
+ 487 01a0 43EA0020 		orr	r0, r3, r0, lsl #8
+ 488 01a4 03B0     		add	sp, sp, #12
+ 489              	.LCFI12:
+ 490              		.cfi_def_cfa_offset 4
+ 491              		@ sp needed
+ 492 01a6 5DF804FB 		ldr	pc, [sp], #4
+ 493              		.cfi_endproc
+ 494              	.LFE6:
+ 496              		.align	1
+ 497              		.global	tmc8462_esc_read_32
+ 498              		.syntax unified
+ 499              		.thumb
+ 500              		.thumb_func
+ 501              		.fpu softvfp
+ 503              	tmc8462_esc_read_32:
+ 504              	.LVL44:
+ 505              	.LFB7:
+  67:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+  68:TMC-API/tmc/ic/TMC8462/TMC8462.c **** uint32_t tmc8462_esc_read_32(TMC8462TypeDef *tmc8462, uint16_t address)
+  69:TMC-API/tmc/ic/TMC8462/TMC8462.c **** {
+ 506              		.loc 1 69 1 is_stmt 1 view -0
+ 507              		.cfi_startproc
+ 508              		@ args = 0, pretend = 0, frame = 8
+ 509              		@ frame_needed = 0, uses_anonymous_args = 0
+  70:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	uint8_t data[4];
+ 510              		.loc 1 70 2 view .LVU112
+  71:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+  72:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_esc_read_data(tmc8462, data, address, 4);
+ 511              		.loc 1 72 2 view .LVU113
+  69:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	uint8_t data[4];
+ 512              		.loc 1 69 1 is_stmt 0 view .LVU114
+ 513 01aa 07B5     		push	{r0, r1, r2, lr}
+ 514              	.LCFI13:
+ 515              		.cfi_def_cfa_offset 16
+ 516              		.cfi_offset 14, -4
+ 517              		.loc 1 72 2 view .LVU115
+ 518 01ac 0423     		movs	r3, #4
+  69:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	uint8_t data[4];
+ 519              		.loc 1 69 1 view .LVU116
+ 520 01ae 0A46     		mov	r2, r1
+ 521              		.loc 1 72 2 view .LVU117
+ 522 01b0 0DEB0301 		add	r1, sp, r3
+ 523              	.LVL45:
+ 524              		.loc 1 72 2 view .LVU118
+ 525 01b4 FFF7FEFF 		bl	tmc8462_esc_read_data
+ 526              	.LVL46:
+  73:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+  74:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	return _8_32(data[3], data[2], data[1], data[0]);
+ 527              		.loc 1 74 2 is_stmt 1 view .LVU119
+  75:TMC-API/tmc/ic/TMC8462/TMC8462.c **** }
+ 528              		.loc 1 75 1 is_stmt 0 view .LVU120
+ 529 01b8 0198     		ldr	r0, [sp, #4]
+ 530 01ba 03B0     		add	sp, sp, #12
+ 531              	.LCFI14:
+ 532              		.cfi_def_cfa_offset 4
+ 533              		@ sp needed
+ 534 01bc 5DF804FB 		ldr	pc, [sp], #4
+ 535              		.cfi_endproc
+ 536              	.LFE7:
+ 538              		.align	1
+ 539              		.global	tmc8462_esc_write_data
+ 540              		.syntax unified
+ 541              		.thumb
+ 542              		.thumb_func
+ 543              		.fpu softvfp
+ 545              	tmc8462_esc_write_data:
+ 546              	.LVL47:
+ 547              	.LFB8:
+  76:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+  77:TMC-API/tmc/ic/TMC8462/TMC8462.c **** void tmc8462_esc_write_data(TMC8462TypeDef *tmc8462, uint8_t *data_ptr, uint16_t address, uint16_t 
+  78:TMC-API/tmc/ic/TMC8462/TMC8462.c **** {
+ 548              		.loc 1 78 1 is_stmt 1 view -0
+ 549              		.cfi_startproc
+ 550              		@ args = 0, pretend = 0, frame = 0
+ 551              		@ frame_needed = 0, uses_anonymous_args = 0
+  79:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_esc_write(tmc8462, address);
+ 552              		.loc 1 79 2 view .LVU122
+  78:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_esc_write(tmc8462, address);
+ 553              		.loc 1 78 1 is_stmt 0 view .LVU123
+ 554 01c0 2DE9F041 		push	{r4, r5, r6, r7, r8, lr}
+ 555              	.LCFI15:
+ 556              		.cfi_def_cfa_offset 24
+ 557              		.cfi_offset 4, -24
+ 558              		.cfi_offset 5, -20
+ 559              		.cfi_offset 6, -16
+ 560              		.cfi_offset 7, -12
+ 561              		.cfi_offset 8, -8
+ 562              		.cfi_offset 14, -4
+  78:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_esc_write(tmc8462, address);
+ 563              		.loc 1 78 1 view .LVU124
+ 564 01c4 0F46     		mov	r7, r1
+ 565              		.loc 1 79 2 view .LVU125
+ 566 01c6 1146     		mov	r1, r2
+ 567              	.LVL48:
+  78:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_esc_write(tmc8462, address);
+ 568              		.loc 1 78 1 view .LVU126
+ 569 01c8 1D46     		mov	r5, r3
+ 570 01ca 0646     		mov	r6, r0
+ 571              		.loc 1 79 2 view .LVU127
+ 572 01cc FFF7FEFF 		bl	tmc8462_esc_write
+ 573              	.LVL49:
+  80:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+  81:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	for(uint16_t i = 0; i < len; i++)
+ 574              		.loc 1 81 2 is_stmt 1 view .LVU128
+ 575              	.LBB4:
+ 576              		.loc 1 81 6 view .LVU129
+ 577              		.loc 1 81 2 is_stmt 0 view .LVU130
+ 578 01d0 0024     		movs	r4, #0
+  82:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		tmc8462_readWrite(tmc8462->config_esc->channel, data_ptr[i], (i < len - 1) ? false : true);
+ 579              		.loc 1 82 73 view .LVU131
+ 580 01d2 05F1FF38 		add	r8, r5, #-1
+ 581              	.LVL50:
+ 582              	.L12:
+  81:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		tmc8462_readWrite(tmc8462->config_esc->channel, data_ptr[i], (i < len - 1) ? false : true);
+ 583              		.loc 1 81 22 is_stmt 1 discriminator 1 view .LVU132
+  81:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		tmc8462_readWrite(tmc8462->config_esc->channel, data_ptr[i], (i < len - 1) ? false : true);
+ 584              		.loc 1 81 2 is_stmt 0 discriminator 1 view .LVU133
+ 585 01d6 AC42     		cmp	r4, r5
+ 586 01d8 01D1     		bne	.L13
+ 587              	.LBE4:
+  83:TMC-API/tmc/ic/TMC8462/TMC8462.c **** }
+ 588              		.loc 1 83 1 view .LVU134
+ 589 01da BDE8F081 		pop	{r4, r5, r6, r7, r8, pc}
+ 590              	.LVL51:
+ 591              	.L13:
+ 592              	.LBB5:
+  82:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		tmc8462_readWrite(tmc8462->config_esc->channel, data_ptr[i], (i < len - 1) ? false : true);
+ 593              		.loc 1 82 3 is_stmt 1 discriminator 3 view .LVU135
+ 594 01de 3368     		ldr	r3, [r6]
+ 595 01e0 395D     		ldrb	r1, [r7, r4]	@ zero_extendqisi2
+ 596 01e2 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+ 597 01e6 A045     		cmp	r8, r4
+ 598 01e8 CCBF     		ite	gt
+ 599 01ea 0022     		movgt	r2, #0
+ 600 01ec 0122     		movle	r2, #1
+ 601 01ee FFF7FEFF 		bl	tmc8462_readWrite
+ 602              	.LVL52:
+  81:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		tmc8462_readWrite(tmc8462->config_esc->channel, data_ptr[i], (i < len - 1) ? false : true);
+ 603              		.loc 1 81 31 discriminator 3 view .LVU136
+  81:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		tmc8462_readWrite(tmc8462->config_esc->channel, data_ptr[i], (i < len - 1) ? false : true);
+ 604              		.loc 1 81 31 is_stmt 0 discriminator 3 view .LVU137
+ 605 01f2 0134     		adds	r4, r4, #1
+ 606              	.LVL53:
+  81:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		tmc8462_readWrite(tmc8462->config_esc->channel, data_ptr[i], (i < len - 1) ? false : true);
+ 607              		.loc 1 81 31 discriminator 3 view .LVU138
+ 608 01f4 EFE7     		b	.L12
+ 609              	.LBE5:
+ 610              		.cfi_endproc
+ 611              	.LFE8:
+ 613              		.align	1
+ 614              		.global	tmc8462_esc_write_8
+ 615              		.syntax unified
+ 616              		.thumb
+ 617              		.thumb_func
+ 618              		.fpu softvfp
+ 620              	tmc8462_esc_write_8:
+ 621              	.LVL54:
+ 622              	.LFB9:
+  84:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+  85:TMC-API/tmc/ic/TMC8462/TMC8462.c **** void tmc8462_esc_write_8(TMC8462TypeDef *tmc8462, uint16_t address, uint8_t value)
+  86:TMC-API/tmc/ic/TMC8462/TMC8462.c **** {
+ 623              		.loc 1 86 1 is_stmt 1 view -0
+ 624              		.cfi_startproc
+ 625              		@ args = 0, pretend = 0, frame = 8
+ 626              		@ frame_needed = 0, uses_anonymous_args = 0
+  87:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_esc_write_data(tmc8462, &value, address, 1);
+ 627              		.loc 1 87 2 view .LVU140
+  86:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_esc_write_data(tmc8462, &value, address, 1);
+ 628              		.loc 1 86 1 is_stmt 0 view .LVU141
+ 629 01f6 07B5     		push	{r0, r1, r2, lr}
+ 630              	.LCFI16:
+ 631              		.cfi_def_cfa_offset 16
+ 632              		.cfi_offset 14, -4
+ 633              		.loc 1 87 2 view .LVU142
+ 634 01f8 0123     		movs	r3, #1
+  86:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_esc_write_data(tmc8462, &value, address, 1);
+ 635              		.loc 1 86 1 view .LVU143
+ 636 01fa 8DF80720 		strb	r2, [sp, #7]
+ 637              		.loc 1 87 2 view .LVU144
+ 638 01fe 0A46     		mov	r2, r1
+ 639              	.LVL55:
+ 640              		.loc 1 87 2 view .LVU145
+ 641 0200 0DF10701 		add	r1, sp, #7
+ 642              	.LVL56:
+ 643              		.loc 1 87 2 view .LVU146
+ 644 0204 FFF7FEFF 		bl	tmc8462_esc_write_data
+ 645              	.LVL57:
+  88:TMC-API/tmc/ic/TMC8462/TMC8462.c **** }
+ 646              		.loc 1 88 1 view .LVU147
+ 647 0208 03B0     		add	sp, sp, #12
+ 648              	.LCFI17:
+ 649              		.cfi_def_cfa_offset 4
+ 650              		@ sp needed
+ 651 020a 5DF804FB 		ldr	pc, [sp], #4
+ 652              		.cfi_endproc
+ 653              	.LFE9:
+ 655              		.align	1
+ 656              		.global	tmc8462_esc_write_16
+ 657              		.syntax unified
+ 658              		.thumb
+ 659              		.thumb_func
+ 660              		.fpu softvfp
+ 662              	tmc8462_esc_write_16:
+ 663              	.LVL58:
+ 664              	.LFB10:
+  89:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+  90:TMC-API/tmc/ic/TMC8462/TMC8462.c **** void tmc8462_esc_write_16(TMC8462TypeDef *tmc8462, uint16_t address, uint16_t value)
+  91:TMC-API/tmc/ic/TMC8462/TMC8462.c **** {
+ 665              		.loc 1 91 1 is_stmt 1 view -0
+ 666              		.cfi_startproc
+ 667              		@ args = 0, pretend = 0, frame = 8
+ 668              		@ frame_needed = 0, uses_anonymous_args = 0
+  92:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	uint8_t data[2];
+ 669              		.loc 1 92 2 view .LVU149
+  93:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+  94:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	data[0] = BYTE(value, 0);
+ 670              		.loc 1 94 2 view .LVU150
+  95:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	data[1] = BYTE(value, 1);
+ 671              		.loc 1 95 2 view .LVU151
+  91:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	uint8_t data[2];
+ 672              		.loc 1 91 1 is_stmt 0 view .LVU152
+ 673 020e 07B5     		push	{r0, r1, r2, lr}
+ 674              	.LCFI18:
+ 675              		.cfi_def_cfa_offset 16
+ 676              		.cfi_offset 14, -4
+  96:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_esc_write_data(tmc8462, data, address, 2);
+ 677              		.loc 1 96 2 view .LVU153
+ 678 0210 0223     		movs	r3, #2
+  94:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	data[1] = BYTE(value, 1);
+ 679              		.loc 1 94 10 view .LVU154
+ 680 0212 ADF80420 		strh	r2, [sp, #4]	@ movhi
+ 681              		.loc 1 96 2 is_stmt 1 view .LVU155
+ 682 0216 0A46     		mov	r2, r1
+ 683              	.LVL59:
+ 684              		.loc 1 96 2 is_stmt 0 view .LVU156
+ 685 0218 01A9     		add	r1, sp, #4
+ 686              	.LVL60:
+ 687              		.loc 1 96 2 view .LVU157
+ 688 021a FFF7FEFF 		bl	tmc8462_esc_write_data
+ 689              	.LVL61:
+  97:TMC-API/tmc/ic/TMC8462/TMC8462.c **** }
+ 690              		.loc 1 97 1 view .LVU158
+ 691 021e 03B0     		add	sp, sp, #12
+ 692              	.LCFI19:
+ 693              		.cfi_def_cfa_offset 4
+ 694              		@ sp needed
+ 695 0220 5DF804FB 		ldr	pc, [sp], #4
+ 696              		.cfi_endproc
+ 697              	.LFE10:
+ 699              		.align	1
+ 700              		.global	tmc8462_esc_write_32
+ 701              		.syntax unified
+ 702              		.thumb
+ 703              		.thumb_func
+ 704              		.fpu softvfp
+ 706              	tmc8462_esc_write_32:
+ 707              	.LVL62:
+ 708              	.LFB11:
+  98:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+  99:TMC-API/tmc/ic/TMC8462/TMC8462.c **** void tmc8462_esc_write_32(TMC8462TypeDef *tmc8462, uint16_t address, uint32_t value)
+ 100:TMC-API/tmc/ic/TMC8462/TMC8462.c **** {
+ 709              		.loc 1 100 1 is_stmt 1 view -0
+ 710              		.cfi_startproc
+ 711              		@ args = 0, pretend = 0, frame = 8
+ 712              		@ frame_needed = 0, uses_anonymous_args = 0
+ 101:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	uint8_t data[4];
+ 713              		.loc 1 101 2 view .LVU160
+ 102:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+ 103:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	data[0] = BYTE(value, 0);
+ 714              		.loc 1 103 2 view .LVU161
+ 104:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	data[1] = BYTE(value, 1);
+ 715              		.loc 1 104 2 view .LVU162
+ 105:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	data[2] = BYTE(value, 2);
+ 716              		.loc 1 105 2 view .LVU163
+ 106:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	data[3] = BYTE(value, 3);
+ 717              		.loc 1 106 2 view .LVU164
+ 100:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	uint8_t data[4];
+ 718              		.loc 1 100 1 is_stmt 0 view .LVU165
+ 719 0224 07B5     		push	{r0, r1, r2, lr}
+ 720              	.LCFI20:
+ 721              		.cfi_def_cfa_offset 16
+ 722              		.cfi_offset 14, -4
+ 107:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_esc_write_data(tmc8462, data, address, 4);
+ 723              		.loc 1 107 2 view .LVU166
+ 724 0226 0423     		movs	r3, #4
+ 103:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	data[1] = BYTE(value, 1);
+ 725              		.loc 1 103 10 view .LVU167
+ 726 0228 0192     		str	r2, [sp, #4]
+ 727              		.loc 1 107 2 is_stmt 1 view .LVU168
+ 728 022a 0A46     		mov	r2, r1
+ 729              	.LVL63:
+ 730              		.loc 1 107 2 is_stmt 0 view .LVU169
+ 731 022c 0DEB0301 		add	r1, sp, r3
+ 732              	.LVL64:
+ 733              		.loc 1 107 2 view .LVU170
+ 734 0230 FFF7FEFF 		bl	tmc8462_esc_write_data
+ 735              	.LVL65:
+ 108:TMC-API/tmc/ic/TMC8462/TMC8462.c **** }
+ 736              		.loc 1 108 1 view .LVU171
+ 737 0234 03B0     		add	sp, sp, #12
+ 738              	.LCFI21:
+ 739              		.cfi_def_cfa_offset 4
+ 740              		@ sp needed
+ 741 0236 5DF804FB 		ldr	pc, [sp], #4
+ 742              		.cfi_endproc
+ 743              	.LFE11:
+ 745              		.align	1
+ 746              		.global	tmc8462_mfc_read_data
+ 747              		.syntax unified
+ 748              		.thumb
+ 749              		.thumb_func
+ 750              		.fpu softvfp
+ 752              	tmc8462_mfc_read_data:
+ 753              	.LVL66:
+ 754              	.LFB12:
+ 109:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+ 110:TMC-API/tmc/ic/TMC8462/TMC8462.c **** void tmc8462_mfc_read_data(TMC8462TypeDef *tmc8462, uint8_t *data_ptr, uint16_t address, uint16_t l
+ 111:TMC-API/tmc/ic/TMC8462/TMC8462.c **** {
+ 755              		.loc 1 111 1 is_stmt 1 view -0
+ 756              		.cfi_startproc
+ 757              		@ args = 0, pretend = 0, frame = 0
+ 758              		@ frame_needed = 0, uses_anonymous_args = 0
+ 112:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_mfc_read(tmc8462, address);
+ 759              		.loc 1 112 2 view .LVU173
+ 111:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_mfc_read(tmc8462, address);
+ 760              		.loc 1 111 1 is_stmt 0 view .LVU174
+ 761 023a 2DE9F041 		push	{r4, r5, r6, r7, r8, lr}
+ 762              	.LCFI22:
+ 763              		.cfi_def_cfa_offset 24
+ 764              		.cfi_offset 4, -24
+ 765              		.cfi_offset 5, -20
+ 766              		.cfi_offset 6, -16
+ 767              		.cfi_offset 7, -12
+ 768              		.cfi_offset 8, -8
+ 769              		.cfi_offset 14, -4
+ 111:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_mfc_read(tmc8462, address);
+ 770              		.loc 1 111 1 view .LVU175
+ 771 023e 0F46     		mov	r7, r1
+ 772              		.loc 1 112 2 view .LVU176
+ 773 0240 1146     		mov	r1, r2
+ 774              	.LVL67:
+ 111:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_mfc_read(tmc8462, address);
+ 775              		.loc 1 111 1 view .LVU177
+ 776 0242 1D46     		mov	r5, r3
+ 777 0244 0646     		mov	r6, r0
+ 778              		.loc 1 112 2 view .LVU178
+ 779 0246 FFF7FEFF 		bl	tmc8462_mfc_read
+ 780              	.LVL68:
+ 113:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+ 114:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	for (uint16_t i = 0; i < len; i++)
+ 781              		.loc 1 114 2 is_stmt 1 view .LVU179
+ 782              	.LBB6:
+ 783              		.loc 1 114 7 view .LVU180
+ 784              		.loc 1 114 2 is_stmt 0 view .LVU181
+ 785 024a 0024     		movs	r4, #0
+ 115:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		data_ptr[i] = tmc8462_readWrite(tmc8462->config_mfc->channel, (i < len - 1) ? 0x00 : 0xFF, (i < l
+ 786              		.loc 1 115 74 view .LVU182
+ 787 024c 05F1FF38 		add	r8, r5, #-1
+ 788              	.LVL69:
+ 789              	.L18:
+ 114:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		data_ptr[i] = tmc8462_readWrite(tmc8462->config_mfc->channel, (i < len - 1) ? 0x00 : 0xFF, (i < l
+ 790              		.loc 1 114 23 is_stmt 1 discriminator 2 view .LVU183
+ 114:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		data_ptr[i] = tmc8462_readWrite(tmc8462->config_mfc->channel, (i < len - 1) ? 0x00 : 0xFF, (i < l
+ 791              		.loc 1 114 2 is_stmt 0 discriminator 2 view .LVU184
+ 792 0250 AC42     		cmp	r4, r5
+ 793 0252 01D1     		bne	.L19
+ 794              	.LBE6:
+ 116:TMC-API/tmc/ic/TMC8462/TMC8462.c **** }
+ 795              		.loc 1 116 1 view .LVU185
+ 796 0254 BDE8F081 		pop	{r4, r5, r6, r7, r8, pc}
+ 797              	.LVL70:
+ 798              	.L19:
+ 799              	.LBB7:
+ 115:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		data_ptr[i] = tmc8462_readWrite(tmc8462->config_mfc->channel, (i < len - 1) ? 0x00 : 0xFF, (i < l
+ 800              		.loc 1 115 3 is_stmt 1 view .LVU186
+ 115:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		data_ptr[i] = tmc8462_readWrite(tmc8462->config_mfc->channel, (i < len - 1) ? 0x00 : 0xFF, (i < l
+ 801              		.loc 1 115 17 is_stmt 0 view .LVU187
+ 802 0258 A045     		cmp	r8, r4
+ 803 025a 7368     		ldr	r3, [r6, #4]
+ 804 025c CCBF     		ite	gt
+ 805 025e 0022     		movgt	r2, #0
+ 806 0260 0122     		movle	r2, #1
+ 807 0262 5142     		rsbs	r1, r2, #0
+ 808 0264 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+ 809 0268 C9B2     		uxtb	r1, r1
+ 810 026a FFF7FEFF 		bl	tmc8462_readWrite
+ 811              	.LVL71:
+ 115:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		data_ptr[i] = tmc8462_readWrite(tmc8462->config_mfc->channel, (i < len - 1) ? 0x00 : 0xFF, (i < l
+ 812              		.loc 1 115 15 view .LVU188
+ 813 026e 3855     		strb	r0, [r7, r4]
+ 114:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		data_ptr[i] = tmc8462_readWrite(tmc8462->config_mfc->channel, (i < len - 1) ? 0x00 : 0xFF, (i < l
+ 814              		.loc 1 114 32 is_stmt 1 view .LVU189
+ 815              	.LVL72:
+ 114:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		data_ptr[i] = tmc8462_readWrite(tmc8462->config_mfc->channel, (i < len - 1) ? 0x00 : 0xFF, (i < l
+ 816              		.loc 1 114 32 is_stmt 0 view .LVU190
+ 817 0270 0134     		adds	r4, r4, #1
+ 818              	.LVL73:
+ 114:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		data_ptr[i] = tmc8462_readWrite(tmc8462->config_mfc->channel, (i < len - 1) ? 0x00 : 0xFF, (i < l
+ 819              		.loc 1 114 32 view .LVU191
+ 820 0272 EDE7     		b	.L18
+ 821              	.LBE7:
+ 822              		.cfi_endproc
+ 823              	.LFE12:
+ 825              		.align	1
+ 826              		.global	tmc8462_mfc_read_32
+ 827              		.syntax unified
+ 828              		.thumb
+ 829              		.thumb_func
+ 830              		.fpu softvfp
+ 832              	tmc8462_mfc_read_32:
+ 833              	.LVL74:
+ 834              	.LFB13:
+ 117:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+ 118:TMC-API/tmc/ic/TMC8462/TMC8462.c **** void tmc8462_mfc_read_32(TMC8462TypeDef *tmc8462, uint16_t address, uint32_t *value)
+ 119:TMC-API/tmc/ic/TMC8462/TMC8462.c **** {
+ 835              		.loc 1 119 1 is_stmt 1 view -0
+ 836              		.cfi_startproc
+ 837              		@ args = 0, pretend = 0, frame = 8
+ 838              		@ frame_needed = 0, uses_anonymous_args = 0
+ 120:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	uint8_t data[4];
+ 839              		.loc 1 120 2 view .LVU193
+ 121:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+ 122:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_mfc_read_data(tmc8462, data, address, 4);
+ 840              		.loc 1 122 2 view .LVU194
+ 119:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	uint8_t data[4];
+ 841              		.loc 1 119 1 is_stmt 0 view .LVU195
+ 842 0274 13B5     		push	{r0, r1, r4, lr}
+ 843              	.LCFI23:
+ 844              		.cfi_def_cfa_offset 16
+ 845              		.cfi_offset 4, -8
+ 846              		.cfi_offset 14, -4
+ 847              		.loc 1 122 2 view .LVU196
+ 848 0276 0423     		movs	r3, #4
+ 119:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	uint8_t data[4];
+ 849              		.loc 1 119 1 view .LVU197
+ 850 0278 1446     		mov	r4, r2
+ 851              		.loc 1 122 2 view .LVU198
+ 852 027a 0A46     		mov	r2, r1
+ 853              	.LVL75:
+ 854              		.loc 1 122 2 view .LVU199
+ 855 027c 0DEB0301 		add	r1, sp, r3
+ 856              	.LVL76:
+ 857              		.loc 1 122 2 view .LVU200
+ 858 0280 FFF7FEFF 		bl	tmc8462_mfc_read_data
+ 859              	.LVL77:
+ 123:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+ 124:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	*value = _8_32(data[3], data[2], data[1], data[0]);
+ 860              		.loc 1 124 2 is_stmt 1 view .LVU201
+ 861              		.loc 1 124 9 is_stmt 0 view .LVU202
+ 862 0284 019B     		ldr	r3, [sp, #4]
+ 863 0286 2360     		str	r3, [r4]
+ 125:TMC-API/tmc/ic/TMC8462/TMC8462.c **** }
+ 864              		.loc 1 125 1 view .LVU203
+ 865 0288 02B0     		add	sp, sp, #8
+ 866              	.LCFI24:
+ 867              		.cfi_def_cfa_offset 8
+ 868              		@ sp needed
+ 869 028a 10BD     		pop	{r4, pc}
+ 870              		.loc 1 125 1 view .LVU204
+ 871              		.cfi_endproc
+ 872              	.LFE13:
+ 874              		.align	1
+ 875              		.global	tmc8462_mfc_read_64
+ 876              		.syntax unified
+ 877              		.thumb
+ 878              		.thumb_func
+ 879              		.fpu softvfp
+ 881              	tmc8462_mfc_read_64:
+ 882              	.LVL78:
+ 883              	.LFB14:
+ 126:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+ 127:TMC-API/tmc/ic/TMC8462/TMC8462.c **** void tmc8462_mfc_read_64(TMC8462TypeDef *tmc8462, uint16_t address, uint64_t *value)
+ 128:TMC-API/tmc/ic/TMC8462/TMC8462.c **** {
+ 884              		.loc 1 128 1 is_stmt 1 view -0
+ 885              		.cfi_startproc
+ 886              		@ args = 0, pretend = 0, frame = 8
+ 887              		@ frame_needed = 0, uses_anonymous_args = 0
+ 129:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	uint8_t data[8];
+ 888              		.loc 1 129 2 view .LVU206
+ 130:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+ 131:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_mfc_read_data(tmc8462, data, address, 8);
+ 889              		.loc 1 131 2 view .LVU207
+ 128:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	uint8_t data[8];
+ 890              		.loc 1 128 1 is_stmt 0 view .LVU208
+ 891 028c 13B5     		push	{r0, r1, r4, lr}
+ 892              	.LCFI25:
+ 893              		.cfi_def_cfa_offset 16
+ 894              		.cfi_offset 4, -8
+ 895              		.cfi_offset 14, -4
+ 896              		.loc 1 131 2 view .LVU209
+ 897 028e 0823     		movs	r3, #8
+ 128:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	uint8_t data[8];
+ 898              		.loc 1 128 1 view .LVU210
+ 899 0290 1446     		mov	r4, r2
+ 900              		.loc 1 131 2 view .LVU211
+ 901 0292 0A46     		mov	r2, r1
+ 902              	.LVL79:
+ 903              		.loc 1 131 2 view .LVU212
+ 904 0294 6946     		mov	r1, sp
+ 905              	.LVL80:
+ 906              		.loc 1 131 2 view .LVU213
+ 907 0296 FFF7FEFF 		bl	tmc8462_mfc_read_data
+ 908              	.LVL81:
+ 132:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+ 133:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	*value = _8_64((uint64_t)data[7], (uint64_t)data[6], (uint64_t)data[5], (uint64_t)data[4], (uint64
+ 909              		.loc 1 133 2 is_stmt 1 view .LVU214
+ 910              		.loc 1 133 9 is_stmt 0 view .LVU215
+ 911 029a DDE90023 		ldrd	r2, [sp]
+ 912 029e C4E90023 		strd	r2, [r4]
+ 134:TMC-API/tmc/ic/TMC8462/TMC8462.c **** }
+ 913              		.loc 1 134 1 view .LVU216
+ 914 02a2 02B0     		add	sp, sp, #8
+ 915              	.LCFI26:
+ 916              		.cfi_def_cfa_offset 8
+ 917              		@ sp needed
+ 918 02a4 10BD     		pop	{r4, pc}
+ 919              		.loc 1 134 1 view .LVU217
+ 920              		.cfi_endproc
+ 921              	.LFE14:
+ 923              		.align	1
+ 924              		.global	tmc8462_mfc_read_auto
+ 925              		.syntax unified
+ 926              		.thumb
+ 927              		.thumb_func
+ 928              		.fpu softvfp
+ 930              	tmc8462_mfc_read_auto:
+ 931              	.LVL82:
+ 932              	.LFB15:
+ 135:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+ 136:TMC-API/tmc/ic/TMC8462/TMC8462.c **** void tmc8462_mfc_read_auto(TMC8462TypeDef *tmc8462, uint16_t address, uint8_t *value)
+ 137:TMC-API/tmc/ic/TMC8462/TMC8462.c **** {
+ 933              		.loc 1 137 1 is_stmt 1 view -0
+ 934              		.cfi_startproc
+ 935              		@ args = 0, pretend = 0, frame = 0
+ 936              		@ frame_needed = 0, uses_anonymous_args = 0
+ 937              		@ link register save eliminated.
+ 138:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	if(address == TMC8462_MFC_SPI_RX_DATA || address == TMC8462_MFC_SPI_TX_DATA || address == TMC8462_
+ 938              		.loc 1 138 2 view .LVU219
+ 137:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	if(address == TMC8462_MFC_SPI_RX_DATA || address == TMC8462_MFC_SPI_TX_DATA || address == TMC8462_
+ 939              		.loc 1 137 1 is_stmt 0 view .LVU220
+ 940 02a6 30B4     		push	{r4, r5}
+ 941              	.LCFI27:
+ 942              		.cfi_def_cfa_offset 8
+ 943              		.cfi_offset 4, -8
+ 944              		.cfi_offset 5, -4
+ 137:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	if(address == TMC8462_MFC_SPI_RX_DATA || address == TMC8462_MFC_SPI_TX_DATA || address == TMC8462_
+ 945              		.loc 1 137 1 view .LVU221
+ 946 02a8 0C46     		mov	r4, r1
+ 947              		.loc 1 138 4 view .LVU222
+ 948 02aa 24F01003 		bic	r3, r4, #16
+ 949 02ae 602B     		cmp	r3, #96
+ 137:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	if(address == TMC8462_MFC_SPI_RX_DATA || address == TMC8462_MFC_SPI_TX_DATA || address == TMC8462_
+ 950              		.loc 1 137 1 view .LVU223
+ 951 02b0 0546     		mov	r5, r0
+ 952 02b2 1146     		mov	r1, r2
+ 953              	.LVL83:
+ 954              		.loc 1 138 4 view .LVU224
+ 955 02b4 02D0     		beq	.L23
+ 956              		.loc 1 138 78 discriminator 2 view .LVU225
+ 957 02b6 B4F5207F 		cmp	r4, #640
+ 958 02ba 05D1     		bne	.L24
+ 959              	.L23:
+ 139:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		// 64 bit
+ 140:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		tmc8462_mfc_read_data(tmc8462, value, address, 8);
+ 960              		.loc 1 140 3 is_stmt 1 view .LVU226
+ 961 02bc 0823     		movs	r3, #8
+ 962 02be 2246     		mov	r2, r4
+ 963              	.LVL84:
+ 964              		.loc 1 140 3 is_stmt 0 view .LVU227
+ 965 02c0 2846     		mov	r0, r5
+ 966              	.LVL85:
+ 967              	.L28:
+ 141:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	} else {
+ 142:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		// 32 bit
+ 143:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		tmc8462_mfc_read_data(tmc8462, value, address, 4);
+ 144:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	}
+ 145:TMC-API/tmc/ic/TMC8462/TMC8462.c **** }
+ 968              		.loc 1 145 1 view .LVU228
+ 969 02c2 30BC     		pop	{r4, r5}
+ 970              	.LCFI28:
+ 971              		.cfi_remember_state
+ 972              		.cfi_restore 5
+ 973              		.cfi_restore 4
+ 974              		.cfi_def_cfa_offset 0
+ 143:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	}
+ 975              		.loc 1 143 3 view .LVU229
+ 976 02c4 FFF7FEBF 		b	tmc8462_mfc_read_data
+ 977              	.LVL86:
+ 978              	.L24:
+ 979              	.LCFI29:
+ 980              		.cfi_restore_state
+ 143:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	}
+ 981              		.loc 1 143 3 is_stmt 1 view .LVU230
+ 982 02c8 0423     		movs	r3, #4
+ 983 02ca 2246     		mov	r2, r4
+ 984 02cc F9E7     		b	.L28
+ 985              		.cfi_endproc
+ 986              	.LFE15:
+ 988              		.align	1
+ 989              		.global	tmc8462_mfc_write_data
+ 990              		.syntax unified
+ 991              		.thumb
+ 992              		.thumb_func
+ 993              		.fpu softvfp
+ 995              	tmc8462_mfc_write_data:
+ 996              	.LVL87:
+ 997              	.LFB16:
+ 146:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+ 147:TMC-API/tmc/ic/TMC8462/TMC8462.c **** void tmc8462_mfc_write_data(TMC8462TypeDef *tmc8462, uint8_t *data_ptr, uint16_t address, uint16_t 
+ 148:TMC-API/tmc/ic/TMC8462/TMC8462.c **** {
+ 998              		.loc 1 148 1 view -0
+ 999              		.cfi_startproc
+ 1000              		@ args = 0, pretend = 0, frame = 0
+ 1001              		@ frame_needed = 0, uses_anonymous_args = 0
+ 149:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_mfc_write(tmc8462, address);
+ 1002              		.loc 1 149 2 view .LVU232
+ 148:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_mfc_write(tmc8462, address);
+ 1003              		.loc 1 148 1 is_stmt 0 view .LVU233
+ 1004 02ce 2DE9F041 		push	{r4, r5, r6, r7, r8, lr}
+ 1005              	.LCFI30:
+ 1006              		.cfi_def_cfa_offset 24
+ 1007              		.cfi_offset 4, -24
+ 1008              		.cfi_offset 5, -20
+ 1009              		.cfi_offset 6, -16
+ 1010              		.cfi_offset 7, -12
+ 1011              		.cfi_offset 8, -8
+ 1012              		.cfi_offset 14, -4
+ 148:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_mfc_write(tmc8462, address);
+ 1013              		.loc 1 148 1 view .LVU234
+ 1014 02d2 0F46     		mov	r7, r1
+ 1015              		.loc 1 149 2 view .LVU235
+ 1016 02d4 1146     		mov	r1, r2
+ 1017              	.LVL88:
+ 148:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_mfc_write(tmc8462, address);
+ 1018              		.loc 1 148 1 view .LVU236
+ 1019 02d6 1D46     		mov	r5, r3
+ 1020 02d8 0646     		mov	r6, r0
+ 1021              		.loc 1 149 2 view .LVU237
+ 1022 02da FFF7FEFF 		bl	tmc8462_mfc_write
+ 1023              	.LVL89:
+ 150:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+ 151:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	for (uint16_t i = 0; i < len; i++)
+ 1024              		.loc 1 151 2 is_stmt 1 view .LVU238
+ 1025              	.LBB8:
+ 1026              		.loc 1 151 7 view .LVU239
+ 1027              		.loc 1 151 2 is_stmt 0 view .LVU240
+ 1028 02de 0024     		movs	r4, #0
+ 152:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		tmc8462_readWrite(tmc8462->config_mfc->channel, data_ptr[i], (i < len - 1) ? false : true);
+ 1029              		.loc 1 152 73 view .LVU241
+ 1030 02e0 05F1FF38 		add	r8, r5, #-1
+ 1031              	.LVL90:
+ 1032              	.L30:
+ 151:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		tmc8462_readWrite(tmc8462->config_mfc->channel, data_ptr[i], (i < len - 1) ? false : true);
+ 1033              		.loc 1 151 23 is_stmt 1 discriminator 1 view .LVU242
+ 151:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		tmc8462_readWrite(tmc8462->config_mfc->channel, data_ptr[i], (i < len - 1) ? false : true);
+ 1034              		.loc 1 151 2 is_stmt 0 discriminator 1 view .LVU243
+ 1035 02e4 AC42     		cmp	r4, r5
+ 1036 02e6 01D1     		bne	.L31
+ 1037              	.LBE8:
+ 153:TMC-API/tmc/ic/TMC8462/TMC8462.c **** }
+ 1038              		.loc 1 153 1 view .LVU244
+ 1039 02e8 BDE8F081 		pop	{r4, r5, r6, r7, r8, pc}
+ 1040              	.LVL91:
+ 1041              	.L31:
+ 1042              	.LBB9:
+ 152:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		tmc8462_readWrite(tmc8462->config_mfc->channel, data_ptr[i], (i < len - 1) ? false : true);
+ 1043              		.loc 1 152 3 is_stmt 1 discriminator 3 view .LVU245
+ 1044 02ec 7368     		ldr	r3, [r6, #4]
+ 1045 02ee 395D     		ldrb	r1, [r7, r4]	@ zero_extendqisi2
+ 1046 02f0 93F81002 		ldrb	r0, [r3, #528]	@ zero_extendqisi2
+ 1047 02f4 A045     		cmp	r8, r4
+ 1048 02f6 CCBF     		ite	gt
+ 1049 02f8 0022     		movgt	r2, #0
+ 1050 02fa 0122     		movle	r2, #1
+ 1051 02fc FFF7FEFF 		bl	tmc8462_readWrite
+ 1052              	.LVL92:
+ 151:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		tmc8462_readWrite(tmc8462->config_mfc->channel, data_ptr[i], (i < len - 1) ? false : true);
+ 1053              		.loc 1 151 32 discriminator 3 view .LVU246
+ 151:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		tmc8462_readWrite(tmc8462->config_mfc->channel, data_ptr[i], (i < len - 1) ? false : true);
+ 1054              		.loc 1 151 32 is_stmt 0 discriminator 3 view .LVU247
+ 1055 0300 0134     		adds	r4, r4, #1
+ 1056              	.LVL93:
+ 151:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		tmc8462_readWrite(tmc8462->config_mfc->channel, data_ptr[i], (i < len - 1) ? false : true);
+ 1057              		.loc 1 151 32 discriminator 3 view .LVU248
+ 1058 0302 EFE7     		b	.L30
+ 1059              	.LBE9:
+ 1060              		.cfi_endproc
+ 1061              	.LFE16:
+ 1063              		.align	1
+ 1064              		.global	tmc8462_mfc_write_32
+ 1065              		.syntax unified
+ 1066              		.thumb
+ 1067              		.thumb_func
+ 1068              		.fpu softvfp
+ 1070              	tmc8462_mfc_write_32:
+ 1071              	.LVL94:
+ 1072              	.LFB17:
+ 154:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+ 155:TMC-API/tmc/ic/TMC8462/TMC8462.c **** void tmc8462_mfc_write_32(TMC8462TypeDef *tmc8462, uint16_t address, uint32_t value)
+ 156:TMC-API/tmc/ic/TMC8462/TMC8462.c **** {
+ 1073              		.loc 1 156 1 is_stmt 1 view -0
+ 1074              		.cfi_startproc
+ 1075              		@ args = 0, pretend = 0, frame = 8
+ 1076              		@ frame_needed = 0, uses_anonymous_args = 0
+ 157:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	uint8_t data[4];
+ 1077              		.loc 1 157 2 view .LVU250
+ 158:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+ 159:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	data[0] = BYTE(value, 0);
+ 1078              		.loc 1 159 2 view .LVU251
+ 160:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	data[1] = BYTE(value, 1);
+ 1079              		.loc 1 160 2 view .LVU252
+ 161:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	data[2] = BYTE(value, 2);
+ 1080              		.loc 1 161 2 view .LVU253
+ 162:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	data[3] = BYTE(value, 3);
+ 1081              		.loc 1 162 2 view .LVU254
+ 156:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	uint8_t data[4];
+ 1082              		.loc 1 156 1 is_stmt 0 view .LVU255
+ 1083 0304 07B5     		push	{r0, r1, r2, lr}
+ 1084              	.LCFI31:
+ 1085              		.cfi_def_cfa_offset 16
+ 1086              		.cfi_offset 14, -4
+ 163:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+ 164:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_mfc_write_data(tmc8462, data, address, 4);
+ 1087              		.loc 1 164 2 view .LVU256
+ 1088 0306 0423     		movs	r3, #4
+ 159:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	data[1] = BYTE(value, 1);
+ 1089              		.loc 1 159 10 view .LVU257
+ 1090 0308 0192     		str	r2, [sp, #4]
+ 1091              		.loc 1 164 2 is_stmt 1 view .LVU258
+ 1092 030a 0A46     		mov	r2, r1
+ 1093              	.LVL95:
+ 1094              		.loc 1 164 2 is_stmt 0 view .LVU259
+ 1095 030c 0DEB0301 		add	r1, sp, r3
+ 1096              	.LVL96:
+ 1097              		.loc 1 164 2 view .LVU260
+ 1098 0310 FFF7FEFF 		bl	tmc8462_mfc_write_data
+ 1099              	.LVL97:
+ 165:TMC-API/tmc/ic/TMC8462/TMC8462.c **** }
+ 1100              		.loc 1 165 1 view .LVU261
+ 1101 0314 03B0     		add	sp, sp, #12
+ 1102              	.LCFI32:
+ 1103              		.cfi_def_cfa_offset 4
+ 1104              		@ sp needed
+ 1105 0316 5DF804FB 		ldr	pc, [sp], #4
+ 1106              		.cfi_endproc
+ 1107              	.LFE17:
+ 1109              		.align	1
+ 1110              		.global	tmc8462_mfc_write_64
+ 1111              		.syntax unified
+ 1112              		.thumb
+ 1113              		.thumb_func
+ 1114              		.fpu softvfp
+ 1116              	tmc8462_mfc_write_64:
+ 1117              	.LVL98:
+ 1118              	.LFB18:
+ 166:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+ 167:TMC-API/tmc/ic/TMC8462/TMC8462.c **** void tmc8462_mfc_write_64(TMC8462TypeDef *tmc8462, uint16_t address, uint64_t value)
+ 168:TMC-API/tmc/ic/TMC8462/TMC8462.c **** {
+ 1119              		.loc 1 168 1 is_stmt 1 view -0
+ 1120              		.cfi_startproc
+ 1121              		@ args = 0, pretend = 0, frame = 8
+ 1122              		@ frame_needed = 0, uses_anonymous_args = 0
+ 169:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	uint8_t data[8];
+ 1123              		.loc 1 169 2 view .LVU263
+ 170:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+ 171:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	data[0] = BYTE(value, 0);
+ 1124              		.loc 1 171 2 view .LVU264
+ 172:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	data[1] = BYTE(value, 1);
+ 1125              		.loc 1 172 2 view .LVU265
+ 173:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	data[2] = BYTE(value, 2);
+ 1126              		.loc 1 173 2 view .LVU266
+ 174:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	data[3] = BYTE(value, 3);
+ 1127              		.loc 1 174 2 view .LVU267
+ 168:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	uint8_t data[8];
+ 1128              		.loc 1 168 1 is_stmt 0 view .LVU268
+ 1129 031a 07B5     		push	{r0, r1, r2, lr}
+ 1130              	.LCFI33:
+ 1131              		.cfi_def_cfa_offset 16
+ 1132              		.cfi_offset 14, -4
+ 171:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	data[1] = BYTE(value, 1);
+ 1133              		.loc 1 171 10 view .LVU269
+ 1134 031c 0092     		str	r2, [sp]
+ 175:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	data[4] = BYTE(value, 4);
+ 1135              		.loc 1 175 2 is_stmt 1 view .LVU270
+ 176:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	data[5] = BYTE(value, 5);
+ 1136              		.loc 1 176 12 is_stmt 0 view .LVU271
+ 1137 031e 1A0A     		lsrs	r2, r3, #8
+ 1138              	.LVL99:
+ 175:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	data[4] = BYTE(value, 4);
+ 1139              		.loc 1 175 10 view .LVU272
+ 1140 0320 8DF80430 		strb	r3, [sp, #4]
+ 1141              		.loc 1 176 2 is_stmt 1 view .LVU273
+ 1142              		.loc 1 176 10 is_stmt 0 view .LVU274
+ 1143 0324 8DF80520 		strb	r2, [sp, #5]
+ 177:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	data[6] = BYTE(value, 6);
+ 1144              		.loc 1 177 2 is_stmt 1 view .LVU275
+ 1145              		.loc 1 177 12 is_stmt 0 view .LVU276
+ 1146 0328 1A0C     		lsrs	r2, r3, #16
+ 178:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	data[7] = BYTE(value, 7);
+ 1147              		.loc 1 178 12 view .LVU277
+ 1148 032a 1B0E     		lsrs	r3, r3, #24
+ 177:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	data[6] = BYTE(value, 6);
+ 1149              		.loc 1 177 10 view .LVU278
+ 1150 032c 8DF80620 		strb	r2, [sp, #6]
+ 1151              		.loc 1 178 2 is_stmt 1 view .LVU279
+ 1152              		.loc 1 178 10 is_stmt 0 view .LVU280
+ 1153 0330 8DF80730 		strb	r3, [sp, #7]
+ 179:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+ 180:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_mfc_write_data(tmc8462, data, address, 8);
+ 1154              		.loc 1 180 2 is_stmt 1 view .LVU281
+ 1155 0334 0A46     		mov	r2, r1
+ 1156 0336 0823     		movs	r3, #8
+ 1157 0338 6946     		mov	r1, sp
+ 1158              	.LVL100:
+ 1159              		.loc 1 180 2 is_stmt 0 view .LVU282
+ 1160 033a FFF7FEFF 		bl	tmc8462_mfc_write_data
+ 1161              	.LVL101:
+ 181:TMC-API/tmc/ic/TMC8462/TMC8462.c **** }
+ 1162              		.loc 1 181 1 view .LVU283
+ 1163 033e 03B0     		add	sp, sp, #12
+ 1164              	.LCFI34:
+ 1165              		.cfi_def_cfa_offset 4
+ 1166              		@ sp needed
+ 1167 0340 5DF804FB 		ldr	pc, [sp], #4
+ 1168              		.cfi_endproc
+ 1169              	.LFE18:
+ 1171              		.align	1
+ 1172              		.global	tmc8462_mfc_write_auto
+ 1173              		.syntax unified
+ 1174              		.thumb
+ 1175              		.thumb_func
+ 1176              		.fpu softvfp
+ 1178              	tmc8462_mfc_write_auto:
+ 1179              	.LVL102:
+ 1180              	.LFB19:
+ 182:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+ 183:TMC-API/tmc/ic/TMC8462/TMC8462.c **** void tmc8462_mfc_write_auto(TMC8462TypeDef *tmc8462, uint16_t address, uint8_t *value)
+ 184:TMC-API/tmc/ic/TMC8462/TMC8462.c **** {
+ 1181              		.loc 1 184 1 is_stmt 1 view -0
+ 1182              		.cfi_startproc
+ 1183              		@ args = 0, pretend = 0, frame = 0
+ 1184              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1185              		@ link register save eliminated.
+ 185:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	if(address == TMC8462_MFC_SPI_RX_DATA || address == TMC8462_MFC_SPI_TX_DATA || address == TMC8462_
+ 1186              		.loc 1 185 2 view .LVU285
+ 184:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	if(address == TMC8462_MFC_SPI_RX_DATA || address == TMC8462_MFC_SPI_TX_DATA || address == TMC8462_
+ 1187              		.loc 1 184 1 is_stmt 0 view .LVU286
+ 1188 0344 30B4     		push	{r4, r5}
+ 1189              	.LCFI35:
+ 1190              		.cfi_def_cfa_offset 8
+ 1191              		.cfi_offset 4, -8
+ 1192              		.cfi_offset 5, -4
+ 184:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	if(address == TMC8462_MFC_SPI_RX_DATA || address == TMC8462_MFC_SPI_TX_DATA || address == TMC8462_
+ 1193              		.loc 1 184 1 view .LVU287
+ 1194 0346 0C46     		mov	r4, r1
+ 1195              		.loc 1 185 4 view .LVU288
+ 1196 0348 24F01003 		bic	r3, r4, #16
+ 1197 034c 602B     		cmp	r3, #96
+ 184:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	if(address == TMC8462_MFC_SPI_RX_DATA || address == TMC8462_MFC_SPI_TX_DATA || address == TMC8462_
+ 1198              		.loc 1 184 1 view .LVU289
+ 1199 034e 0546     		mov	r5, r0
+ 1200 0350 1146     		mov	r1, r2
+ 1201              	.LVL103:
+ 1202              		.loc 1 185 4 view .LVU290
+ 1203 0352 02D0     		beq	.L35
+ 1204              		.loc 1 185 78 discriminator 2 view .LVU291
+ 1205 0354 B4F5207F 		cmp	r4, #640
+ 1206 0358 05D1     		bne	.L36
+ 1207              	.L35:
+ 186:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		// 64 bit
+ 187:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		tmc8462_mfc_write_data(tmc8462, value, address, 8);
+ 1208              		.loc 1 187 3 is_stmt 1 view .LVU292
+ 1209 035a 0823     		movs	r3, #8
+ 1210 035c 2246     		mov	r2, r4
+ 1211              	.LVL104:
+ 1212              		.loc 1 187 3 is_stmt 0 view .LVU293
+ 1213 035e 2846     		mov	r0, r5
+ 1214              	.LVL105:
+ 1215              	.L40:
+ 188:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	} else {
+ 189:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		// 32 bit
+ 190:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 		tmc8462_mfc_write_data(tmc8462, value, address, 4);
+ 191:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	}
+ 192:TMC-API/tmc/ic/TMC8462/TMC8462.c **** }
+ 1216              		.loc 1 192 1 view .LVU294
+ 1217 0360 30BC     		pop	{r4, r5}
+ 1218              	.LCFI36:
+ 1219              		.cfi_remember_state
+ 1220              		.cfi_restore 5
+ 1221              		.cfi_restore 4
+ 1222              		.cfi_def_cfa_offset 0
+ 190:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	}
+ 1223              		.loc 1 190 3 view .LVU295
+ 1224 0362 FFF7FEBF 		b	tmc8462_mfc_write_data
+ 1225              	.LVL106:
+ 1226              	.L36:
+ 1227              	.LCFI37:
+ 1228              		.cfi_restore_state
+ 190:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	}
+ 1229              		.loc 1 190 3 is_stmt 1 view .LVU296
+ 1230 0366 0423     		movs	r3, #4
+ 1231 0368 2246     		mov	r2, r4
+ 1232 036a F9E7     		b	.L40
+ 1233              		.cfi_endproc
+ 1234              	.LFE19:
+ 1236              		.align	1
+ 1237              		.global	tmc8462_initConfig
+ 1238              		.syntax unified
+ 1239              		.thumb
+ 1240              		.thumb_func
+ 1241              		.fpu softvfp
+ 1243              	tmc8462_initConfig:
+ 1244              	.LVL107:
+ 1245              	.LFB20:
+ 193:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+ 194:TMC-API/tmc/ic/TMC8462/TMC8462.c **** void tmc8462_initConfig(TMC8462TypeDef *tmc8462, ConfigurationTypeDef *tmc8462_config_esc, Configur
+ 195:TMC-API/tmc/ic/TMC8462/TMC8462.c **** {
+ 1246              		.loc 1 195 1 view -0
+ 1247              		.cfi_startproc
+ 1248              		@ args = 0, pretend = 0, frame = 0
+ 1249              		@ frame_needed = 0, uses_anonymous_args = 0
+ 196:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462->config_esc = tmc8462_config_esc;
+ 1250              		.loc 1 196 2 view .LVU298
+ 195:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462->config_esc = tmc8462_config_esc;
+ 1251              		.loc 1 195 1 is_stmt 0 view .LVU299
+ 1252 036c 10B5     		push	{r4, lr}
+ 1253              	.LCFI38:
+ 1254              		.cfi_def_cfa_offset 8
+ 1255              		.cfi_offset 4, -8
+ 1256              		.cfi_offset 14, -4
+ 197:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462->config_mfc = tmc8462_config_mfc;
+ 1257              		.loc 1 197 22 view .LVU300
+ 1258 036e C0E90012 		strd	r1, r2, [r0]
+ 198:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 
+ 199:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	while(TMC8462_FIELD_READ(tmc8462, tmc8462_esc_read_16, TMC8462_ESC_PDI_CTRL, TMC8462_ESC_PDI_MODE_
+ 1259              		.loc 1 199 2 is_stmt 1 view .LVU301
+ 195:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462->config_esc = tmc8462_config_esc;
+ 1260              		.loc 1 195 1 is_stmt 0 view .LVU302
+ 1261 0372 0446     		mov	r4, r0
+ 1262              	.LVL108:
+ 1263              	.L42:
+ 1264              		.loc 1 199 159 is_stmt 1 discriminator 1 view .LVU303
+ 1265              		.loc 1 199 7 discriminator 1 view .LVU304
+ 1266              		.loc 1 199 8 is_stmt 0 discriminator 1 view .LVU305
+ 1267 0374 4FF4A071 		mov	r1, #320
+ 1268 0378 2046     		mov	r0, r4
+ 1269 037a FFF7FEFF 		bl	tmc8462_esc_read_16
+ 1270              	.LVL109:
+ 1271              		.loc 1 199 7 discriminator 1 view .LVU306
+ 1272 037e C0B2     		uxtb	r0, r0
+ 1273 0380 0528     		cmp	r0, #5
+ 1274 0382 F7D1     		bne	.L42
+ 200:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_esc_write_16(tmc8462, TMC8462_ESC_AL_STATUS, FIELD_SET(TMC8462_EC_STATE_INIT, TMC8462_ESC_
+ 1275              		.loc 1 200 2 is_stmt 1 view .LVU307
+ 1276 0384 2046     		mov	r0, r4
+ 1277 0386 1122     		movs	r2, #17
+ 1278 0388 4FF49871 		mov	r1, #304
+ 1279 038c FFF7FEFF 		bl	tmc8462_esc_write_16
+ 1280              	.LVL110:
+ 201:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_esc_write_16(tmc8462, TMC8462_ESC_AL_CODE, 0x0000);
+ 1281              		.loc 1 201 2 view .LVU308
+ 1282 0390 2046     		mov	r0, r4
+ 1283 0392 0022     		movs	r2, #0
+ 1284 0394 4FF49A71 		mov	r1, #308
+ 1285 0398 FFF7FEFF 		bl	tmc8462_esc_write_16
+ 1286              	.LVL111:
+ 202:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_esc_write_16(tmc8462, TMC8462_ESC_AL_EVENT_MASK_LO, 0xFF0E);
+ 1287              		.loc 1 202 2 view .LVU309
+ 1288 039c 2046     		mov	r0, r4
+ 1289 039e 4FF60E72 		movw	r2, #65294
+ 203:TMC-API/tmc/ic/TMC8462/TMC8462.c **** }
+ 1290              		.loc 1 203 1 is_stmt 0 view .LVU310
+ 1291 03a2 BDE81040 		pop	{r4, lr}
+ 1292              	.LCFI39:
+ 1293              		.cfi_restore 14
+ 1294              		.cfi_restore 4
+ 1295              		.cfi_def_cfa_offset 0
+ 1296              	.LVL112:
+ 202:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_esc_write_16(tmc8462, TMC8462_ESC_AL_EVENT_MASK_LO, 0xFF0E);
+ 1297              		.loc 1 202 2 view .LVU311
+ 1298 03a6 4FF40171 		mov	r1, #516
+ 1299 03aa FFF7FEBF 		b	tmc8462_esc_write_16
+ 1300              	.LVL113:
+ 202:TMC-API/tmc/ic/TMC8462/TMC8462.c **** 	tmc8462_esc_write_16(tmc8462, TMC8462_ESC_AL_EVENT_MASK_LO, 0xFF0E);
+ 1301              		.loc 1 202 2 view .LVU312
+ 1302              		.cfi_endproc
+ 1303              	.LFE20:
+ 1305              	.Letext0:
+ 1306              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1307              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1308              		.file 4 "TMC-API/tmc/helpers/Config.h"
+ 1309              		.file 5 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 1310              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1311              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1312              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1313              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 1314              		.file 10 "TMC-API/tmc/ic/TMC8462/TMC8462.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 TMC8462.c
+C:\Users\Shubham\AppData\Local\Temp\ccQQl5UV.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccQQl5UV.s:23     .text:00000000 tmc8462_esc_read
+C:\Users\Shubham\AppData\Local\Temp\ccQQl5UV.s:105    .text:00000054 tmc8462_esc_write
+C:\Users\Shubham\AppData\Local\Temp\ccQQl5UV.s:179    .text:0000009a tmc8462_mfc_read
+C:\Users\Shubham\AppData\Local\Temp\ccQQl5UV.s:260    .text:000000ee tmc8462_mfc_write
+C:\Users\Shubham\AppData\Local\Temp\ccQQl5UV.s:334    .text:00000134 tmc8462_esc_read_data
+C:\Users\Shubham\AppData\Local\Temp\ccQQl5UV.s:414    .text:0000016e tmc8462_esc_read_8
+C:\Users\Shubham\AppData\Local\Temp\ccQQl5UV.s:458    .text:0000018c tmc8462_esc_read_16
+C:\Users\Shubham\AppData\Local\Temp\ccQQl5UV.s:503    .text:000001aa tmc8462_esc_read_32
+C:\Users\Shubham\AppData\Local\Temp\ccQQl5UV.s:545    .text:000001c0 tmc8462_esc_write_data
+C:\Users\Shubham\AppData\Local\Temp\ccQQl5UV.s:620    .text:000001f6 tmc8462_esc_write_8
+C:\Users\Shubham\AppData\Local\Temp\ccQQl5UV.s:662    .text:0000020e tmc8462_esc_write_16
+C:\Users\Shubham\AppData\Local\Temp\ccQQl5UV.s:706    .text:00000224 tmc8462_esc_write_32
+C:\Users\Shubham\AppData\Local\Temp\ccQQl5UV.s:752    .text:0000023a tmc8462_mfc_read_data
+C:\Users\Shubham\AppData\Local\Temp\ccQQl5UV.s:832    .text:00000274 tmc8462_mfc_read_32
+C:\Users\Shubham\AppData\Local\Temp\ccQQl5UV.s:881    .text:0000028c tmc8462_mfc_read_64
+C:\Users\Shubham\AppData\Local\Temp\ccQQl5UV.s:930    .text:000002a6 tmc8462_mfc_read_auto
+C:\Users\Shubham\AppData\Local\Temp\ccQQl5UV.s:995    .text:000002ce tmc8462_mfc_write_data
+C:\Users\Shubham\AppData\Local\Temp\ccQQl5UV.s:1070   .text:00000304 tmc8462_mfc_write_32
+C:\Users\Shubham\AppData\Local\Temp\ccQQl5UV.s:1116   .text:0000031a tmc8462_mfc_write_64
+C:\Users\Shubham\AppData\Local\Temp\ccQQl5UV.s:1178   .text:00000344 tmc8462_mfc_write_auto
+C:\Users\Shubham\AppData\Local\Temp\ccQQl5UV.s:1243   .text:0000036c tmc8462_initConfig
+
+UNDEFINED SYMBOLS
+tmc8462_readWrite

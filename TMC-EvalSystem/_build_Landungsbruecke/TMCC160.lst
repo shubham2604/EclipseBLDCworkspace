@@ -1,0 +1,870 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"TMCC160.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.global	tmcc160_init
+  17              		.arch armv7e-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	tmcc160_init:
+  24              	.LFB0:
+  25              		.file 1 "TMC-API/tmc/ic/TMCC160/TMCC160.c"
+   1:TMC-API/tmc/ic/TMCC160/TMCC160.c **** /*
+   2:TMC-API/tmc/ic/TMCC160/TMCC160.c ****  * TMCC160.c
+   3:TMC-API/tmc/ic/TMCC160/TMCC160.c ****  *
+   4:TMC-API/tmc/ic/TMCC160/TMCC160.c ****  *  Created on: 06.10.2016
+   5:TMC-API/tmc/ic/TMCC160/TMCC160.c ****  *      Author: ed
+   6:TMC-API/tmc/ic/TMCC160/TMCC160.c ****  */
+   7:TMC-API/tmc/ic/TMCC160/TMCC160.c **** #include "TMCC160.h"
+   8:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+   9:TMC-API/tmc/ic/TMCC160/TMCC160.c **** #define __NOP asm volatile ("nop")
+  10:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+  11:TMC-API/tmc/ic/TMCC160/TMCC160.c **** // => SPI wrapper
+  12:TMC-API/tmc/ic/TMCC160/TMCC160.c **** extern uint8_t tmcc160_spi_readwriteByte(uint8_t data, uint8_t lastTransfer);
+  13:TMC-API/tmc/ic/TMCC160/TMCC160.c **** // <= SPI wrapper
+  14:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+  15:TMC-API/tmc/ic/TMCC160/TMCC160.c **** void tmcc160_init()
+  16:TMC-API/tmc/ic/TMCC160/TMCC160.c **** {
+  26              		.loc 1 16 1 view -0
+  27              		.cfi_startproc
+  28              		@ args = 0, pretend = 0, frame = 0
+  29              		@ frame_needed = 0, uses_anonymous_args = 0
+  30              		@ link register save eliminated.
+  17:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	// nothing to do here
+  18:TMC-API/tmc/ic/TMCC160/TMCC160.c **** }
+  31              		.loc 1 18 1 view .LVU1
+  32 0000 7047     		bx	lr
+  33              		.cfi_endproc
+  34              	.LFE0:
+  36              		.align	1
+  37              		.global	tmcc160_periodicJob
+  38              		.syntax unified
+  39              		.thumb
+  40              		.thumb_func
+  41              		.fpu softvfp
+  43              	tmcc160_periodicJob:
+  44              	.LVL0:
+  45              	.LFB1:
+  19:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+  20:TMC-API/tmc/ic/TMCC160/TMCC160.c **** void tmcc160_periodicJob(uint32_t actualSystick)
+  21:TMC-API/tmc/ic/TMCC160/TMCC160.c **** {
+  46              		.loc 1 21 1 view -0
+  47              		.cfi_startproc
+  48              		@ args = 0, pretend = 0, frame = 0
+  49              		@ frame_needed = 0, uses_anonymous_args = 0
+  50              		@ link register save eliminated.
+  22:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	// nothing to do here
+  23:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	UNUSED(actualSystick);
+  51              		.loc 1 23 2 view .LVU3
+  24:TMC-API/tmc/ic/TMCC160/TMCC160.c **** }
+  52              		.loc 1 24 1 is_stmt 0 view .LVU4
+  53 0002 7047     		bx	lr
+  54              		.cfi_endproc
+  55              	.LFE1:
+  57              		.align	1
+  58              		.global	tmcc160_delay
+  59              		.syntax unified
+  60              		.thumb
+  61              		.thumb_func
+  62              		.fpu softvfp
+  64              	tmcc160_delay:
+  65              	.LVL1:
+  66              	.LFB2:
+  25:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+  26:TMC-API/tmc/ic/TMCC160/TMCC160.c **** void tmcc160_delay(uint32_t nCount)
+  27:TMC-API/tmc/ic/TMCC160/TMCC160.c **** {
+  67              		.loc 1 27 1 is_stmt 1 view -0
+  68              		.cfi_startproc
+  69              		@ args = 0, pretend = 0, frame = 0
+  70              		@ frame_needed = 0, uses_anonymous_args = 0
+  71              		@ link register save eliminated.
+  28:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	while(nCount--)
+  72              		.loc 1 28 2 view .LVU6
+  73              	.L4:
+  74              		.loc 1 28 7 view .LVU7
+  75 0004 0138     		subs	r0, r0, #1
+  76              	.LVL2:
+  77              		.loc 1 28 7 is_stmt 0 view .LVU8
+  78 0006 00D2     		bcs	.L5
+  29:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	{
+  30:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 		__NOP;
+  31:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	}
+  32:TMC-API/tmc/ic/TMCC160/TMCC160.c **** }
+  79              		.loc 1 32 1 view .LVU9
+  80 0008 7047     		bx	lr
+  81              	.L5:
+  30:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	}
+  82              		.loc 1 30 3 is_stmt 1 view .LVU10
+  83              		.syntax unified
+  84              	@ 30 "TMC-API/tmc/ic/TMCC160/TMCC160.c" 1
+  85 000a 00BF     		nop
+  86              	@ 0 "" 2
+  87              		.thumb
+  88              		.syntax unified
+  89 000c FAE7     		b	.L4
+  90              		.cfi_endproc
+  91              	.LFE2:
+  93              		.align	1
+  94              		.global	tmcc160_default_spi_delay
+  95              		.syntax unified
+  96              		.thumb
+  97              		.thumb_func
+  98              		.fpu softvfp
+ 100              	tmcc160_default_spi_delay:
+ 101              	.LFB3:
+  33:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+  34:TMC-API/tmc/ic/TMCC160/TMCC160.c **** void tmcc160_default_spi_delay()
+  35:TMC-API/tmc/ic/TMCC160/TMCC160.c **** {
+ 102              		.loc 1 35 1 view -0
+ 103              		.cfi_startproc
+ 104              		@ args = 0, pretend = 0, frame = 0
+ 105              		@ frame_needed = 0, uses_anonymous_args = 0
+ 106              		@ link register save eliminated.
+  36:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_delay(1550);
+ 107              		.loc 1 36 2 view .LVU12
+ 108 000e 40F20E60 		movw	r0, #1550
+ 109 0012 FFF7FEBF 		b	tmcc160_delay
+ 110              	.LVL3:
+ 111              		.cfi_endproc
+ 112              	.LFE3:
+ 114              		.align	1
+ 115              		.global	tmcc160_writeInt
+ 116              		.syntax unified
+ 117              		.thumb
+ 118              		.thumb_func
+ 119              		.fpu softvfp
+ 121              	tmcc160_writeInt:
+ 122              	.LVL4:
+ 123              	.LFB4:
+  37:TMC-API/tmc/ic/TMCC160/TMCC160.c **** }
+  38:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+  39:TMC-API/tmc/ic/TMCC160/TMCC160.c **** void tmcc160_writeInt(uint8_t address, int value)
+  40:TMC-API/tmc/ic/TMCC160/TMCC160.c **** {
+ 124              		.loc 1 40 1 view -0
+ 125              		.cfi_startproc
+ 126              		@ args = 0, pretend = 0, frame = 0
+ 127              		@ frame_needed = 0, uses_anonymous_args = 0
+  41:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_spi_readwriteByte(address | 0x80, false);
+ 128              		.loc 1 41 2 view .LVU14
+  40:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_spi_readwriteByte(address | 0x80, false);
+ 129              		.loc 1 40 1 is_stmt 0 view .LVU15
+ 130 0016 10B5     		push	{r4, lr}
+ 131              	.LCFI0:
+ 132              		.cfi_def_cfa_offset 8
+ 133              		.cfi_offset 4, -8
+ 134              		.cfi_offset 14, -4
+ 135              		.loc 1 41 2 view .LVU16
+ 136 0018 40F08000 		orr	r0, r0, #128
+ 137              	.LVL5:
+  40:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_spi_readwriteByte(address | 0x80, false);
+ 138              		.loc 1 40 1 view .LVU17
+ 139 001c 0C46     		mov	r4, r1
+ 140              		.loc 1 41 2 view .LVU18
+ 141 001e 0021     		movs	r1, #0
+ 142              	.LVL6:
+ 143              		.loc 1 41 2 view .LVU19
+ 144 0020 FFF7FEFF 		bl	tmcc160_spi_readwriteByte
+ 145              	.LVL7:
+  42:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_spi_readwriteByte(0xFF & (value>>24), false);
+ 146              		.loc 1 42 2 is_stmt 1 view .LVU20
+ 147 0024 0021     		movs	r1, #0
+ 148 0026 200E     		lsrs	r0, r4, #24
+ 149 0028 FFF7FEFF 		bl	tmcc160_spi_readwriteByte
+ 150              	.LVL8:
+  43:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_spi_readwriteByte(0xFF & (value>>16), false);
+ 151              		.loc 1 43 2 view .LVU21
+ 152 002c 0021     		movs	r1, #0
+ 153 002e C4F30740 		ubfx	r0, r4, #16, #8
+ 154 0032 FFF7FEFF 		bl	tmcc160_spi_readwriteByte
+ 155              	.LVL9:
+  44:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_spi_readwriteByte(0xFF & (value>>8), false);
+ 156              		.loc 1 44 2 view .LVU22
+ 157 0036 0021     		movs	r1, #0
+ 158 0038 C4F30720 		ubfx	r0, r4, #8, #8
+ 159 003c FFF7FEFF 		bl	tmcc160_spi_readwriteByte
+ 160              	.LVL10:
+  45:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_spi_readwriteByte(0xFF & (value>>0), true);
+ 161              		.loc 1 45 2 view .LVU23
+ 162 0040 E0B2     		uxtb	r0, r4
+ 163 0042 0121     		movs	r1, #1
+  46:TMC-API/tmc/ic/TMCC160/TMCC160.c **** }
+ 164              		.loc 1 46 1 is_stmt 0 view .LVU24
+ 165 0044 BDE81040 		pop	{r4, lr}
+ 166              	.LCFI1:
+ 167              		.cfi_restore 14
+ 168              		.cfi_restore 4
+ 169              		.cfi_def_cfa_offset 0
+ 170              	.LVL11:
+  45:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_spi_readwriteByte(0xFF & (value>>0), true);
+ 171              		.loc 1 45 2 view .LVU25
+ 172 0048 FFF7FEBF 		b	tmcc160_spi_readwriteByte
+ 173              	.LVL12:
+ 174              		.cfi_endproc
+ 175              	.LFE4:
+ 177              		.align	1
+ 178              		.global	tmcc160_readInt
+ 179              		.syntax unified
+ 180              		.thumb
+ 181              		.thumb_func
+ 182              		.fpu softvfp
+ 184              	tmcc160_readInt:
+ 185              	.LVL13:
+ 186              	.LFB5:
+  47:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+  48:TMC-API/tmc/ic/TMCC160/TMCC160.c **** int tmcc160_readInt(uint8_t address)
+  49:TMC-API/tmc/ic/TMCC160/TMCC160.c **** {
+ 187              		.loc 1 49 1 is_stmt 1 view -0
+ 188              		.cfi_startproc
+ 189              		@ args = 0, pretend = 0, frame = 0
+ 190              		@ frame_needed = 0, uses_anonymous_args = 0
+  50:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	// clear write bit
+  51:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	address &= 0x7F;
+ 191              		.loc 1 51 2 view .LVU27
+  49:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	// clear write bit
+ 192              		.loc 1 49 1 is_stmt 0 view .LVU28
+ 193 004c 10B5     		push	{r4, lr}
+ 194              	.LCFI2:
+ 195              		.cfi_def_cfa_offset 8
+ 196              		.cfi_offset 4, -8
+ 197              		.cfi_offset 14, -4
+ 198              		.loc 1 51 10 view .LVU29
+ 199 004e 00F07F04 		and	r4, r0, #127
+ 200              	.LVL14:
+  52:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+  53:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_spi_readwriteByte(address, false);
+ 201              		.loc 1 53 2 is_stmt 1 view .LVU30
+ 202 0052 0021     		movs	r1, #0
+ 203 0054 2046     		mov	r0, r4
+ 204 0056 FFF7FEFF 		bl	tmcc160_spi_readwriteByte
+ 205              	.LVL15:
+  54:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_spi_readwriteByte(0, false);
+ 206              		.loc 1 54 2 view .LVU31
+ 207 005a 0021     		movs	r1, #0
+ 208 005c 0846     		mov	r0, r1
+ 209 005e FFF7FEFF 		bl	tmcc160_spi_readwriteByte
+ 210              	.LVL16:
+  55:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_spi_readwriteByte(0, false);
+ 211              		.loc 1 55 2 view .LVU32
+ 212 0062 0021     		movs	r1, #0
+ 213 0064 0846     		mov	r0, r1
+ 214 0066 FFF7FEFF 		bl	tmcc160_spi_readwriteByte
+ 215              	.LVL17:
+  56:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_spi_readwriteByte(0, false);
+ 216              		.loc 1 56 2 view .LVU33
+ 217 006a 0021     		movs	r1, #0
+ 218 006c 0846     		mov	r0, r1
+ 219 006e FFF7FEFF 		bl	tmcc160_spi_readwriteByte
+ 220              	.LVL18:
+  57:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_spi_readwriteByte(0, true);
+ 221              		.loc 1 57 2 view .LVU34
+ 222 0072 0121     		movs	r1, #1
+ 223 0074 0020     		movs	r0, #0
+ 224 0076 FFF7FEFF 		bl	tmcc160_spi_readwriteByte
+ 225              	.LVL19:
+  58:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+  59:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	// delay needed!
+  60:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_default_spi_delay();
+ 226              		.loc 1 60 2 view .LVU35
+ 227 007a FFF7FEFF 		bl	tmcc160_default_spi_delay
+ 228              	.LVL20:
+  61:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+  62:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_spi_readwriteByte(address, false);
+ 229              		.loc 1 62 2 view .LVU36
+ 230 007e 0021     		movs	r1, #0
+ 231 0080 2046     		mov	r0, r4
+ 232 0082 FFF7FEFF 		bl	tmcc160_spi_readwriteByte
+ 233              	.LVL21:
+  63:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+  64:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	int value = tmcc160_spi_readwriteByte(0, false);
+ 234              		.loc 1 64 2 view .LVU37
+ 235              		.loc 1 64 14 is_stmt 0 view .LVU38
+ 236 0086 0021     		movs	r1, #0
+ 237 0088 0846     		mov	r0, r1
+ 238 008a FFF7FEFF 		bl	tmcc160_spi_readwriteByte
+ 239              	.LVL22:
+  65:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	value <<= 8;
+ 240              		.loc 1 65 2 is_stmt 1 view .LVU39
+  66:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	value |= tmcc160_spi_readwriteByte(0, false);
+ 241              		.loc 1 66 11 is_stmt 0 view .LVU40
+ 242 008e 0021     		movs	r1, #0
+  65:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	value <<= 8;
+ 243              		.loc 1 65 8 view .LVU41
+ 244 0090 0402     		lsls	r4, r0, #8
+ 245              	.LVL23:
+ 246              		.loc 1 66 2 is_stmt 1 view .LVU42
+ 247              		.loc 1 66 11 is_stmt 0 view .LVU43
+ 248 0092 0846     		mov	r0, r1
+ 249 0094 FFF7FEFF 		bl	tmcc160_spi_readwriteByte
+ 250              	.LVL24:
+  67:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	value <<= 8;
+  68:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	value |= tmcc160_spi_readwriteByte(0, false);
+ 251              		.loc 1 68 11 view .LVU44
+ 252 0098 0021     		movs	r1, #0
+  66:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	value |= tmcc160_spi_readwriteByte(0, false);
+ 253              		.loc 1 66 8 view .LVU45
+ 254 009a 0443     		orrs	r4, r4, r0
+ 255              	.LVL25:
+  67:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	value <<= 8;
+ 256              		.loc 1 67 2 is_stmt 1 view .LVU46
+ 257              		.loc 1 68 11 is_stmt 0 view .LVU47
+ 258 009c 0846     		mov	r0, r1
+ 259 009e FFF7FEFF 		bl	tmcc160_spi_readwriteByte
+ 260              	.LVL26:
+  67:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	value <<= 8;
+ 261              		.loc 1 67 8 view .LVU48
+ 262 00a2 2402     		lsls	r4, r4, #8
+ 263              	.LVL27:
+ 264              		.loc 1 68 2 is_stmt 1 view .LVU49
+ 265              		.loc 1 68 8 is_stmt 0 view .LVU50
+ 266 00a4 0443     		orrs	r4, r4, r0
+ 267              	.LVL28:
+  69:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	value <<= 8;
+ 268              		.loc 1 69 2 is_stmt 1 view .LVU51
+  70:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	value |= tmcc160_spi_readwriteByte(0, true);
+ 269              		.loc 1 70 11 is_stmt 0 view .LVU52
+ 270 00a6 0121     		movs	r1, #1
+ 271 00a8 0020     		movs	r0, #0
+ 272 00aa FFF7FEFF 		bl	tmcc160_spi_readwriteByte
+ 273              	.LVL29:
+  69:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	value <<= 8;
+ 274              		.loc 1 69 8 view .LVU53
+ 275 00ae 2402     		lsls	r4, r4, #8
+ 276              	.LVL30:
+ 277              		.loc 1 70 2 is_stmt 1 view .LVU54
+  71:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+  72:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	return value;
+ 278              		.loc 1 72 2 view .LVU55
+  73:TMC-API/tmc/ic/TMCC160/TMCC160.c **** }
+ 279              		.loc 1 73 1 is_stmt 0 view .LVU56
+ 280 00b0 2043     		orrs	r0, r0, r4
+ 281              	.LVL31:
+ 282              		.loc 1 73 1 view .LVU57
+ 283 00b2 10BD     		pop	{r4, pc}
+ 284              		.cfi_endproc
+ 285              	.LFE5:
+ 287              		.align	1
+ 288              		.global	tmcc160_setTargetTorque_raw
+ 289              		.syntax unified
+ 290              		.thumb
+ 291              		.thumb_func
+ 292              		.fpu softvfp
+ 294              	tmcc160_setTargetTorque_raw:
+ 295              	.LVL32:
+ 296              	.LFB6:
+  74:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+  75:TMC-API/tmc/ic/TMCC160/TMCC160.c **** void tmcc160_setTargetTorque_raw(int32_t targetTorque)
+  76:TMC-API/tmc/ic/TMCC160/TMCC160.c **** {
+ 297              		.loc 1 76 1 is_stmt 1 view -0
+ 298              		.cfi_startproc
+ 299              		@ args = 0, pretend = 0, frame = 0
+ 300              		@ frame_needed = 0, uses_anonymous_args = 0
+ 301              		@ link register save eliminated.
+  77:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_writeInt(CURRENT_TARGET_REG_ADDR | 0x80, targetTorque);
+ 302              		.loc 1 77 2 view .LVU59
+  76:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_writeInt(CURRENT_TARGET_REG_ADDR | 0x80, targetTorque);
+ 303              		.loc 1 76 1 is_stmt 0 view .LVU60
+ 304 00b4 0146     		mov	r1, r0
+ 305              		.loc 1 77 2 view .LVU61
+ 306 00b6 A320     		movs	r0, #163
+ 307              	.LVL33:
+ 308              		.loc 1 77 2 view .LVU62
+ 309 00b8 FFF7FEBF 		b	tmcc160_writeInt
+ 310              	.LVL34:
+ 311              		.loc 1 77 2 view .LVU63
+ 312              		.cfi_endproc
+ 313              	.LFE6:
+ 315              		.align	1
+ 316              		.global	tmcc160_getTargetTorque_raw
+ 317              		.syntax unified
+ 318              		.thumb
+ 319              		.thumb_func
+ 320              		.fpu softvfp
+ 322              	tmcc160_getTargetTorque_raw:
+ 323              	.LFB7:
+  78:TMC-API/tmc/ic/TMCC160/TMCC160.c **** }
+  79:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+  80:TMC-API/tmc/ic/TMCC160/TMCC160.c **** int32_t tmcc160_getTargetTorque_raw()
+  81:TMC-API/tmc/ic/TMCC160/TMCC160.c **** {
+ 324              		.loc 1 81 1 is_stmt 1 view -0
+ 325              		.cfi_startproc
+ 326              		@ args = 0, pretend = 0, frame = 0
+ 327              		@ frame_needed = 0, uses_anonymous_args = 0
+ 328              		@ link register save eliminated.
+  82:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	return (int32_t) tmcc160_readInt(CURRENT_TARGET_REG_ADDR);
+ 329              		.loc 1 82 2 view .LVU65
+ 330              		.loc 1 82 19 is_stmt 0 view .LVU66
+ 331 00bc 2320     		movs	r0, #35
+ 332 00be FFF7FEBF 		b	tmcc160_readInt
+ 333              	.LVL35:
+ 334              		.cfi_endproc
+ 335              	.LFE7:
+ 337              		.align	1
+ 338              		.global	tmcc160_getActualTorque_raw
+ 339              		.syntax unified
+ 340              		.thumb
+ 341              		.thumb_func
+ 342              		.fpu softvfp
+ 344              	tmcc160_getActualTorque_raw:
+ 345              	.LFB8:
+  83:TMC-API/tmc/ic/TMCC160/TMCC160.c **** }
+  84:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+  85:TMC-API/tmc/ic/TMCC160/TMCC160.c **** int32_t tmcc160_getActualTorque_raw()
+  86:TMC-API/tmc/ic/TMCC160/TMCC160.c **** {
+ 346              		.loc 1 86 1 is_stmt 1 view -0
+ 347              		.cfi_startproc
+ 348              		@ args = 0, pretend = 0, frame = 0
+ 349              		@ frame_needed = 0, uses_anonymous_args = 0
+ 350              		@ link register save eliminated.
+  87:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	return (int32_t) tmcc160_readInt(CURRENT_ACTUAL_REG_ADDR);
+ 351              		.loc 1 87 2 view .LVU68
+ 352              		.loc 1 87 19 is_stmt 0 view .LVU69
+ 353 00c2 2220     		movs	r0, #34
+ 354 00c4 FFF7FEBF 		b	tmcc160_readInt
+ 355              	.LVL36:
+ 356              		.cfi_endproc
+ 357              	.LFE8:
+ 359              		.align	1
+ 360              		.global	tmcc160_getActualRampTorque_raw
+ 361              		.syntax unified
+ 362              		.thumb
+ 363              		.thumb_func
+ 364              		.fpu softvfp
+ 366              	tmcc160_getActualRampTorque_raw:
+ 367              	.LFB9:
+  88:TMC-API/tmc/ic/TMCC160/TMCC160.c **** }
+  89:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+  90:TMC-API/tmc/ic/TMCC160/TMCC160.c **** int32_t tmcc160_getActualRampTorque_raw()
+  91:TMC-API/tmc/ic/TMCC160/TMCC160.c **** {
+ 368              		.loc 1 91 1 is_stmt 1 view -0
+ 369              		.cfi_startproc
+ 370              		@ args = 0, pretend = 0, frame = 0
+ 371              		@ frame_needed = 0, uses_anonymous_args = 0
+ 372              		@ link register save eliminated.
+  92:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	// because this IC does not support a torque ramp!
+  93:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	return tmcc160_getTargetTorque_raw();
+ 373              		.loc 1 93 2 view .LVU71
+ 374              		.loc 1 93 9 is_stmt 0 view .LVU72
+ 375 00c8 FFF7FEBF 		b	tmcc160_getTargetTorque_raw
+ 376              	.LVL37:
+ 377              		.cfi_endproc
+ 378              	.LFE9:
+ 380              		.align	1
+ 381              		.global	tmcc160_setTargetTorque_mA
+ 382              		.syntax unified
+ 383              		.thumb
+ 384              		.thumb_func
+ 385              		.fpu softvfp
+ 387              	tmcc160_setTargetTorque_mA:
+ 388              	.LVL38:
+ 389              	.LFB10:
+  94:TMC-API/tmc/ic/TMCC160/TMCC160.c **** }
+  95:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+  96:TMC-API/tmc/ic/TMCC160/TMCC160.c **** // actual==raw motor current for this IC!
+  97:TMC-API/tmc/ic/TMCC160/TMCC160.c **** void tmcc160_setTargetTorque_mA(int32_t targetTorque)
+  98:TMC-API/tmc/ic/TMCC160/TMCC160.c **** {
+ 390              		.loc 1 98 1 is_stmt 1 view -0
+ 391              		.cfi_startproc
+ 392              		@ args = 0, pretend = 0, frame = 0
+ 393              		@ frame_needed = 0, uses_anonymous_args = 0
+ 394              		@ link register save eliminated.
+  99:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_setTargetTorque_raw(targetTorque);
+ 395              		.loc 1 99 2 view .LVU74
+ 396 00cc FFF7FEBF 		b	tmcc160_setTargetTorque_raw
+ 397              	.LVL39:
+ 398              		.loc 1 99 2 is_stmt 0 view .LVU75
+ 399              		.cfi_endproc
+ 400              	.LFE10:
+ 402              		.align	1
+ 403              		.global	tmcc160_getTargetTorque_mA
+ 404              		.syntax unified
+ 405              		.thumb
+ 406              		.thumb_func
+ 407              		.fpu softvfp
+ 409              	tmcc160_getTargetTorque_mA:
+ 410              	.LFB25:
+ 411              		.cfi_startproc
+ 412              		@ args = 0, pretend = 0, frame = 0
+ 413              		@ frame_needed = 0, uses_anonymous_args = 0
+ 414              		@ link register save eliminated.
+ 415 00d0 FFF7FEBF 		b	tmcc160_getTargetTorque_raw
+ 416              		.cfi_endproc
+ 417              	.LFE25:
+ 419              		.align	1
+ 420              		.global	tmcc160_getActualTorque_mA
+ 421              		.syntax unified
+ 422              		.thumb
+ 423              		.thumb_func
+ 424              		.fpu softvfp
+ 426              	tmcc160_getActualTorque_mA:
+ 427              	.LFB12:
+ 100:TMC-API/tmc/ic/TMCC160/TMCC160.c **** }
+ 101:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+ 102:TMC-API/tmc/ic/TMCC160/TMCC160.c **** int32_t tmcc160_getTargetTorque_mA()
+ 103:TMC-API/tmc/ic/TMCC160/TMCC160.c **** {
+ 104:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	return tmcc160_getTargetTorque_raw();
+ 105:TMC-API/tmc/ic/TMCC160/TMCC160.c **** }
+ 106:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+ 107:TMC-API/tmc/ic/TMCC160/TMCC160.c **** int32_t tmcc160_getActualTorque_mA()
+ 108:TMC-API/tmc/ic/TMCC160/TMCC160.c **** {
+ 428              		.loc 1 108 1 is_stmt 1 view -0
+ 429              		.cfi_startproc
+ 430              		@ args = 0, pretend = 0, frame = 0
+ 431              		@ frame_needed = 0, uses_anonymous_args = 0
+ 432              		@ link register save eliminated.
+ 109:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	return tmcc160_getActualTorque_raw();
+ 433              		.loc 1 109 2 view .LVU77
+ 434              		.loc 1 109 9 is_stmt 0 view .LVU78
+ 435 00d4 FFF7FEBF 		b	tmcc160_getActualTorque_raw
+ 436              	.LVL40:
+ 437              		.cfi_endproc
+ 438              	.LFE12:
+ 440              		.align	1
+ 441              		.global	tmcc160_getActualRampTorque_mA
+ 442              		.syntax unified
+ 443              		.thumb
+ 444              		.thumb_func
+ 445              		.fpu softvfp
+ 447              	tmcc160_getActualRampTorque_mA:
+ 448              	.LFB27:
+ 449              		.cfi_startproc
+ 450              		@ args = 0, pretend = 0, frame = 0
+ 451              		@ frame_needed = 0, uses_anonymous_args = 0
+ 452              		@ link register save eliminated.
+ 453 00d8 FFF7FEBF 		b	tmcc160_getTargetTorque_raw
+ 454              		.cfi_endproc
+ 455              	.LFE27:
+ 457              		.align	1
+ 458              		.global	tmcc160_setTargetVelocity
+ 459              		.syntax unified
+ 460              		.thumb
+ 461              		.thumb_func
+ 462              		.fpu softvfp
+ 464              	tmcc160_setTargetVelocity:
+ 465              	.LVL41:
+ 466              	.LFB14:
+ 110:TMC-API/tmc/ic/TMCC160/TMCC160.c **** }
+ 111:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+ 112:TMC-API/tmc/ic/TMCC160/TMCC160.c **** int32_t tmcc160_getActualRampTorque_mA()
+ 113:TMC-API/tmc/ic/TMCC160/TMCC160.c **** {
+ 114:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	// because this IC does not support a torque ramp!
+ 115:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	return tmcc160_getTargetTorque_mA();
+ 116:TMC-API/tmc/ic/TMCC160/TMCC160.c **** }
+ 117:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+ 118:TMC-API/tmc/ic/TMCC160/TMCC160.c **** void tmcc160_setTargetVelocity(int32_t targetVelocity)
+ 119:TMC-API/tmc/ic/TMCC160/TMCC160.c **** {
+ 467              		.loc 1 119 1 is_stmt 1 view -0
+ 468              		.cfi_startproc
+ 469              		@ args = 0, pretend = 0, frame = 0
+ 470              		@ frame_needed = 0, uses_anonymous_args = 0
+ 471              		@ link register save eliminated.
+ 120:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_writeInt(VELOCITY_TARGET_REG_ADDR | 0x80, targetVelocity);
+ 472              		.loc 1 120 2 view .LVU80
+ 119:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_writeInt(VELOCITY_TARGET_REG_ADDR | 0x80, targetVelocity);
+ 473              		.loc 1 119 1 is_stmt 0 view .LVU81
+ 474 00dc 0146     		mov	r1, r0
+ 475              		.loc 1 120 2 view .LVU82
+ 476 00de B320     		movs	r0, #179
+ 477              	.LVL42:
+ 478              		.loc 1 120 2 view .LVU83
+ 479 00e0 FFF7FEBF 		b	tmcc160_writeInt
+ 480              	.LVL43:
+ 481              		.loc 1 120 2 view .LVU84
+ 482              		.cfi_endproc
+ 483              	.LFE14:
+ 485              		.align	1
+ 486              		.global	tmcc160_getTargetVelocity
+ 487              		.syntax unified
+ 488              		.thumb
+ 489              		.thumb_func
+ 490              		.fpu softvfp
+ 492              	tmcc160_getTargetVelocity:
+ 493              	.LFB15:
+ 121:TMC-API/tmc/ic/TMCC160/TMCC160.c **** }
+ 122:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+ 123:TMC-API/tmc/ic/TMCC160/TMCC160.c **** int32_t tmcc160_getTargetVelocity()
+ 124:TMC-API/tmc/ic/TMCC160/TMCC160.c **** {
+ 494              		.loc 1 124 1 is_stmt 1 view -0
+ 495              		.cfi_startproc
+ 496              		@ args = 0, pretend = 0, frame = 0
+ 497              		@ frame_needed = 0, uses_anonymous_args = 0
+ 498              		@ link register save eliminated.
+ 125:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	return (int32_t) tmcc160_readInt(VELOCITY_TARGET_REG_ADDR);
+ 499              		.loc 1 125 2 view .LVU86
+ 500              		.loc 1 125 19 is_stmt 0 view .LVU87
+ 501 00e4 3320     		movs	r0, #51
+ 502 00e6 FFF7FEBF 		b	tmcc160_readInt
+ 503              	.LVL44:
+ 504              		.cfi_endproc
+ 505              	.LFE15:
+ 507              		.align	1
+ 508              		.global	tmcc160_getActualVelocity
+ 509              		.syntax unified
+ 510              		.thumb
+ 511              		.thumb_func
+ 512              		.fpu softvfp
+ 514              	tmcc160_getActualVelocity:
+ 515              	.LFB16:
+ 126:TMC-API/tmc/ic/TMCC160/TMCC160.c **** }
+ 127:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+ 128:TMC-API/tmc/ic/TMCC160/TMCC160.c **** int32_t tmcc160_getActualVelocity()
+ 129:TMC-API/tmc/ic/TMCC160/TMCC160.c **** {
+ 516              		.loc 1 129 1 is_stmt 1 view -0
+ 517              		.cfi_startproc
+ 518              		@ args = 0, pretend = 0, frame = 0
+ 519              		@ frame_needed = 0, uses_anonymous_args = 0
+ 520              		@ link register save eliminated.
+ 130:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	return (int32_t) tmcc160_readInt(VELOCITY_ACTUAL_REG_ADDR);
+ 521              		.loc 1 130 2 view .LVU89
+ 522              		.loc 1 130 19 is_stmt 0 view .LVU90
+ 523 00ea 3220     		movs	r0, #50
+ 524 00ec FFF7FEBF 		b	tmcc160_readInt
+ 525              	.LVL45:
+ 526              		.cfi_endproc
+ 527              	.LFE16:
+ 529              		.align	1
+ 530              		.global	tmcc160_getActualRampVelocity
+ 531              		.syntax unified
+ 532              		.thumb
+ 533              		.thumb_func
+ 534              		.fpu softvfp
+ 536              	tmcc160_getActualRampVelocity:
+ 537              	.LFB17:
+ 131:TMC-API/tmc/ic/TMCC160/TMCC160.c **** }
+ 132:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+ 133:TMC-API/tmc/ic/TMCC160/TMCC160.c **** int32_t tmcc160_getActualRampVelocity()
+ 134:TMC-API/tmc/ic/TMCC160/TMCC160.c **** {
+ 538              		.loc 1 134 1 is_stmt 1 view -0
+ 539              		.cfi_startproc
+ 540              		@ args = 0, pretend = 0, frame = 0
+ 541              		@ frame_needed = 0, uses_anonymous_args = 0
+ 542              		@ link register save eliminated.
+ 135:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	return (int32_t) tmcc160_readInt(RAMP_ACTUAL_VELOCITY_REG_ADDR);
+ 543              		.loc 1 135 2 view .LVU92
+ 544              		.loc 1 135 19 is_stmt 0 view .LVU93
+ 545 00f0 3C20     		movs	r0, #60
+ 546 00f2 FFF7FEBF 		b	tmcc160_readInt
+ 547              	.LVL46:
+ 548              		.cfi_endproc
+ 549              	.LFE17:
+ 551              		.align	1
+ 552              		.global	tmcc160_setAbsolutTargetPosition
+ 553              		.syntax unified
+ 554              		.thumb
+ 555              		.thumb_func
+ 556              		.fpu softvfp
+ 558              	tmcc160_setAbsolutTargetPosition:
+ 559              	.LVL47:
+ 560              	.LFB18:
+ 136:TMC-API/tmc/ic/TMCC160/TMCC160.c **** }
+ 137:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+ 138:TMC-API/tmc/ic/TMCC160/TMCC160.c **** void tmcc160_setAbsolutTargetPosition(int32_t targetPosition)
+ 139:TMC-API/tmc/ic/TMCC160/TMCC160.c **** {
+ 561              		.loc 1 139 1 is_stmt 1 view -0
+ 562              		.cfi_startproc
+ 563              		@ args = 0, pretend = 0, frame = 0
+ 564              		@ frame_needed = 0, uses_anonymous_args = 0
+ 565              		@ link register save eliminated.
+ 140:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_writeInt(POSITION_TARGET_ABS_REG_ADDR | 0x80, targetPosition);
+ 566              		.loc 1 140 2 view .LVU95
+ 139:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_writeInt(POSITION_TARGET_ABS_REG_ADDR | 0x80, targetPosition);
+ 567              		.loc 1 139 1 is_stmt 0 view .LVU96
+ 568 00f6 0146     		mov	r1, r0
+ 569              		.loc 1 140 2 view .LVU97
+ 570 00f8 C120     		movs	r0, #193
+ 571              	.LVL48:
+ 572              		.loc 1 140 2 view .LVU98
+ 573 00fa FFF7FEBF 		b	tmcc160_writeInt
+ 574              	.LVL49:
+ 575              		.loc 1 140 2 view .LVU99
+ 576              		.cfi_endproc
+ 577              	.LFE18:
+ 579              		.align	1
+ 580              		.global	tmcc160_setRelativeTargetPosition
+ 581              		.syntax unified
+ 582              		.thumb
+ 583              		.thumb_func
+ 584              		.fpu softvfp
+ 586              	tmcc160_setRelativeTargetPosition:
+ 587              	.LVL50:
+ 588              	.LFB19:
+ 141:TMC-API/tmc/ic/TMCC160/TMCC160.c **** }
+ 142:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+ 143:TMC-API/tmc/ic/TMCC160/TMCC160.c **** void tmcc160_setRelativeTargetPosition(int32_t relativePosition)
+ 144:TMC-API/tmc/ic/TMCC160/TMCC160.c **** {
+ 589              		.loc 1 144 1 is_stmt 1 view -0
+ 590              		.cfi_startproc
+ 591              		@ args = 0, pretend = 0, frame = 0
+ 592              		@ frame_needed = 0, uses_anonymous_args = 0
+ 593              		@ link register save eliminated.
+ 145:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_writeInt(POSITION_TARGET_REL_REG_ADDR | 0x80,  relativePosition);
+ 594              		.loc 1 145 2 view .LVU101
+ 144:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_writeInt(POSITION_TARGET_REL_REG_ADDR | 0x80,  relativePosition);
+ 595              		.loc 1 144 1 is_stmt 0 view .LVU102
+ 596 00fe 0146     		mov	r1, r0
+ 597              		.loc 1 145 2 view .LVU103
+ 598 0100 C220     		movs	r0, #194
+ 599              	.LVL51:
+ 600              		.loc 1 145 2 view .LVU104
+ 601 0102 FFF7FEBF 		b	tmcc160_writeInt
+ 602              	.LVL52:
+ 603              		.loc 1 145 2 view .LVU105
+ 604              		.cfi_endproc
+ 605              	.LFE19:
+ 607              		.align	1
+ 608              		.global	tmcc160_getTargetPosition
+ 609              		.syntax unified
+ 610              		.thumb
+ 611              		.thumb_func
+ 612              		.fpu softvfp
+ 614              	tmcc160_getTargetPosition:
+ 615              	.LFB20:
+ 146:TMC-API/tmc/ic/TMCC160/TMCC160.c **** }
+ 147:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+ 148:TMC-API/tmc/ic/TMCC160/TMCC160.c **** int32_t tmcc160_getTargetPosition()
+ 149:TMC-API/tmc/ic/TMCC160/TMCC160.c **** {
+ 616              		.loc 1 149 1 is_stmt 1 view -0
+ 617              		.cfi_startproc
+ 618              		@ args = 0, pretend = 0, frame = 0
+ 619              		@ frame_needed = 0, uses_anonymous_args = 0
+ 620              		@ link register save eliminated.
+ 150:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	return (int32_t) tmcc160_readInt(POSITION_TARGET_ABS_REG_ADDR);
+ 621              		.loc 1 150 2 view .LVU107
+ 622              		.loc 1 150 19 is_stmt 0 view .LVU108
+ 623 0106 4120     		movs	r0, #65
+ 624 0108 FFF7FEBF 		b	tmcc160_readInt
+ 625              	.LVL53:
+ 626              		.cfi_endproc
+ 627              	.LFE20:
+ 629              		.align	1
+ 630              		.global	tmcc160_setActualPosition
+ 631              		.syntax unified
+ 632              		.thumb
+ 633              		.thumb_func
+ 634              		.fpu softvfp
+ 636              	tmcc160_setActualPosition:
+ 637              	.LVL54:
+ 638              	.LFB21:
+ 151:TMC-API/tmc/ic/TMCC160/TMCC160.c **** }
+ 152:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+ 153:TMC-API/tmc/ic/TMCC160/TMCC160.c **** void tmcc160_setActualPosition(int32_t actualPosition)
+ 154:TMC-API/tmc/ic/TMCC160/TMCC160.c **** {
+ 639              		.loc 1 154 1 is_stmt 1 view -0
+ 640              		.cfi_startproc
+ 641              		@ args = 0, pretend = 0, frame = 0
+ 642              		@ frame_needed = 0, uses_anonymous_args = 0
+ 643              		@ link register save eliminated.
+ 155:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_writeInt(POSITION_ACTUAL_REG_ADDR | 0x80, actualPosition);
+ 644              		.loc 1 155 2 view .LVU110
+ 154:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	tmcc160_writeInt(POSITION_ACTUAL_REG_ADDR | 0x80, actualPosition);
+ 645              		.loc 1 154 1 is_stmt 0 view .LVU111
+ 646 010c 0146     		mov	r1, r0
+ 647              		.loc 1 155 2 view .LVU112
+ 648 010e C020     		movs	r0, #192
+ 649              	.LVL55:
+ 650              		.loc 1 155 2 view .LVU113
+ 651 0110 FFF7FEBF 		b	tmcc160_writeInt
+ 652              	.LVL56:
+ 653              		.loc 1 155 2 view .LVU114
+ 654              		.cfi_endproc
+ 655              	.LFE21:
+ 657              		.align	1
+ 658              		.global	tmcc160_getActualPosition
+ 659              		.syntax unified
+ 660              		.thumb
+ 661              		.thumb_func
+ 662              		.fpu softvfp
+ 664              	tmcc160_getActualPosition:
+ 665              	.LFB22:
+ 156:TMC-API/tmc/ic/TMCC160/TMCC160.c **** }
+ 157:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+ 158:TMC-API/tmc/ic/TMCC160/TMCC160.c **** int32_t tmcc160_getActualPosition()
+ 159:TMC-API/tmc/ic/TMCC160/TMCC160.c **** {
+ 666              		.loc 1 159 1 is_stmt 1 view -0
+ 667              		.cfi_startproc
+ 668              		@ args = 0, pretend = 0, frame = 0
+ 669              		@ frame_needed = 0, uses_anonymous_args = 0
+ 670              		@ link register save eliminated.
+ 160:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	return (int32_t) tmcc160_readInt(POSITION_ACTUAL_REG_ADDR);
+ 671              		.loc 1 160 2 view .LVU116
+ 672              		.loc 1 160 19 is_stmt 0 view .LVU117
+ 673 0114 4020     		movs	r0, #64
+ 674 0116 FFF7FEBF 		b	tmcc160_readInt
+ 675              	.LVL57:
+ 676              		.cfi_endproc
+ 677              	.LFE22:
+ 679              		.align	1
+ 680              		.global	tmcc160_getActualRampPosition
+ 681              		.syntax unified
+ 682              		.thumb
+ 683              		.thumb_func
+ 684              		.fpu softvfp
+ 686              	tmcc160_getActualRampPosition:
+ 687              	.LFB23:
+ 161:TMC-API/tmc/ic/TMCC160/TMCC160.c **** }
+ 162:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 
+ 163:TMC-API/tmc/ic/TMCC160/TMCC160.c **** int32_t tmcc160_getActualRampPosition()
+ 164:TMC-API/tmc/ic/TMCC160/TMCC160.c **** {
+ 688              		.loc 1 164 1 is_stmt 1 view -0
+ 689              		.cfi_startproc
+ 690              		@ args = 0, pretend = 0, frame = 0
+ 691              		@ frame_needed = 0, uses_anonymous_args = 0
+ 692              		@ link register save eliminated.
+ 165:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	// module does not support position ramp
+ 166:TMC-API/tmc/ic/TMCC160/TMCC160.c **** 	return tmcc160_getTargetPosition();
+ 693              		.loc 1 166 2 view .LVU119
+ 694              		.loc 1 166 9 is_stmt 0 view .LVU120
+ 695 011a FFF7FEBF 		b	tmcc160_getTargetPosition
+ 696              	.LVL58:
+ 697              		.cfi_endproc
+ 698              	.LFE23:
+ 700              	.Letext0:
+ 701              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 702              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 703              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 704              		.file 5 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 705              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 706              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 707              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+DEFINED SYMBOLS
+                            *ABS*:00000000 TMCC160.c
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:23     .text:00000000 tmcc160_init
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:43     .text:00000002 tmcc160_periodicJob
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:64     .text:00000004 tmcc160_delay
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:100    .text:0000000e tmcc160_default_spi_delay
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:121    .text:00000016 tmcc160_writeInt
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:184    .text:0000004c tmcc160_readInt
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:294    .text:000000b4 tmcc160_setTargetTorque_raw
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:322    .text:000000bc tmcc160_getTargetTorque_raw
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:344    .text:000000c2 tmcc160_getActualTorque_raw
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:366    .text:000000c8 tmcc160_getActualRampTorque_raw
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:387    .text:000000cc tmcc160_setTargetTorque_mA
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:409    .text:000000d0 tmcc160_getTargetTorque_mA
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:426    .text:000000d4 tmcc160_getActualTorque_mA
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:447    .text:000000d8 tmcc160_getActualRampTorque_mA
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:464    .text:000000dc tmcc160_setTargetVelocity
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:492    .text:000000e4 tmcc160_getTargetVelocity
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:514    .text:000000ea tmcc160_getActualVelocity
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:536    .text:000000f0 tmcc160_getActualRampVelocity
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:558    .text:000000f6 tmcc160_setAbsolutTargetPosition
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:586    .text:000000fe tmcc160_setRelativeTargetPosition
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:614    .text:00000106 tmcc160_getTargetPosition
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:636    .text:0000010c tmcc160_setActualPosition
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:664    .text:00000114 tmcc160_getActualPosition
+C:\Users\Shubham\AppData\Local\Temp\ccKx3oz1.s:686    .text:0000011a tmcc160_getActualRampPosition
+
+UNDEFINED SYMBOLS
+tmcc160_spi_readwriteByte

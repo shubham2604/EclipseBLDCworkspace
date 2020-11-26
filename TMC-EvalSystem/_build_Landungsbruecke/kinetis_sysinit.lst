@@ -1,0 +1,616 @@
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 4
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"kinetis_sysinit.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.align	1
+  16              		.global	Default_Handler
+  17              		.arch armv7e-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	Default_Handler:
+  24              	.LFB0:
+  25              		.file 1 "hal/Landungsbruecke/freescale/kinetis_sysinit.c"
+   1:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** /*
+   2:hal/Landungsbruecke/freescale/kinetis_sysinit.c ****  *    kinetis_sysinit.c - Default init routines for Flycatcher
+   3:hal/Landungsbruecke/freescale/kinetis_sysinit.c ****  *                     		Kinetis ARM systems
+   4:hal/Landungsbruecke/freescale/kinetis_sysinit.c ****  *    Copyright © 2012 Freescale semiConductor Inc. All Rights Reserved.
+   5:hal/Landungsbruecke/freescale/kinetis_sysinit.c ****  */
+   6:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 
+   7:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** #include "hal/derivative.h"
+   8:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** #include "kinetis_sysinit.h"
+   9:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 
+  10:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** /**
+  11:hal/Landungsbruecke/freescale/kinetis_sysinit.c ****  **===========================================================================
+  12:hal/Landungsbruecke/freescale/kinetis_sysinit.c ****  **  External declarations
+  13:hal/Landungsbruecke/freescale/kinetis_sysinit.c ****  **===========================================================================
+  14:hal/Landungsbruecke/freescale/kinetis_sysinit.c ****  */
+  15:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** #if __cplusplus
+  16:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** extern "C" {
+  17:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** #endif
+  18:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** extern uint32 __vector_table[];
+  19:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** extern unsigned long _estack;
+  20:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** extern void __thumb_startup(void);
+  21:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** #if __cplusplus
+  22:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** }
+  23:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** #endif
+  24:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 
+  25:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** /**
+  26:hal/Landungsbruecke/freescale/kinetis_sysinit.c ****  **===========================================================================
+  27:hal/Landungsbruecke/freescale/kinetis_sysinit.c ****  **  Default interrupt handler
+  28:hal/Landungsbruecke/freescale/kinetis_sysinit.c ****  **===========================================================================
+  29:hal/Landungsbruecke/freescale/kinetis_sysinit.c ****  */
+  30:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** void Default_Handler(void)
+  31:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** {
+  26              		.loc 1 31 1 view -0
+  27              		.cfi_startproc
+  28              		@ Volatile: function does not return.
+  29              		@ args = 0, pretend = 0, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  31              		@ link register save eliminated.
+  32:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	asm volatile ("bkpt");
+  32              		.loc 1 32 2 view .LVU1
+  33              		.syntax unified
+  34              	@ 32 "hal/Landungsbruecke/freescale/kinetis_sysinit.c" 1
+  35 0000 00BE     		bkpt
+  36              	@ 0 "" 2
+  37              		.thumb
+  38              		.syntax unified
+  39              	.L2:
+  33:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 
+  34:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	while(1);
+  40              		.loc 1 34 2 discriminator 1 view .LVU2
+  41              		.loc 1 34 10 discriminator 1 view .LVU3
+  42              		.loc 1 34 7 discriminator 1 view .LVU4
+  43 0002 FEE7     		b	.L2
+  44              		.cfi_endproc
+  45              	.LFE0:
+  47              		.weak	SWI_IRQHandler
+  48              		.thumb_set SWI_IRQHandler,Default_Handler
+  49              		.weak	Reserved109_IRQHandler
+  50              		.thumb_set Reserved109_IRQHandler,Default_Handler
+  51              		.weak	Reserved108_IRQHandler
+  52              		.thumb_set Reserved108_IRQHandler,Default_Handler
+  53              		.weak	PORTE_IRQHandler
+  54              		.thumb_set PORTE_IRQHandler,Default_Handler
+  55              		.weak	PORTD_IRQHandler
+  56              		.thumb_set PORTD_IRQHandler,Default_Handler
+  57              		.weak	PORTC_IRQHandler
+  58              		.thumb_set PORTC_IRQHandler,Default_Handler
+  59              		.weak	PORTB_IRQHandler
+  60              		.thumb_set PORTB_IRQHandler,Default_Handler
+  61              		.weak	PORTA_IRQHandler
+  62              		.thumb_set PORTA_IRQHandler,Default_Handler
+  63              		.weak	Reserved102_IRQHandler
+  64              		.thumb_set Reserved102_IRQHandler,Default_Handler
+  65              		.weak	LPTimer_IRQHandler
+  66              		.thumb_set LPTimer_IRQHandler,Default_Handler
+  67              		.weak	MCG_IRQHandler
+  68              		.thumb_set MCG_IRQHandler,Default_Handler
+  69              		.weak	TSI_IRQHandler
+  70              		.thumb_set TSI_IRQHandler,Default_Handler
+  71              		.weak	Reserved98_IRQHandler
+  72              		.thumb_set Reserved98_IRQHandler,Default_Handler
+  73              		.weak	DAC0_IRQHandler
+  74              		.thumb_set DAC0_IRQHandler,Default_Handler
+  75              		.weak	SDHC_IRQHandler
+  76              		.thumb_set SDHC_IRQHandler,Default_Handler
+  77              		.weak	Reserved95_IRQHandler
+  78              		.thumb_set Reserved95_IRQHandler,Default_Handler
+  79              		.weak	Reserved94_IRQHandler
+  80              		.thumb_set Reserved94_IRQHandler,Default_Handler
+  81              		.weak	Reserved93_IRQHandler
+  82              		.thumb_set Reserved93_IRQHandler,Default_Handler
+  83              		.weak	Reserved92_IRQHandler
+  84              		.thumb_set Reserved92_IRQHandler,Default_Handler
+  85              		.weak	Reserved91_IRQHandler
+  86              		.thumb_set Reserved91_IRQHandler,Default_Handler
+  87              		.weak	USBCharge_IRQHandler
+  88              		.thumb_set USBCharge_IRQHandler,Default_Handler
+  89              		.weak	USB_ISR
+  90              		.thumb_set USB_ISR,Default_Handler
+  91              		.weak	PDB0_IRQHandler
+  92              		.thumb_set PDB0_IRQHandler,Default_Handler
+  93              		.weak	PIT3_IRQHandler
+  94              		.thumb_set PIT3_IRQHandler,Default_Handler
+  95              		.weak	PIT2_IRQHandler
+  96              		.thumb_set PIT2_IRQHandler,Default_Handler
+  97              		.weak	PIT1_IRQHandler
+  98              		.thumb_set PIT1_IRQHandler,Default_Handler
+  99              		.weak	PIT0_IRQHandler
+ 100              		.thumb_set PIT0_IRQHandler,Default_Handler
+ 101              		.weak	RTCSeconds_IRQHandler
+ 102              		.thumb_set RTCSeconds_IRQHandler,Default_Handler
+ 103              		.weak	RTC_IRQHandler
+ 104              		.thumb_set RTC_IRQHandler,Default_Handler
+ 105              		.weak	CMT_IRQHandler
+ 106              		.thumb_set CMT_IRQHandler,Default_Handler
+ 107              		.weak	FTM2_IRQHandler
+ 108              		.thumb_set FTM2_IRQHandler,Default_Handler
+ 109              		.weak	FTM1_IRQHandler
+ 110              		.thumb_set FTM1_IRQHandler,Default_Handler
+ 111              		.weak	FTM0_IRQHandler
+ 112              		.thumb_set FTM0_IRQHandler,Default_Handler
+ 113              		.weak	CMP2_IRQHandler
+ 114              		.thumb_set CMP2_IRQHandler,Default_Handler
+ 115              		.weak	CMP1_IRQHandler
+ 116              		.thumb_set CMP1_IRQHandler,Default_Handler
+ 117              		.weak	CMP0_IRQHandler
+ 118              		.thumb_set CMP0_IRQHandler,Default_Handler
+ 119              		.weak	ADC1_IRQHandler
+ 120              		.thumb_set ADC1_IRQHandler,Default_Handler
+ 121              		.weak	ADC0_IRQHandler
+ 122              		.thumb_set ADC0_IRQHandler,Default_Handler
+ 123              		.weak	Reserved72_IRQHandler
+ 124              		.thumb_set Reserved72_IRQHandler,Default_Handler
+ 125              		.weak	Reserved71_IRQHandler
+ 126              		.thumb_set Reserved71_IRQHandler,Default_Handler
+ 127              		.weak	UART4Error_IRQHandler
+ 128              		.thumb_set UART4Error_IRQHandler,Default_Handler
+ 129              		.weak	UART4_RX_TX_IRQHandler
+ 130              		.thumb_set UART4_RX_TX_IRQHandler,Default_Handler
+ 131              		.weak	UART3Error_IRQHandler
+ 132              		.thumb_set UART3Error_IRQHandler,Default_Handler
+ 133              		.weak	UART3_RX_TX_IRQHandler
+ 134              		.thumb_set UART3_RX_TX_IRQHandler,Default_Handler
+ 135              		.weak	UART2Error_IRQHandler
+ 136              		.thumb_set UART2Error_IRQHandler,Default_Handler
+ 137              		.weak	UART2_RX_TX_IRQHandler
+ 138              		.thumb_set UART2_RX_TX_IRQHandler,Default_Handler
+ 139              		.weak	UART1Error_IRQHandler
+ 140              		.thumb_set UART1Error_IRQHandler,Default_Handler
+ 141              		.weak	UART1_RX_TX_IRQHandler
+ 142              		.thumb_set UART1_RX_TX_IRQHandler,Default_Handler
+ 143              		.weak	UART0Error_IRQHandler
+ 144              		.thumb_set UART0Error_IRQHandler,Default_Handler
+ 145              		.weak	UART0_RX_TX_IRQHandler
+ 146              		.thumb_set UART0_RX_TX_IRQHandler,Default_Handler
+ 147              		.weak	UART0_LON_IRQHandler
+ 148              		.thumb_set UART0_LON_IRQHandler,Default_Handler
+ 149              		.weak	Reserved59_IRQHandler
+ 150              		.thumb_set Reserved59_IRQHandler,Default_Handler
+ 151              		.weak	CAN1Wake_IRQHandler
+ 152              		.thumb_set CAN1Wake_IRQHandler,Default_Handler
+ 153              		.weak	CAN1Rcv_IRQHandler
+ 154              		.thumb_set CAN1Rcv_IRQHandler,Default_Handler
+ 155              		.weak	CAN1Xmit_IRQHandler
+ 156              		.thumb_set CAN1Xmit_IRQHandler,Default_Handler
+ 157              		.weak	CAN1Error_IRQHandler
+ 158              		.thumb_set CAN1Error_IRQHandler,Default_Handler
+ 159              		.weak	CAN1BusOff_IRQHandler
+ 160              		.thumb_set CAN1BusOff_IRQHandler,Default_Handler
+ 161              		.weak	CAN1Msg_IRQHandler
+ 162              		.thumb_set CAN1Msg_IRQHandler,Default_Handler
+ 163              		.weak	I2S0_Rx_IRQHandler
+ 164              		.thumb_set I2S0_Rx_IRQHandler,Default_Handler
+ 165              		.weak	I2S0_Tx_IRQHandler
+ 166              		.thumb_set I2S0_Tx_IRQHandler,Default_Handler
+ 167              		.weak	CAN0Wake_IRQHandler
+ 168              		.thumb_set CAN0Wake_IRQHandler,Default_Handler
+ 169              		.weak	CAN0Rcv_IRQHandler
+ 170              		.thumb_set CAN0Rcv_IRQHandler,Default_Handler
+ 171              		.weak	CAN0Xmit_IRQHandler
+ 172              		.thumb_set CAN0Xmit_IRQHandler,Default_Handler
+ 173              		.weak	CAN0Error_IRQHandler
+ 174              		.thumb_set CAN0Error_IRQHandler,Default_Handler
+ 175              		.weak	CAN0BusOff_IRQHandler
+ 176              		.thumb_set CAN0BusOff_IRQHandler,Default_Handler
+ 177              		.weak	CAN0Msg_IRQHandler
+ 178              		.thumb_set CAN0Msg_IRQHandler,Default_Handler
+ 179              		.weak	SPI2_IRQHandler
+ 180              		.thumb_set SPI2_IRQHandler,Default_Handler
+ 181              		.weak	SPI1_IRQHandler
+ 182              		.thumb_set SPI1_IRQHandler,Default_Handler
+ 183              		.weak	SPI0_IRQHandler
+ 184              		.thumb_set SPI0_IRQHandler,Default_Handler
+ 185              		.weak	I2C1_IRQHandler
+ 186              		.thumb_set I2C1_IRQHandler,Default_Handler
+ 187              		.weak	I2C0_IRQHandler
+ 188              		.thumb_set I2C0_IRQHandler,Default_Handler
+ 189              		.weak	Reserved39_IRQHandler
+ 190              		.thumb_set Reserved39_IRQHandler,Default_Handler
+ 191              		.weak	Watchdog_IRQHandler
+ 192              		.thumb_set Watchdog_IRQHandler,Default_Handler
+ 193              		.weak	LLW_IRQHandler
+ 194              		.thumb_set LLW_IRQHandler,Default_Handler
+ 195              		.weak	LVD_LVW_IRQHandler
+ 196              		.thumb_set LVD_LVW_IRQHandler,Default_Handler
+ 197              		.weak	FlashReadErr_IRQHandler
+ 198              		.thumb_set FlashReadErr_IRQHandler,Default_Handler
+ 199              		.weak	FlashCmd_IRQHandler
+ 200              		.thumb_set FlashCmd_IRQHandler,Default_Handler
+ 201              		.weak	MCMNormal_IRQHandler
+ 202              		.thumb_set MCMNormal_IRQHandler,Default_Handler
+ 203              		.weak	DMA_Error_IRQHandler
+ 204              		.thumb_set DMA_Error_IRQHandler,Default_Handler
+ 205              		.weak	DMA15_IRQHandler
+ 206              		.thumb_set DMA15_IRQHandler,Default_Handler
+ 207              		.weak	DMA14_IRQHandler
+ 208              		.thumb_set DMA14_IRQHandler,Default_Handler
+ 209              		.weak	DMA13_IRQHandler
+ 210              		.thumb_set DMA13_IRQHandler,Default_Handler
+ 211              		.weak	DMA12_IRQHandler
+ 212              		.thumb_set DMA12_IRQHandler,Default_Handler
+ 213              		.weak	DMA11_IRQHandler
+ 214              		.thumb_set DMA11_IRQHandler,Default_Handler
+ 215              		.weak	DMA10_IRQHandler
+ 216              		.thumb_set DMA10_IRQHandler,Default_Handler
+ 217              		.weak	DMA9_IRQHandler
+ 218              		.thumb_set DMA9_IRQHandler,Default_Handler
+ 219              		.weak	DMA8_IRQHandler
+ 220              		.thumb_set DMA8_IRQHandler,Default_Handler
+ 221              		.weak	DMA7_IRQHandler
+ 222              		.thumb_set DMA7_IRQHandler,Default_Handler
+ 223              		.weak	DMA6_IRQHandler
+ 224              		.thumb_set DMA6_IRQHandler,Default_Handler
+ 225              		.weak	DMA5_IRQHandler
+ 226              		.thumb_set DMA5_IRQHandler,Default_Handler
+ 227              		.weak	DMA4_IRQHandler
+ 228              		.thumb_set DMA4_IRQHandler,Default_Handler
+ 229              		.weak	DMA3_IRQHandler
+ 230              		.thumb_set DMA3_IRQHandler,Default_Handler
+ 231              		.weak	DMA2_IRQHandler
+ 232              		.thumb_set DMA2_IRQHandler,Default_Handler
+ 233              		.weak	DMA1_IRQHandler
+ 234              		.thumb_set DMA1_IRQHandler,Default_Handler
+ 235              		.weak	DMA0_IRQHandler
+ 236              		.thumb_set DMA0_IRQHandler,Default_Handler
+ 237              		.weak	SysTick_Handler
+ 238              		.thumb_set SysTick_Handler,Default_Handler
+ 239              		.weak	PendSV_Handler
+ 240              		.thumb_set PendSV_Handler,Default_Handler
+ 241              		.weak	DebugMon_Handler
+ 242              		.thumb_set DebugMon_Handler,Default_Handler
+ 243              		.weak	SVC_Handler
+ 244              		.thumb_set SVC_Handler,Default_Handler
+ 245              		.weak	UsageFault_Handler
+ 246              		.thumb_set UsageFault_Handler,Default_Handler
+ 247              		.weak	BusFault_Handler
+ 248              		.thumb_set BusFault_Handler,Default_Handler
+ 249              		.weak	MemManage_Handler
+ 250              		.thumb_set MemManage_Handler,Default_Handler
+ 251              		.weak	HardFault_Handler
+ 252              		.thumb_set HardFault_Handler,Default_Handler
+ 253              		.weak	NMI_Handler
+ 254              		.thumb_set NMI_Handler,Default_Handler
+ 255              		.align	1
+ 256              		.global	__init_hardware
+ 257              		.syntax unified
+ 258              		.thumb
+ 259              		.thumb_func
+ 260              		.fpu softvfp
+ 262              	__init_hardware:
+ 263              	.LFB1:
+  35:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 
+  36:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	/* Fault registers:
+  37:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	 * 0xE000ED2C: HFSR (HardFault status register)
+  38:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	 * 0xE000ED28: MMFSR (MemManage fault status register)
+  39:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	 * 0xE000ED34: MMFAR (MemManage fault address register)
+  40:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	 * 0xE000ED29: BFSR (BusFault status register)
+  41:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	 * 0xE000ED38: BFAR (BusFault address register)
+  42:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	 */
+  43:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** }
+  44:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 
+  45:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** /**
+  46:hal/Landungsbruecke/freescale/kinetis_sysinit.c ****  **===========================================================================
+  47:hal/Landungsbruecke/freescale/kinetis_sysinit.c ****  **  Reset handler
+  48:hal/Landungsbruecke/freescale/kinetis_sysinit.c ****  **===========================================================================
+  49:hal/Landungsbruecke/freescale/kinetis_sysinit.c ****  */
+  50:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** void __init_hardware(void)
+  51:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** {
+ 264              		.loc 1 51 1 view -0
+ 265              		.cfi_startproc
+ 266              		@ args = 0, pretend = 0, frame = 0
+ 267              		@ frame_needed = 0, uses_anonymous_args = 0
+ 268              		@ link register save eliminated.
+  52:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	SCB_VTOR = (uint32)__vector_table; /* Set the interrupt vector table position */
+ 269              		.loc 1 52 2 view .LVU6
+ 270              		.loc 1 52 11 is_stmt 0 view .LVU7
+ 271 0004 4FF0E023 		mov	r3, #-536813568
+ 272 0008 084A     		ldr	r2, .L4
+ 273 000a C3F8082D 		str	r2, [r3, #3336]
+  53:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 
+  54:hal/Landungsbruecke/freescale/kinetis_sysinit.c ****   #if defined(MKL25Z128)
+  55:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	 // Disable the Watchdog because it may reset the core before entering main().
+  56:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	SIM_COPC = KINETIS_WDOG_DISABLED_CTRL;
+  57:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 
+  58:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	#elif defined(MKE02Z64)
+  59:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	 // Disable the Watchdog because it may reset the core before entering main().
+  60:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	WDOG_CNT = 0x20C5;
+  61:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	WDOG_CNT = 0x28D9;
+  62:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	WDOG_TOVAL = 0x28D9;
+  63:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	WDOG_CS2 = WDOG_CS2_CLK(0);
+  64:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	WDOG_CS1 = WDOG_CS1_UPDATE_MASK;   //watchdog setting can be changed later
+  65:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 
+  66:hal/Landungsbruecke/freescale/kinetis_sysinit.c ****   #elif defined(MK20DN512) || defined(MK20DX256)
+  67:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	 // Disable the Watchdog because it may reset the core before entering main().
+  68:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	WDOG_UNLOCK = 0xC520;			// Write 0xC520 to the unlock register
+ 274              		.loc 1 68 2 is_stmt 1 view .LVU8
+ 275              		.loc 1 68 14 is_stmt 0 view .LVU9
+ 276 000e 084A     		ldr	r2, .L4+4
+ 277 0010 4CF22053 		movw	r3, #50464
+ 278 0014 D381     		strh	r3, [r2, #14]	@ movhi
+  69:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	WDOG_UNLOCK = 0xD928;			// Followed by 0xD928 to complete the unlock
+ 279              		.loc 1 69 2 is_stmt 1 view .LVU10
+ 280              		.loc 1 69 14 is_stmt 0 view .LVU11
+ 281 0016 4DF62813 		movw	r3, #55592
+ 282 001a D381     		strh	r3, [r2, #14]	@ movhi
+  70:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	WDOG_STCTRLH &= ~WDOG_STCTRLH_WDOGEN_MASK;	// Clear the WDOGEN bit to disable the watchdog
+ 283              		.loc 1 70 2 is_stmt 1 view .LVU12
+ 284              		.loc 1 70 15 is_stmt 0 view .LVU13
+ 285 001c 1388     		ldrh	r3, [r2]
+ 286 001e 23F00103 		bic	r3, r3, #1
+ 287 0022 1B04     		lsls	r3, r3, #16
+ 288 0024 1B0C     		lsrs	r3, r3, #16
+ 289 0026 1380     		strh	r3, [r2]	@ movhi
+  71:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	#else
+  72:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	#error "MCU sub-model not supported!"
+  73:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** 	#endif
+  74:hal/Landungsbruecke/freescale/kinetis_sysinit.c **** }
+ 290              		.loc 1 74 1 view .LVU14
+ 291 0028 7047     		bx	lr
+ 292              	.L5:
+ 293 002a 00BF     		.align	2
+ 294              	.L4:
+ 295 002c 00000000 		.word	__vector_table
+ 296 0030 00200540 		.word	1074077696
+ 297              		.cfi_endproc
+ 298              	.LFE1:
+ 300              		.global	InterruptVector
+ 301              		.comm	Cpu,8,4
+ 302              		.section	.vectortable,"a"
+ 303              		.align	2
+ 306              	InterruptVector:
+ 307 0000 00000000 		.word	_estack
+ 308 0004 00000000 		.word	__thumb_startup
+ 309 0008 00000000 		.word	NMI_Handler
+ 310 000c 00000000 		.word	HardFault_Handler
+ 311 0010 00000000 		.word	MemManage_Handler
+ 312 0014 00000000 		.word	BusFault_Handler
+ 313 0018 00000000 		.word	UsageFault_Handler
+ 314 001c 00000000 		.word	0
+ 315 0020 00000000 		.word	0
+ 316 0024 00000000 		.word	0
+ 317 0028 00000000 		.word	0
+ 318 002c 00000000 		.word	SVC_Handler
+ 319 0030 00000000 		.word	DebugMon_Handler
+ 320 0034 00000000 		.word	0
+ 321 0038 00000000 		.word	PendSV_Handler
+ 322 003c 00000000 		.word	SysTick_Handler
+ 323 0040 00000000 		.word	DMA0_IRQHandler
+ 324 0044 00000000 		.word	DMA1_IRQHandler
+ 325 0048 00000000 		.word	DMA2_IRQHandler
+ 326 004c 00000000 		.word	DMA3_IRQHandler
+ 327 0050 00000000 		.word	DMA4_IRQHandler
+ 328 0054 00000000 		.word	DMA5_IRQHandler
+ 329 0058 00000000 		.word	DMA6_IRQHandler
+ 330 005c 00000000 		.word	DMA7_IRQHandler
+ 331 0060 00000000 		.word	DMA8_IRQHandler
+ 332 0064 00000000 		.word	DMA9_IRQHandler
+ 333 0068 00000000 		.word	DMA10_IRQHandler
+ 334 006c 00000000 		.word	DMA11_IRQHandler
+ 335 0070 00000000 		.word	DMA12_IRQHandler
+ 336 0074 00000000 		.word	DMA13_IRQHandler
+ 337 0078 00000000 		.word	DMA14_IRQHandler
+ 338 007c 00000000 		.word	DMA15_IRQHandler
+ 339 0080 00000000 		.word	DMA_Error_IRQHandler
+ 340 0084 00000000 		.word	MCMNormal_IRQHandler
+ 341 0088 00000000 		.word	FlashCmd_IRQHandler
+ 342 008c 00000000 		.word	FlashReadErr_IRQHandler
+ 343 0090 00000000 		.word	LVD_LVW_IRQHandler
+ 344 0094 00000000 		.word	LLW_IRQHandler
+ 345 0098 00000000 		.word	Watchdog_IRQHandler
+ 346 009c 00000000 		.word	Reserved39_IRQHandler
+ 347 00a0 00000000 		.word	I2C0_IRQHandler
+ 348 00a4 00000000 		.word	I2C1_IRQHandler
+ 349 00a8 00000000 		.word	SPI0_IRQHandler
+ 350 00ac 00000000 		.word	SPI1_IRQHandler
+ 351 00b0 00000000 		.word	SPI2_IRQHandler
+ 352 00b4 00000000 		.word	CAN0Msg_IRQHandler
+ 353 00b8 00000000 		.word	CAN0BusOff_IRQHandler
+ 354 00bc 00000000 		.word	CAN0Error_IRQHandler
+ 355 00c0 00000000 		.word	CAN0Xmit_IRQHandler
+ 356 00c4 00000000 		.word	CAN0Rcv_IRQHandler
+ 357 00c8 00000000 		.word	CAN0Wake_IRQHandler
+ 358 00cc 00000000 		.word	I2S0_Tx_IRQHandler
+ 359 00d0 00000000 		.word	I2S0_Rx_IRQHandler
+ 360 00d4 00000000 		.word	CAN1Msg_IRQHandler
+ 361 00d8 00000000 		.word	CAN1BusOff_IRQHandler
+ 362 00dc 00000000 		.word	CAN1Error_IRQHandler
+ 363 00e0 00000000 		.word	CAN1Xmit_IRQHandler
+ 364 00e4 00000000 		.word	CAN1Rcv_IRQHandler
+ 365 00e8 00000000 		.word	CAN1Wake_IRQHandler
+ 366 00ec 00000000 		.word	Reserved59_IRQHandler
+ 367 00f0 00000000 		.word	UART0_LON_IRQHandler
+ 368 00f4 00000000 		.word	UART0_RX_TX_IRQHandler
+ 369 00f8 00000000 		.word	UART0Error_IRQHandler
+ 370 00fc 00000000 		.word	UART1_RX_TX_IRQHandler
+ 371 0100 00000000 		.word	UART1Error_IRQHandler
+ 372 0104 00000000 		.word	UART2_RX_TX_IRQHandler
+ 373 0108 00000000 		.word	UART2Error_IRQHandler
+ 374 010c 00000000 		.word	UART3_RX_TX_IRQHandler
+ 375 0110 00000000 		.word	UART3Error_IRQHandler
+ 376 0114 00000000 		.word	UART4_RX_TX_IRQHandler
+ 377 0118 00000000 		.word	UART4Error_IRQHandler
+ 378 011c 00000000 		.word	Reserved71_IRQHandler
+ 379 0120 00000000 		.word	Reserved72_IRQHandler
+ 380 0124 00000000 		.word	ADC0_IRQHandler
+ 381 0128 00000000 		.word	ADC1_IRQHandler
+ 382 012c 00000000 		.word	CMP0_IRQHandler
+ 383 0130 00000000 		.word	CMP1_IRQHandler
+ 384 0134 00000000 		.word	CMP2_IRQHandler
+ 385 0138 00000000 		.word	FTM0_IRQHandler
+ 386 013c 00000000 		.word	FTM1_IRQHandler
+ 387 0140 00000000 		.word	FTM2_IRQHandler
+ 388 0144 00000000 		.word	CMT_IRQHandler
+ 389 0148 00000000 		.word	RTC_IRQHandler
+ 390 014c 00000000 		.word	RTCSeconds_IRQHandler
+ 391 0150 00000000 		.word	PIT0_IRQHandler
+ 392 0154 00000000 		.word	PIT1_IRQHandler
+ 393 0158 00000000 		.word	PIT2_IRQHandler
+ 394 015c 00000000 		.word	PIT3_IRQHandler
+ 395 0160 00000000 		.word	PDB0_IRQHandler
+ 396 0164 00000000 		.word	USB_ISR
+ 397 0168 00000000 		.word	USBCharge_IRQHandler
+ 398 016c 00000000 		.word	Reserved91_IRQHandler
+ 399 0170 00000000 		.word	Reserved92_IRQHandler
+ 400 0174 00000000 		.word	Reserved93_IRQHandler
+ 401 0178 00000000 		.word	Reserved94_IRQHandler
+ 402 017c 00000000 		.word	Reserved95_IRQHandler
+ 403 0180 00000000 		.word	SDHC_IRQHandler
+ 404 0184 00000000 		.word	DAC0_IRQHandler
+ 405 0188 00000000 		.word	Reserved98_IRQHandler
+ 406 018c 00000000 		.word	TSI_IRQHandler
+ 407 0190 00000000 		.word	MCG_IRQHandler
+ 408 0194 00000000 		.word	LPTimer_IRQHandler
+ 409 0198 00000000 		.word	Reserved102_IRQHandler
+ 410 019c 00000000 		.word	PORTA_IRQHandler
+ 411 01a0 00000000 		.word	PORTB_IRQHandler
+ 412 01a4 00000000 		.word	PORTC_IRQHandler
+ 413 01a8 00000000 		.word	PORTD_IRQHandler
+ 414 01ac 00000000 		.word	PORTE_IRQHandler
+ 415 01b0 00000000 		.word	Reserved108_IRQHandler
+ 416 01b4 00000000 		.word	Reserved109_IRQHandler
+ 417 01b8 00000000 		.word	SWI_IRQHandler
+ 418              		.text
+ 419              	.Letext0:
+ 420              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 421              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 422              		.file 4 "TMC-API/tmc/helpers/Types.h"
+ 423              		.file 5 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 424              		.file 6 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 425              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 426              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 427              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 428              		.file 10 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 429              		.file 11 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 430              		.file 12 "./hal/Landungsbruecke/freescale/Cpu.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 kinetis_sysinit.c
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 Default_Handler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 SWI_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 Reserved109_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 Reserved108_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 PORTE_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 PORTD_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 PORTC_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 PORTB_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 PORTA_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 Reserved102_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 LPTimer_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 MCG_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 TSI_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 Reserved98_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 DAC0_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 SDHC_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 Reserved95_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 Reserved94_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 Reserved93_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 Reserved92_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 Reserved91_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 USBCharge_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 USB_ISR
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 PDB0_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 PIT3_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 PIT2_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 PIT1_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 PIT0_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 RTCSeconds_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 RTC_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 CMT_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 FTM2_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 FTM1_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 FTM0_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 CMP2_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 CMP1_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 CMP0_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 ADC1_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 ADC0_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 Reserved72_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 Reserved71_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 UART4Error_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 UART4_RX_TX_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 UART3Error_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 UART3_RX_TX_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 UART2Error_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 UART2_RX_TX_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 UART1Error_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 UART1_RX_TX_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 UART0Error_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 UART0_RX_TX_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 UART0_LON_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 Reserved59_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 CAN1Wake_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 CAN1Rcv_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 CAN1Xmit_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 CAN1Error_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 CAN1BusOff_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 CAN1Msg_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 I2S0_Rx_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 I2S0_Tx_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 CAN0Wake_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 CAN0Rcv_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 CAN0Xmit_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 CAN0Error_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 CAN0BusOff_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 CAN0Msg_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 SPI2_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 SPI1_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 SPI0_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 I2C1_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 I2C0_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 Reserved39_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 Watchdog_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 LLW_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 LVD_LVW_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 FlashReadErr_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 FlashCmd_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 MCMNormal_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 DMA_Error_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 DMA15_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 DMA14_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 DMA13_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 DMA12_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 DMA11_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 DMA10_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 DMA9_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 DMA8_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 DMA7_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 DMA6_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 DMA5_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 DMA4_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 DMA3_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 DMA2_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 DMA1_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 DMA0_IRQHandler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 SysTick_Handler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 PendSV_Handler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 DebugMon_Handler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 SVC_Handler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 UsageFault_Handler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 BusFault_Handler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 MemManage_Handler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 HardFault_Handler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:23     .text:00000000 NMI_Handler
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:262    .text:00000004 __init_hardware
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:295    .text:0000002c $d
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:306    .vectortable:00000000 InterruptVector
+                            *COM*:00000008 Cpu
+C:\Users\Shubham\AppData\Local\Temp\ccCrJ6EZ.s:303    .vectortable:00000000 $d
+
+UNDEFINED SYMBOLS
+__vector_table
+_estack
+__thumb_startup
