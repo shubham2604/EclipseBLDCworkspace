@@ -53,7 +53,7 @@
   30:hal/Landungsbruecke/tmc/USB.c **** 	.rxN             = rxN,
   31:hal/Landungsbruecke/tmc/USB.c **** 	.txN             = txN,
   32:hal/Landungsbruecke/tmc/USB.c **** 	.clearBuffers    = clearBuffers,
-  33:hal/Landungsbruecke/tmc/USB.c **** 	.baudRate        = 256000,
+  33:hal/Landungsbruecke/tmc/USB.c **** 	.baudRate        = 460800,
   34:hal/Landungsbruecke/tmc/USB.c **** 	.bytesAvailable  = bytesAvailable
   35:hal/Landungsbruecke/tmc/USB.c **** };
   36:hal/Landungsbruecke/tmc/USB.c **** 
@@ -543,7 +543,7 @@
  400 0014 00000000 		.word	rxN
  401 0018 00000000 		.word	clearBuffers
  402 001c 00000000 		.word	bytesAvailable
- 403 0020 00E80300 		.word	256000
+ 403 0020 00080700 		.word	460800
  404              		.bss
  405              		.align	1
  408              	ADCValue:
@@ -583,17 +583,17 @@
  440              		.file 30 "./hal/Landungsbruecke/freescale/nvic.h"
 DEFINED SYMBOLS
                             *ABS*:00000000 USB.c
-C:\Users\Shubham\AppData\Local\Temp\ccqcXDsa.s:15     .text:00000000 $t
-C:\Users\Shubham\AppData\Local\Temp\ccqcXDsa.s:22     .text:00000000 bytesAvailable
-C:\Users\Shubham\AppData\Local\Temp\ccqcXDsa.s:50     .text:00000008 clearBuffers
-C:\Users\Shubham\AppData\Local\Temp\ccqcXDsa.s:94     .text:00000018 tx
-C:\Users\Shubham\AppData\Local\Temp\ccqcXDsa.s:115    .text:0000001c txN
-C:\Users\Shubham\AppData\Local\Temp\ccqcXDsa.s:181    .text:00000034 deInit
-C:\Users\Shubham\AppData\Local\Temp\ccqcXDsa.s:229    .text:00000070 $d
-C:\Users\Shubham\AppData\Local\Temp\ccqcXDsa.s:233    .text:00000074 $t
-C:\Users\Shubham\AppData\Local\Temp\ccqcXDsa.s:239    .text:00000074 init
-C:\Users\Shubham\AppData\Local\Temp\ccqcXDsa.s:284    .text:00000090 rxN
-C:\Users\Shubham\AppData\Local\Temp\ccqcXDsa.s:359    .text:000000ba rx
+C:\Users\Shubham\AppData\Local\Temp\ccviKeZQ.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccviKeZQ.s:22     .text:00000000 bytesAvailable
+C:\Users\Shubham\AppData\Local\Temp\ccviKeZQ.s:50     .text:00000008 clearBuffers
+C:\Users\Shubham\AppData\Local\Temp\ccviKeZQ.s:94     .text:00000018 tx
+C:\Users\Shubham\AppData\Local\Temp\ccviKeZQ.s:115    .text:0000001c txN
+C:\Users\Shubham\AppData\Local\Temp\ccviKeZQ.s:181    .text:00000034 deInit
+C:\Users\Shubham\AppData\Local\Temp\ccviKeZQ.s:229    .text:00000070 $d
+C:\Users\Shubham\AppData\Local\Temp\ccviKeZQ.s:233    .text:00000074 $t
+C:\Users\Shubham\AppData\Local\Temp\ccviKeZQ.s:239    .text:00000074 init
+C:\Users\Shubham\AppData\Local\Temp\ccviKeZQ.s:284    .text:00000090 rxN
+C:\Users\Shubham\AppData\Local\Temp\ccviKeZQ.s:359    .text:000000ba rx
                             *COM*:00000001 hwid
                             *COM*:00000030 HAL
                             *COM*:00000028 UART
@@ -601,16 +601,16 @@ C:\Users\Shubham\AppData\Local\Temp\ccqcXDsa.s:359    .text:000000ba rx
                             *COM*:00000024 WLAN
                             *COM*:00000024 RS232
                             *COM*:0000001c LEDs
-C:\Users\Shubham\AppData\Local\Temp\ccqcXDsa.s:394    .data:00000000 USB
+C:\Users\Shubham\AppData\Local\Temp\ccviKeZQ.s:394    .data:00000000 USB
                             *COM*:00000001 uart0_interrupt
                             *COM*:00000020 ADCs
                             *COM*:0000002c SPI
                             *COM*:00000828 IOMap
                             *COM*:00000034 IOs
                             *COM*:00000008 Cpu
-C:\Users\Shubham\AppData\Local\Temp\ccqcXDsa.s:391    .data:00000000 $d
-C:\Users\Shubham\AppData\Local\Temp\ccqcXDsa.s:405    .bss:00000000 $d
-C:\Users\Shubham\AppData\Local\Temp\ccqcXDsa.s:408    .bss:00000000 ADCValue
+C:\Users\Shubham\AppData\Local\Temp\ccviKeZQ.s:391    .data:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccviKeZQ.s:405    .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccviKeZQ.s:408    .bss:00000000 ADCValue
 
 UNDEFINED SYMBOLS
 CDC1_GetCharsInRxBuf

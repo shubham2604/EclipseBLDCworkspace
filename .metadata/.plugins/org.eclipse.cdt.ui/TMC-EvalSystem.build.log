@@ -1,4 +1,4 @@
-01:45:00 **** Build of configuration Release for project TMC-EvalSystem ****
+20:17:39 **** Build of configuration Release for project TMC-EvalSystem ****
 cs-make -s -j8 all LINK=BL DEVICE=Landungsbruecke 
 "-------- begin (mode: ROM_RUN) --------"
 arm-none-eabi-gcc (GNU Arm Embedded Toolchain 9-2020-q2-update) 9.3.1 20200408 (release)
@@ -6,15 +6,8 @@ Copyright (C) 2019 Free Software Foundation, Inc.
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-"**** Compiling C :" HelloWorld.c "->" _build_Landungsbruecke/HelloWorld.o
---------  end  --------
-ECHO is off.
-"**** Linking :" _build_Landungsbruecke/Landungsbruecke_v3.07.15_BL.elf
-Creating load file: _build_Landungsbruecke/Landungsbruecke_v3.07.15_BL.hex
-Creating load file: _build_Landungsbruecke/Landungsbruecke_v3.07.15_BL.bin
-Creating Extended Listing/Disassembly: _build_Landungsbruecke/Landungsbruecke_v3.07.15_BL.lss
-Creating Symbol Table: _build_Landungsbruecke/Landungsbruecke_v3.07.15_BL.sym
 Size after build:
+--------  end  --------
 _build_Landungsbruecke/Landungsbruecke_v3.07.15_BL.elf  :
 section                 size         addr
 .interrupts            0x1bc       0x8000
@@ -43,5 +36,5 @@ Total               0x1cd7c6
 
 
 
-01:45:03 Build Finished. 0 errors, 0 warnings. (took 3s.123ms)
+20:17:39 Build Finished. 0 errors, 0 warnings. (took 838ms)
 

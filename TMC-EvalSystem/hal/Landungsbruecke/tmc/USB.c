@@ -30,7 +30,7 @@ RXTXTypeDef USB =
 	.rxN             = rxN,
 	.txN             = txN,
 	.clearBuffers    = clearBuffers,
-	.baudRate        = 256000,
+	.baudRate        = 460800,
 	.bytesAvailable  = bytesAvailable
 };
 
