@@ -700,249 +700,247 @@
  530              	.LVL57:
  157:HelloWorld.c  **** 
  158:HelloWorld.c  **** 	// Switch to position mode
- 159:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_PID_POSITION_TARGET, 0x00000000);
- 531              		.loc 1 159 2 view .LVU133
- 532 0060 0022     		movs	r2, #0
- 533 0062 1046     		mov	r0, r2
- 534 0064 6821     		movs	r1, #104
+ 159:HelloWorld.c  **** 	//tmc4671_writeInt(0, TMC4671_PID_POSITION_TARGET, 0x00000000);
+ 160:HelloWorld.c  **** 	//tmc4671_writeInt(0, TMC4671_MODE_RAMP_MODE_MOTION, 0x00000003);
+ 161:HelloWorld.c  **** 
+ 162:HelloWorld.c  **** 	// Switch to torque mode
+ 163:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_MODE_RAMP_MODE_MOTION, 0x00000001);
+ 531              		.loc 1 163 2 view .LVU133
+ 532 0060 0122     		movs	r2, #1
+ 533 0062 6321     		movs	r1, #99
+ 534 0064 0020     		movs	r0, #0
  535 0066 FFF7FEFF 		bl	tmc4671_writeInt
  536              	.LVL58:
- 160:HelloWorld.c  **** 	tmc4671_writeInt(0, TMC4671_MODE_RAMP_MODE_MOTION, 0x00000003);
- 537              		.loc 1 160 2 view .LVU134
- 538 006a 0322     		movs	r2, #3
- 539 006c 6321     		movs	r1, #99
- 540 006e 0020     		movs	r0, #0
- 541 0070 FFF7FEFF 		bl	tmc4671_writeInt
- 542              	.LVL59:
- 161:HelloWorld.c  **** 
- 162:HelloWorld.c  **** 	//uint8_t time = 1;
- 163:HelloWorld.c  **** 	uint8_t pos_target[4];
- 164:HelloWorld.c  **** 	uint8_t enc[4];
- 165:HelloWorld.c  **** 	int32_t target;
- 166:HelloWorld.c  **** 	int32_t current_pos;
- 167:HelloWorld.c  **** 	while(1){
- 168:HelloWorld.c  **** 		//if(time % 100 == 0)
- 169:HelloWorld.c  **** 		//	break;
- 170:HelloWorld.c  **** 		//time+=1;
- 171:HelloWorld.c  **** 		current_pos = tmc4671_readInt(0, TMC4671_PID_POSITION_ACTUAL);
- 172:HelloWorld.c  **** 		enc[0] = ( current_pos & 0xFF000000 ) >> 24;
- 173:HelloWorld.c  **** 		enc[1] = ( current_pos & 0x00FF0000 ) >> 16;
- 174:HelloWorld.c  **** 		enc[2] = ( current_pos & 0x0000FF00 ) >> 8;
- 175:HelloWorld.c  **** 		enc[3] = ( current_pos & 0x000000FF ) ;
- 176:HelloWorld.c  **** 
- 177:HelloWorld.c  **** 		HAL.USB->txN(enc,4);
- 543              		.loc 1 177 6 is_stmt 0 view .LVU135
- 544 0074 134D     		ldr	r5, .L20
- 545              	.L16:
- 163:HelloWorld.c  **** 	uint8_t enc[4];
- 546              		.loc 1 163 2 is_stmt 1 view .LVU136
- 164:HelloWorld.c  **** 	int32_t target;
- 547              		.loc 1 164 2 view .LVU137
- 165:HelloWorld.c  **** 	int32_t current_pos;
- 548              		.loc 1 165 2 view .LVU138
- 166:HelloWorld.c  **** 	while(1){
- 549              		.loc 1 166 2 view .LVU139
- 167:HelloWorld.c  **** 		//if(time % 100 == 0)
- 550              		.loc 1 167 2 view .LVU140
- 171:HelloWorld.c  **** 		enc[0] = ( current_pos & 0xFF000000 ) >> 24;
- 551              		.loc 1 171 3 view .LVU141
- 171:HelloWorld.c  **** 		enc[0] = ( current_pos & 0xFF000000 ) >> 24;
- 552              		.loc 1 171 17 is_stmt 0 view .LVU142
- 553 0076 6B21     		movs	r1, #107
- 554 0078 0020     		movs	r0, #0
- 555 007a FFF7FEFF 		bl	tmc4671_readInt
- 556              	.LVL60:
- 172:HelloWorld.c  **** 		enc[1] = ( current_pos & 0x00FF0000 ) >> 16;
- 557              		.loc 1 172 3 is_stmt 1 view .LVU143
- 173:HelloWorld.c  **** 		enc[2] = ( current_pos & 0x0000FF00 ) >> 8;
- 558              		.loc 1 173 3 view .LVU144
- 174:HelloWorld.c  **** 		enc[3] = ( current_pos & 0x000000FF ) ;
- 559              		.loc 1 174 3 view .LVU145
- 175:HelloWorld.c  **** 
- 560              		.loc 1 175 3 view .LVU146
- 561              		.loc 1 177 6 is_stmt 0 view .LVU147
- 562 007e 6C69     		ldr	r4, [r5, #20]
- 563              		.loc 1 177 3 view .LVU148
- 564 0080 0421     		movs	r1, #4
- 565 0082 00BA     		rev	r0, r0
- 566              	.LVL61:
- 567              		.loc 1 177 3 view .LVU149
- 568 0084 2369     		ldr	r3, [r4, #16]
- 172:HelloWorld.c  **** 		enc[1] = ( current_pos & 0x00FF0000 ) >> 16;
- 569              		.loc 1 172 10 view .LVU150
- 570 0086 0190     		str	r0, [sp, #4]
- 571              		.loc 1 177 3 is_stmt 1 view .LVU151
- 572 0088 0DEB0100 		add	r0, sp, r1
- 573 008c 9847     		blx	r3
- 574              	.LVL62:
- 178:HelloWorld.c  **** 
- 179:HelloWorld.c  **** 		if(HAL.USB->rxN(pos_target,4)){
- 575              		.loc 1 179 3 view .LVU152
- 576              		.loc 1 179 6 is_stmt 0 view .LVU153
- 577 008e 6369     		ldr	r3, [r4, #20]
- 578 0090 0421     		movs	r1, #4
- 579 0092 6846     		mov	r0, sp
- 580 0094 9847     		blx	r3
- 581              	.LVL63:
- 582              		.loc 1 179 5 view .LVU154
- 583 0096 88B1     		cbz	r0, .L15
- 180:HelloWorld.c  **** 			target = ( pos_target[0] << 24 ) + ( pos_target[1] << 16 ) + ( pos_target[2] << 8 ) + pos_target
- 584              		.loc 1 180 4 is_stmt 1 view .LVU155
- 585              	.LVL64:
- 181:HelloWorld.c  **** 			tmc4671_writeInt(0, TMC4671_PID_POSITION_TARGET, target);  //
- 586              		.loc 1 181 4 view .LVU156
- 180:HelloWorld.c  **** 			target = ( pos_target[0] << 24 ) + ( pos_target[1] << 16 ) + ( pos_target[2] << 8 ) + pos_target
- 587              		.loc 1 180 51 is_stmt 0 view .LVU157
- 588 0098 9DF80130 		ldrb	r3, [sp, #1]	@ zero_extendqisi2
- 589              	.LVL65:
- 180:HelloWorld.c  **** 			target = ( pos_target[0] << 24 ) + ( pos_target[1] << 16 ) + ( pos_target[2] << 8 ) + pos_target
- 590              		.loc 1 180 25 view .LVU158
- 591 009c 9DF80020 		ldrb	r2, [sp]	@ zero_extendqisi2
- 592              	.LVL66:
- 180:HelloWorld.c  **** 			target = ( pos_target[0] << 24 ) + ( pos_target[1] << 16 ) + ( pos_target[2] << 8 ) + pos_target
- 593              		.loc 1 180 55 view .LVU159
- 594 00a0 1B04     		lsls	r3, r3, #16
- 595              	.LVL67:
- 180:HelloWorld.c  **** 			target = ( pos_target[0] << 24 ) + ( pos_target[1] << 16 ) + ( pos_target[2] << 8 ) + pos_target
- 596              		.loc 1 180 37 view .LVU160
- 597 00a2 03EB0263 		add	r3, r3, r2, lsl #24
- 180:HelloWorld.c  **** 			target = ( pos_target[0] << 24 ) + ( pos_target[1] << 16 ) + ( pos_target[2] << 8 ) + pos_target
- 598              		.loc 1 180 77 view .LVU161
- 599 00a6 9DF80220 		ldrb	r2, [sp, #2]	@ zero_extendqisi2
- 600              	.LVL68:
- 180:HelloWorld.c  **** 			target = ( pos_target[0] << 24 ) + ( pos_target[1] << 16 ) + ( pos_target[2] << 8 ) + pos_target
- 601              		.loc 1 180 63 view .LVU162
- 602 00aa 03EB0223 		add	r3, r3, r2, lsl #8
- 180:HelloWorld.c  **** 			target = ( pos_target[0] << 24 ) + ( pos_target[1] << 16 ) + ( pos_target[2] << 8 ) + pos_target
- 603              		.loc 1 180 100 view .LVU163
- 604 00ae 9DF80320 		ldrb	r2, [sp, #3]	@ zero_extendqisi2
- 605              		.loc 1 181 4 view .LVU164
- 606 00b2 6821     		movs	r1, #104
- 607 00b4 1A44     		add	r2, r2, r3
- 608 00b6 0020     		movs	r0, #0
- 609 00b8 FFF7FEFF 		bl	tmc4671_writeInt
- 610              	.LVL69:
- 611              	.L15:
- 182:HelloWorld.c  **** 		}
- 183:HelloWorld.c  **** 
- 184:HelloWorld.c  **** 		wait(1);
- 612              		.loc 1 184 3 is_stmt 1 view .LVU165
- 613 00bc 0120     		movs	r0, #1
- 614 00be FFF7FEFF 		bl	wait
- 615              	.LVL70:
- 167:HelloWorld.c  **** 		//if(time % 100 == 0)
- 616              		.loc 1 167 7 view .LVU166
- 171:HelloWorld.c  **** 		enc[0] = ( current_pos & 0xFF000000 ) >> 24;
- 617              		.loc 1 171 15 is_stmt 0 view .LVU167
- 618 00c2 D8E7     		b	.L16
- 619              	.L21:
- 620              		.align	2
- 621              	.L20:
- 622 00c4 00000000 		.word	HAL
- 623              		.cfi_endproc
- 624              	.LFE3:
- 626              		.global	BLConfig
- 627              		.global	Protection
- 628              		.global	VersionString
- 629              		.section	.rodata.str1.1,"aMS",%progbits,1
- 630              	.LC0:
- 631 0000 30303132 		.ascii	"0012V307\000"
- 631      56333037 
- 631      00
- 632              		.comm	IdState,40,4
- 633              		.comm	TMCMotionController,532,4
- 634              		.comm	TMCDriver,532,4
- 635              		.comm	Evalboards,244,4
- 636              		.comm	VitalSignsMonitor,20,4
- 637              		.comm	hwid,1,1
- 638              		.comm	HAL,48,4
- 639              		.comm	UART,40,4
- 640              		.comm	Timer,16,4
- 641              		.comm	WLAN,36,4
- 642              		.comm	RS232,36,4
- 643              		.comm	LEDs,28,4
- 644              		.comm	USB,36,4
- 645              		.comm	uart0_interrupt,1,1
- 646              		.comm	ADCs,32,4
- 647              		.comm	SPI,44,4
- 648              		.comm	IOMap,2088,4
- 649              		.comm	IOs,52,4
- 650              		.comm	Cpu,8,4
- 651              		.data
- 652              		.align	2
- 655              	VersionString:
- 656 0000 00000000 		.word	.LC0
- 657              		.bss
- 658              		.align	1
- 661              	ADCValue:
- 662 0000 00000000 		.space	12
- 662      00000000 
- 662      00000000 
- 663              		.section	.bldata,"aw"
- 664              		.align	2
- 665              		.set	.LANCHOR0,. + 0
- 668              	BLConfig:
- 669 0000 00000000 		.space	8
- 669      00000000 
- 670              		.section	.cfmconfig,"a"
- 673              	Protection:
- 674 0000 FFFFFFFF 		.ascii	"\377\377\377\377\377\377\377\377\377\377\377\377~\371"
- 674      FFFFFFFF 
- 674      FFFFFFFF 
- 674      7EF9
- 675 000e FFFF     		.ascii	"\377\377"
- 676              		.text
- 677              	.Letext0:
- 678              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
- 679              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
- 680              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
- 681              		.file 5 "TMC-API/tmc/helpers/Types.h"
- 682              		.file 6 "TMC-API/tmc/helpers/Config.h"
- 683              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
- 684              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
- 685              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
- 686              		.file 10 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\in
- 687              		.file 11 "hal/Landungsbruecke/freescale/MK20D10.h"
- 688              		.file 12 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
- 689              		.file 13 "./hal/Landungsbruecke/freescale/Cpu.h"
- 690              		.file 14 "./hal/IOs.h"
- 691              		.file 15 "./hal/IOMap.h"
- 692              		.file 16 "./hal/SPI.h"
- 693              		.file 17 "./hal/ADCs.h"
- 694              		.file 18 "./hal/RXTX.h"
- 695              		.file 19 "./hal/USB.h"
- 696              		.file 20 "./hal/LEDs.h"
- 697              		.file 21 "./hal/RS232.h"
- 698              		.file 22 "./hal/WLAN.h"
- 699              		.file 23 "./hal/Timer.h"
- 700              		.file 24 "./hal/UART.h"
- 701              		.file 25 "./hal/HAL.h"
- 702              		.file 26 "./tmc/VitalSignsMonitor.h"
- 703              		.file 27 "boards/Board.h"
- 704              		.file 28 "boards/TMCDriver.h"
- 705              		.file 29 "boards/TMCMotionController.h"
- 706              		.file 30 "tmc/BoardAssignment.h"
- 707              		.file 31 "TMC-API/tmc/ic/TMC4671/TMC4671.h"
- 708              		.file 32 "./hal/SysTick.h"
- 709              		.file 33 "tmc/IdDetection.h"
- 710              		.file 34 "tmc/TMCL.h"
+ 164:HelloWorld.c  **** 
+ 165:HelloWorld.c  **** 	//uint8_t time = 1;
+ 166:HelloWorld.c  **** 	//uint8_t pos_target[4];
+ 167:HelloWorld.c  **** 	uint8_t torque_target[4];
+ 168:HelloWorld.c  **** 	uint8_t enc[4];
+ 169:HelloWorld.c  **** 	int32_t target;
+ 170:HelloWorld.c  **** 	int32_t current_pos;
+ 171:HelloWorld.c  **** 	while(1){
+ 172:HelloWorld.c  **** 		//if(time % 100 == 0)
+ 173:HelloWorld.c  **** 		//	break;
+ 174:HelloWorld.c  **** 		//time+=1;
+ 175:HelloWorld.c  **** 		current_pos = tmc4671_readInt(0, TMC4671_PID_POSITION_ACTUAL);
+ 176:HelloWorld.c  **** 		enc[0] = ( current_pos & 0xFF000000 ) >> 24;
+ 177:HelloWorld.c  **** 		enc[1] = ( current_pos & 0x00FF0000 ) >> 16;
+ 178:HelloWorld.c  **** 		enc[2] = ( current_pos & 0x0000FF00 ) >> 8;
+ 179:HelloWorld.c  **** 		enc[3] = ( current_pos & 0x000000FF ) ;
+ 180:HelloWorld.c  **** 
+ 181:HelloWorld.c  **** 		HAL.USB->txN(enc,4);
+ 537              		.loc 1 181 6 is_stmt 0 view .LVU134
+ 538 006a 144D     		ldr	r5, .L20
+ 539              	.L16:
+ 167:HelloWorld.c  **** 	uint8_t enc[4];
+ 540              		.loc 1 167 2 is_stmt 1 view .LVU135
+ 168:HelloWorld.c  **** 	int32_t target;
+ 541              		.loc 1 168 2 view .LVU136
+ 169:HelloWorld.c  **** 	int32_t current_pos;
+ 542              		.loc 1 169 2 view .LVU137
+ 170:HelloWorld.c  **** 	while(1){
+ 543              		.loc 1 170 2 view .LVU138
+ 171:HelloWorld.c  **** 		//if(time % 100 == 0)
+ 544              		.loc 1 171 2 view .LVU139
+ 175:HelloWorld.c  **** 		enc[0] = ( current_pos & 0xFF000000 ) >> 24;
+ 545              		.loc 1 175 3 view .LVU140
+ 175:HelloWorld.c  **** 		enc[0] = ( current_pos & 0xFF000000 ) >> 24;
+ 546              		.loc 1 175 17 is_stmt 0 view .LVU141
+ 547 006c 6B21     		movs	r1, #107
+ 548 006e 0020     		movs	r0, #0
+ 549 0070 FFF7FEFF 		bl	tmc4671_readInt
+ 550              	.LVL59:
+ 176:HelloWorld.c  **** 		enc[1] = ( current_pos & 0x00FF0000 ) >> 16;
+ 551              		.loc 1 176 3 is_stmt 1 view .LVU142
+ 177:HelloWorld.c  **** 		enc[2] = ( current_pos & 0x0000FF00 ) >> 8;
+ 552              		.loc 1 177 3 view .LVU143
+ 178:HelloWorld.c  **** 		enc[3] = ( current_pos & 0x000000FF ) ;
+ 553              		.loc 1 178 3 view .LVU144
+ 179:HelloWorld.c  **** 
+ 554              		.loc 1 179 3 view .LVU145
+ 555              		.loc 1 181 6 is_stmt 0 view .LVU146
+ 556 0074 6C69     		ldr	r4, [r5, #20]
+ 557              		.loc 1 181 3 view .LVU147
+ 558 0076 0421     		movs	r1, #4
+ 559 0078 00BA     		rev	r0, r0
+ 560              	.LVL60:
+ 561              		.loc 1 181 3 view .LVU148
+ 562 007a 2369     		ldr	r3, [r4, #16]
+ 176:HelloWorld.c  **** 		enc[1] = ( current_pos & 0x00FF0000 ) >> 16;
+ 563              		.loc 1 176 10 view .LVU149
+ 564 007c 0190     		str	r0, [sp, #4]
+ 565              		.loc 1 181 3 is_stmt 1 view .LVU150
+ 566 007e 0DEB0100 		add	r0, sp, r1
+ 567 0082 9847     		blx	r3
+ 568              	.LVL61:
+ 182:HelloWorld.c  **** 
+ 183:HelloWorld.c  **** 		if(HAL.USB->rxN(torque_target,4)){
+ 569              		.loc 1 183 3 view .LVU151
+ 570              		.loc 1 183 6 is_stmt 0 view .LVU152
+ 571 0084 6369     		ldr	r3, [r4, #20]
+ 572 0086 0421     		movs	r1, #4
+ 573 0088 6846     		mov	r0, sp
+ 574 008a 9847     		blx	r3
+ 575              	.LVL62:
+ 576              		.loc 1 183 5 view .LVU153
+ 577 008c 88B1     		cbz	r0, .L15
+ 184:HelloWorld.c  **** 			target = ( torque_target[0] << 24 ) + ( torque_target[1] << 16 ) + ( torque_target[2] << 8 ) + t
+ 578              		.loc 1 184 4 is_stmt 1 view .LVU154
+ 579              	.LVL63:
+ 185:HelloWorld.c  **** 			tmc4671_writeInt(0, TMC4671_PID_TORQUE_FLUX_TARGET, target);  //
+ 580              		.loc 1 185 4 view .LVU155
+ 184:HelloWorld.c  **** 			target = ( torque_target[0] << 24 ) + ( torque_target[1] << 16 ) + ( torque_target[2] << 8 ) + t
+ 581              		.loc 1 184 57 is_stmt 0 view .LVU156
+ 582 008e 9DF80130 		ldrb	r3, [sp, #1]	@ zero_extendqisi2
+ 583              	.LVL64:
+ 184:HelloWorld.c  **** 			target = ( torque_target[0] << 24 ) + ( torque_target[1] << 16 ) + ( torque_target[2] << 8 ) + t
+ 584              		.loc 1 184 28 view .LVU157
+ 585 0092 9DF80020 		ldrb	r2, [sp]	@ zero_extendqisi2
+ 586              	.LVL65:
+ 184:HelloWorld.c  **** 			target = ( torque_target[0] << 24 ) + ( torque_target[1] << 16 ) + ( torque_target[2] << 8 ) + t
+ 587              		.loc 1 184 61 view .LVU158
+ 588 0096 1B04     		lsls	r3, r3, #16
+ 589              	.LVL66:
+ 184:HelloWorld.c  **** 			target = ( torque_target[0] << 24 ) + ( torque_target[1] << 16 ) + ( torque_target[2] << 8 ) + t
+ 590              		.loc 1 184 40 view .LVU159
+ 591 0098 03EB0263 		add	r3, r3, r2, lsl #24
+ 184:HelloWorld.c  **** 			target = ( torque_target[0] << 24 ) + ( torque_target[1] << 16 ) + ( torque_target[2] << 8 ) + t
+ 592              		.loc 1 184 86 view .LVU160
+ 593 009c 9DF80220 		ldrb	r2, [sp, #2]	@ zero_extendqisi2
+ 594              	.LVL67:
+ 184:HelloWorld.c  **** 			target = ( torque_target[0] << 24 ) + ( torque_target[1] << 16 ) + ( torque_target[2] << 8 ) + t
+ 595              		.loc 1 184 69 view .LVU161
+ 596 00a0 03EB0223 		add	r3, r3, r2, lsl #8
+ 184:HelloWorld.c  **** 			target = ( torque_target[0] << 24 ) + ( torque_target[1] << 16 ) + ( torque_target[2] << 8 ) + t
+ 597              		.loc 1 184 112 view .LVU162
+ 598 00a4 9DF80320 		ldrb	r2, [sp, #3]	@ zero_extendqisi2
+ 599              		.loc 1 185 4 view .LVU163
+ 600 00a8 6421     		movs	r1, #100
+ 601 00aa 1A44     		add	r2, r2, r3
+ 602 00ac 0020     		movs	r0, #0
+ 603 00ae FFF7FEFF 		bl	tmc4671_writeInt
+ 604              	.LVL68:
+ 605              	.L15:
+ 186:HelloWorld.c  **** 		}
+ 187:HelloWorld.c  **** 
+ 188:HelloWorld.c  **** 		wait(1);
+ 606              		.loc 1 188 3 is_stmt 1 view .LVU164
+ 607 00b2 0120     		movs	r0, #1
+ 608 00b4 FFF7FEFF 		bl	wait
+ 609              	.LVL69:
+ 171:HelloWorld.c  **** 		//if(time % 100 == 0)
+ 610              		.loc 1 171 7 view .LVU165
+ 175:HelloWorld.c  **** 		enc[0] = ( current_pos & 0xFF000000 ) >> 24;
+ 611              		.loc 1 175 15 is_stmt 0 view .LVU166
+ 612 00b8 D8E7     		b	.L16
+ 613              	.L21:
+ 614 00ba 00BF     		.align	2
+ 615              	.L20:
+ 616 00bc 00000000 		.word	HAL
+ 617              		.cfi_endproc
+ 618              	.LFE3:
+ 620              		.global	BLConfig
+ 621              		.global	Protection
+ 622              		.global	VersionString
+ 623              		.section	.rodata.str1.1,"aMS",%progbits,1
+ 624              	.LC0:
+ 625 0000 30303132 		.ascii	"0012V307\000"
+ 625      56333037 
+ 625      00
+ 626              		.comm	IdState,40,4
+ 627              		.comm	TMCMotionController,532,4
+ 628              		.comm	TMCDriver,532,4
+ 629              		.comm	Evalboards,244,4
+ 630              		.comm	VitalSignsMonitor,20,4
+ 631              		.comm	hwid,1,1
+ 632              		.comm	HAL,48,4
+ 633              		.comm	UART,40,4
+ 634              		.comm	Timer,16,4
+ 635              		.comm	WLAN,36,4
+ 636              		.comm	RS232,36,4
+ 637              		.comm	LEDs,28,4
+ 638              		.comm	USB,36,4
+ 639              		.comm	uart0_interrupt,1,1
+ 640              		.comm	ADCs,32,4
+ 641              		.comm	SPI,44,4
+ 642              		.comm	IOMap,2088,4
+ 643              		.comm	IOs,52,4
+ 644              		.comm	Cpu,8,4
+ 645              		.data
+ 646              		.align	2
+ 649              	VersionString:
+ 650 0000 00000000 		.word	.LC0
+ 651              		.bss
+ 652              		.align	1
+ 655              	ADCValue:
+ 656 0000 00000000 		.space	12
+ 656      00000000 
+ 656      00000000 
+ 657              		.section	.bldata,"aw"
+ 658              		.align	2
+ 659              		.set	.LANCHOR0,. + 0
+ 662              	BLConfig:
+ 663 0000 00000000 		.space	8
+ 663      00000000 
+ 664              		.section	.cfmconfig,"a"
+ 667              	Protection:
+ 668 0000 FFFFFFFF 		.ascii	"\377\377\377\377\377\377\377\377\377\377\377\377~\371"
+ 668      FFFFFFFF 
+ 668      FFFFFFFF 
+ 668      7EF9
+ 669 000e FFFF     		.ascii	"\377\377"
+ 670              		.text
+ 671              	.Letext0:
+ 672              		.file 2 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\lib\\gcc\\arm-none
+ 673              		.file 3 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 674              		.file 4 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 675              		.file 5 "TMC-API/tmc/helpers/Types.h"
+ 676              		.file 6 "TMC-API/tmc/helpers/Config.h"
+ 677              		.file 7 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 678              		.file 8 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 679              		.file 9 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\inc
+ 680              		.file 10 "c:\\program files (x86)\\gnu arm embedded toolchain\\9 2020-q2-update\\arm-none-eabi\\in
+ 681              		.file 11 "hal/Landungsbruecke/freescale/MK20D10.h"
+ 682              		.file 12 "./hal/Landungsbruecke/freescale/USB_CDC/PE_Types.h"
+ 683              		.file 13 "./hal/Landungsbruecke/freescale/Cpu.h"
+ 684              		.file 14 "./hal/IOs.h"
+ 685              		.file 15 "./hal/IOMap.h"
+ 686              		.file 16 "./hal/SPI.h"
+ 687              		.file 17 "./hal/ADCs.h"
+ 688              		.file 18 "./hal/RXTX.h"
+ 689              		.file 19 "./hal/USB.h"
+ 690              		.file 20 "./hal/LEDs.h"
+ 691              		.file 21 "./hal/RS232.h"
+ 692              		.file 22 "./hal/WLAN.h"
+ 693              		.file 23 "./hal/Timer.h"
+ 694              		.file 24 "./hal/UART.h"
+ 695              		.file 25 "./hal/HAL.h"
+ 696              		.file 26 "./tmc/VitalSignsMonitor.h"
+ 697              		.file 27 "boards/Board.h"
+ 698              		.file 28 "boards/TMCDriver.h"
+ 699              		.file 29 "boards/TMCMotionController.h"
+ 700              		.file 30 "tmc/BoardAssignment.h"
+ 701              		.file 31 "TMC-API/tmc/ic/TMC4671/TMC4671.h"
+ 702              		.file 32 "./hal/SysTick.h"
+ 703              		.file 33 "tmc/IdDetection.h"
+ 704              		.file 34 "tmc/TMCL.h"
 DEFINED SYMBOLS
                             *ABS*:00000000 HelloWorld.c
-C:\Users\Shubham\AppData\Local\Temp\cc0NfyaD.s:15     .text:00000000 $t
-C:\Users\Shubham\AppData\Local\Temp\cc0NfyaD.s:23     .text:00000000 shallForceBoot
-C:\Users\Shubham\AppData\Local\Temp\cc0NfyaD.s:163    .text:00000090 $d
+C:\Users\Shubham\AppData\Local\Temp\ccmDwGyf.s:15     .text:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccmDwGyf.s:23     .text:00000000 shallForceBoot
+C:\Users\Shubham\AppData\Local\Temp\ccmDwGyf.s:163    .text:00000090 $d
                             *COM*:00000030 HAL
-C:\Users\Shubham\AppData\Local\Temp\cc0NfyaD.s:167    .text:00000094 $t
-C:\Users\Shubham\AppData\Local\Temp\cc0NfyaD.s:174    .text:00000094 init_reg
-C:\Users\Shubham\AppData\Local\Temp\cc0NfyaD.s:440    .text:00000208 $d
+C:\Users\Shubham\AppData\Local\Temp\ccmDwGyf.s:167    .text:00000094 $t
+C:\Users\Shubham\AppData\Local\Temp\ccmDwGyf.s:174    .text:00000094 init_reg
+C:\Users\Shubham\AppData\Local\Temp\ccmDwGyf.s:440    .text:00000208 $d
                             *COM*:00000014 VitalSignsMonitor
                             *COM*:000000f4 Evalboards
-C:\Users\Shubham\AppData\Local\Temp\cc0NfyaD.s:455    .text.startup:00000000 $t
-C:\Users\Shubham\AppData\Local\Temp\cc0NfyaD.s:462    .text.startup:00000000 main
-C:\Users\Shubham\AppData\Local\Temp\cc0NfyaD.s:622    .text.startup:000000c4 $d
-C:\Users\Shubham\AppData\Local\Temp\cc0NfyaD.s:668    .bldata:00000000 BLConfig
-C:\Users\Shubham\AppData\Local\Temp\cc0NfyaD.s:673    .cfmconfig:00000000 Protection
-C:\Users\Shubham\AppData\Local\Temp\cc0NfyaD.s:655    .data:00000000 VersionString
+C:\Users\Shubham\AppData\Local\Temp\ccmDwGyf.s:455    .text.startup:00000000 $t
+C:\Users\Shubham\AppData\Local\Temp\ccmDwGyf.s:462    .text.startup:00000000 main
+C:\Users\Shubham\AppData\Local\Temp\ccmDwGyf.s:616    .text.startup:000000bc $d
+C:\Users\Shubham\AppData\Local\Temp\ccmDwGyf.s:662    .bldata:00000000 BLConfig
+C:\Users\Shubham\AppData\Local\Temp\ccmDwGyf.s:667    .cfmconfig:00000000 Protection
+C:\Users\Shubham\AppData\Local\Temp\ccmDwGyf.s:649    .data:00000000 VersionString
                             *COM*:00000028 IdState
                             *COM*:00000214 TMCMotionController
                             *COM*:00000214 TMCDriver
@@ -959,10 +957,10 @@ C:\Users\Shubham\AppData\Local\Temp\cc0NfyaD.s:655    .data:00000000 VersionStri
                             *COM*:00000828 IOMap
                             *COM*:00000034 IOs
                             *COM*:00000008 Cpu
-C:\Users\Shubham\AppData\Local\Temp\cc0NfyaD.s:652    .data:00000000 $d
-C:\Users\Shubham\AppData\Local\Temp\cc0NfyaD.s:658    .bss:00000000 $d
-C:\Users\Shubham\AppData\Local\Temp\cc0NfyaD.s:661    .bss:00000000 ADCValue
-C:\Users\Shubham\AppData\Local\Temp\cc0NfyaD.s:664    .bldata:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccmDwGyf.s:646    .data:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccmDwGyf.s:652    .bss:00000000 $d
+C:\Users\Shubham\AppData\Local\Temp\ccmDwGyf.s:655    .bss:00000000 ADCValue
+C:\Users\Shubham\AppData\Local\Temp\ccmDwGyf.s:658    .bldata:00000000 $d
 
 UNDEFINED SYMBOLS
 tmcl_boot

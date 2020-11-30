@@ -156,15 +156,11 @@ int main(void) {
 	tmc4671_writeInt(0, TMC4671_VELOCITY_SELECTION, 0x00000009);
 
 	// Switch to position mode
-	//tmc4671_writeInt(0, TMC4671_PID_POSITION_TARGET, 0x00000000);
-	//tmc4671_writeInt(0, TMC4671_MODE_RAMP_MODE_MOTION, 0x00000003);
-
-	// Switch to torque mode
-	tmc4671_writeInt(0, TMC4671_MODE_RAMP_MODE_MOTION, 0x00000001);
+	tmc4671_writeInt(0, TMC4671_PID_POSITION_TARGET, 0x00000000);
+	tmc4671_writeInt(0, TMC4671_MODE_RAMP_MODE_MOTION, 0x00000003);
 
 	//uint8_t time = 1;
-	//uint8_t pos_target[4];
-	uint8_t torque_target[4];
+	uint8_t pos_target[4];
 	uint8_t enc[4];
 	int32_t target;
 	int32_t current_pos;
@@ -180,9 +176,9 @@ int main(void) {
 
 		HAL.USB->txN(enc,4);
 
-		if(HAL.USB->rxN(torque_target,4)){
-			target = ( torque_target[0] << 24 ) + ( torque_target[1] << 16 ) + ( torque_target[2] << 8 ) + torque_target[3];  // position target
-			tmc4671_writeInt(0, TMC4671_PID_TORQUE_FLUX_TARGET, target);  //
+		if(HAL.USB->rxN(pos_target,4)){
+			target = ( pos_target[0] << 24 ) + ( pos_target[1] << 16 ) + ( pos_target[2] << 8 ) + pos_target[3];  // position target
+			tmc4671_writeInt(0, TMC4671_PID_POSITION_TARGET, target);  //
 		}
 
 		wait(1);

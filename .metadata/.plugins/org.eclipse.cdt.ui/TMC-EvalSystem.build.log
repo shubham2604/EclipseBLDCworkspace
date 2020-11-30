@@ -1,4 +1,4 @@
-20:17:39 **** Build of configuration Release for project TMC-EvalSystem ****
+20:01:33 **** Build of configuration Release for project TMC-EvalSystem ****
 cs-make -s -j8 all LINK=BL DEVICE=Landungsbruecke 
 "-------- begin (mode: ROM_RUN) --------"
 arm-none-eabi-gcc (GNU Arm Embedded Toolchain 9-2020-q2-update) 9.3.1 20200408 (release)
@@ -6,16 +6,23 @@ Copyright (C) 2019 Free Software Foundation, Inc.
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-Size after build:
+"**** Compiling C :" HelloWorld.c "->" _build_Landungsbruecke/HelloWorld.o
 --------  end  --------
+ECHO is off.
+"**** Linking :" _build_Landungsbruecke/Landungsbruecke_v3.07.15_BL.elf
+Creating load file: _build_Landungsbruecke/Landungsbruecke_v3.07.15_BL.hex
+Creating load file: _build_Landungsbruecke/Landungsbruecke_v3.07.15_BL.bin
+Creating Extended Listing/Disassembly: _build_Landungsbruecke/Landungsbruecke_v3.07.15_BL.lss
+Creating Symbol Table: _build_Landungsbruecke/Landungsbruecke_v3.07.15_BL.sym
+Size after build:
 _build_Landungsbruecke/Landungsbruecke_v3.07.15_BL.elf  :
 section                 size         addr
 .interrupts            0x1bc       0x8000
 .cfmprotect             0x10       0x8400
-.text                0x22e48       0x8420
-.ARM                     0x8      0x2b268
-.init_array              0x8      0x2b270
-.fini_array              0x4      0x2b278
+.text                0x22e40       0x8420
+.ARM                     0x8      0x2b260
+.init_array              0x8      0x2b268
+.fini_array              0x4      0x2b270
 .bldata                  0x8   0x1fff0000
 .mtb                     0x0   0x1fff0008
 .data                 0x106c   0x1fff0008
@@ -23,18 +30,18 @@ section                 size         addr
 .romp                   0x18   0x1fff6c24
 ._user_heap_stack      0x800   0x1fff6c3c
 .ARM.attributes         0x2a          0x0
-.debug_line          0x3c1c5          0x0
-.debug_info          0xe9ea7          0x0
+.debug_line          0x3c1c4          0x0
+.debug_info          0xe9e89          0x0
 .debug_abbrev        0x18d22          0x0
 .debug_aranges         0xca8          0x0
-.debug_str            0x9936          0x0
+.debug_str            0x9939          0x0
 .debug_loc           0x50114          0x0
 .comment                0x4c          0x0
 .debug_frame          0x87a8          0x0
 .debug_ranges         0x1850          0x0
-Total               0x1cd7c6
+Total               0x1cd7a2
 
 
 
-20:17:39 Build Finished. 0 errors, 0 warnings. (took 838ms)
+20:01:43 Build Finished. 0 errors, 0 warnings. (took 10s.273ms)
 

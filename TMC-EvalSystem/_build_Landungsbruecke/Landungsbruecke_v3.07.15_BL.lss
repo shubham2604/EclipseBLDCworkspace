@@ -7,45 +7,45 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
   1 .cfmprotect   00000010  00008400  00008400  00008400  2**0
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  2 .text         00022e48  00008420  00008420  00008420  2**5
+  2 .text         00022e40  00008420  00008420  00008420  2**5
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  3 .ARM          00000008  0002b268  0002b268  0002b268  2**2
+  3 .ARM          00000008  0002b260  0002b260  0002b260  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  4 .init_array   00000008  0002b270  0002b270  0002b270  2**2
+  4 .init_array   00000008  0002b268  0002b268  0002b268  2**2
                   CONTENTS, ALLOC, LOAD, DATA
-  5 .fini_array   00000004  0002b278  0002b278  0002b278  2**2
+  5 .fini_array   00000004  0002b270  0002b270  0002b270  2**2
                   CONTENTS, ALLOC, LOAD, DATA
   6 .bldata       00000008  1fff0000  1fff0000  00040000  2**2
                   ALLOC
   7 .mtb          00000000  1fff0008  1fff0008  00036c3c  2**0
                   CONTENTS
-  8 .data         0000106c  1fff0008  0002b27c  00030008  2**3
+  8 .data         0000106c  1fff0008  0002b274  00030008  2**3
                   CONTENTS, ALLOC, LOAD, DATA
   9 .bss          00005a24  1fff1200  0002c600  00041200  2**9
                   ALLOC
- 10 .romp         00000018  1fff6c24  0002c2e8  00036c24  2**0
+ 10 .romp         00000018  1fff6c24  0002c2e0  00036c24  2**0
                   CONTENTS, ALLOC, LOAD, DATA
- 11 ._user_heap_stack 00000800  1fff6c3c  0002c300  00036c3c  2**0
+ 11 ._user_heap_stack 00000800  1fff6c3c  0002c2f8  00036c3c  2**0
                   ALLOC
  12 .ARM.attributes 0000002a  00000000  00000000  00036c3c  2**0
                   CONTENTS, READONLY
- 13 .debug_line   0003c1c5  00000000  00000000  00036c66  2**0
+ 13 .debug_line   0003c1c4  00000000  00000000  00036c66  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 14 .debug_info   000e9ea7  00000000  00000000  00072e2b  2**0
+ 14 .debug_info   000e9e89  00000000  00000000  00072e2a  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_abbrev 00018d22  00000000  00000000  0015ccd2  2**0
+ 15 .debug_abbrev 00018d22  00000000  00000000  0015ccb3  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_aranges 00000ca8  00000000  00000000  001759f8  2**3
+ 16 .debug_aranges 00000ca8  00000000  00000000  001759d8  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_str    00009936  00000000  00000000  001766a0  2**0
+ 17 .debug_str    00009939  00000000  00000000  00176680  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_loc    00050114  00000000  00000000  0017ffd6  2**0
+ 18 .debug_loc    00050114  00000000  00000000  0017ffb9  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .comment      0000004c  00000000  00000000  001d00ea  2**0
+ 19 .comment      0000004c  00000000  00000000  001d00cd  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  000087a8  00000000  00000000  001d0138  2**2
+ 20 .debug_frame  000087a8  00000000  00000000  001d011c  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_ranges 00001850  00000000  00000000  001d88e0  2**0
+ 21 .debug_ranges 00001850  00000000  00000000  001d88c4  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -64,7 +64,7 @@ Disassembly of section .text:
     8436:	bd10      	pop	{r4, pc}
     8438:	1fff1200 	.word	0x1fff1200
     843c:	00000000 	.word	0x00000000
-    8440:	0002b250 	.word	0x0002b250
+    8440:	0002b248 	.word	0x0002b248
 
 00008444 <frame_dummy>:
     8444:	b508      	push	{r3, lr}
@@ -76,7 +76,7 @@ Disassembly of section .text:
     8452:	bd08      	pop	{r3, pc}
     8454:	00000000 	.word	0x00000000
     8458:	1fff1204 	.word	0x1fff1204
-    845c:	0002b250 	.word	0x0002b250
+    845c:	0002b248 	.word	0x0002b248
 
 00008460 <deInit>:
 	Evalboards.ch1.deInit        = deInit;
@@ -107,7 +107,7 @@ static void deInit()
     847e:	bf00      	nop
     8480:	1fff0b34 	.word	0x1fff0b34
     8484:	1fff01b0 	.word	0x1fff01b0
-    8488:	00029d1c 	.word	0x00029d1c
+    8488:	00029d14 	.word	0x00029d14
 
 0000848c <selfTest>:
 
@@ -480,7 +480,7 @@ static uint32_t selfTest(uint8_t type, uint8_t motor, int32_t *value)  // Aufruf
     8752:	bf00      	nop
     8754:	1fff5f80 	.word	0x1fff5f80
     8758:	1fff5e44 	.word	0x1fff5e44
-    875c:	00029d1c 	.word	0x00029d1c
+    875c:	00029d14 	.word	0x00029d14
     8760:	1fff0b34 	.word	0x1fff0b34
 			HAL.IOs->config->toOutput(&HAL.IOs->pins->MIXED0);
     8764:	4b78      	ldr	r3, [pc, #480]	; (8948 <selfTest+0x4bc>)
@@ -689,7 +689,7 @@ static uint32_t selfTest(uint8_t type, uint8_t motor, int32_t *value)  // Aufruf
     8944:	2404      	movs	r4, #4
 	return errors;
     8946:	e5fa      	b.n	853e <selfTest+0xb2>
-    8948:	00029d1c 	.word	0x00029d1c
+    8948:	00029d14 	.word	0x00029d14
 
 0000894c <periodicJob>:
 
@@ -719,7 +719,7 @@ static void periodicJob(uint32_t tick)
 }
     8966:	bd38      	pop	{r3, r4, r5, pc}
     8968:	1fff121c 	.word	0x1fff121c
-    896c:	00029d1c 	.word	0x00029d1c
+    896c:	00029d14 	.word	0x00029d14
 
 00008970 <SelfTest_init>:
 	groupA[0]   = &HAL.IOs->pins->DIO6;
@@ -847,7 +847,7 @@ static void periodicJob(uint32_t tick)
     8a58:	659a      	str	r2, [r3, #88]	; 0x58
 }
     8a5a:	4770      	bx	lr
-    8a5c:	00029d1c 	.word	0x00029d1c
+    8a5c:	00029d14 	.word	0x00029d14
     8a60:	1fff5e44 	.word	0x1fff5e44
     8a64:	1fff5f80 	.word	0x1fff5f80
     8a68:	1fff0b34 	.word	0x1fff0b34
@@ -1255,7 +1255,7 @@ static void set()
 }
     8c08:	bdf8      	pop	{r3, r4, r5, r6, r7, pc}
     8c0a:	bf00      	nop
-    8c0c:	00029d1c 	.word	0x00029d1c
+    8c0c:	00029d14 	.word	0x00029d14
     8c10:	1fff166c 	.word	0x1fff166c
     8c14:	1fff0008 	.word	0x1fff0008
 
@@ -2300,7 +2300,7 @@ static void enableDriver(DriverState state)
     942c:	4770      	bx	lr
     942e:	bf00      	nop
     9430:	1fff5e88 	.word	0x1fff5e88
-    9434:	00029d1c 	.word	0x00029d1c
+    9434:	00029d14 	.word	0x00029d14
     9438:	1fff16a0 	.word	0x1fff16a0
 
 0000943c <deInit>:
@@ -2337,7 +2337,7 @@ static void enableDriver(DriverState state)
     9472:	685b      	ldr	r3, [r3, #4]
     9474:	4718      	bx	r3
     9476:	bf00      	nop
-    9478:	00029d1c 	.word	0x00029d1c
+    9478:	00029d14 	.word	0x00029d14
     947c:	1fff16a0 	.word	0x1fff16a0
     9480:	1fff0ae0 	.word	0x1fff0ae0
 
@@ -2439,7 +2439,7 @@ static void enableDriver(DriverState state)
     950c:	2004      	movs	r0, #4
 	return errors;
     950e:	e7f1      	b.n	94f4 <userFunction+0x2e>
-    9510:	00029d1c 	.word	0x00029d1c
+    9510:	00029d14 	.word	0x00029d14
     9514:	1fff16a0 	.word	0x1fff16a0
 
 00009518 <moveBy>:
@@ -2703,8 +2703,8 @@ void TMC2041_init(void)
     96d2:	4718      	bx	r3
     96d4:	1fff5e88 	.word	0x1fff5e88
     96d8:	1fff16a0 	.word	0x1fff16a0
-    96dc:	00029d1c 	.word	0x00029d1c
-    96e0:	00027ed8 	.word	0x00027ed8
+    96dc:	00029d14 	.word	0x00029d14
+    96e0:	00027ed0 	.word	0x00027ed0
     96e4:	000186a0 	.word	0x000186a0
     96e8:	000093a5 	.word	0x000093a5
     96ec:	00009399 	.word	0x00009399
@@ -3049,7 +3049,7 @@ static void enableDriver(DriverState state)
 	Timer.deInit();
     9900:	685b      	ldr	r3, [r3, #4]
     9902:	4718      	bx	r3
-    9904:	00029d1c 	.word	0x00029d1c
+    9904:	00029d14 	.word	0x00029d14
     9908:	1fff1960 	.word	0x1fff1960
     990c:	1fff0ae0 	.word	0x1fff0ae0
 
@@ -3280,7 +3280,7 @@ static void enableDriver(DriverState state)
     9a56:	4798      	blx	r3
     9a58:	e7ea      	b.n	9a30 <userFunction+0x18>
     9a5a:	bf00      	nop
-    9a5c:	00029d1c 	.word	0x00029d1c
+    9a5c:	00029d14 	.word	0x00029d14
     9a60:	1fff0008 	.word	0x1fff0008
     9a64:	1fff1960 	.word	0x1fff1960
 
@@ -3409,7 +3409,7 @@ static void enableDriver(DriverState state)
     9b42:	2008      	movs	r0, #8
     9b44:	e7c0      	b.n	9ac8 <GAP+0x40>
     9b46:	bf00      	nop
-    9b48:	00029d1c 	.word	0x00029d1c
+    9b48:	00029d14 	.word	0x00029d14
     9b4c:	1fff1960 	.word	0x1fff1960
 
 00009b50 <SAP>:
@@ -3543,7 +3543,7 @@ static void enableDriver(DriverState state)
 		return TMC_ERROR_MOTOR;
     9c30:	2408      	movs	r4, #8
     9c32:	e7af      	b.n	9b94 <SAP+0x44>
-    9c34:	00029d1c 	.word	0x00029d1c
+    9c34:	00029d14 	.word	0x00029d14
     9c38:	1fff1960 	.word	0x1fff1960
     9c3c:	1fff0ae0 	.word	0x1fff0ae0
     9c40:	1fff0008 	.word	0x1fff0008
@@ -3793,7 +3793,7 @@ static void enableDriver(DriverState state)
 	Timer.setDuty(TIMER_CHANNEL_1, 0);
     9dfc:	4718      	bx	r3
     9dfe:	bf00      	nop
-    9e00:	00029d1c 	.word	0x00029d1c
+    9e00:	00029d14 	.word	0x00029d14
     9e04:	1fff1960 	.word	0x1fff1960
     9e08:	1fff0008 	.word	0x1fff0008
     9e0c:	1fff5e88 	.word	0x1fff5e88
@@ -3893,7 +3893,7 @@ static void deInit(void)
     9eba:	685b      	ldr	r3, [r3, #4]
     9ebc:	4718      	bx	r3
     9ebe:	bf00      	nop
-    9ec0:	00029d1c 	.word	0x00029d1c
+    9ec0:	00029d14 	.word	0x00029d14
     9ec4:	1fff19a0 	.word	0x1fff19a0
     9ec8:	1fff0ae0 	.word	0x1fff0ae0
 
@@ -4016,7 +4016,7 @@ static void deInit(void)
     9f8c:	2010      	movs	r0, #16
 	return errors;
     9f8e:	e7a8      	b.n	9ee2 <userFunction+0x16>
-    9f90:	00029d1c 	.word	0x00029d1c
+    9f90:	00029d14 	.word	0x00029d14
     9f94:	1fff19a0 	.word	0x1fff19a0
     9f98:	1fff0ae0 	.word	0x1fff0ae0
 
@@ -5484,7 +5484,7 @@ static void enableDriver(DriverState state)
 }
     ab36:	4770      	bx	lr
     ab38:	1fff5e88 	.word	0x1fff5e88
-    ab3c:	00029d1c 	.word	0x00029d1c
+    ab3c:	00029d14 	.word	0x00029d14
     ab40:	1fff19a0 	.word	0x1fff19a0
 
 0000ab44 <getMax>:
@@ -5893,7 +5893,7 @@ void TMC2130_init(void)
     adae:	bf00      	nop
     adb0:	1fff5e88 	.word	0x1fff5e88
     adb4:	1fff5fc4 	.word	0x1fff5fc4
-    adb8:	000280d8 	.word	0x000280d8
+    adb8:	000280d0 	.word	0x000280d0
     adbc:	1fff19a0 	.word	0x1fff19a0
     adc0:	0000ab87 	.word	0x0000ab87
     adc4:	1fff6248 	.word	0x1fff6248
@@ -5917,7 +5917,7 @@ void TMC2130_init(void)
     ae0c:	0000abc9 	.word	0x0000abc9
     ae10:	0000ab45 	.word	0x0000ab45
     ae14:	1fff0ae0 	.word	0x1fff0ae0
-    ae18:	00029d1c 	.word	0x00029d1c
+    ae18:	00029d14 	.word	0x00029d14
 
 0000ae1c <deInit>:
 	}
@@ -5990,7 +5990,7 @@ static void deInit(void)
 }
     ae7c:	bd38      	pop	{r3, r4, r5, pc}
     ae7e:	bf00      	nop
-    ae80:	00029d1c 	.word	0x00029d1c
+    ae80:	00029d14 	.word	0x00029d14
     ae84:	1fff19d4 	.word	0x1fff19d4
     ae88:	1fff0ae0 	.word	0x1fff0ae0
 
@@ -7433,7 +7433,7 @@ static void enableDriver(DriverState state)
 }
     b9fa:	4770      	bx	lr
     b9fc:	1fff5e88 	.word	0x1fff5e88
-    ba00:	00029d1c 	.word	0x00029d1c
+    ba00:	00029d14 	.word	0x00029d14
     ba04:	1fff19d4 	.word	0x1fff19d4
 
 0000ba08 <userFunction>:
@@ -7533,7 +7533,7 @@ static void enableDriver(DriverState state)
     baa0:	e7bd      	b.n	ba1e <userFunction+0x16>
     baa2:	bf00      	nop
     baa4:	1fff0ae0 	.word	0x1fff0ae0
-    baa8:	00029d1c 	.word	0x00029d1c
+    baa8:	00029d14 	.word	0x00029d14
     baac:	1fff19d4 	.word	0x1fff19d4
 
 0000bab0 <getMax>:
@@ -7970,7 +7970,7 @@ void TMC2160_init(void)
     bd5a:	bf00      	nop
     bd5c:	1fff5e88 	.word	0x1fff5e88
     bd60:	1fff6250 	.word	0x1fff6250
-    bd64:	000282d8 	.word	0x000282d8
+    bd64:	000282d0 	.word	0x000282d0
     bd68:	1fff19d4 	.word	0x1fff19d4
     bd6c:	0000bb61 	.word	0x0000bb61
     bd70:	1fff624c 	.word	0x1fff624c
@@ -7994,7 +7994,7 @@ void TMC2160_init(void)
     bdb8:	0000bbb1 	.word	0x0000bbb1
     bdbc:	0000bab1 	.word	0x0000bab1
     bdc0:	1fff0ae0 	.word	0x1fff0ae0
-    bdc4:	00029d1c 	.word	0x00029d1c
+    bdc4:	00029d14 	.word	0x00029d14
 
 0000bdc8 <checkErrors>:
 }
@@ -8186,7 +8186,7 @@ static void periodicJob(uint32_t tick)
     bebc:	4770      	bx	lr
     bebe:	bf00      	nop
     bec0:	1fff5e88 	.word	0x1fff5e88
-    bec4:	00029d1c 	.word	0x00029d1c
+    bec4:	00029d14 	.word	0x00029d14
     bec8:	1fff1a0c 	.word	0x1fff1a0c
 
 0000becc <deInit>:
@@ -8237,7 +8237,7 @@ static void periodicJob(uint32_t tick)
     bf20:	e8bd 4038 	ldmia.w	sp!, {r3, r4, r5, lr}
 	StepDir_deInit();
     bf24:	f013 bece 	b.w	1fcc4 <StepDir_deInit>
-    bf28:	00029d1c 	.word	0x00029d1c
+    bf28:	00029d14 	.word	0x00029d14
     bf2c:	1fff1a0c 	.word	0x1fff1a0c
 
 0000bf30 <moveBy>:
@@ -8571,7 +8571,7 @@ void TMC2208_init(void)
     c15e:	e8bd 4070 	ldmia.w	sp!, {r4, r5, r6, lr}
 	enableDriver(DRIVER_ENABLE);
     c162:	e691      	b.n	be88 <enableDriver>
-    c164:	00029d1c 	.word	0x00029d1c
+    c164:	00029d14 	.word	0x00029d14
     c168:	1fff1a0c 	.word	0x1fff1a0c
     c16c:	1fff5e88 	.word	0x1fff5e88
     c170:	0000be61 	.word	0x0000be61
@@ -8591,7 +8591,7 @@ void TMC2208_init(void)
     c1a8:	0000bdc9 	.word	0x0000bdc9
     c1ac:	0000becd 	.word	0x0000becd
     c1b0:	0000bdf9 	.word	0x0000bdf9
-    c1b4:	000284d8 	.word	0x000284d8
+    c1b4:	000284d0 	.word	0x000284d0
 
 0000c1b8 <checkErrors>:
 }
@@ -8785,7 +8785,7 @@ static void periodicJob(uint32_t tick)
     c2e2:	e7a2      	b.n	c22a <userFunction+0x2a>
     c2e4:	1fff1cbc 	.word	0x1fff1cbc
     c2e8:	1fff0ae0 	.word	0x1fff0ae0
-    c2ec:	00029d1c 	.word	0x00029d1c
+    c2ec:	00029d14 	.word	0x00029d14
 
 0000c2f0 <moveTo>:
 {
@@ -9730,7 +9730,7 @@ static void periodicJob(uint32_t tick)
     ca84:	4770      	bx	lr
     ca86:	bf00      	nop
     ca88:	1fff5e88 	.word	0x1fff5e88
-    ca8c:	00029d1c 	.word	0x00029d1c
+    ca8c:	00029d14 	.word	0x00029d14
     ca90:	1fff1cbc 	.word	0x1fff1cbc
 
 0000ca94 <deInit>:
@@ -9801,7 +9801,7 @@ static void periodicJob(uint32_t tick)
 	Timer.deInit();
     cb10:	685b      	ldr	r3, [r3, #4]
     cb12:	4718      	bx	r3
-    cb14:	00029d1c 	.word	0x00029d1c
+    cb14:	00029d14 	.word	0x00029d14
     cb18:	1fff1cbc 	.word	0x1fff1cbc
     cb1c:	1fff0ae0 	.word	0x1fff0ae0
 
@@ -10093,7 +10093,7 @@ void TMC2209_init(void)
     cd02:	e8bd 40f0 	ldmia.w	sp!, {r4, r5, r6, r7, lr}
 	enableDriver(DRIVER_ENABLE);
     cd06:	e6a3      	b.n	ca50 <enableDriver>
-    cd08:	00029d1c 	.word	0x00029d1c
+    cd08:	00029d14 	.word	0x00029d14
     cd0c:	1fff1cbc 	.word	0x1fff1cbc
     cd10:	1fff5e88 	.word	0x1fff5e88
     cd14:	0000ca29 	.word	0x0000ca29
@@ -10113,7 +10113,7 @@ void TMC2209_init(void)
     cd4c:	0000c1b9 	.word	0x0000c1b9
     cd50:	0000ca95 	.word	0x0000ca95
     cd54:	0000c1e9 	.word	0x0000c1e9
-    cd58:	000286d8 	.word	0x000286d8
+    cd58:	000286d0 	.word	0x000286d0
     cd5c:	1fff0ae0 	.word	0x1fff0ae0
 
 0000cd60 <checkErrors>:
@@ -10333,7 +10333,7 @@ static void periodicJob(uint32_t tick)
     ce88:	4770      	bx	lr
     ce8a:	bf00      	nop
     ce8c:	1fff5e88 	.word	0x1fff5e88
-    ce90:	00029d1c 	.word	0x00029d1c
+    ce90:	00029d14 	.word	0x00029d14
     ce94:	1fff1f80 	.word	0x1fff1f80
 
 0000ce98 <deInit>:
@@ -10389,7 +10389,7 @@ static void periodicJob(uint32_t tick)
 	StepDir_deInit();
     cef6:	f012 bee5 	b.w	1fcc4 <StepDir_deInit>
     cefa:	bf00      	nop
-    cefc:	00029d1c 	.word	0x00029d1c
+    cefc:	00029d14 	.word	0x00029d14
     cf00:	1fff1f80 	.word	0x1fff1f80
 
 0000cf04 <moveBy>:
@@ -10721,7 +10721,7 @@ void TMC2224_init(void)
 	enableDriver(DRIVER_ENABLE);
     d12e:	e691      	b.n	ce54 <enableDriver>
     d130:	1fff1f80 	.word	0x1fff1f80
-    d134:	00029d1c 	.word	0x00029d1c
+    d134:	00029d14 	.word	0x00029d14
     d138:	1fff5e88 	.word	0x1fff5e88
     d13c:	0000ce2d 	.word	0x0000ce2d
     d140:	0000ce1f 	.word	0x0000ce1f
@@ -11573,7 +11573,7 @@ static void periodicJob(uint32_t tick)
     d7f4:	4770      	bx	lr
     d7f6:	bf00      	nop
     d7f8:	1fff5e88 	.word	0x1fff5e88
-    d7fc:	00029d1c 	.word	0x00029d1c
+    d7fc:	00029d14 	.word	0x00029d14
     d800:	1fff2240 	.word	0x1fff2240
 
 0000d804 <deInit>:
@@ -11624,7 +11624,7 @@ static void periodicJob(uint32_t tick)
     d858:	e8bd 4038 	ldmia.w	sp!, {r3, r4, r5, lr}
 	StepDir_deInit();
     d85c:	f012 ba32 	b.w	1fcc4 <StepDir_deInit>
-    d860:	00029d1c 	.word	0x00029d1c
+    d860:	00029d14 	.word	0x00029d14
     d864:	1fff2240 	.word	0x1fff2240
 
 0000d868 <userFunction>:
@@ -11946,7 +11946,7 @@ void TMC2225_init(void)
     da82:	e8bd 4070 	ldmia.w	sp!, {r4, r5, r6, lr}
 	enableDriver(DRIVER_ENABLE);
     da86:	e69b      	b.n	d7c0 <enableDriver>
-    da88:	00029d1c 	.word	0x00029d1c
+    da88:	00029d14 	.word	0x00029d14
     da8c:	1fff2240 	.word	0x1fff2240
     da90:	1fff5e88 	.word	0x1fff5e88
     da94:	0000d799 	.word	0x0000d799
@@ -11966,7 +11966,7 @@ void TMC2225_init(void)
     dacc:	0000d181 	.word	0x0000d181
     dad0:	0000d805 	.word	0x0000d805
     dad4:	0000d1b1 	.word	0x0000d1b1
-    dad8:	000288d8 	.word	0x000288d8
+    dad8:	000288d0 	.word	0x000288d0
     dadc:	1fff0ae0 	.word	0x1fff0ae0
 
 0000dae0 <userFunction>:
@@ -13074,7 +13074,7 @@ static void enableDriver(DriverState state)
 }
     e36e:	4770      	bx	lr
     e370:	1fff5e88 	.word	0x1fff5e88
-    e374:	00029d1c 	.word	0x00029d1c
+    e374:	00029d14 	.word	0x00029d14
     e378:	1fff24f8 	.word	0x1fff24f8
 
 0000e37c <deInit>:
@@ -13121,7 +13121,7 @@ static void enableDriver(DriverState state)
 	StepDir_deInit();
     e3be:	f011 bc81 	b.w	1fcc4 <StepDir_deInit>
     e3c2:	bf00      	nop
-    e3c4:	00029d1c 	.word	0x00029d1c
+    e3c4:	00029d14 	.word	0x00029d14
     e3c8:	1fff24f8 	.word	0x1fff24f8
 
 0000e3cc <getMax>:
@@ -13448,7 +13448,7 @@ void TMC2590_init(void)
     e5c0:	1fff006c 	.word	0x1fff006c
     e5c4:	1fff5e88 	.word	0x1fff5e88
     e5c8:	1fff24f8 	.word	0x1fff24f8
-    e5cc:	00028ad8 	.word	0x00028ad8
+    e5cc:	00028ad0 	.word	0x00028ad0
     e5d0:	0000e331 	.word	0x0000e331
     e5d4:	0000e40f 	.word	0x0000e40f
     e5d8:	0000dbb7 	.word	0x0000dbb7
@@ -13468,7 +13468,7 @@ void TMC2590_init(void)
     e610:	0000e37d 	.word	0x0000e37d
     e614:	0000e475 	.word	0x0000e475
     e618:	0000e3cd 	.word	0x0000e3cd
-    e61c:	00029d1c 	.word	0x00029d1c
+    e61c:	00029d14 	.word	0x00029d14
 
 0000e620 <userFunction>:
 	// write store written value to shadow register
@@ -13608,7 +13608,7 @@ static void enableDriver(DriverState state)
 }
     e6b6:	4770      	bx	lr
     e6b8:	1fff5e88 	.word	0x1fff5e88
-    e6bc:	00029d1c 	.word	0x00029d1c
+    e6bc:	00029d14 	.word	0x00029d14
     e6c0:	1fff2564 	.word	0x1fff2564
 
 0000e6c4 <deInit>:
@@ -13655,7 +13655,7 @@ static void enableDriver(DriverState state)
 	StepDir_deInit();
     e706:	f011 badd 	b.w	1fcc4 <StepDir_deInit>
     e70a:	bf00      	nop
-    e70c:	00029d1c 	.word	0x00029d1c
+    e70c:	00029d14 	.word	0x00029d14
     e710:	1fff2564 	.word	0x1fff2564
 
 0000e714 <getMeasuredSpeed>:
@@ -15195,7 +15195,7 @@ void TMC2660_init(void)
     f2f2:	bf00      	nop
     f2f4:	1fff2564 	.word	0x1fff2564
     f2f8:	1fff0070 	.word	0x1fff0070
-    f2fc:	00029d1c 	.word	0x00029d1c
+    f2fc:	00029d14 	.word	0x00029d14
     f300:	1fff5e88 	.word	0x1fff5e88
     f304:	0000e677 	.word	0x0000e677
     f308:	0000e74f 	.word	0x0000e74f
@@ -15300,7 +15300,7 @@ static void deInit(void)
     f3b2:	6a5b      	ldr	r3, [r3, #36]	; 0x24
     f3b4:	4718      	bx	r3
     f3b6:	bf00      	nop
-    f3b8:	00029d1c 	.word	0x00029d1c
+    f3b8:	00029d14 	.word	0x00029d14
     f3bc:	1fff25dc 	.word	0x1fff25dc
 
 0000f3c0 <userFunction>:
@@ -15431,7 +15431,7 @@ static void deInit(void)
     f486:	4798      	blx	r3
     f488:	e7bf      	b.n	f40a <userFunction+0x4a>
     f48a:	bf00      	nop
-    f48c:	00029d1c 	.word	0x00029d1c
+    f48c:	00029d14 	.word	0x00029d14
     f490:	1fff25dc 	.word	0x1fff25dc
     f494:	1fff2600 	.word	0x1fff2600
     f498:	1fff5e88 	.word	0x1fff5e88
@@ -16551,7 +16551,7 @@ static uint8_t restore()
     fc96:	2001      	movs	r0, #1
     fc98:	bd38      	pop	{r3, r4, r5, pc}
     fc9a:	bf00      	nop
-    fc9c:	00029d1c 	.word	0x00029d1c
+    fc9c:	00029d14 	.word	0x00029d14
     fca0:	1fff25dc 	.word	0x1fff25dc
 
 0000fca4 <reset>:
@@ -16580,7 +16580,7 @@ static uint8_t restore()
     fcca:	2001      	movs	r0, #1
     fccc:	bd38      	pop	{r3, r4, r5, pc}
     fcce:	bf00      	nop
-    fcd0:	00029d1c 	.word	0x00029d1c
+    fcd0:	00029d14 	.word	0x00029d14
     fcd4:	1fff25dc 	.word	0x1fff25dc
 
 0000fcd8 <rotate>:
@@ -16814,8 +16814,8 @@ void TMC4330_init(void)
     fe1e:	bf00      	nop
     fe20:	1fff25dc 	.word	0x1fff25dc
     fe24:	1fff5e88 	.word	0x1fff5e88
-    fe28:	00029d1c 	.word	0x00029d1c
-    fe2c:	00028af8 	.word	0x00028af8
+    fe28:	00029d14 	.word	0x00029d14
+    fe2c:	00028af0 	.word	0x00028af0
     fe30:	0000fca5 	.word	0x0000fca5
     fe34:	0000fc71 	.word	0x0000fc71
     fe38:	0000fcd9 	.word	0x0000fcd9
@@ -16976,7 +16976,7 @@ static uint32_t userFunction(uint8_t type, uint8_t motor, int32_t *value)
 		errors |= TMC_ERROR_NOT_DONE;
     ff34:	2420      	movs	r4, #32
     ff36:	e7af      	b.n	fe98 <userFunction+0x1c>
-    ff38:	00029d1c 	.word	0x00029d1c
+    ff38:	00029d14 	.word	0x00029d14
     ff3c:	1fff28a8 	.word	0x1fff28a8
     ff40:	1fff5e88 	.word	0x1fff5e88
 
@@ -17048,7 +17048,7 @@ static void deInit(void)
     ffa2:	6a5b      	ldr	r3, [r3, #36]	; 0x24
     ffa4:	4718      	bx	r3
     ffa6:	bf00      	nop
-    ffa8:	00029d1c 	.word	0x00029d1c
+    ffa8:	00029d14 	.word	0x00029d14
     ffac:	1fff28a8 	.word	0x1fff28a8
 
 0000ffb0 <tmc4331_fullCover>:
@@ -17599,7 +17599,7 @@ static uint8_t restore()
    10346:	2001      	movs	r0, #1
    10348:	bd38      	pop	{r3, r4, r5, pc}
    1034a:	bf00      	nop
-   1034c:	00029d1c 	.word	0x00029d1c
+   1034c:	00029d14 	.word	0x00029d14
    10350:	1fff28a8 	.word	0x1fff28a8
 
 00010354 <reset>:
@@ -17628,7 +17628,7 @@ static uint8_t restore()
    1037a:	2001      	movs	r0, #1
    1037c:	bd38      	pop	{r3, r4, r5, pc}
    1037e:	bf00      	nop
-   10380:	00029d1c 	.word	0x00029d1c
+   10380:	00029d14 	.word	0x00029d14
    10384:	1fff28a8 	.word	0x1fff28a8
 
 00010388 <configCallback>:
@@ -18042,8 +18042,8 @@ void TMC4331_init(void)
    10602:	bdf8      	pop	{r3, r4, r5, r6, r7, pc}
    10604:	1fff28a8 	.word	0x1fff28a8
    10608:	1fff5e88 	.word	0x1fff5e88
-   1060c:	00028cf8 	.word	0x00028cf8
-   10610:	00029d1c 	.word	0x00029d1c
+   1060c:	00028cf0 	.word	0x00028cf0
+   10610:	00029d14 	.word	0x00029d14
    10614:	00010389 	.word	0x00010389
    10618:	00010355 	.word	0x00010355
    1061c:	00010321 	.word	0x00010321
@@ -18149,7 +18149,7 @@ static void deInit(void)
    106ca:	6a5b      	ldr	r3, [r3, #36]	; 0x24
    106cc:	4718      	bx	r3
    106ce:	bf00      	nop
-   106d0:	00029d1c 	.word	0x00029d1c
+   106d0:	00029d14 	.word	0x00029d14
    106d4:	1fff2b90 	.word	0x1fff2b90
 
 000106d8 <tmc4361_fullCover>:
@@ -18290,7 +18290,7 @@ static void deInit(void)
    107ae:	4798      	blx	r3
    107b0:	e7bf      	b.n	10732 <userFunction+0x4a>
    107b2:	bf00      	nop
-   107b4:	00029d1c 	.word	0x00029d1c
+   107b4:	00029d14 	.word	0x00029d14
    107b8:	1fff2b90 	.word	0x1fff2b90
    107bc:	1fff2bb4 	.word	0x1fff2bb4
    107c0:	1fff5e88 	.word	0x1fff5e88
@@ -19512,7 +19512,7 @@ static uint8_t restore()
    1108a:	2001      	movs	r0, #1
    1108c:	bd38      	pop	{r3, r4, r5, pc}
    1108e:	bf00      	nop
-   11090:	00029d1c 	.word	0x00029d1c
+   11090:	00029d14 	.word	0x00029d14
    11094:	1fff2b90 	.word	0x1fff2b90
 
 00011098 <reset>:
@@ -19541,7 +19541,7 @@ static uint8_t restore()
    110be:	2001      	movs	r0, #1
    110c0:	bd38      	pop	{r3, r4, r5, pc}
    110c2:	bf00      	nop
-   110c4:	00029d1c 	.word	0x00029d1c
+   110c4:	00029d14 	.word	0x00029d14
    110c8:	1fff2b90 	.word	0x1fff2b90
 
 000110cc <configCallback>:
@@ -19955,8 +19955,8 @@ void TMC4361_init(void)
    11346:	bdf8      	pop	{r3, r4, r5, r6, r7, pc}
    11348:	1fff2b90 	.word	0x1fff2b90
    1134c:	1fff5e88 	.word	0x1fff5e88
-   11350:	00028ef8 	.word	0x00028ef8
-   11354:	00029d1c 	.word	0x00029d1c
+   11350:	00028ef0 	.word	0x00028ef0
+   11354:	00029d14 	.word	0x00029d14
    11358:	000110cd 	.word	0x000110cd
    1135c:	00011099 	.word	0x00011099
    11360:	00011065 	.word	0x00011065
@@ -20062,7 +20062,7 @@ static void deInit(void)
    1140e:	6a5b      	ldr	r3, [r3, #36]	; 0x24
    11410:	4718      	bx	r3
    11412:	bf00      	nop
-   11414:	00029d1c 	.word	0x00029d1c
+   11414:	00029d14 	.word	0x00029d14
    11418:	1fff2e78 	.word	0x1fff2e78
 
 0001141c <tmc4361A_fullCover>:
@@ -20203,7 +20203,7 @@ static void deInit(void)
    114f2:	4798      	blx	r3
    114f4:	e7bf      	b.n	11476 <userFunction+0x4a>
    114f6:	bf00      	nop
-   114f8:	00029d1c 	.word	0x00029d1c
+   114f8:	00029d14 	.word	0x00029d14
    114fc:	1fff2e78 	.word	0x1fff2e78
    11500:	1fff2e9c 	.word	0x1fff2e9c
    11504:	1fff5e88 	.word	0x1fff5e88
@@ -21425,7 +21425,7 @@ static uint8_t restore()
    11dce:	2001      	movs	r0, #1
    11dd0:	bd38      	pop	{r3, r4, r5, pc}
    11dd2:	bf00      	nop
-   11dd4:	00029d1c 	.word	0x00029d1c
+   11dd4:	00029d14 	.word	0x00029d14
    11dd8:	1fff2e78 	.word	0x1fff2e78
 
 00011ddc <reset>:
@@ -21454,7 +21454,7 @@ static uint8_t restore()
    11e02:	2001      	movs	r0, #1
    11e04:	bd38      	pop	{r3, r4, r5, pc}
    11e06:	bf00      	nop
-   11e08:	00029d1c 	.word	0x00029d1c
+   11e08:	00029d14 	.word	0x00029d14
    11e0c:	1fff2e78 	.word	0x1fff2e78
 
 00011e10 <tmc4361A_cover>:
@@ -21886,8 +21886,8 @@ void TMC4361A_init(void)
    120ae:	bdf8      	pop	{r3, r4, r5, r6, r7, pc}
    120b0:	1fff2e78 	.word	0x1fff2e78
    120b4:	1fff5e88 	.word	0x1fff5e88
-   120b8:	000290f8 	.word	0x000290f8
-   120bc:	00029d1c 	.word	0x00029d1c
+   120b8:	000290f0 	.word	0x000290f0
+   120bc:	00029d14 	.word	0x00029d14
    120c0:	00011ee9 	.word	0x00011ee9
    120c4:	00011ddd 	.word	0x00011ddd
    120c8:	00011da9 	.word	0x00011da9
@@ -24036,7 +24036,7 @@ static void checkErrors(uint32_t tick)
    132fc:	4770      	bx	lr
    132fe:	bf00      	nop
    13300:	1fff5e88 	.word	0x1fff5e88
-   13304:	00029d1c 	.word	0x00029d1c
+   13304:	00029d14 	.word	0x00029d14
    13308:	1fff3168 	.word	0x1fff3168
 
 0001330c <deInit>:
@@ -24057,7 +24057,7 @@ static void checkErrors(uint32_t tick)
    13322:	699b      	ldr	r3, [r3, #24]
    13324:	4718      	bx	r3
    13326:	bf00      	nop
-   13328:	00029d1c 	.word	0x00029d1c
+   13328:	00029d14 	.word	0x00029d14
    1332c:	1fff3168 	.word	0x1fff3168
 
 00013330 <moveBy>:
@@ -24243,7 +24243,7 @@ void TMC4670_init(void)
 	}
 };
    13416:	bd70      	pop	{r4, r5, r6, pc}
-   13418:	00029d1c 	.word	0x00029d1c
+   13418:	00029d14 	.word	0x00029d14
    1341c:	1fff3168 	.word	0x1fff3168
    13420:	1fff5e88 	.word	0x1fff5e88
    13424:	00012111 	.word	0x00012111
@@ -24367,7 +24367,7 @@ static void checkErrors(uint32_t tick)
 }
    134ee:	4770      	bx	lr
    134f0:	1fff5e88 	.word	0x1fff5e88
-   134f4:	00029d1c 	.word	0x00029d1c
+   134f4:	00029d14 	.word	0x00029d14
    134f8:	1fff317c 	.word	0x1fff317c
 
 000134fc <deInit>:
@@ -24388,7 +24388,7 @@ static void checkErrors(uint32_t tick)
    13512:	699b      	ldr	r3, [r3, #24]
    13514:	4718      	bx	r3
    13516:	bf00      	nop
-   13518:	00029d1c 	.word	0x00029d1c
+   13518:	00029d14 	.word	0x00029d14
    1351c:	1fff317c 	.word	0x1fff317c
 
 00013520 <getMeasuredSpeed>:
@@ -25246,7 +25246,7 @@ void TMC4671_init(void)
 }
    13abc:	bd70      	pop	{r4, r5, r6, pc}
    13abe:	bf00      	nop
-   13ac0:	00029d1c 	.word	0x00029d1c
+   13ac0:	00029d14 	.word	0x00029d14
    13ac4:	1fff317c 	.word	0x1fff317c
    13ac8:	1fff5e88 	.word	0x1fff5e88
    13acc:	00013487 	.word	0x00013487
@@ -25411,7 +25411,7 @@ static uint8_t restore()
    13bec:	2004      	movs	r0, #4
 	return errors;
    13bee:	e7e5      	b.n	13bbc <userFunction+0x24>
-   13bf0:	00029d1c 	.word	0x00029d1c
+   13bf0:	00029d14 	.word	0x00029d14
    13bf4:	1fff3194 	.word	0x1fff3194
 
 00013bf8 <enableDriver>:
@@ -25455,7 +25455,7 @@ static void enableDriver(DriverState state)
    13c2c:	4770      	bx	lr
    13c2e:	bf00      	nop
    13c30:	1fff5e88 	.word	0x1fff5e88
-   13c34:	00029d1c 	.word	0x00029d1c
+   13c34:	00029d14 	.word	0x00029d14
    13c38:	1fff3194 	.word	0x1fff3194
 
 00013c3c <deInit>:
@@ -25505,7 +25505,7 @@ static void enableDriver(DriverState state)
    13c8e:	e8bd 4070 	ldmia.w	sp!, {r4, r5, r6, lr}
 	HAL.IOs->config->reset(Pins.SWSEL);
    13c92:	4718      	bx	r3
-   13c94:	00029d1c 	.word	0x00029d1c
+   13c94:	00029d14 	.word	0x00029d14
    13c98:	1fff3194 	.word	0x1fff3194
 
 00013c9c <tmc5031_writeDatagram>:
@@ -27521,7 +27521,7 @@ void TMC5031_init(void)
 	enableDriver(DRIVER_ENABLE);
    14c38:	f7fe bfde 	b.w	13bf8 <enableDriver>
    14c3c:	1fff3194 	.word	0x1fff3194
-   14c40:	00029d1c 	.word	0x00029d1c
+   14c40:	00029d14 	.word	0x00029d14
    14c44:	1fff5e88 	.word	0x1fff5e88
    14c48:	00014b05 	.word	0x00014b05
    14c4c:	00013b8d 	.word	0x00013b8d
@@ -29179,7 +29179,7 @@ static uint8_t restore()
    15962:	681b      	ldr	r3, [r3, #0]
    15964:	6a5b      	ldr	r3, [r3, #36]	; 0x24
    15966:	e7f0      	b.n	1594a <userFunction+0x1e>
-   15968:	00029d1c 	.word	0x00029d1c
+   15968:	00029d14 	.word	0x00029d14
    1596c:	1fff3464 	.word	0x1fff3464
 
 00015970 <enableDriver>:
@@ -29223,7 +29223,7 @@ static void enableDriver(DriverState state)
    159a4:	4770      	bx	lr
    159a6:	bf00      	nop
    159a8:	1fff5e88 	.word	0x1fff5e88
-   159ac:	00029d1c 	.word	0x00029d1c
+   159ac:	00029d14 	.word	0x00029d14
    159b0:	1fff3464 	.word	0x1fff3464
 
 000159b4 <deInit>:
@@ -29253,7 +29253,7 @@ static void enableDriver(DriverState state)
    159de:	e8bd 4070 	ldmia.w	sp!, {r4, r5, r6, lr}
 	HAL.IOs->config->reset(Pins.PP_ENCB);
    159e2:	4718      	bx	r3
-   159e4:	00029d1c 	.word	0x00029d1c
+   159e4:	00029d14 	.word	0x00029d14
    159e8:	1fff3464 	.word	0x1fff3464
 
 000159ec <rotate>:
@@ -29467,8 +29467,8 @@ void TMC5041_init(void)
    15b12:	bf00      	nop
    15b14:	1fff5e88 	.word	0x1fff5e88
    15b18:	1fff3464 	.word	0x1fff3464
-   15b1c:	00029d1c 	.word	0x00029d1c
-   15b20:	000292f8 	.word	0x000292f8
+   15b1c:	00029d14 	.word	0x00029d14
+   15b20:	000292f0 	.word	0x000292f0
    15b24:	00015905 	.word	0x00015905
    15b28:	000158fb 	.word	0x000158fb
    15b2c:	000159ed 	.word	0x000159ed
@@ -31205,7 +31205,7 @@ static uint8_t restore()
    168c0:	2004      	movs	r0, #4
 	return errors;
    168c2:	e7e5      	b.n	16890 <userFunction+0x24>
-   168c4:	00029d1c 	.word	0x00029d1c
+   168c4:	00029d14 	.word	0x00029d14
    168c8:	1fff3720 	.word	0x1fff3720
 
 000168cc <enableDriver>:
@@ -31249,7 +31249,7 @@ static void enableDriver(DriverState state)
    16900:	4770      	bx	lr
    16902:	bf00      	nop
    16904:	1fff5e88 	.word	0x1fff5e88
-   16908:	00029d1c 	.word	0x00029d1c
+   16908:	00029d14 	.word	0x00029d14
    1690c:	1fff3720 	.word	0x1fff3720
 
 00016910 <deInit>:
@@ -31299,7 +31299,7 @@ static void enableDriver(DriverState state)
    16962:	e8bd 4070 	ldmia.w	sp!, {r4, r5, r6, lr}
 	HAL.IOs->config->reset(Pins.SWSEL);
    16966:	4718      	bx	r3
-   16968:	00029d1c 	.word	0x00029d1c
+   16968:	00029d14 	.word	0x00029d14
    1696c:	1fff3720 	.word	0x1fff3720
 
 00016970 <configCallback>:
@@ -31611,7 +31611,7 @@ void TMC5062_init(void)
    16b44:	1fff5e88 	.word	0x1fff5e88
    16b48:	1fff3720 	.word	0x1fff3720
    16b4c:	00f42400 	.word	0x00f42400
-   16b50:	000294f8 	.word	0x000294f8
+   16b50:	000294f0 	.word	0x000294f0
    16b54:	00016971 	.word	0x00016971
    16b58:	aaaab554 	.word	0xaaaab554
    16b5c:	24492929 	.word	0x24492929
@@ -31637,7 +31637,7 @@ void TMC5062_init(void)
    16bac:	000168cd 	.word	0x000168cd
    16bb0:	00015b89 	.word	0x00015b89
    16bb4:	00016911 	.word	0x00016911
-   16bb8:	00029d1c 	.word	0x00029d1c
+   16bb8:	00029d14 	.word	0x00029d14
 
 00016bbc <getMeasuredSpeed>:
 	return handleParameter(READ, motor, type, value);
@@ -33383,7 +33383,7 @@ static uint8_t restore()
    179b4:	2004      	movs	r0, #4
 	return errors;
    179b6:	e7e5      	b.n	17984 <userFunction+0x24>
-   179b8:	00029d1c 	.word	0x00029d1c
+   179b8:	00029d14 	.word	0x00029d14
    179bc:	1fff39fc 	.word	0x1fff39fc
 
 000179c0 <enableDriver>:
@@ -33427,7 +33427,7 @@ static void enableDriver(DriverState state)
    179f4:	4770      	bx	lr
    179f6:	bf00      	nop
    179f8:	1fff5e88 	.word	0x1fff5e88
-   179fc:	00029d1c 	.word	0x00029d1c
+   179fc:	00029d14 	.word	0x00029d14
    17a00:	1fff39fc 	.word	0x1fff39fc
 
 00017a04 <deInit>:
@@ -33477,7 +33477,7 @@ static void enableDriver(DriverState state)
    17a56:	e8bd 4070 	ldmia.w	sp!, {r4, r5, r6, lr}
 	HAL.IOs->config->reset(Pins.SWSEL);
    17a5a:	4718      	bx	r3
-   17a5c:	00029d1c 	.word	0x00029d1c
+   17a5c:	00029d14 	.word	0x00029d14
    17a60:	1fff39fc 	.word	0x1fff39fc
 
 00017a64 <configCallback>:
@@ -33728,8 +33728,8 @@ void TMC5072_init(void)
    17bd2:	bf00      	nop
    17bd4:	1fff5e88 	.word	0x1fff5e88
    17bd8:	1fff39fc 	.word	0x1fff39fc
-   17bdc:	000296f8 	.word	0x000296f8
-   17be0:	00029d1c 	.word	0x00029d1c
+   17bdc:	000296f0 	.word	0x000296f0
+   17be0:	00029d14 	.word	0x00029d14
    17be4:	00017a65 	.word	0x00017a65
    17be8:	00017939 	.word	0x00017939
    17bec:	0001792d 	.word	0x0001792d
@@ -34016,7 +34016,7 @@ static void checkErrors(uint32_t tick)
    17dd0:	2410      	movs	r4, #16
 	return errors;
    17dd2:	e74e      	b.n	17c72 <userFunction+0x22>
-   17dd4:	00029d1c 	.word	0x00029d1c
+   17dd4:	00029d14 	.word	0x00029d14
    17dd8:	1fff3cc8 	.word	0x1fff3cc8
    17ddc:	1fff0ae0 	.word	0x1fff0ae0
 
@@ -34099,7 +34099,7 @@ static void deInit(void)
    17e66:	685b      	ldr	r3, [r3, #4]
    17e68:	4718      	bx	r3
    17e6a:	bf00      	nop
-   17e6c:	00029d1c 	.word	0x00029d1c
+   17e6c:	00029d14 	.word	0x00029d14
    17e70:	1fff3cc8 	.word	0x1fff3cc8
    17e74:	1fff0ae0 	.word	0x1fff0ae0
 
@@ -35903,7 +35903,7 @@ static uint8_t restore()
    18c48:	bd38      	pop	{r3, r4, r5, pc}
    18c4a:	bf00      	nop
    18c4c:	1fff3cc8 	.word	0x1fff3cc8
-   18c50:	00029d1c 	.word	0x00029d1c
+   18c50:	00029d14 	.word	0x00029d14
 
 00018c54 <enableDriver>:
 	}
@@ -35947,7 +35947,7 @@ static void enableDriver(DriverState state)
    18c88:	4770      	bx	lr
    18c8a:	bf00      	nop
    18c8c:	1fff5e88 	.word	0x1fff5e88
-   18c90:	00029d1c 	.word	0x00029d1c
+   18c90:	00029d14 	.word	0x00029d14
    18c94:	1fff3cc8 	.word	0x1fff3cc8
 
 00018c98 <configCallback>:
@@ -36235,7 +36235,7 @@ void TMC5130_init(void)
    18e5a:	e8bd 4070 	ldmia.w	sp!, {r4, r5, r6, lr}
 	Timer.setDuty(TIMER_CHANNEL_1, 0);
    18e5e:	4718      	bx	r3
-   18e60:	00029d1c 	.word	0x00029d1c
+   18e60:	00029d14 	.word	0x00029d14
    18e64:	1fff3cc8 	.word	0x1fff3cc8
    18e68:	1fff5e88 	.word	0x1fff5e88
    18e6c:	00018c11 	.word	0x00018c11
@@ -36256,7 +36256,7 @@ void TMC5130_init(void)
    18ea8:	00018c55 	.word	0x00018c55
    18eac:	00017c45 	.word	0x00017c45
    18eb0:	00017de1 	.word	0x00017de1
-   18eb4:	000298f8 	.word	0x000298f8
+   18eb4:	000298f0 	.word	0x000298f0
    18eb8:	00018c99 	.word	0x00018c99
    18ebc:	1fff0ae0 	.word	0x1fff0ae0
 
@@ -36379,7 +36379,7 @@ static void deInit(void)
 	HAL.IOs->config->reset(Pins.SPI_MODE);
    18f6c:	4718      	bx	r3
    18f6e:	bf00      	nop
-   18f70:	00029d1c 	.word	0x00029d1c
+   18f70:	00029d14 	.word	0x00029d14
    18f74:	1fff3f98 	.word	0x1fff3f98
 
 00018f78 <periodicJob>:
@@ -36545,7 +36545,7 @@ static void enableDriver(DriverState state)
    19078:	4770      	bx	lr
    1907a:	bf00      	nop
    1907c:	1fff5e88 	.word	0x1fff5e88
-   19080:	00029d1c 	.word	0x00029d1c
+   19080:	00029d14 	.word	0x00029d14
    19084:	1fff3f98 	.word	0x1fff3f98
 
 00019088 <init_comm>:
@@ -36602,7 +36602,7 @@ static void init_comm(TMC_Board_Comm_Mode mode)
    190c6:	f884 32c4 	strb.w	r3, [r4, #708]	; 0x2c4
 }
    190ca:	e7ea      	b.n	190a2 <init_comm+0x1a>
-   190cc:	00029d1c 	.word	0x00029d1c
+   190cc:	00029d14 	.word	0x00029d14
    190d0:	1fff3f98 	.word	0x1fff3f98
 
 000190d4 <userFunction>:
@@ -36830,7 +36830,7 @@ static void init_comm(TMC_Board_Comm_Mode mode)
 	return errors;
    19260:	e764      	b.n	1912c <userFunction+0x58>
    19262:	bf00      	nop
-   19264:	00029d1c 	.word	0x00029d1c
+   19264:	00029d14 	.word	0x00029d14
    19268:	1fff3f98 	.word	0x1fff3f98
 
 0001926c <readInt_uart.isra.0>:
@@ -36963,7 +36963,7 @@ static int32_t readInt_uart(uint8_t motor, uint8_t address)
    19360:	2001      	movs	r0, #1
    19362:	bd38      	pop	{r3, r4, r5, pc}
    19364:	1fff3f98 	.word	0x1fff3f98
-   19368:	00029d1c 	.word	0x00029d1c
+   19368:	00029d14 	.word	0x00029d14
 
 0001936c <readRegister>:
 {
@@ -39008,7 +39008,7 @@ void TMC5160_init(void)
 	enableDriver(DRIVER_USE_GLOBAL_ENABLE);
    1a2e0:	f7fe beb0 	b.w	19044 <enableDriver>
    1a2e4:	1fff3f98 	.word	0x1fff3f98
-   1a2e8:	00029d1c 	.word	0x00029d1c
+   1a2e8:	00029d14 	.word	0x00029d14
    1a2ec:	1fff5e88 	.word	0x1fff5e88
    1a2f0:	00019335 	.word	0x00019335
    1a2f4:	00018f8d 	.word	0x00018f8d
@@ -39296,7 +39296,7 @@ static void checkErrors(uint32_t tick)
 	return errors;
    1a4b0:	e77d      	b.n	1a3ae <userFunction+0x56>
    1a4b2:	bf00      	nop
-   1a4b4:	00029d1c 	.word	0x00029d1c
+   1a4b4:	00029d14 	.word	0x00029d14
    1a4b8:	1fff426c 	.word	0x1fff426c
 
 0001a4bc <deInit>:
@@ -39378,7 +39378,7 @@ static void deInit(void)
 	HAL.IOs->config->reset(Pins.SPI_MODE);
    1a548:	4718      	bx	r3
    1a54a:	bf00      	nop
-   1a54c:	00029d1c 	.word	0x00029d1c
+   1a54c:	00029d14 	.word	0x00029d14
    1a550:	1fff426c 	.word	0x1fff426c
 
 0001a554 <periodicJob>:
@@ -41156,7 +41156,7 @@ static uint8_t restore()
    1b2e8:	2001      	movs	r0, #1
    1b2ea:	bd38      	pop	{r3, r4, r5, pc}
    1b2ec:	1fff426c 	.word	0x1fff426c
-   1b2f0:	00029d1c 	.word	0x00029d1c
+   1b2f0:	00029d14 	.word	0x00029d14
 
 0001b2f4 <enableDriver>:
 }
@@ -41199,7 +41199,7 @@ static void enableDriver(DriverState state)
    1b328:	4770      	bx	lr
    1b32a:	bf00      	nop
    1b32c:	1fff5e88 	.word	0x1fff5e88
-   1b330:	00029d1c 	.word	0x00029d1c
+   1b330:	00029d14 	.word	0x00029d14
    1b334:	1fff426c 	.word	0x1fff426c
 
 0001b338 <configCallback>:
@@ -41475,8 +41475,8 @@ void TMC5161_init(void)
    1b4ee:	e701      	b.n	1b2f4 <enableDriver>
    1b4f0:	1fff426c 	.word	0x1fff426c
    1b4f4:	1fff5e88 	.word	0x1fff5e88
-   1b4f8:	00029af8 	.word	0x00029af8
-   1b4fc:	00029d1c 	.word	0x00029d1c
+   1b4f8:	00029af0 	.word	0x00029af0
+   1b4fc:	00029d14 	.word	0x00029d14
    1b500:	0001b339 	.word	0x0001b339
    1b504:	0001b2bd 	.word	0x0001b2bd
    1b508:	0001b2b1 	.word	0x0001b2b1
@@ -41818,7 +41818,7 @@ void TMC6100_init(void)
    1b69c:	2240      	movs	r2, #64	; 0x40
    1b69e:	4608      	mov	r0, r1
    1b6a0:	f008 bfb8 	b.w	24614 <tmc6100_writeInt>
-   1b6a4:	00029d1c 	.word	0x00029d1c
+   1b6a4:	00029d14 	.word	0x00029d14
    1b6a8:	1fff6534 	.word	0x1fff6534
    1b6ac:	1fff5e88 	.word	0x1fff5e88
    1b6b0:	0001b5b3 	.word	0x0001b5b3
@@ -42161,7 +42161,7 @@ void TMC6200_init(void)
    1b848:	4611      	mov	r1, r2
    1b84a:	4610      	mov	r0, r2
    1b84c:	f008 bf24 	b.w	24698 <tmc6200_writeInt>
-   1b850:	00029d1c 	.word	0x00029d1c
+   1b850:	00029d14 	.word	0x00029d14
    1b854:	1fff6538 	.word	0x1fff6538
    1b858:	1fff5e88 	.word	0x1fff5e88
    1b85c:	0001b75f 	.word	0x0001b75f
@@ -42583,7 +42583,7 @@ static void checkErrors(uint32_t tick)
    1bb28:	6999      	ldr	r1, [r3, #24]
    1bb2a:	f008 bf8b 	b.w	24a44 <tmc8461_initConfig>
    1bb2e:	bf00      	nop
-   1bb30:	00029d1c 	.word	0x00029d1c
+   1bb30:	00029d14 	.word	0x00029d14
    1bb34:	1fff653c 	.word	0x1fff653c
    1bb38:	1fff5e88 	.word	0x1fff5e88
    1bb3c:	0001b8ab 	.word	0x0001b8ab
@@ -42671,7 +42671,7 @@ static void checkErrors(uint32_t tick)
    1bbca:	60da      	str	r2, [r3, #12]
 	TMC8461_init_ch2();
    1bbcc:	f7ff bf78 	b.w	1bac0 <TMC8461_init_ch2>
-   1bbd0:	00029d1c 	.word	0x00029d1c
+   1bbd0:	00029d14 	.word	0x00029d14
    1bbd4:	1fff6540 	.word	0x1fff6540
    1bbd8:	1fff654c 	.word	0x1fff654c
    1bbdc:	1fff5e88 	.word	0x1fff5e88
@@ -43089,7 +43089,7 @@ static void checkErrors(uint32_t tick)
    1be90:	6999      	ldr	r1, [r3, #24]
    1be92:	f008 bfae 	b.w	24df2 <tmc8462_initConfig>
    1be96:	bf00      	nop
-   1be98:	00029d1c 	.word	0x00029d1c
+   1be98:	00029d14 	.word	0x00029d14
    1be9c:	1fff655c 	.word	0x1fff655c
    1bea0:	1fff5e88 	.word	0x1fff5e88
    1bea4:	0001bc0b 	.word	0x0001bc0b
@@ -43177,7 +43177,7 @@ static void checkErrors(uint32_t tick)
    1bf32:	60da      	str	r2, [r3, #12]
 	TMC8462_init_ch2();
    1bf34:	f7ff bf78 	b.w	1be28 <TMC8462_init_ch2>
-   1bf38:	00029d1c 	.word	0x00029d1c
+   1bf38:	00029d14 	.word	0x00029d14
    1bf3c:	1fff6540 	.word	0x1fff6540
    1bf40:	1fff6550 	.word	0x1fff6550
    1bf44:	1fff5e88 	.word	0x1fff5e88
@@ -43388,7 +43388,7 @@ static void checkErrors(uint32_t tick)
    1c044:	4770      	bx	lr
    1c046:	bf00      	nop
    1c048:	1fff5e88 	.word	0x1fff5e88
-   1c04c:	00029d1c 	.word	0x00029d1c
+   1c04c:	00029d14 	.word	0x00029d14
    1c050:	1fff6540 	.word	0x1fff6540
 
 0001c054 <deInit>:
@@ -43409,7 +43409,7 @@ static void checkErrors(uint32_t tick)
    1c06a:	689b      	ldr	r3, [r3, #8]
    1c06c:	4718      	bx	r3
    1c06e:	bf00      	nop
-   1c070:	00029d1c 	.word	0x00029d1c
+   1c070:	00029d14 	.word	0x00029d14
    1c074:	1fff6540 	.word	0x1fff6540
 
 0001c078 <restore>:
@@ -43743,7 +43743,7 @@ void TMCC160_init(void)
    1c2a2:	e8bd 4038 	ldmia.w	sp!, {r3, r4, r5, lr}
 	enableDriver(DRIVER_ENABLE);
    1c2a6:	e6b4      	b.n	1c012 <enableDriver>
-   1c2a8:	00029d1c 	.word	0x00029d1c
+   1c2a8:	00029d14 	.word	0x00029d14
    1c2ac:	1fff6540 	.word	0x1fff6540
    1c2b0:	1fff5e88 	.word	0x1fff5e88
    1c2b4:	1fff6560 	.word	0x1fff6560
@@ -44579,7 +44579,7 @@ static void init()
    1c808:	f500 60fd 	add.w	r0, r0, #2024	; 0x7e8
    1c80c:	4718      	bx	r3
    1c80e:	bf00      	nop
-   1c810:	00029d1c 	.word	0x00029d1c
+   1c810:	00029d14 	.word	0x00029d14
 
 0001c814 <reset>:
 	get_hwid();
@@ -44826,7 +44826,7 @@ static Tristate getTristate(IOPinTypeDef *pin)
    1c95c:	1fff0abc 	.word	0x1fff0abc
    1c960:	1fff0a7c 	.word	0x1fff0a7c
    1c964:	1fff0a04 	.word	0x1fff0a04
-   1c968:	00029cf8 	.word	0x00029cf8
+   1c968:	00029cf0 	.word	0x00029cf0
    1c96c:	1fff5f7c 	.word	0x1fff5f7c
 
 0001c970 <_exit>:
@@ -45119,7 +45119,7 @@ void setTMCSPIParameters(SPI_MemMapPtr basePtr)
    1cb7c:	400ac000 	.word	0x400ac000
    1cb80:	1fff6568 	.word	0x1fff6568
    1cb84:	1fff6564 	.word	0x1fff6564
-   1cb88:	00029d1c 	.word	0x00029d1c
+   1cb88:	00029d14 	.word	0x00029d14
 
 0001cb8c <reset_ch1>:
 
@@ -45163,7 +45163,7 @@ void reset_ch1()
    1cbc8:	6013      	str	r3, [r2, #0]
 }
    1cbca:	bd38      	pop	{r3, r4, r5, pc}
-   1cbcc:	00029d1c 	.word	0x00029d1c
+   1cbcc:	00029d14 	.word	0x00029d14
    1cbd0:	1fff09d8 	.word	0x1fff09d8
 
 0001cbd4 <reset_ch2>:
@@ -45213,7 +45213,7 @@ void reset_ch2()
    1cc14:	6013      	str	r3, [r2, #0]
 }
    1cc16:	bd38      	pop	{r3, r4, r5, pc}
-   1cc18:	00029d1c 	.word	0x00029d1c
+   1cc18:	00029d14 	.word	0x00029d14
    1cc1c:	1fff09d8 	.word	0x1fff09d8
    1cc20:	0001ccd1 	.word	0x0001ccd1
 
@@ -45318,7 +45318,7 @@ uint8_t readWrite(SPIChannelTypeDef *SPIChannel, uint8_t writeData, uint8_t last
 		return 0;
    1cc94:	4618      	mov	r0, r3
    1cc96:	e7ed      	b.n	1cc74 <readWrite+0x50>
-   1cc98:	00029d1c 	.word	0x00029d1c
+   1cc98:	00029d14 	.word	0x00029d14
 
 0001cc9c <spi_ch2_readWriteArray>:
 {
@@ -46063,7 +46063,7 @@ static void init(void)
    1d0fa:	e8bd 8ff8 	ldmia.w	sp!, {r3, r4, r5, r6, r7, r8, r9, sl, fp, pc}
    1d0fe:	bf00      	nop
    1d100:	40047000 	.word	0x40047000
-   1d104:	00029d1c 	.word	0x00029d1c
+   1d104:	00029d14 	.word	0x00029d14
    1d108:	4003b000 	.word	0x4003b000
    1d10c:	400bb000 	.word	0x400bb000
    1d110:	40048040 	.word	0x40048040
@@ -46074,7 +46074,7 @@ static void init(void)
    1d124:	1fff45ac 	.word	0x1fff45ac
    1d128:	40009060 	.word	0x40009060
    1d12c:	400bb010 	.word	0x400bb010
-   1d130:	00029d4c 	.word	0x00029d4c
+   1d130:	00029d44 	.word	0x00029d44
    1d134:	40009040 	.word	0x40009040
 
 0001d138 <deInit>:
@@ -46158,7 +46158,7 @@ static void init()
 }
    1d1b4:	bd10      	pop	{r4, pc}
    1d1b6:	bf00      	nop
-   1d1b8:	00029d1c 	.word	0x00029d1c
+   1d1b8:	00029d14 	.word	0x00029d14
 
 0001d1bc <onStat>:
 
@@ -46174,7 +46174,7 @@ static void onStat()
 }
    1d1cc:	4770      	bx	lr
    1d1ce:	bf00      	nop
-   1d1d0:	00029d1c 	.word	0x00029d1c
+   1d1d0:	00029d14 	.word	0x00029d14
 
 0001d1d4 <onError>:
 
@@ -46190,7 +46190,7 @@ static void onError()
 }
    1d1e4:	4770      	bx	lr
    1d1e6:	bf00      	nop
-   1d1e8:	00029d1c 	.word	0x00029d1c
+   1d1e8:	00029d14 	.word	0x00029d14
 
 0001d1ec <offStat>:
 
@@ -46206,7 +46206,7 @@ static void offStat()
 }
    1d1fc:	4770      	bx	lr
    1d1fe:	bf00      	nop
-   1d200:	00029d1c 	.word	0x00029d1c
+   1d200:	00029d14 	.word	0x00029d14
 
 0001d204 <offError>:
 
@@ -46222,7 +46222,7 @@ static void offError()
 }
    1d214:	4770      	bx	lr
    1d216:	bf00      	nop
-   1d218:	00029d1c 	.word	0x00029d1c
+   1d218:	00029d14 	.word	0x00029d14
 
 0001d21c <toggleStat>:
 
@@ -46240,7 +46240,7 @@ static void toggleStat()
 }
    1d230:	4770      	bx	lr
    1d232:	bf00      	nop
-   1d234:	00029d1c 	.word	0x00029d1c
+   1d234:	00029d14 	.word	0x00029d14
 
 0001d238 <toggleError>:
 
@@ -46258,7 +46258,7 @@ static void toggleError()
 }
    1d24c:	4770      	bx	lr
    1d24e:	bf00      	nop
-   1d250:	00029d1c 	.word	0x00029d1c
+   1d250:	00029d14 	.word	0x00029d14
 
 0001d254 <tx>:
 	}
@@ -46419,7 +46419,7 @@ static uint32_t bytesAvailable()
    1d338:	e7c8      	b.n	1d2cc <clearBuffers>
    1d33a:	bf00      	nop
    1d33c:	40047000 	.word	0x40047000
-   1d340:	00029d1c 	.word	0x00029d1c
+   1d340:	00029d14 	.word	0x00029d14
 
 0001d344 <init>:
 	SIM_SCGC1 |= (SIM_SCGC1_UART4_MASK);
@@ -46481,7 +46481,7 @@ static uint32_t bytesAvailable()
    1d3aa:	f007 bea7 	b.w	250fc <enable_irq>
    1d3ae:	bf00      	nop
    1d3b0:	40047000 	.word	0x40047000
-   1d3b4:	00029d1c 	.word	0x00029d1c
+   1d3b4:	00029d14 	.word	0x00029d14
    1d3b8:	400ea000 	.word	0x400ea000
    1d3bc:	1fff0a64 	.word	0x1fff0a64
    1d3c0:	002dc6c0 	.word	0x002dc6c0
@@ -46719,7 +46719,7 @@ static uint32_t bytesAvailable()
    1d520:	e7c8      	b.n	1d4b4 <clearBuffers>
    1d522:	bf00      	nop
    1d524:	40047000 	.word	0x40047000
-   1d528:	00029d1c 	.word	0x00029d1c
+   1d528:	00029d14 	.word	0x00029d14
 
 0001d52c <init>:
 	HAL.IOs->config->toOutput(&HAL.IOs->pins->MIXED6);
@@ -46793,7 +46793,7 @@ static uint32_t bytesAvailable()
 	enable_irq(INT_UART0_RX_TX-16);
    1d5a6:	202d      	movs	r0, #45	; 0x2d
    1d5a8:	f007 bda8 	b.w	250fc <enable_irq>
-   1d5ac:	00029d1c 	.word	0x00029d1c
+   1d5ac:	00029d14 	.word	0x00029d14
    1d5b0:	40047000 	.word	0x40047000
    1d5b4:	4006a000 	.word	0x4006a000
    1d5b8:	1fff0aa0 	.word	0x1fff0aa0
@@ -47026,7 +47026,7 @@ uint32_t checkCmdModeEnabled()
    1d708:	762b      	strb	r3, [r5, #24]
    1d70a:	e7e3      	b.n	1d6d4 <checkCmdModeEnabled+0x10>
    1d70c:	1fff0aa0 	.word	0x1fff0aa0
-   1d710:	0002b23f 	.word	0x0002b23f
+   1d710:	0002b237 	.word	0x0002b237
    1d714:	1fff4dd4 	.word	0x1fff4dd4
 
 0001d718 <checkReadyToSend>:
@@ -47620,7 +47620,7 @@ static uint32_t bytesAvailable()
    1da66:	e7e5      	b.n	1da34 <init+0xd0>
    1da68:	1fff0af0 	.word	0x1fff0af0
    1da6c:	002dc6c0 	.word	0x002dc6c0
-   1da70:	00029d1c 	.word	0x00029d1c
+   1da70:	00029d14 	.word	0x00029d14
    1da74:	40047000 	.word	0x40047000
    1da78:	4006a000 	.word	0x4006a000
    1da7c:	4006c000 	.word	0x4006c000
@@ -47800,7 +47800,7 @@ static uint32_t bytesAvailable()
 		disable_irq(INT_UART2_RX_TX-16);
    1dba8:	2031      	movs	r0, #49	; 0x31
    1dbaa:	e7e7      	b.n	1db7c <deInit+0x40>
-   1dbac:	00029d1c 	.word	0x00029d1c
+   1dbac:	00029d14 	.word	0x00029d14
    1dbb0:	40047000 	.word	0x40047000
    1dbb4:	1fff0af0 	.word	0x1fff0af0
 
@@ -48265,7 +48265,7 @@ void UART0_RX_TX_IRQHandler(void)
    1de8e:	f000 b99b 	b.w	1e1c8 <tmcl_boot>
 	}
    1de92:	bd10      	pop	{r4, pc}
-   1de94:	00029d1c 	.word	0x00029d1c
+   1de94:	00029d14 	.word	0x00029d14
 
 0001de98 <init_reg>:
 
@@ -48494,7 +48494,7 @@ void init_reg(){
    1e008:	b00a      	add	sp, #40	; 0x28
    1e00a:	bd70      	pop	{r4, r5, r6, pc}
    1e00c:	1fff0000 	.word	0x1fff0000
-   1e010:	00029d1c 	.word	0x00029d1c
+   1e010:	00029d14 	.word	0x00029d14
    1e014:	1fff0b34 	.word	0x1fff0b34
    1e018:	1fff5e88 	.word	0x1fff5e88
    1e01c:	00030004 	.word	0x00030004
@@ -48629,7 +48629,7 @@ static void setDriversEnable()
 }
    1e0f0:	bdf0      	pop	{r4, r5, r6, r7, pc}
    1e0f2:	bf00      	nop
-   1e0f4:	00029d1c 	.word	0x00029d1c
+   1e0f4:	00029d14 	.word	0x00029d14
    1e0f8:	1fff6604 	.word	0x1fff6604
    1e0fc:	1fff6570 	.word	0x1fff6570
    1e100:	1fff6600 	.word	0x1fff6600
@@ -48834,7 +48834,7 @@ static void setDriversEnable()
    1e23a:	4718      	bx	r3
    1e23c:	1fff5e88 	.word	0x1fff5e88
    1e240:	1fff0000 	.word	0x1fff0000
-   1e244:	00029d1c 	.word	0x00029d1c
+   1e244:	00029d14 	.word	0x00029d14
    1e248:	12345678 	.word	0x12345678
 
 0001e24c <ExecuteActualCommand>:
@@ -49165,7 +49165,7 @@ static void SoftwareReset(void)
    1e534:	1fff660c 	.word	0x1fff660c
    1e538:	1fff6614 	.word	0x1fff6614
    1e53c:	1fff0b34 	.word	0x1fff0b34
-   1e540:	00029d1c 	.word	0x00029d1c
+   1e540:	00029d14 	.word	0x00029d14
 		HAL.IOs->config->setToState(HAL.IOs->pins->pins[ActualCommand.Motor], ActualCommand.Value.UInt32);
    1e544:	4b99      	ldr	r3, [pc, #612]	; (1e7ac <ExecuteActualCommand+0x560>)
    1e546:	78a0      	ldrb	r0, [r4, #2]
@@ -49541,7 +49541,7 @@ static void SoftwareReset(void)
    1e7a4:	4b03      	ldr	r3, [pc, #12]	; (1e7b4 <ExecuteActualCommand+0x568>)
    1e7a6:	f8d3 30cc 	ldr.w	r3, [r3, #204]	; 0xcc
    1e7aa:	e7f6      	b.n	1e79a <ExecuteActualCommand+0x54e>
-   1e7ac:	00029d1c 	.word	0x00029d1c
+   1e7ac:	00029d14 	.word	0x00029d14
    1e7b0:	1fff0b34 	.word	0x1fff0b34
    1e7b4:	1fff5e88 	.word	0x1fff5e88
    1e7b8:	1fff5f7c 	.word	0x1fff5f7c
@@ -49801,7 +49801,7 @@ static void SoftwareReset(void)
    1e9a8:	1fff6604 	.word	0x1fff6604
    1e9ac:	1fff56c0 	.word	0x1fff56c0
    1e9b0:	1fff6570 	.word	0x1fff6570
-   1e9b4:	00029d1c 	.word	0x00029d1c
+   1e9b4:	00029d14 	.word	0x00029d14
    1e9b8:	1fff6610 	.word	0x1fff6610
    1e9bc:	1fff6600 	.word	0x1fff6600
 
@@ -50139,7 +50139,7 @@ static uint8_t assign(uint32_t pulse)
    1ebc8:	400b8000 	.word	0x400b8000
    1ebcc:	4004a000 	.word	0x4004a000
    1ebd0:	1fff56d4 	.word	0x1fff56d4
-   1ebd4:	00029d1c 	.word	0x00029d1c
+   1ebd4:	00029d14 	.word	0x00029d14
 
 0001ebd8 <FTM2_IRQHandler>:
 	FTM2_SC &= ~FTM_SC_TOF_MASK;
@@ -50282,7 +50282,7 @@ static uint8_t assign(uint32_t pulse)
    1ecc4:	1fff56d4 	.word	0x1fff56d4
    1ecc8:	40047000 	.word	0x40047000
    1eccc:	400b8000 	.word	0x400b8000
-   1ecd0:	00029d1c 	.word	0x00029d1c
+   1ecd0:	00029d14 	.word	0x00029d14
    1ecd4:	000b0102 	.word	0x000b0102
    1ecd8:	4004a000 	.word	0x4004a000
 
@@ -50529,7 +50529,7 @@ uint8_t IDDetection_detect(IdAssignmentTypeDef *out)
    1ee6a:	e7be      	b.n	1edea <IDDetection_detect+0xda>
    1ee6c:	1fff56d4 	.word	0x1fff56d4
    1ee70:	400b8000 	.word	0x400b8000
-   1ee74:	00029d1c 	.word	0x00029d1c
+   1ee74:	00029d14 	.word	0x00029d14
    1ee78:	1fff09d8 	.word	0x1fff09d8
    1ee7c:	000b0102 	.word	0x000b0102
    1ee80:	1fff09ec 	.word	0x1fff09ec
@@ -50696,7 +50696,7 @@ void eeprom_write_byte(SPIChannelTypeDef *SPIChannel, uint16_t address, uint8_t 
 }
    1ef46:	e8bd 81f0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, pc}
    1ef4a:	bf00      	nop
-   1ef4c:	00029d1c 	.word	0x00029d1c
+   1ef4c:	00029d14 	.word	0x00029d14
    1ef50:	1fff09d8 	.word	0x1fff09d8
    1ef54:	1fff5710 	.word	0x1fff5710
    1ef58:	1fff0078 	.word	0x1fff0078
@@ -50926,7 +50926,7 @@ void eeprom_write_array(SPIChannelTypeDef *SPIChannel, uint16_t address, uint8_t
 		SPIChannel->readWrite(*(data+i), (address & 0x0000003F)==0 || i==size-1);
    1f08c:	2101      	movs	r1, #1
    1f08e:	e7d1      	b.n	1f034 <eeprom_write_array+0xd8>
-   1f090:	00029d1c 	.word	0x00029d1c
+   1f090:	00029d14 	.word	0x00029d14
    1f094:	1fff09d8 	.word	0x1fff09d8
    1f098:	1fff5710 	.word	0x1fff5710
    1f09c:	1fff0078 	.word	0x1fff0078
@@ -51008,7 +51008,7 @@ uint8_t eeprom_read_byte(SPIChannelTypeDef *SPIChannel, uint16_t address)
    1f0ee:	4628      	mov	r0, r5
    1f0f0:	bdf8      	pop	{r3, r4, r5, r6, r7, pc}
    1f0f2:	bf00      	nop
-   1f0f4:	00029d1c 	.word	0x00029d1c
+   1f0f4:	00029d14 	.word	0x00029d14
    1f0f8:	1fff09d8 	.word	0x1fff09d8
    1f0fc:	1fff0078 	.word	0x1fff0078
 
@@ -51100,7 +51100,7 @@ void eeprom_read_array(SPIChannelTypeDef *SPIChannel, uint16_t address, uint8_t 
    1f172:	3601      	adds	r6, #1
    1f174:	e7ea      	b.n	1f14c <eeprom_read_array+0x4c>
    1f176:	bf00      	nop
-   1f178:	00029d1c 	.word	0x00029d1c
+   1f178:	00029d14 	.word	0x00029d14
    1f17c:	1fff09d8 	.word	0x1fff09d8
    1f180:	1fff0078 	.word	0x1fff0078
 
@@ -51120,7 +51120,7 @@ void eeprom_read_array(SPIChannelTypeDef *SPIChannel, uint16_t address, uint8_t 
    1f190:	9600      	str	r6, [sp, #0]
    1f192:	2212      	movs	r2, #18
    1f194:	a801      	add	r0, sp, #4
-   1f196:	f008 fddf 	bl	27d58 <memset>
+   1f196:	f008 fddb 	bl	27d50 <memset>
 	EEPROM_Data *eep = (SPIChannel == &SPI.ch1) ? &EEPROM.ch1 : &EEPROM.ch2;
    1f19a:	4a19      	ldr	r2, [pc, #100]	; (1f200 <eeprom_init+0x7c>)
    1f19c:	f104 0318 	add.w	r3, r4, #24
@@ -51261,7 +51261,7 @@ void eeprom_read_array(SPIChannelTypeDef *SPIChannel, uint16_t address, uint8_t 
    1f28e:	4b04      	ldr	r3, [pc, #16]	; (1f2a0 <eeprom_check+0x9c>)
    1f290:	7e1b      	ldrb	r3, [r3, #24]
    1f292:	e7ef      	b.n	1f274 <eeprom_check+0x70>
-   1f294:	00029d1c 	.word	0x00029d1c
+   1f294:	00029d14 	.word	0x00029d14
    1f298:	1fff09d8 	.word	0x1fff09d8
    1f29c:	1fff0078 	.word	0x1fff0078
    1f2a0:	1fff5710 	.word	0x1fff5710
@@ -51563,9 +51563,9 @@ static void hookDriverSPI(IdAssignmentTypeDef *ids)
 	return out;
    1f42a:	e754      	b.n	1f2d6 <Board_assign+0x2e>
    1f42c:	1fff5e88 	.word	0x1fff5e88
-   1f430:	00029d54 	.word	0x00029d54
-   1f434:	00029dd4 	.word	0x00029dd4
-   1f438:	00029d1c 	.word	0x00029d1c
+   1f430:	00029d4c 	.word	0x00029d4c
+   1f434:	00029dcc 	.word	0x00029dcc
+   1f438:	00029d14 	.word	0x00029d14
 
 0001f43c <Board_supported>:
 {
@@ -51621,8 +51621,8 @@ static void hookDriverSPI(IdAssignmentTypeDef *ids)
 			ok = ID_STATE_DONE;
    1f484:	2202      	movs	r2, #2
    1f486:	e7f3      	b.n	1f470 <Board_supported+0x34>
-   1f488:	00029d54 	.word	0x00029d54
-   1f48c:	00029dd4 	.word	0x00029dd4
+   1f488:	00029d4c 	.word	0x00029d4c
+   1f48c:	00029dcc 	.word	0x00029dcc
 
 0001f490 <periodicJob>:
 }
@@ -51700,7 +51700,7 @@ void heartBeat(uint32_t tick)
    1f4da:	bf00      	nop
    1f4dc:	1fff0b34 	.word	0x1fff0b34
    1f4e0:	1fff574c 	.word	0x1fff574c
-   1f4e4:	00029d1c 	.word	0x00029d1c
+   1f4e4:	00029d14 	.word	0x00029d14
 
 0001f4e8 <checkVM>:
 
@@ -51880,7 +51880,7 @@ void checkVM()
    1f5ca:	7d63      	ldrb	r3, [r4, #21]
    1f5cc:	e7f0      	b.n	1f5b0 <checkVM+0xc8>
    1f5ce:	bf00      	nop
-   1f5d0:	00029d1c 	.word	0x00029d1c
+   1f5d0:	00029d14 	.word	0x00029d14
    1f5d4:	1fff0b34 	.word	0x1fff0b34
    1f5d8:	1fff5e88 	.word	0x1fff5e88
    1f5dc:	02bcfd42 	.word	0x02bcfd42
@@ -52076,7 +52076,7 @@ void vitalsignsmonitor_checkVitalSigns()
    1f6d4:	1fff574c 	.word	0x1fff574c
    1f6d8:	1fff5e88 	.word	0x1fff5e88
    1f6dc:	1fff0b34 	.word	0x1fff0b34
-   1f6e0:	00029d1c 	.word	0x00029d1c
+   1f6e0:	00029d14 	.word	0x00029d14
 
 0001f6e4 <vitalsignsmonitor_clearOvervoltageErrors>:
 
@@ -52563,7 +52563,7 @@ void StepDir_stallGuard(uint8_t channel, bool stall)
    1f9aa:	e7e8      	b.n	1f97e <FTM1_IRQHandler+0x72>
    1f9ac:	40039000 	.word	0x40039000
    1f9b0:	1fff6624 	.word	0x1fff6624
-   1f9b4:	00029d1c 	.word	0x00029d1c
+   1f9b4:	00029d14 	.word	0x00029d14
 
 0001f9b8 <StepDir_setActualPosition>:
 // The setters are responsible to access their respective variables while keeping the ramp generation stable
@@ -53582,7 +53582,7 @@ int32_t tmc_sqrti(int32_t x)
 }
    1fefc:	4770      	bx	lr
    1fefe:	bf00      	nop
-   1ff00:	00029e3c 	.word	0x00029e3c
+   1ff00:	00029e34 	.word	0x00029e34
 
 0001ff04 <tmc_filterPT1>:
 
@@ -54825,7 +54825,7 @@ void tmc2041_init(TMC2041TypeDef *tmc2041, uint8_t channel, ConfigurationTypeDef
 }
    20520:	bd30      	pop	{r4, r5, pc}
    20522:	bf00      	nop
-   20524:	00029f3c 	.word	0x00029f3c
+   20524:	00029f34 	.word	0x00029f34
 
 00020528 <tmc2041_reset>:
 
@@ -55140,7 +55140,7 @@ int32_t tmc2130_readInt(TMC2130TypeDef *tmc2130, uint8_t address)
    206d6:	ba00      	rev	r0, r0
    206d8:	e7e2      	b.n	206a0 <tmc2130_readInt+0x1a>
    206da:	bf00      	nop
-   206dc:	00029fbc 	.word	0x00029fbc
+   206dc:	00029fb4 	.word	0x00029fb4
 
 000206e0 <tmc2130_init>:
 // This function requires:
@@ -55184,7 +55184,7 @@ void tmc2130_init(TMC2130TypeDef *tmc2130, uint8_t channel, ConfigurationTypeDef
 	}
 }
    20712:	bd30      	pop	{r4, r5, pc}
-   20714:	00029fc1 	.word	0x00029fc1
+   20714:	00029fb9 	.word	0x00029fb9
 
 00020718 <tmc2130_fillShadowRegisters>:
 
@@ -55249,7 +55249,7 @@ void tmc2130_fillShadowRegisters(TMC2130TypeDef *tmc2130)
 }
    20764:	bdf0      	pop	{r4, r5, r6, r7, pc}
    20766:	bf00      	nop
-   20768:	0002a044 	.word	0x0002a044
+   20768:	0002a03c 	.word	0x0002a03c
 
 0002076c <tmc2130_reset>:
 
@@ -55610,7 +55610,7 @@ void tmc2160_init(TMC2160TypeDef *tmc2160, uint8_t channel, ConfigurationTypeDef
 }
    2094c:	bd30      	pop	{r4, r5, pc}
    2094e:	bf00      	nop
-   20950:	0002a09c 	.word	0x0002a09c
+   20950:	0002a094 	.word	0x0002a094
 
 00020954 <tmc2160_fillShadowRegisters>:
 
@@ -55662,7 +55662,7 @@ void tmc2160_fillShadowRegisters(TMC2160TypeDef *tmc2160)
 			j++;
    20994:	3201      	adds	r2, #1
    20996:	e7e9      	b.n	2096c <tmc2160_fillShadowRegisters+0x18>
-   20998:	0002a11c 	.word	0x0002a11c
+   20998:	0002a114 	.word	0x0002a114
 
 0002099c <tmc2160_reset>:
 
@@ -56023,7 +56023,7 @@ void tmc2208_init(TMC2208TypeDef *tmc2208, uint8_t channel, ConfigurationTypeDef
 	}
 }
    20b8e:	bd30      	pop	{r4, r5, pc}
-   20b90:	0002a184 	.word	0x0002a184
+   20b90:	0002a17c 	.word	0x0002a17c
 
 00020b94 <tmc2208_periodicJob>:
 		tmc2208->config->state = CONFIG_READY;
@@ -56412,7 +56412,7 @@ void tmc2209_init(TMC2209TypeDef *tmc2209, uint8_t channel, uint8_t slaveAddress
 }
    20da8:	bd30      	pop	{r4, r5, pc}
    20daa:	bf00      	nop
-   20dac:	0002a204 	.word	0x0002a204
+   20dac:	0002a1fc 	.word	0x0002a1fc
 
 00020db0 <tmc2209_periodicJob>:
 		tmc2209->config->state = CONFIG_READY;
@@ -56650,7 +56650,7 @@ void tmc2224_initConfig(TMC2224TypeDef *tmc2224)
 }
    20ed4:	bd30      	pop	{r4, r5, pc}
    20ed6:	bf00      	nop
-   20ed8:	0002a284 	.word	0x0002a284
+   20ed8:	0002a27c 	.word	0x0002a27c
 
 00020edc <tmc2224_writeConfiguration>:
 
@@ -56985,7 +56985,7 @@ void tmc2225_init(TMC2225TypeDef *tmc2225, uint8_t channel, ConfigurationTypeDef
 	}
 }
    2107e:	bd30      	pop	{r4, r5, pc}
-   21080:	0002a504 	.word	0x0002a504
+   21080:	0002a4fc 	.word	0x0002a4fc
 
 00021084 <tmc2225_periodicJob>:
 		tmc2225->config->state = CONFIG_READY;
@@ -57390,7 +57390,7 @@ void tmc2590_init(TMC2590TypeDef *tmc2590, uint8_t channel, ConfigurationTypeDef
 }
    21290:	bd30      	pop	{r4, r5, pc}
    21292:	bf00      	nop
-   21294:	0002a584 	.word	0x0002a584
+   21294:	0002a57c 	.word	0x0002a57c
 
 00021298 <tmc2590_periodicJob>:
 
@@ -57626,7 +57626,7 @@ uint8_t tmc2590_restore(TMC2590TypeDef *tmc2590)
 }
    213fc:	bd30      	pop	{r4, r5, pc}
    213fe:	bf00      	nop
-   21400:	0002a58c 	.word	0x0002a58c
+   21400:	0002a584 	.word	0x0002a584
 
 00021404 <tmc2660_writeConfiguration>:
 	//}
@@ -58023,7 +58023,7 @@ void tmc4330_init(TMC4330TypeDef *tmc4330, uint8_t channel, ConfigurationTypeDef
 }
    21638:	bd30      	pop	{r4, r5, pc}
    2163a:	bf00      	nop
-   2163c:	0002a5b4 	.word	0x0002a5b4
+   2163c:	0002a5ac 	.word	0x0002a5ac
 
 00021640 <tmc4330_reset>:
 
@@ -58866,7 +58866,7 @@ void tmc4331_init(TMC4331TypeDef *tmc4331, uint8_t channel, ConfigurationTypeDef
 	}
 }
    21b36:	bd30      	pop	{r4, r5, pc}
-   21b38:	0002a634 	.word	0x0002a634
+   21b38:	0002a62c 	.word	0x0002a62c
 
 00021b3c <tmc4331_reset>:
 
@@ -59499,7 +59499,7 @@ void tmc4361_init(TMC4361TypeDef *tmc4361, uint8_t channel, ConfigurationTypeDef
 	}
 }
    21eb2:	bd30      	pop	{r4, r5, pc}
-   21eb4:	0002a6b4 	.word	0x0002a6b4
+   21eb4:	0002a6ac 	.word	0x0002a6ac
 
 00021eb8 <tmc4361_reset>:
 
@@ -60342,7 +60342,7 @@ void tmc4361A_init(TMC4361ATypeDef *tmc4361A, uint8_t channel, ConfigurationType
 	}
 }
    223ae:	bd30      	pop	{r4, r5, pc}
-   223b0:	0002a734 	.word	0x0002a734
+   223b0:	0002a72c 	.word	0x0002a72c
 
 000223b4 <tmc4361A_fillShadowRegisters>:
 
@@ -60401,7 +60401,7 @@ void tmc4361A_fillShadowRegisters(TMC4361ATypeDef *tmc4361A)
 }
    223fc:	bdf0      	pop	{r4, r5, r6, r7, pc}
    223fe:	bf00      	nop
-   22400:	0002a7b4 	.word	0x0002a7b4
+   22400:	0002a7ac 	.word	0x0002a7ac
 
 00022404 <tmc4361A_reset>:
 
@@ -63216,7 +63216,7 @@ void tmc5031_initConfig(TMC5031TypeDef *tmc5031)
 }
    23244:	bd30      	pop	{r4, r5, pc}
    23246:	bf00      	nop
-   23248:	0002a82c 	.word	0x0002a82c
+   23248:	0002a824 	.word	0x0002a824
 
 0002324c <tmc5031_writeConfiguration>:
 
@@ -63549,7 +63549,7 @@ int32_t tmc5041_readInt(TMC5041TypeDef *tmc5041, uint8_t address)
    23432:	ba00      	rev	r0, r0
    23434:	e7e2      	b.n	233fc <tmc5041_readInt+0x1a>
    23436:	bf00      	nop
-   23438:	0002aaac 	.word	0x0002aaac
+   23438:	0002aaa4 	.word	0x0002aaa4
 
 0002343c <tmc5041_init>:
 
@@ -63601,7 +63601,7 @@ void tmc5041_init(TMC5041TypeDef *tmc5041, uint8_t channel, ConfigurationTypeDef
 	}
 }
    2347e:	bd30      	pop	{r4, r5, pc}
-   23480:	0002aab1 	.word	0x0002aab1
+   23480:	0002aaa9 	.word	0x0002aaa9
 
 00023484 <tmc5041_periodicJob>:
 		tmc5041->config->state = CONFIG_READY;
@@ -63993,7 +63993,7 @@ void tmc5062_init(TMC5062TypeDef *tmc5062, ConfigurationTypeDef *tmc5062_config,
 	}
 }
    236aa:	bd30      	pop	{r4, r5, pc}
-   236ac:	0002ab34 	.word	0x0002ab34
+   236ac:	0002ab2c 	.word	0x0002ab2c
 
 000236b0 <tmc5062_fillShadowRegisters>:
 
@@ -64045,7 +64045,7 @@ void tmc5062_fillShadowRegisters(TMC5062TypeDef *tmc5062)
 			j++;
    236f0:	3201      	adds	r2, #1
    236f2:	e7e9      	b.n	236c8 <tmc5062_fillShadowRegisters+0x18>
-   236f4:	0002abb4 	.word	0x0002abb4
+   236f4:	0002abac 	.word	0x0002abac
 
 000236f8 <tmc5062_setRegisterResetState>:
 
@@ -64932,7 +64932,7 @@ int32_t tmc5072_readInt(TMC5072TypeDef *tmc5072, uint8_t address)
    23c66:	ba00      	rev	r0, r0
    23c68:	e7e2      	b.n	23c30 <tmc5072_readInt+0x1a>
    23c6a:	bf00      	nop
-   23c6c:	0002ac54 	.word	0x0002ac54
+   23c6c:	0002ac4c 	.word	0x0002ac4c
 
 00023c70 <tmc5072_init>:
 //}
@@ -64993,7 +64993,7 @@ void tmc5072_init(TMC5072TypeDef *tmc5072, uint8_t channel, ConfigurationTypeDef
 	}
 }
    23cae:	bd30      	pop	{r4, r5, pc}
-   23cb0:	0002ac59 	.word	0x0002ac59
+   23cb0:	0002ac51 	.word	0x0002ac51
 
 00023cb4 <tmc5072_fillShadowRegisters>:
 //		tmc5072->registerResetState[i]  = tmc5072_defaultRegisterResetState[i];
@@ -65048,7 +65048,7 @@ void tmc5072_fillShadowRegisters(TMC5072TypeDef *tmc5072)
 			j++;
    23cf4:	3201      	adds	r2, #1
    23cf6:	e7e9      	b.n	23ccc <tmc5072_fillShadowRegisters+0x18>
-   23cf8:	0002acdc 	.word	0x0002acdc
+   23cf8:	0002acd4 	.word	0x0002acd4
 
 00023cfc <tmc5072_periodicJob>:
 //		TMC5072_config->state = CONFIG_READY;
@@ -65569,7 +65569,7 @@ int32_t tmc5130_readInt(TMC5130TypeDef *tmc5130, uint8_t address)
    23fda:	ba00      	rev	r0, r0
    23fdc:	e7e2      	b.n	23fa4 <tmc5130_readInt+0x1a>
    23fde:	bf00      	nop
-   23fe0:	0002ad2c 	.word	0x0002ad2c
+   23fe0:	0002ad24 	.word	0x0002ad24
 
 00023fe4 <tmc5130_init>:
 //     - tmc5130: The pointer to a TMC5130TypeDef struct, which represents one IC
@@ -65618,7 +65618,7 @@ void tmc5130_init(TMC5130TypeDef *tmc5130, uint8_t channel, ConfigurationTypeDef
 	}
 }
    2401e:	bd30      	pop	{r4, r5, pc}
-   24020:	0002ad31 	.word	0x0002ad31
+   24020:	0002ad29 	.word	0x0002ad29
 
 00024024 <tmc5130_fillShadowRegisters>:
 
@@ -65683,7 +65683,7 @@ void tmc5130_fillShadowRegisters(TMC5130TypeDef *tmc5130)
 }
    24070:	bdf0      	pop	{r4, r5, r6, r7, pc}
    24072:	bf00      	nop
-   24074:	0002adb4 	.word	0x0002adb4
+   24074:	0002adac 	.word	0x0002adac
 
 00024078 <tmc5130_reset>:
 
@@ -66059,7 +66059,7 @@ void tmc5160_initConfig(TMC5160TypeDef *tmc5160)
 }
    24254:	bd30      	pop	{r4, r5, pc}
    24256:	bf00      	nop
-   24258:	0002ae0c 	.word	0x0002ae0c
+   24258:	0002ae04 	.word	0x0002ae04
 
 0002425c <tmc5160_writeConfiguration>:
 
@@ -66394,7 +66394,7 @@ void tmc5161_init(TMC5161TypeDef *tmc5161, uint8_t channel, ConfigurationTypeDef
 }
    24424:	bd30      	pop	{r4, r5, pc}
    24426:	bf00      	nop
-   24428:	0002b08c 	.word	0x0002b08c
+   24428:	0002b084 	.word	0x0002b084
 
 0002442c <tmc5161_periodicJob>:
 		tmc5161->config->state = CONFIG_READY;
@@ -71283,7 +71283,7 @@ uint_8 USB_DCI_Init (
     (void)memset(start_addr, val, count);
    25d36:	4628      	mov	r0, r5
    25d38:	21ff      	movs	r1, #255	; 0xff
-   25d3a:	f002 f80d 	bl	27d58 <memset>
+   25d3a:	f002 f809 	bl	27d50 <memset>
     g_bdtmap = (BDTMAP *)((uint_32)g_Mem);
    25d3e:	4b2c      	ldr	r3, [pc, #176]	; (25df0 <USB_DCI_Init+0xd0>)
    25d40:	f8c5 3244 	str.w	r3, [r5, #580]	; 0x244
@@ -71291,7 +71291,7 @@ uint_8 USB_DCI_Init (
    25d44:	f44f 6280 	mov.w	r2, #1024	; 0x400
    25d48:	4639      	mov	r1, r7
    25d4a:	4618      	mov	r0, r3
-   25d4c:	f002 f804 	bl	27d58 <memset>
+   25d4c:	f002 f800 	bl	27d50 <memset>
     USB0_USBTRC0 |= USB_USBTRC0_USBRESET_MASK;
    25d50:	f894 210c 	ldrb.w	r2, [r4, #268]	; 0x10c
    25d54:	f042 0280 	orr.w	r2, r2, #128	; 0x80
@@ -72223,11 +72223,11 @@ uint_8 USB_DCI_Init (
 	USB0_USBCTRL = 0x00;
    26426:	f885 7100 	strb.w	r7, [r5, #256]	; 0x100
     (void)memset(start_addr, val, count);
-   2642a:	f001 fc95 	bl	27d58 <memset>
+   2642a:	f001 fc91 	bl	27d50 <memset>
    2642e:	f44f 6280 	mov.w	r2, #1024	; 0x400
    26432:	4639      	mov	r1, r7
    26434:	f8d4 0244 	ldr.w	r0, [r4, #580]	; 0x244
-   26438:	f001 fc8e 	bl	27d58 <memset>
+   26438:	f001 fc8a 	bl	27d50 <memset>
 	g_bdt_address = ((uint_32)g_bdtmap + BYTES_512);
    2643c:	f8d4 3244 	ldr.w	r3, [r4, #580]	; 0x244
    26440:	f503 7300 	add.w	r3, r3, #512	; 0x200
@@ -72663,7 +72663,7 @@ uint_8 USB_DCI_Init (
     (void)memset(start_addr, val, count);
    26796:	460a      	mov	r2, r1
    26798:	4619      	mov	r1, r3
-   2679a:	f001 badd 	b.w	27d58 <memset>
+   2679a:	f001 bad9 	b.w	27d50 <memset>
    2679e:	bf00      	nop
 
 000267a0 <USB_Desc_Get_Descriptor>:
@@ -72753,7 +72753,7 @@ uint_8 USB_DCI_Init (
    26802:	f8b1 3040 	ldrh.w	r3, [r1, #64]	; 0x40
    26806:	e7e9      	b.n	267dc <USB_Desc_Get_Descriptor+0x3c>
    26808:	1fff0b5f 	.word	0x1fff0b5f
-   2680c:	0002b10c 	.word	0x0002b10c
+   2680c:	0002b104 	.word	0x0002b104
 
 00026810 <USB_Desc_Get_Interface>:
       uint_8_ptr alt_interface  /* [OUT] output alternate interface */
@@ -72868,7 +72868,7 @@ uint_8 USB_DCI_Init (
 }
    26864:	4800      	ldr	r0, [pc, #0]	; (26868 <USB_Desc_Get_Endpoints+0x4>)
    26866:	4770      	bx	lr
-   26868:	0002b15c 	.word	0x0002b15c
+   26868:	0002b154 	.word	0x0002b154
 
 0002686c <USB_Desc_Get_Line_Coding>:
     uint_8_ptr *coding_data     /* [OUT] Line Coding Data */
@@ -73356,7 +73356,7 @@ void USB_NULL_CALLBACK (PTR_USB_DEV_EVENT_STRUCT event)
    26ac0:	20c4      	movs	r0, #196	; 0xc4
 }
    26ac2:	4770      	bx	lr
-   26ac4:	0002b184 	.word	0x0002b184
+   26ac4:	0002b17c 	.word	0x0002b17c
 
 00026ac8 <USB_Device_Call_Service>:
 {
@@ -73379,7 +73379,7 @@ void USB_NULL_CALLBACK (PTR_USB_DEV_EVENT_STRUCT event)
 }
    26ae0:	2000      	movs	r0, #0
    26ae2:	bd10      	pop	{r4, pc}
-   26ae4:	0002b184 	.word	0x0002b184
+   26ae4:	0002b17c 	.word	0x0002b17c
 
 00026ae8 <USB_Strd_Req_Sync_Frame>:
     uint_8    controller_ID,            /* [IN] Controller ID */
@@ -74038,7 +74038,7 @@ static void USB_Control_Service_Handler (
    26f38:	21cd      	movs	r1, #205	; 0xcd
    26f3a:	e7a2      	b.n	26e82 <USB_Control_Service+0x66>
    26f3c:	1fff5e04 	.word	0x1fff5e04
-   26f40:	0002b1e4 	.word	0x0002b1e4
+   26f40:	0002b1dc 	.word	0x0002b1dc
    26f44:	1fff5e0e 	.word	0x1fff5e0e
 
 00026f48 <USB_Framework_Init>:
@@ -75381,7 +75381,7 @@ LoopFillZerobss:
    27c78:	4770      	bx	lr
    27c7a:	0000      	.short	0x0000
   ldr r3, =___ROM_AT
-   27c7c:	0002b27c 	.word	0x0002b27c
+   27c7c:	0002b274 	.word	0x0002b274
   ldr r0, =_sdata
    27c80:	1fff0008 	.word	0x1fff0008
   ldr r3, =_edata
@@ -75447,779 +75447,778 @@ int main(void) {
    27ce8:	2150      	movs	r1, #80	; 0x50
    27cea:	2000      	movs	r0, #0
    27cec:	f7fa ff84 	bl	22bf8 <tmc4671_writeInt>
-
 	// Switch to position mode
-	tmc4671_writeInt(0, TMC4671_PID_POSITION_TARGET, 0x00000000);
-   27cf0:	2200      	movs	r2, #0
-   27cf2:	4610      	mov	r0, r2
-   27cf4:	2168      	movs	r1, #104	; 0x68
+	//tmc4671_writeInt(0, TMC4671_PID_POSITION_TARGET, 0x00000000);
+	//tmc4671_writeInt(0, TMC4671_MODE_RAMP_MODE_MOTION, 0x00000003);
+
+	// Switch to torque mode
+	tmc4671_writeInt(0, TMC4671_MODE_RAMP_MODE_MOTION, 0x00000001);
+   27cf0:	2201      	movs	r2, #1
+   27cf2:	2163      	movs	r1, #99	; 0x63
+   27cf4:	2000      	movs	r0, #0
    27cf6:	f7fa ff7f 	bl	22bf8 <tmc4671_writeInt>
-	tmc4671_writeInt(0, TMC4671_MODE_RAMP_MODE_MOTION, 0x00000003);
-   27cfa:	2203      	movs	r2, #3
-   27cfc:	2163      	movs	r1, #99	; 0x63
-   27cfe:	2000      	movs	r0, #0
-   27d00:	f7fa ff7a 	bl	22bf8 <tmc4671_writeInt>
 		enc[0] = ( current_pos & 0xFF000000 ) >> 24;
 		enc[1] = ( current_pos & 0x00FF0000 ) >> 16;
 		enc[2] = ( current_pos & 0x0000FF00 ) >> 8;
 		enc[3] = ( current_pos & 0x000000FF ) ;
 
 		HAL.USB->txN(enc,4);
-   27d04:	4d13      	ldr	r5, [pc, #76]	; (27d54 <main+0xc4>)
+   27cfa:	4d14      	ldr	r5, [pc, #80]	; (27d4c <main+0xbc>)
 		current_pos = tmc4671_readInt(0, TMC4671_PID_POSITION_ACTUAL);
-   27d06:	216b      	movs	r1, #107	; 0x6b
-   27d08:	2000      	movs	r0, #0
-   27d0a:	f7fa ff53 	bl	22bb4 <tmc4671_readInt>
+   27cfc:	216b      	movs	r1, #107	; 0x6b
+   27cfe:	2000      	movs	r0, #0
+   27d00:	f7fa ff58 	bl	22bb4 <tmc4671_readInt>
 		HAL.USB->txN(enc,4);
-   27d0e:	696c      	ldr	r4, [r5, #20]
-   27d10:	2104      	movs	r1, #4
-   27d12:	ba00      	rev	r0, r0
-   27d14:	6923      	ldr	r3, [r4, #16]
+   27d04:	696c      	ldr	r4, [r5, #20]
+   27d06:	2104      	movs	r1, #4
+   27d08:	ba00      	rev	r0, r0
+   27d0a:	6923      	ldr	r3, [r4, #16]
 		enc[0] = ( current_pos & 0xFF000000 ) >> 24;
-   27d16:	9001      	str	r0, [sp, #4]
+   27d0c:	9001      	str	r0, [sp, #4]
 		HAL.USB->txN(enc,4);
-   27d18:	eb0d 0001 	add.w	r0, sp, r1
-   27d1c:	4798      	blx	r3
+   27d0e:	eb0d 0001 	add.w	r0, sp, r1
+   27d12:	4798      	blx	r3
 
-		if(HAL.USB->rxN(pos_target,4)){
-   27d1e:	6963      	ldr	r3, [r4, #20]
-   27d20:	2104      	movs	r1, #4
-   27d22:	4668      	mov	r0, sp
-   27d24:	4798      	blx	r3
-   27d26:	b188      	cbz	r0, 27d4c <main+0xbc>
-			target = ( pos_target[0] << 24 ) + ( pos_target[1] << 16 ) + ( pos_target[2] << 8 ) + pos_target[3];  // position target
-   27d28:	f89d 3001 	ldrb.w	r3, [sp, #1]
-   27d2c:	f89d 2000 	ldrb.w	r2, [sp]
-   27d30:	041b      	lsls	r3, r3, #16
-   27d32:	eb03 6302 	add.w	r3, r3, r2, lsl #24
-   27d36:	f89d 2002 	ldrb.w	r2, [sp, #2]
-   27d3a:	eb03 2302 	add.w	r3, r3, r2, lsl #8
-   27d3e:	f89d 2003 	ldrb.w	r2, [sp, #3]
-			tmc4671_writeInt(0, TMC4671_PID_POSITION_TARGET, target);  //
-   27d42:	2168      	movs	r1, #104	; 0x68
-   27d44:	441a      	add	r2, r3
-   27d46:	2000      	movs	r0, #0
-   27d48:	f7fa ff56 	bl	22bf8 <tmc4671_writeInt>
+		if(HAL.USB->rxN(torque_target,4)){
+   27d14:	6963      	ldr	r3, [r4, #20]
+   27d16:	2104      	movs	r1, #4
+   27d18:	4668      	mov	r0, sp
+   27d1a:	4798      	blx	r3
+   27d1c:	b188      	cbz	r0, 27d42 <main+0xb2>
+			target = ( torque_target[0] << 24 ) + ( torque_target[1] << 16 ) + ( torque_target[2] << 8 ) + torque_target[3];  // position target
+   27d1e:	f89d 3001 	ldrb.w	r3, [sp, #1]
+   27d22:	f89d 2000 	ldrb.w	r2, [sp]
+   27d26:	041b      	lsls	r3, r3, #16
+   27d28:	eb03 6302 	add.w	r3, r3, r2, lsl #24
+   27d2c:	f89d 2002 	ldrb.w	r2, [sp, #2]
+   27d30:	eb03 2302 	add.w	r3, r3, r2, lsl #8
+   27d34:	f89d 2003 	ldrb.w	r2, [sp, #3]
+			tmc4671_writeInt(0, TMC4671_PID_TORQUE_FLUX_TARGET, target);  //
+   27d38:	2164      	movs	r1, #100	; 0x64
+   27d3a:	441a      	add	r2, r3
+   27d3c:	2000      	movs	r0, #0
+   27d3e:	f7fa ff5b 	bl	22bf8 <tmc4671_writeInt>
 		}
 
 		wait(1);
-   27d4c:	2001      	movs	r0, #1
-   27d4e:	f7f4 faf7 	bl	1c340 <wait>
+   27d42:	2001      	movs	r0, #1
+   27d44:	f7f4 fafc 	bl	1c340 <wait>
 		current_pos = tmc4671_readInt(0, TMC4671_PID_POSITION_ACTUAL);
-   27d52:	e7d8      	b.n	27d06 <main+0x76>
-   27d54:	00029d1c 	.word	0x00029d1c
+   27d48:	e7d8      	b.n	27cfc <main+0x6c>
+   27d4a:	bf00      	nop
+   27d4c:	00029d14 	.word	0x00029d14
 
-00027d58 <memset>:
-   27d58:	b4f0      	push	{r4, r5, r6, r7}
-   27d5a:	0786      	lsls	r6, r0, #30
-   27d5c:	d046      	beq.n	27dec <memset+0x94>
-   27d5e:	1e54      	subs	r4, r2, #1
-   27d60:	2a00      	cmp	r2, #0
-   27d62:	d03c      	beq.n	27dde <memset+0x86>
-   27d64:	b2ca      	uxtb	r2, r1
-   27d66:	4603      	mov	r3, r0
-   27d68:	e001      	b.n	27d6e <memset+0x16>
-   27d6a:	3c01      	subs	r4, #1
-   27d6c:	d337      	bcc.n	27dde <memset+0x86>
-   27d6e:	f803 2b01 	strb.w	r2, [r3], #1
-   27d72:	079d      	lsls	r5, r3, #30
-   27d74:	d1f9      	bne.n	27d6a <memset+0x12>
-   27d76:	2c03      	cmp	r4, #3
-   27d78:	d92a      	bls.n	27dd0 <memset+0x78>
-   27d7a:	b2cd      	uxtb	r5, r1
-   27d7c:	ea45 2505 	orr.w	r5, r5, r5, lsl #8
-   27d80:	2c0f      	cmp	r4, #15
-   27d82:	ea45 4505 	orr.w	r5, r5, r5, lsl #16
-   27d86:	d934      	bls.n	27df2 <memset+0x9a>
-   27d88:	f1a4 0210 	sub.w	r2, r4, #16
-   27d8c:	f022 0c0f 	bic.w	ip, r2, #15
-   27d90:	f103 0720 	add.w	r7, r3, #32
-   27d94:	0916      	lsrs	r6, r2, #4
-   27d96:	4467      	add	r7, ip
-   27d98:	f103 0210 	add.w	r2, r3, #16
-   27d9c:	e942 5504 	strd	r5, r5, [r2, #-16]
-   27da0:	e942 5502 	strd	r5, r5, [r2, #-8]
-   27da4:	3210      	adds	r2, #16
-   27da6:	42ba      	cmp	r2, r7
-   27da8:	d1f8      	bne.n	27d9c <memset+0x44>
-   27daa:	1c72      	adds	r2, r6, #1
-   27dac:	f014 0f0c 	tst.w	r4, #12
-   27db0:	eb03 1202 	add.w	r2, r3, r2, lsl #4
-   27db4:	f004 060f 	and.w	r6, r4, #15
-   27db8:	d013      	beq.n	27de2 <memset+0x8a>
-   27dba:	1f33      	subs	r3, r6, #4
-   27dbc:	f023 0303 	bic.w	r3, r3, #3
-   27dc0:	3304      	adds	r3, #4
-   27dc2:	4413      	add	r3, r2
-   27dc4:	f842 5b04 	str.w	r5, [r2], #4
-   27dc8:	4293      	cmp	r3, r2
-   27dca:	d1fb      	bne.n	27dc4 <memset+0x6c>
-   27dcc:	f006 0403 	and.w	r4, r6, #3
-   27dd0:	b12c      	cbz	r4, 27dde <memset+0x86>
-   27dd2:	b2ca      	uxtb	r2, r1
-   27dd4:	441c      	add	r4, r3
-   27dd6:	f803 2b01 	strb.w	r2, [r3], #1
-   27dda:	429c      	cmp	r4, r3
-   27ddc:	d1fb      	bne.n	27dd6 <memset+0x7e>
-   27dde:	bcf0      	pop	{r4, r5, r6, r7}
-   27de0:	4770      	bx	lr
-   27de2:	4634      	mov	r4, r6
-   27de4:	4613      	mov	r3, r2
-   27de6:	2c00      	cmp	r4, #0
-   27de8:	d1f3      	bne.n	27dd2 <memset+0x7a>
-   27dea:	e7f8      	b.n	27dde <memset+0x86>
-   27dec:	4614      	mov	r4, r2
-   27dee:	4603      	mov	r3, r0
-   27df0:	e7c1      	b.n	27d76 <memset+0x1e>
-   27df2:	461a      	mov	r2, r3
-   27df4:	4626      	mov	r6, r4
-   27df6:	e7e0      	b.n	27dba <memset+0x62>
+00027d50 <memset>:
+   27d50:	b4f0      	push	{r4, r5, r6, r7}
+   27d52:	0786      	lsls	r6, r0, #30
+   27d54:	d046      	beq.n	27de4 <memset+0x94>
+   27d56:	1e54      	subs	r4, r2, #1
+   27d58:	2a00      	cmp	r2, #0
+   27d5a:	d03c      	beq.n	27dd6 <memset+0x86>
+   27d5c:	b2ca      	uxtb	r2, r1
+   27d5e:	4603      	mov	r3, r0
+   27d60:	e001      	b.n	27d66 <memset+0x16>
+   27d62:	3c01      	subs	r4, #1
+   27d64:	d337      	bcc.n	27dd6 <memset+0x86>
+   27d66:	f803 2b01 	strb.w	r2, [r3], #1
+   27d6a:	079d      	lsls	r5, r3, #30
+   27d6c:	d1f9      	bne.n	27d62 <memset+0x12>
+   27d6e:	2c03      	cmp	r4, #3
+   27d70:	d92a      	bls.n	27dc8 <memset+0x78>
+   27d72:	b2cd      	uxtb	r5, r1
+   27d74:	ea45 2505 	orr.w	r5, r5, r5, lsl #8
+   27d78:	2c0f      	cmp	r4, #15
+   27d7a:	ea45 4505 	orr.w	r5, r5, r5, lsl #16
+   27d7e:	d934      	bls.n	27dea <memset+0x9a>
+   27d80:	f1a4 0210 	sub.w	r2, r4, #16
+   27d84:	f022 0c0f 	bic.w	ip, r2, #15
+   27d88:	f103 0720 	add.w	r7, r3, #32
+   27d8c:	0916      	lsrs	r6, r2, #4
+   27d8e:	4467      	add	r7, ip
+   27d90:	f103 0210 	add.w	r2, r3, #16
+   27d94:	e942 5504 	strd	r5, r5, [r2, #-16]
+   27d98:	e942 5502 	strd	r5, r5, [r2, #-8]
+   27d9c:	3210      	adds	r2, #16
+   27d9e:	42ba      	cmp	r2, r7
+   27da0:	d1f8      	bne.n	27d94 <memset+0x44>
+   27da2:	1c72      	adds	r2, r6, #1
+   27da4:	f014 0f0c 	tst.w	r4, #12
+   27da8:	eb03 1202 	add.w	r2, r3, r2, lsl #4
+   27dac:	f004 060f 	and.w	r6, r4, #15
+   27db0:	d013      	beq.n	27dda <memset+0x8a>
+   27db2:	1f33      	subs	r3, r6, #4
+   27db4:	f023 0303 	bic.w	r3, r3, #3
+   27db8:	3304      	adds	r3, #4
+   27dba:	4413      	add	r3, r2
+   27dbc:	f842 5b04 	str.w	r5, [r2], #4
+   27dc0:	4293      	cmp	r3, r2
+   27dc2:	d1fb      	bne.n	27dbc <memset+0x6c>
+   27dc4:	f006 0403 	and.w	r4, r6, #3
+   27dc8:	b12c      	cbz	r4, 27dd6 <memset+0x86>
+   27dca:	b2ca      	uxtb	r2, r1
+   27dcc:	441c      	add	r4, r3
+   27dce:	f803 2b01 	strb.w	r2, [r3], #1
+   27dd2:	429c      	cmp	r4, r3
+   27dd4:	d1fb      	bne.n	27dce <memset+0x7e>
+   27dd6:	bcf0      	pop	{r4, r5, r6, r7}
+   27dd8:	4770      	bx	lr
+   27dda:	4634      	mov	r4, r6
+   27ddc:	4613      	mov	r3, r2
+   27dde:	2c00      	cmp	r4, #0
+   27de0:	d1f3      	bne.n	27dca <memset+0x7a>
+   27de2:	e7f8      	b.n	27dd6 <memset+0x86>
+   27de4:	4614      	mov	r4, r2
+   27de6:	4603      	mov	r3, r0
+   27de8:	e7c1      	b.n	27d6e <memset+0x1e>
+   27dea:	461a      	mov	r2, r3
+   27dec:	4626      	mov	r6, r4
+   27dee:	e7e0      	b.n	27db2 <memset+0x62>
 
-00027df8 <register_fini>:
-   27df8:	4b02      	ldr	r3, [pc, #8]	; (27e04 <register_fini+0xc>)
-   27dfa:	b113      	cbz	r3, 27e02 <register_fini+0xa>
-   27dfc:	4802      	ldr	r0, [pc, #8]	; (27e08 <register_fini+0x10>)
-   27dfe:	f000 b805 	b.w	27e0c <atexit>
-   27e02:	4770      	bx	lr
-   27e04:	00000000 	.word	0x00000000
-   27e08:	00027e19 	.word	0x00027e19
+00027df0 <register_fini>:
+   27df0:	4b02      	ldr	r3, [pc, #8]	; (27dfc <register_fini+0xc>)
+   27df2:	b113      	cbz	r3, 27dfa <register_fini+0xa>
+   27df4:	4802      	ldr	r0, [pc, #8]	; (27e00 <register_fini+0x10>)
+   27df6:	f000 b805 	b.w	27e04 <atexit>
+   27dfa:	4770      	bx	lr
+   27dfc:	00000000 	.word	0x00000000
+   27e00:	00027e11 	.word	0x00027e11
 
-00027e0c <atexit>:
-   27e0c:	2300      	movs	r3, #0
-   27e0e:	4601      	mov	r1, r0
-   27e10:	461a      	mov	r2, r3
-   27e12:	4618      	mov	r0, r3
-   27e14:	f000 b81a 	b.w	27e4c <__register_exitproc>
+00027e04 <atexit>:
+   27e04:	2300      	movs	r3, #0
+   27e06:	4601      	mov	r1, r0
+   27e08:	461a      	mov	r2, r3
+   27e0a:	4618      	mov	r0, r3
+   27e0c:	f000 b81a 	b.w	27e44 <__register_exitproc>
 
-00027e18 <__libc_fini_array>:
-   27e18:	b538      	push	{r3, r4, r5, lr}
-   27e1a:	4b08      	ldr	r3, [pc, #32]	; (27e3c <__libc_fini_array+0x24>)
-   27e1c:	4d08      	ldr	r5, [pc, #32]	; (27e40 <__libc_fini_array+0x28>)
-   27e1e:	1b5b      	subs	r3, r3, r5
-   27e20:	109c      	asrs	r4, r3, #2
-   27e22:	d007      	beq.n	27e34 <__libc_fini_array+0x1c>
-   27e24:	3b04      	subs	r3, #4
-   27e26:	441d      	add	r5, r3
-   27e28:	3c01      	subs	r4, #1
-   27e2a:	f855 3904 	ldr.w	r3, [r5], #-4
-   27e2e:	4798      	blx	r3
-   27e30:	2c00      	cmp	r4, #0
-   27e32:	d1f9      	bne.n	27e28 <__libc_fini_array+0x10>
-   27e34:	e8bd 4038 	ldmia.w	sp!, {r3, r4, r5, lr}
-   27e38:	f003 ba10 	b.w	2b25c <_fini>
-   27e3c:	0002b27c 	.word	0x0002b27c
-   27e40:	0002b278 	.word	0x0002b278
+00027e10 <__libc_fini_array>:
+   27e10:	b538      	push	{r3, r4, r5, lr}
+   27e12:	4b08      	ldr	r3, [pc, #32]	; (27e34 <__libc_fini_array+0x24>)
+   27e14:	4d08      	ldr	r5, [pc, #32]	; (27e38 <__libc_fini_array+0x28>)
+   27e16:	1b5b      	subs	r3, r3, r5
+   27e18:	109c      	asrs	r4, r3, #2
+   27e1a:	d007      	beq.n	27e2c <__libc_fini_array+0x1c>
+   27e1c:	3b04      	subs	r3, #4
+   27e1e:	441d      	add	r5, r3
+   27e20:	3c01      	subs	r4, #1
+   27e22:	f855 3904 	ldr.w	r3, [r5], #-4
+   27e26:	4798      	blx	r3
+   27e28:	2c00      	cmp	r4, #0
+   27e2a:	d1f9      	bne.n	27e20 <__libc_fini_array+0x10>
+   27e2c:	e8bd 4038 	ldmia.w	sp!, {r3, r4, r5, lr}
+   27e30:	f003 ba10 	b.w	2b254 <_fini>
+   27e34:	0002b274 	.word	0x0002b274
+   27e38:	0002b270 	.word	0x0002b270
 
-00027e44 <__retarget_lock_acquire_recursive>:
-   27e44:	4770      	bx	lr
-   27e46:	bf00      	nop
+00027e3c <__retarget_lock_acquire_recursive>:
+   27e3c:	4770      	bx	lr
+   27e3e:	bf00      	nop
 
-00027e48 <__retarget_lock_release_recursive>:
-   27e48:	4770      	bx	lr
-   27e4a:	bf00      	nop
+00027e40 <__retarget_lock_release_recursive>:
+   27e40:	4770      	bx	lr
+   27e42:	bf00      	nop
 
-00027e4c <__register_exitproc>:
-   27e4c:	e92d 47f0 	stmdb	sp!, {r4, r5, r6, r7, r8, r9, sl, lr}
-   27e50:	f8df a080 	ldr.w	sl, [pc, #128]	; 27ed4 <__register_exitproc+0x88>
-   27e54:	4606      	mov	r6, r0
-   27e56:	f8da 0000 	ldr.w	r0, [sl]
-   27e5a:	4698      	mov	r8, r3
-   27e5c:	460f      	mov	r7, r1
-   27e5e:	4691      	mov	r9, r2
-   27e60:	f7ff fff0 	bl	27e44 <__retarget_lock_acquire_recursive>
-   27e64:	4b1a      	ldr	r3, [pc, #104]	; (27ed0 <__register_exitproc+0x84>)
-   27e66:	681b      	ldr	r3, [r3, #0]
-   27e68:	f8d3 4148 	ldr.w	r4, [r3, #328]	; 0x148
-   27e6c:	b324      	cbz	r4, 27eb8 <__register_exitproc+0x6c>
-   27e6e:	6865      	ldr	r5, [r4, #4]
-   27e70:	2d1f      	cmp	r5, #31
-   27e72:	dc26      	bgt.n	27ec2 <__register_exitproc+0x76>
-   27e74:	b95e      	cbnz	r6, 27e8e <__register_exitproc+0x42>
-   27e76:	1cab      	adds	r3, r5, #2
-   27e78:	3501      	adds	r5, #1
-   27e7a:	f8da 0000 	ldr.w	r0, [sl]
-   27e7e:	6065      	str	r5, [r4, #4]
-   27e80:	f844 7023 	str.w	r7, [r4, r3, lsl #2]
-   27e84:	f7ff ffe0 	bl	27e48 <__retarget_lock_release_recursive>
-   27e88:	2000      	movs	r0, #0
-   27e8a:	e8bd 87f0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, r9, sl, pc}
-   27e8e:	eb04 0385 	add.w	r3, r4, r5, lsl #2
-   27e92:	2101      	movs	r1, #1
-   27e94:	f8c3 9088 	str.w	r9, [r3, #136]	; 0x88
-   27e98:	f8d4 2188 	ldr.w	r2, [r4, #392]	; 0x188
-   27e9c:	40a9      	lsls	r1, r5
-   27e9e:	430a      	orrs	r2, r1
-   27ea0:	2e02      	cmp	r6, #2
-   27ea2:	f8c4 2188 	str.w	r2, [r4, #392]	; 0x188
-   27ea6:	f8c3 8108 	str.w	r8, [r3, #264]	; 0x108
-   27eaa:	d1e4      	bne.n	27e76 <__register_exitproc+0x2a>
-   27eac:	f8d4 318c 	ldr.w	r3, [r4, #396]	; 0x18c
-   27eb0:	4319      	orrs	r1, r3
-   27eb2:	f8c4 118c 	str.w	r1, [r4, #396]	; 0x18c
-   27eb6:	e7de      	b.n	27e76 <__register_exitproc+0x2a>
-   27eb8:	f503 74a6 	add.w	r4, r3, #332	; 0x14c
-   27ebc:	f8c3 4148 	str.w	r4, [r3, #328]	; 0x148
-   27ec0:	e7d5      	b.n	27e6e <__register_exitproc+0x22>
-   27ec2:	f8da 0000 	ldr.w	r0, [sl]
-   27ec6:	f7ff ffbf 	bl	27e48 <__retarget_lock_release_recursive>
-   27eca:	f04f 30ff 	mov.w	r0, #4294967295
-   27ece:	e7dc      	b.n	27e8a <__register_exitproc+0x3e>
-   27ed0:	0002b24c 	.word	0x0002b24c
-   27ed4:	1fff1070 	.word	0x1fff1070
+00027e44 <__register_exitproc>:
+   27e44:	e92d 47f0 	stmdb	sp!, {r4, r5, r6, r7, r8, r9, sl, lr}
+   27e48:	f8df a080 	ldr.w	sl, [pc, #128]	; 27ecc <__register_exitproc+0x88>
+   27e4c:	4606      	mov	r6, r0
+   27e4e:	f8da 0000 	ldr.w	r0, [sl]
+   27e52:	4698      	mov	r8, r3
+   27e54:	460f      	mov	r7, r1
+   27e56:	4691      	mov	r9, r2
+   27e58:	f7ff fff0 	bl	27e3c <__retarget_lock_acquire_recursive>
+   27e5c:	4b1a      	ldr	r3, [pc, #104]	; (27ec8 <__register_exitproc+0x84>)
+   27e5e:	681b      	ldr	r3, [r3, #0]
+   27e60:	f8d3 4148 	ldr.w	r4, [r3, #328]	; 0x148
+   27e64:	b324      	cbz	r4, 27eb0 <__register_exitproc+0x6c>
+   27e66:	6865      	ldr	r5, [r4, #4]
+   27e68:	2d1f      	cmp	r5, #31
+   27e6a:	dc26      	bgt.n	27eba <__register_exitproc+0x76>
+   27e6c:	b95e      	cbnz	r6, 27e86 <__register_exitproc+0x42>
+   27e6e:	1cab      	adds	r3, r5, #2
+   27e70:	3501      	adds	r5, #1
+   27e72:	f8da 0000 	ldr.w	r0, [sl]
+   27e76:	6065      	str	r5, [r4, #4]
+   27e78:	f844 7023 	str.w	r7, [r4, r3, lsl #2]
+   27e7c:	f7ff ffe0 	bl	27e40 <__retarget_lock_release_recursive>
+   27e80:	2000      	movs	r0, #0
+   27e82:	e8bd 87f0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, r9, sl, pc}
+   27e86:	eb04 0385 	add.w	r3, r4, r5, lsl #2
+   27e8a:	2101      	movs	r1, #1
+   27e8c:	f8c3 9088 	str.w	r9, [r3, #136]	; 0x88
+   27e90:	f8d4 2188 	ldr.w	r2, [r4, #392]	; 0x188
+   27e94:	40a9      	lsls	r1, r5
+   27e96:	430a      	orrs	r2, r1
+   27e98:	2e02      	cmp	r6, #2
+   27e9a:	f8c4 2188 	str.w	r2, [r4, #392]	; 0x188
+   27e9e:	f8c3 8108 	str.w	r8, [r3, #264]	; 0x108
+   27ea2:	d1e4      	bne.n	27e6e <__register_exitproc+0x2a>
+   27ea4:	f8d4 318c 	ldr.w	r3, [r4, #396]	; 0x18c
+   27ea8:	4319      	orrs	r1, r3
+   27eaa:	f8c4 118c 	str.w	r1, [r4, #396]	; 0x18c
+   27eae:	e7de      	b.n	27e6e <__register_exitproc+0x2a>
+   27eb0:	f503 74a6 	add.w	r4, r3, #332	; 0x14c
+   27eb4:	f8c3 4148 	str.w	r4, [r3, #328]	; 0x148
+   27eb8:	e7d5      	b.n	27e66 <__register_exitproc+0x22>
+   27eba:	f8da 0000 	ldr.w	r0, [sl]
+   27ebe:	f7ff ffbf 	bl	27e40 <__retarget_lock_release_recursive>
+   27ec2:	f04f 30ff 	mov.w	r0, #4294967295
+   27ec6:	e7dc      	b.n	27e82 <__register_exitproc+0x3e>
+   27ec8:	0002b244 	.word	0x0002b244
+   27ecc:	1fff1070 	.word	0x1fff1070
 
-00027ed8 <tmc2041_defaultRegisterResetState>:
-   27ed8:	00000006 00000000 00000000 00000000     ................
+00027ed0 <tmc2041_defaultRegisterResetState>:
+   27ed0:	00000006 00000000 00000000 00000000     ................
 	...
-   27f98:	00071703 00000000 00000000 00000000     ................
+   27f90:	00071703 00000000 00000000 00000000     ................
 	...
-   28018:	00071703 00000000 00000000 00000000     ................
+   28010:	00071703 00000000 00000000 00000000     ................
 	...
-   28088:	000101d5 00000000 00000000 00000000     ................
+   28080:	000101d5 00000000 00000000 00000000     ................
 	...
-   280c8:	000101d5 00000000 00000000 00000000     ................
+   280c0:	000101d5 00000000 00000000 00000000     ................
 
-000280d8 <tmc2130_defaultRegisterResetState>:
+000280d0 <tmc2130_defaultRegisterResetState>:
 	...
-   28118:	00071703 00000000 00000000 00000000     ................
+   28110:	00071703 00000000 00000000 00000000     ................
 	...
-   28288:	000101d5 00000000 00000000 00000000     ................
-	...
-
-000282d8 <tmc2160_defaultRegisterResetState>:
-	...
-   28318:	00070a03 00000000 00000000 00000000     ................
-	...
-   28488:	10410153 00000000 00000000 00000000     S.A.............
-   28498:	c40c001e 00000000 00000000 00000000     ................
+   28280:	000101d5 00000000 00000000 00000000     ................
 	...
 
-000284d8 <tmc2208_defaultRegisterResetState>:
-   284d8:	00000041 00000000 00000000 00000000     A...............
+000282d0 <tmc2160_defaultRegisterResetState>:
 	...
-   28518:	00071703 00000014 00000000 00000000     ................
+   28310:	00070a03 00000000 00000000 00000000     ................
 	...
-   28688:	10000053 00000000 00000000 00000000     S...............
-   28698:	c10d0024 00000000 00000000 00000000     $...............
-	...
-
-000286d8 <tmc2209_defaultRegisterResetState>:
-   286d8:	00000040 00000000 00000000 00000000     @...............
-	...
-   28718:	00071703 00000014 00000000 00000000     ................
-	...
-   28888:	10000053 00000000 00000000 00000000     S...............
-   28898:	c10d0024 00000000 00000000 00000000     $...............
+   28480:	10410153 00000000 00000000 00000000     S.A.............
+   28490:	c40c001e 00000000 00000000 00000000     ................
 	...
 
-000288d8 <tmc2225_defaultRegisterResetState>:
-   288d8:	000000c1 00000000 00000000 00000000     ................
+000284d0 <tmc2208_defaultRegisterResetState>:
+   284d0:	00000041 00000000 00000000 00000000     A...............
 	...
-   28918:	00071703 00000014 00000000 00000000     ................
+   28510:	00071703 00000014 00000000 00000000     ................
 	...
-   28a88:	10000053 00000000 00000000 00000000     S...............
-   28a98:	c00d0024 00000000 00000000 00000000     $...............
-	...
-
-00028ad8 <tmc2590_defaultRegisterResetState>:
-   28ad8:	10000000 00000000 00000000 00000000     ................
-   28ae8:	00091935 000a0000 000d0505 000ef040     5...........@...
-
-00028af8 <tmc4330_defaultRegisterResetState>:
-	...
-   28b38:	00040001 00000000 00000000 00000000     ................
-	...
-   28b78:	00000001 00000000 00000000 00000000     ................
+   28680:	10000053 00000000 00000000 00000000     S...............
+   28690:	c10d0024 00000000 00000000 00000000     $...............
 	...
 
-00028cf8 <tmc4331_defaultRegisterResetState>:
+000286d0 <tmc2209_defaultRegisterResetState>:
+   286d0:	00000040 00000000 00000000 00000000     @...............
 	...
-   28d38:	00040001 00000000 00000000 00000000     ................
+   28710:	00071703 00000014 00000000 00000000     ................
 	...
-   28d78:	00000001 00000000 00000000 00000000     ................
-	...
-
-00028ef8 <tmc4361_defaultRegisterResetState>:
-	...
-   28f38:	00040001 00000000 00000000 00000000     ................
-	...
-   28f78:	00000001 00000000 00000000 00000000     ................
+   28880:	10000053 00000000 00000000 00000000     S...............
+   28890:	c10d0024 00000000 00000000 00000000     $...............
 	...
 
-000290f8 <tmc4361A_defaultRegisterResetState>:
+000288d0 <tmc2225_defaultRegisterResetState>:
+   288d0:	000000c1 00000000 00000000 00000000     ................
 	...
-   29138:	00040001 00000000 00000000 00000000     ................
+   28910:	00071703 00000014 00000000 00000000     ................
 	...
-   29178:	00000001 00000000 00000000 00000000     ................
-	...
-
-000292f8 <tmc5041_defaultRegisterResetState>:
-	...
-   293b8:	00071703 00000000 00ffffff 00000000     ................
-	...
-   29438:	00071703 00000000 00ffffff 00000000     ................
-	...
-   29478:	aaaab554 4a9554aa 24492929 10104222     T....T.J))I$"B..
-   29488:	fbffffff b5bb777d 49295556 00404222     ....}w..VU)I"B@.
-   29498:	ffff8056 00f70000 00000000 00000000     V...............
-   294a8:	000101d5 00000000 00000000 00000000     ................
-	...
-   294e8:	000101d5 00000000 00000000 00000000     ................
-
-000294f8 <tmc5062_defaultRegisterResetState>:
-	...
-   295b8:	00071703 00000000 00ffffff 00000000     ................
-	...
-   295e0:	00010000 00000000 00000000 00000000     ................
-	...
-   29638:	00071703 00000000 00ffffff 00000000     ................
-	...
-   29660:	00010000 00000000 00000000 00000000     ................
-	...
-   296a8:	000101d5 00000000 00000000 00000000     ................
-	...
-   296e8:	000101d5 00000000 00000000 00000000     ................
-
-000296f8 <tmc5072_defaultRegisterResetState>:
-	...
-   297b8:	00071703 00000000 00ffffff 00000000     ................
-	...
-   297e0:	00010000 00000000 00000000 00000000     ................
-	...
-   29838:	00071703 00000000 00ffffff 00000000     ................
-	...
-   29860:	00010000 00000000 00000000 00000000     ................
-	...
-   298a8:	000101d5 00000000 00000000 00000000     ................
-	...
-   298e8:	000101d5 00000000 00000000 00000000     ................
-
-000298f8 <tmc5130_defaultRegisterResetState>:
-	...
-   29938:	00071703 00000000 00000000 00000000     ................
-	...
-   299e0:	00010000 00000000 00000000 00000000     ................
-	...
-   29aa8:	000101d5 00000000 00000000 00000000     ................
+   28a80:	10000053 00000000 00000000 00000000     S...............
+   28a90:	c00d0024 00000000 00000000 00000000     $...............
 	...
 
-00029af8 <tmc5161_defaultRegisterResetState>:
-   29af8:	00000008 00000000 00000000 00000000     ................
+00028ad0 <tmc2590_defaultRegisterResetState>:
+   28ad0:	10000000 00000000 00000000 00000000     ................
+   28ae0:	00091935 000a0000 000d0505 000ef040     5...........@...
+
+00028af0 <tmc4330_defaultRegisterResetState>:
 	...
-   29b1c:	00010c0c 00080200 00000000 00000000     ................
+   28b30:	00040001 00000000 00000000 00000000     ................
 	...
-   29b38:	00070a03 0000000a 00000000 00000000     ................
-	...
-   29b64:	00000001 00000000 00000000 00000000     ................
-	...
-   29be0:	00010000 00000000 00000000 00000000     ................
-	...
-   29ca8:	00410153 00000000 00000000 00000000     S.A.............
-   29cb8:	c40c001e 00000000 00000000 00000000     ................
+   28b70:	00000001 00000000 00000000 00000000     ................
 	...
 
-00029cf8 <hwid_map.7364>:
-   29cf8:	00000001 00000000 00000000 00000000     ................
-   29d08:	00000002 00000000 00000000              ............
-
-00029d14 <IOFunctions>:
-   29d14:	1fff0078 1fff01b0                       x.......
-
-00029d1c <HAL>:
-   29d1c:	0001c8c9 0001c815 0001c835 00029d14     ........5.......
-   29d2c:	1fff09d8 1fff0a04 1fff0a48 1fff0a28     ........H...(...
-   29d3c:	1fff0a7c 1fff0abc 1fff0ae0 1fff0b08     |...............
-
-00029d4c <adc0_mux>:
-   29d4c:	                                         ...
-
-00029d4f <adc1_mux>:
-   29d4f:	00030100                                 .....
-
-00029d54 <init_ch1>:
-   29d54:	00000002 00014b31 00000004 00011215     ....1K..........
-   29d64:	00000005 00018cd1 00000006 00015a51     ............QZ..
-   29d74:	00000007 00017aa9 00000009 00013379     .....z......y3..
-   29d84:	0000000a 000104d1 0000000b 00011f7d     ............}...
-   29d94:	0000000d 000139ad 0000000f 0000fcfd     .....9..........
-   29da4:	00000010 0001a191 00000012 0001b385     ................
-   29db4:	00000019 000169c1 0000001a 0001bb65     .....i......e...
-   29dc4:	0000001b 0001becd 000000ff 00008971     ............q...
-
-00029dd4 <init_ch2>:
-   29dd4:	00000001 0000f1e5 00000003 0000abfd     ................
-   29de4:	00000004 00009c45 00000005 00009565     ....E.......e...
-   29df4:	00000006 0000c013 00000008 0000cb57     ............W...
-   29e04:	00000007 0000cfe5 00000012 0000d907     ................
-   29e14:	0000000d 0000e4a9 00000009 0001c1f9     ................
-   29e24:	00000013 0001b601 0000000a 0001b7ad     ................
-   29e34:	0000000b 0000bbe5                       ........
-
-00029e3c <sqrttable>:
-   29e3c:	1b161000 2a272320 3532302d 3d3b3937     .... #'*-02579;=
-   29e4c:	45434140 4c4b4947 5351504e 59575654     @ACEGIKLNPQSTVWY
-   29e5c:	5e5d5b5a 63626160 68676665 6d6c6b6a     Z[]^`abcefghjklm
-   29e6c:	7271706e 76757473 7a797877 7e7d7c7b     npqrstuvwxyz{|}~
-   29e7c:	82818080 86858483 8a898887 8e8d8c8b     ................
-   29e8c:	9190908f 95949392 98979696 9b9b9a99     ................
-   29e9c:	9f9e9d9c a2a1a0a0 a5a4a3a3 a8a7a7a6     ................
-   29eac:	abaaaaa9 aeadadac b1b0b0af b4b3b2b2     ................
-   29ebc:	b7b6b5b5 b9b9b8b7 bcbbbbba bfbebdbd     ................
-   29ecc:	c1c1c0c0 c4c3c3c2 c7c6c5c5 c9c9c8c7     ................
-   29edc:	cccbcbca cececdcc d1d0d0cf d3d3d2d1     ................
-   29eec:	d6d5d4d4 d8d7d7d6 dadad9d9 dddcdbdb     ................
-   29efc:	dfdededd e1e1e0e0 e3e3e2e2 e6e5e5e4     ................
-   29f0c:	e8e7e7e6 eaeae9e8 ececebeb eeeeeded     ................
-   29f1c:	f1f0f0ef f3f2f2f1 f5f4f4f3 f7f6f6f5     ................
-   29f2c:	f9f8f8f7 fbfafaf9 fdfcfcfb fffefefd     ................
-
-00029f3c <tmc2041_defaultRegisterAccess>:
-   29f3c:	02012103 00000013 00000000 00000000     .!..............
+00028cf0 <tmc4331_defaultRegisterResetState>:
 	...
-   29f6c:	00000002 00000000 00000000 00000000     ................
+   28d30:	00040001 00000000 00000000 00000000     ................
 	...
-   29f8c:	00000002 00000000 00000000 00000000     ................
-	...
-   29fa4:	01010000 01000203 00000000 00000000     ................
-   29fb4:	01010000 01000203 00000000               .............
-
-00029fc1 <tmc2130_defaultRegisterAccess>:
-   29fc1:	00002103 00000001 00000000 00000000     .!..............
-   29fd1:	02010202 00000202 00000000 00000000     ................
-	...
-   29fed:	00000300 02000000 00000000 00000000     ................
-	...
-   2a021:	42424242 42424242 01014242 01020203     BBBBBBBBBB......
-   2a031:	01020142 00000000 00000000 00000000     B...............
-   2a041:	                                         ...
-
-0002a044 <tmc2130_RegisterConstants>:
-   2a044:	00000060 aaaab554 00000061 4a9554aa     `...T...a....T.J
-   2a054:	00000062 24492929 00000063 10104222     b...))I$c..."B..
-   2a064:	00000064 fbffffff 00000065 b5bb777d     d.......e...}w..
-   2a074:	00000066 49295556 00000067 00404222     f...VU)Ig..."B@.
-   2a084:	00000068 ffff8056 00000069 00f70000     h...V...i.......
-   2a094:	00000070 00050480                       p.......
-
-0002a09c <tmc2160_defaultRegisterAccess>:
-   2a09c:	02012303 01020223 02424242 00000001     .#..#...BBB.....
-   2a0ac:	02010202 00000202 00000000 00000000     ................
-   2a0bc:	02010303 02020202 02020002 00000302     ................
-   2a0cc:	02000000 00012303 23020303 00000201     .....#.....#....
-	...
-   2a0fc:	42424242 42424242 01014242 01020203     BBBBBBBBBB......
-   2a10c:	01010102 00000000 00000000 00000000     ................
-
-0002a11c <tmc2160_RegisterConstants>:
-   2a11c:	00000008 00000000 00000009 00000000     ................
-   2a12c:	0000000a 00000000 00000060 aaaab554     ........`...T...
-   2a13c:	00000061 4a9554aa 00000062 24492929     a....T.Jb...))I$
-   2a14c:	00000063 10104222 00000064 fbffffff     c..."B..d.......
-   2a15c:	00000065 b5bb777d 00000066 49295556     e...}w..f...VU)I
-   2a16c:	00000067 00404222 00000068 ffff8056     g..."B@.h...V...
-   2a17c:	00000069 00f70000                       i.......
-
-0002a184 <tmc2208_defaultRegisterAccess>:
-   2a184:	02012303 03010102 00000000 00000000     .#..............
-   2a194:	02010202 00000000 00000000 00000000     ................
-   2a1a4:	00020000 00000000 00000000 00000000     ................
-	...
-   2a1c4:	00020102 00000000 00000000 00000000     ................
-	...
-   2a1ec:	01010000 01000003 00010103 00000000     ................
+   28d70:	00000001 00000000 00000000 00000000     ................
 	...
 
-0002a204 <tmc2209_defaultRegisterAccess>:
-   2a204:	02012303 03010102 00000000 00000000     .#..............
-   2a214:	02010202 00000002 00000000 00000000     ................
-   2a224:	00020000 00000000 00000000 00000000     ................
+00028ef0 <tmc4361_defaultRegisterResetState>:
 	...
-   2a244:	00020102 00000000 00000000 00000000     ................
+   28f30:	00040001 00000000 00000000 00000000     ................
 	...
-   2a26c:	01010000 01000003 00010103 00000000     ................
+   28f70:	00000001 00000000 00000000 00000000     ................
 	...
 
-0002a284 <tmc2224_defaultRegisterAccess>:
-   2a284:	02010303 03010102 00000000 00000000     ................
-   2a294:	02010202 00000000 00000000 00000000     ................
-   2a2a4:	00020000 00000000 00000000 00000000     ................
+000290f0 <tmc4361A_defaultRegisterResetState>:
 	...
-   2a2ec:	01010000 01000003 00010103 00000000     ................
+   29130:	00040001 00000000 00000000 00000000     ................
 	...
-
-0002a304 <tmc2224_defaultRegisterResetState>:
-   2a304:	00000141 00000000 00000000 00000000     A...............
-	...
-   2a344:	00001f00 00000014 00000000 00000000     ................
-	...
-   2a4b4:	10000053 00000000 00000000 00000000     S...............
-   2a4c4:	c10d0024 00000000 00000000 00000000     $...............
+   29170:	00000001 00000000 00000000 00000000     ................
 	...
 
-0002a504 <tmc2225_defaultRegisterAccess>:
-   2a504:	02012303 03010102 00000000 00000000     .#..............
-   2a514:	02010202 00000000 00000000 00000000     ................
-   2a524:	00020000 00000000 00000000 00000000     ................
+000292f0 <tmc5041_defaultRegisterResetState>:
 	...
-   2a544:	00020102 00000000 00000000 00000000     ................
+   293b0:	00071703 00000000 00ffffff 00000000     ................
 	...
-   2a56c:	01010000 01000003 00010103 00000000     ................
+   29430:	00071703 00000000 00ffffff 00000000     ................
+	...
+   29470:	aaaab554 4a9554aa 24492929 10104222     T....T.J))I$"B..
+   29480:	fbffffff b5bb777d 49295556 00404222     ....}w..VU)I"B@.
+   29490:	ffff8056 00f70000 00000000 00000000     V...............
+   294a0:	000101d5 00000000 00000000 00000000     ................
+	...
+   294e0:	000101d5 00000000 00000000 00000000     ................
+
+000294f0 <tmc5062_defaultRegisterResetState>:
+	...
+   295b0:	00071703 00000000 00ffffff 00000000     ................
+	...
+   295d8:	00010000 00000000 00000000 00000000     ................
+	...
+   29630:	00071703 00000000 00ffffff 00000000     ................
+	...
+   29658:	00010000 00000000 00000000 00000000     ................
+	...
+   296a0:	000101d5 00000000 00000000 00000000     ................
+	...
+   296e0:	000101d5 00000000 00000000 00000000     ................
+
+000296f0 <tmc5072_defaultRegisterResetState>:
+	...
+   297b0:	00071703 00000000 00ffffff 00000000     ................
+	...
+   297d8:	00010000 00000000 00000000 00000000     ................
+	...
+   29830:	00071703 00000000 00ffffff 00000000     ................
+	...
+   29858:	00010000 00000000 00000000 00000000     ................
+	...
+   298a0:	000101d5 00000000 00000000 00000000     ................
+	...
+   298e0:	000101d5 00000000 00000000 00000000     ................
+
+000298f0 <tmc5130_defaultRegisterResetState>:
+	...
+   29930:	00071703 00000000 00000000 00000000     ................
+	...
+   299d8:	00010000 00000000 00000000 00000000     ................
+	...
+   29aa0:	000101d5 00000000 00000000 00000000     ................
 	...
 
-0002a584 <tmc2590_defaultRegisterAccess>:
+00029af0 <tmc5161_defaultRegisterResetState>:
+   29af0:	00000008 00000000 00000000 00000000     ................
+	...
+   29b14:	00010c0c 00080200 00000000 00000000     ................
+	...
+   29b30:	00070a03 0000000a 00000000 00000000     ................
+	...
+   29b5c:	00000001 00000000 00000000 00000000     ................
+	...
+   29bd8:	00010000 00000000 00000000 00000000     ................
+	...
+   29ca0:	00410153 00000000 00000000 00000000     S.A.............
+   29cb0:	c40c001e 00000000 00000000 00000000     ................
+	...
+
+00029cf0 <hwid_map.7364>:
+   29cf0:	00000001 00000000 00000000 00000000     ................
+   29d00:	00000002 00000000 00000000              ............
+
+00029d0c <IOFunctions>:
+   29d0c:	1fff0078 1fff01b0                       x.......
+
+00029d14 <HAL>:
+   29d14:	0001c8c9 0001c815 0001c835 00029d0c     ........5.......
+   29d24:	1fff09d8 1fff0a04 1fff0a48 1fff0a28     ........H...(...
+   29d34:	1fff0a7c 1fff0abc 1fff0ae0 1fff0b08     |...............
+
+00029d44 <adc0_mux>:
+   29d44:	                                         ...
+
+00029d47 <adc1_mux>:
+   29d47:	00030100                                 .....
+
+00029d4c <init_ch1>:
+   29d4c:	00000002 00014b31 00000004 00011215     ....1K..........
+   29d5c:	00000005 00018cd1 00000006 00015a51     ............QZ..
+   29d6c:	00000007 00017aa9 00000009 00013379     .....z......y3..
+   29d7c:	0000000a 000104d1 0000000b 00011f7d     ............}...
+   29d8c:	0000000d 000139ad 0000000f 0000fcfd     .....9..........
+   29d9c:	00000010 0001a191 00000012 0001b385     ................
+   29dac:	00000019 000169c1 0000001a 0001bb65     .....i......e...
+   29dbc:	0000001b 0001becd 000000ff 00008971     ............q...
+
+00029dcc <init_ch2>:
+   29dcc:	00000001 0000f1e5 00000003 0000abfd     ................
+   29ddc:	00000004 00009c45 00000005 00009565     ....E.......e...
+   29dec:	00000006 0000c013 00000008 0000cb57     ............W...
+   29dfc:	00000007 0000cfe5 00000012 0000d907     ................
+   29e0c:	0000000d 0000e4a9 00000009 0001c1f9     ................
+   29e1c:	00000013 0001b601 0000000a 0001b7ad     ................
+   29e2c:	0000000b 0000bbe5                       ........
+
+00029e34 <sqrttable>:
+   29e34:	1b161000 2a272320 3532302d 3d3b3937     .... #'*-02579;=
+   29e44:	45434140 4c4b4947 5351504e 59575654     @ACEGIKLNPQSTVWY
+   29e54:	5e5d5b5a 63626160 68676665 6d6c6b6a     Z[]^`abcefghjklm
+   29e64:	7271706e 76757473 7a797877 7e7d7c7b     npqrstuvwxyz{|}~
+   29e74:	82818080 86858483 8a898887 8e8d8c8b     ................
+   29e84:	9190908f 95949392 98979696 9b9b9a99     ................
+   29e94:	9f9e9d9c a2a1a0a0 a5a4a3a3 a8a7a7a6     ................
+   29ea4:	abaaaaa9 aeadadac b1b0b0af b4b3b2b2     ................
+   29eb4:	b7b6b5b5 b9b9b8b7 bcbbbbba bfbebdbd     ................
+   29ec4:	c1c1c0c0 c4c3c3c2 c7c6c5c5 c9c9c8c7     ................
+   29ed4:	cccbcbca cececdcc d1d0d0cf d3d3d2d1     ................
+   29ee4:	d6d5d4d4 d8d7d7d6 dadad9d9 dddcdbdb     ................
+   29ef4:	dfdededd e1e1e0e0 e3e3e2e2 e6e5e5e4     ................
+   29f04:	e8e7e7e6 eaeae9e8 ececebeb eeeeeded     ................
+   29f14:	f1f0f0ef f3f2f2f1 f5f4f4f3 f7f6f6f5     ................
+   29f24:	f9f8f8f7 fbfafaf9 fdfcfcfb fffefefd     ................
+
+00029f34 <tmc2041_defaultRegisterAccess>:
+   29f34:	02012103 00000013 00000000 00000000     .!..............
+	...
+   29f64:	00000002 00000000 00000000 00000000     ................
+	...
+   29f84:	00000002 00000000 00000000 00000000     ................
+	...
+   29f9c:	01010000 01000203 00000000 00000000     ................
+   29fac:	01010000 01000203 00000000               .............
+
+00029fb9 <tmc2130_defaultRegisterAccess>:
+   29fb9:	00002103 00000001 00000000 00000000     .!..............
+   29fc9:	02010202 00000202 00000000 00000000     ................
+	...
+   29fe5:	00000300 02000000 00000000 00000000     ................
+	...
+   2a019:	42424242 42424242 01014242 01020203     BBBBBBBBBB......
+   2a029:	01020142 00000000 00000000 00000000     B...............
+   2a039:	                                         ...
+
+0002a03c <tmc2130_RegisterConstants>:
+   2a03c:	00000060 aaaab554 00000061 4a9554aa     `...T...a....T.J
+   2a04c:	00000062 24492929 00000063 10104222     b...))I$c..."B..
+   2a05c:	00000064 fbffffff 00000065 b5bb777d     d.......e...}w..
+   2a06c:	00000066 49295556 00000067 00404222     f...VU)Ig..."B@.
+   2a07c:	00000068 ffff8056 00000069 00f70000     h...V...i.......
+   2a08c:	00000070 00050480                       p.......
+
+0002a094 <tmc2160_defaultRegisterAccess>:
+   2a094:	02012303 01020223 02424242 00000001     .#..#...BBB.....
+   2a0a4:	02010202 00000202 00000000 00000000     ................
+   2a0b4:	02010303 02020202 02020002 00000302     ................
+   2a0c4:	02000000 00012303 23020303 00000201     .....#.....#....
+	...
+   2a0f4:	42424242 42424242 01014242 01020203     BBBBBBBBBB......
+   2a104:	01010102 00000000 00000000 00000000     ................
+
+0002a114 <tmc2160_RegisterConstants>:
+   2a114:	00000008 00000000 00000009 00000000     ................
+   2a124:	0000000a 00000000 00000060 aaaab554     ........`...T...
+   2a134:	00000061 4a9554aa 00000062 24492929     a....T.Jb...))I$
+   2a144:	00000063 10104222 00000064 fbffffff     c..."B..d.......
+   2a154:	00000065 b5bb777d 00000066 49295556     e...}w..f...VU)I
+   2a164:	00000067 00404222 00000068 ffff8056     g..."B@.h...V...
+   2a174:	00000069 00f70000                       i.......
+
+0002a17c <tmc2208_defaultRegisterAccess>:
+   2a17c:	02012303 03010102 00000000 00000000     .#..............
+   2a18c:	02010202 00000000 00000000 00000000     ................
+   2a19c:	00020000 00000000 00000000 00000000     ................
+	...
+   2a1bc:	00020102 00000000 00000000 00000000     ................
+	...
+   2a1e4:	01010000 01000003 00010103 00000000     ................
+	...
+
+0002a1fc <tmc2209_defaultRegisterAccess>:
+   2a1fc:	02012303 03010102 00000000 00000000     .#..............
+   2a20c:	02010202 00000002 00000000 00000000     ................
+   2a21c:	00020000 00000000 00000000 00000000     ................
+	...
+   2a23c:	00020102 00000000 00000000 00000000     ................
+	...
+   2a264:	01010000 01000003 00010103 00000000     ................
+	...
+
+0002a27c <tmc2224_defaultRegisterAccess>:
+   2a27c:	02010303 03010102 00000000 00000000     ................
+   2a28c:	02010202 00000000 00000000 00000000     ................
+   2a29c:	00020000 00000000 00000000 00000000     ................
+	...
+   2a2e4:	01010000 01000003 00010103 00000000     ................
+	...
+
+0002a2fc <tmc2224_defaultRegisterResetState>:
+   2a2fc:	00000141 00000000 00000000 00000000     A...............
+	...
+   2a33c:	00001f00 00000014 00000000 00000000     ................
+	...
+   2a4ac:	10000053 00000000 00000000 00000000     S...............
+   2a4bc:	c10d0024 00000000 00000000 00000000     $...............
+	...
+
+0002a4fc <tmc2225_defaultRegisterAccess>:
+   2a4fc:	02012303 03010102 00000000 00000000     .#..............
+   2a50c:	02010202 00000000 00000000 00000000     ................
+   2a51c:	00020000 00000000 00000000 00000000     ................
+	...
+   2a53c:	00020102 00000000 00000000 00000000     ................
+	...
+   2a564:	01010000 01000003 00010103 00000000     ................
+	...
+
+0002a57c <tmc2590_defaultRegisterAccess>:
+   2a57c:	00000002 02020202                       ........
+
+0002a584 <tmc2660_defaultRegisterAccess>:
    2a584:	00000002 02020202                       ........
 
-0002a58c <tmc2660_defaultRegisterAccess>:
-   2a58c:	00000002 02020202                       ........
-
-0002a594 <tmc2660_defaultRegisterResetState>:
+0002a58c <tmc2660_defaultRegisterResetState>:
 	...
-   2a5a4:	00091935 000a0000 000d0505 000ef040     5...........@...
+   2a59c:	00091935 000a0000 000d0505 000ef040     5...........@...
 
-0002a5b4 <tmc4330_defaultRegisterAccess>:
-   2a5b4:	03030343 43000300 43430003 01130303     C......C..CC....
-   2a5c4:	03430303 03000303 00000000 43030043     ..C.........C..C
-   2a5d4:	01010303 03030303 03030303 03030303     ................
-   2a5e4:	03034303 03030303 03030303 03030303     .C..............
-   2a5f4:	03030303 03030303 03030303 03000303     ................
-   2a604:	42131303 42420013 13130342 02021302     ...B..BBB.......
-   2a614:	02420202 00010100 01010202 00000000     ..B.............
-   2a624:	42424242 42424242 01010142 01420202     BBBBBBBBB.....B.
+0002a5ac <tmc4330_defaultRegisterAccess>:
+   2a5ac:	03030343 43000300 43430003 01130303     C......C..CC....
+   2a5bc:	03430303 03000303 00000000 43030043     ..C.........C..C
+   2a5cc:	01010303 03030303 03030303 03030303     ................
+   2a5dc:	03034303 03030303 03030303 03030303     .C..............
+   2a5ec:	03030303 03030303 03030303 03000303     ................
+   2a5fc:	42131303 42420013 13130342 02021302     ...B..BBB.......
+   2a60c:	02420202 00010100 01010202 00000000     ..B.............
+   2a61c:	42424242 42424242 01010142 01420202     BBBBBBBBB.....B.
 
-0002a634 <tmc4331_defaultRegisterAccess>:
-   2a634:	03030343 00430303 43430000 01130303     C.....C...CC....
-   2a644:	03430303 43030303 03030303 43030300     ..C....C.......C
-   2a654:	01010303 03030303 03030303 03030303     ................
-   2a664:	03034303 03130303 03030303 03030303     .C..............
-   2a674:	03030303 03030303 03030303 03000303     ................
+0002a62c <tmc4331_defaultRegisterAccess>:
+   2a62c:	03030343 00430303 43430000 01130303     C.....C...CC....
+   2a63c:	03430303 43030303 03030303 43030300     ..C....C.......C
+   2a64c:	01010303 03030303 03030303 03030303     ................
+   2a65c:	03034303 03130303 03030303 03030303     .C..............
+   2a66c:	03030303 03030303 03030303 03000303     ................
 	...
-   2a694:	00420202 02000000 00000000 01011313     ..B.............
-   2a6a4:	42424242 42424242 53010142 01420013     BBBBBBBBB..S..B.
+   2a68c:	00420202 02000000 00000000 01011313     ..B.............
+   2a69c:	42424242 42424242 53010142 01420013     BBBBBBBBB..S..B.
 
-0002a6b4 <tmc4361_defaultRegisterAccess>:
-   2a6b4:	03030343 43430303 43430303 01130303     C.....CC..CC....
-   2a6c4:	03430303 43030303 03030303 43030343     ..C....C....C..C
-   2a6d4:	01010303 03030303 03030303 03030303     ................
-   2a6e4:	03034303 03030303 03030303 03030303     .C..............
-   2a6f4:	03030303 03030303 03030303 03030303     ................
-   2a704:	42131303 42420213 13130342 02021302     ...B..BBB.......
-   2a714:	02420202 02010100 01010202 01010202     ..B.............
-   2a724:	42424242 42424242 53010142 01420253     BBBBBBBBB..SS.B.
+0002a6ac <tmc4361_defaultRegisterAccess>:
+   2a6ac:	03030343 43430303 43430303 01130303     C.....CC..CC....
+   2a6bc:	03430303 43030303 03030303 43030343     ..C....C....C..C
+   2a6cc:	01010303 03030303 03030303 03030303     ................
+   2a6dc:	03034303 03030303 03030303 03030303     .C..............
+   2a6ec:	03030303 03030303 03030303 03030303     ................
+   2a6fc:	42131303 42420213 13130342 02021302     ...B..BBB.......
+   2a70c:	02420202 02010100 01010202 01010202     ..B.............
+   2a71c:	42424242 42424242 53010142 01420253     BBBBBBBBB..SS.B.
 
-0002a734 <tmc4361A_defaultRegisterAccess>:
-   2a734:	03030343 43430303 43430303 01230303     C.....CC..CC..#.
-   2a744:	03430303 03030303 03030303 43030343     ..C.........C..C
-   2a754:	01010303 03030303 03030303 03030303     ................
-   2a764:	03034303 03130303 03030303 03030303     .C..............
-   2a774:	03030303 03030303 03030303 03030303     ................
-   2a784:	42131303 42420213 13130342 02021302     ...B..BBB.......
-   2a794:	02420202 02010100 01010202 01010202     ..B.............
-   2a7a4:	42424242 42424242 13011342 01420213     BBBBBBBBB.....B.
+0002a72c <tmc4361A_defaultRegisterAccess>:
+   2a72c:	03030343 43430303 43430303 01230303     C.....CC..CC..#.
+   2a73c:	03430303 03030303 03030303 43030343     ..C.........C..C
+   2a74c:	01010303 03030303 03030303 03030303     ................
+   2a75c:	03034303 03130303 03030303 03030303     .C..............
+   2a76c:	03030303 03030303 03030303 03030303     ................
+   2a77c:	42131303 42420213 13130342 02021302     ...B..BBB.......
+   2a78c:	02420202 02010100 01010202 01010202     ..B.............
+   2a79c:	42424242 42424242 13011342 01420213     BBBBBBBBB.....B.
 
-0002a7b4 <tmc4361A_RegisterConstants>:
-   2a7b4:	00000053 ffffffff 00000056 00a000a0     S.......V.......
-   2a7c4:	00000057 00f00000 00000058 00000190     W.......X.......
-   2a7d4:	00000062 00ffffff 00000070 aaaab554     b.......p...T...
-   2a7e4:	00000071 4a9554aa 00000072 24492929     q....T.Jr...))I$
-   2a7f4:	00000073 10104222 00000074 fbffffff     s..."B..t.......
-   2a804:	00000075 b5bb777d 00000076 49295556     u...}w..v...VU)I
-   2a814:	00000077 00404222 00000078 ffff8056     w..."B@.x...V...
-   2a824:	0000007e 00f70000                       ~.......
+0002a7ac <tmc4361A_RegisterConstants>:
+   2a7ac:	00000053 ffffffff 00000056 00a000a0     S.......V.......
+   2a7bc:	00000057 00f00000 00000058 00000190     W.......X.......
+   2a7cc:	00000062 00ffffff 00000070 aaaab554     b.......p...T...
+   2a7dc:	00000071 4a9554aa 00000072 24492929     q....T.Jr...))I$
+   2a7ec:	00000073 10104222 00000074 fbffffff     s..."B..t.......
+   2a7fc:	00000075 b5bb777d 00000076 49295556     u...}w..v...VU)I
+   2a80c:	00000077 00404222 00000078 ffff8056     w..."B@.x...V...
+   2a81c:	0000007e 00f70000                       ~.......
 
-0002a82c <tmc5031_defaultRegisterAccess>:
-   2a82c:	02010103 00000207 00000000 00000000     ................
-   2a83c:	00000102 00000000 00000102 00000000     ................
-   2a84c:	02010303 02020202 02020202 00000302     ................
-   2a85c:	02020202 00010103 01020303 00000001     ................
-   2a86c:	02010303 02020202 02020202 00000302     ................
-   2a87c:	02020202 00010103 01020303 00000001     ................
-   2a88c:	02020202 02020202 01010202 01020203     ................
-   2a89c:	02020202 02020202 01010202 01020203     ................
+0002a824 <tmc5031_defaultRegisterAccess>:
+   2a824:	02010103 00000207 00000000 00000000     ................
+   2a834:	00000102 00000000 00000102 00000000     ................
+   2a844:	02010303 02020202 02020202 00000302     ................
+   2a854:	02020202 00010103 01020303 00000001     ................
+   2a864:	02010303 02020202 02020202 00000302     ................
+   2a874:	02020202 00010103 01020303 00000001     ................
+   2a884:	02020202 02020202 01010202 01020203     ................
+   2a894:	02020202 02020202 01010202 01020203     ................
 
-0002a8ac <tmc5031_defaultRegisterResetState>:
+0002a8a4 <tmc5031_defaultRegisterResetState>:
 	...
-   2a96c:	00071703 00000000 00ffffff 00000000     ................
+   2a964:	00071703 00000000 00ffffff 00000000     ................
 	...
-   2a994:	00010000 00000000 00000000 00000000     ................
+   2a98c:	00010000 00000000 00000000 00000000     ................
 	...
-   2a9ec:	00071703 00000000 00ffffff 00000000     ................
+   2a9e4:	00071703 00000000 00ffffff 00000000     ................
 	...
-   2aa14:	00010000 00000000 00000000 00000000     ................
+   2aa0c:	00010000 00000000 00000000 00000000     ................
 	...
-   2aa2c:	aaaab554 4a9554aa 24492929 10104222     T....T.J))I$"B..
-   2aa3c:	fbffffff b5bb777d 49295556 00404222     ....}w..VU)I"B@.
-   2aa4c:	ffff8056 00f70000 00000000 00000000     V...............
-   2aa5c:	000101d5 00000000 00000000 00000000     ................
-   2aa6c:	aaaab554 4a9554aa 24492929 10104222     T....T.J))I$"B..
-   2aa7c:	fbffffff b5bb777d 49295556 00404222     ....}w..VU)I"B@.
-   2aa8c:	ffff8056 00f70000 00000000 00000000     V...............
-   2aa9c:	000101d5 00000000 00000000 00000000     ................
-   2aaac:	00000000                                 .....
+   2aa24:	aaaab554 4a9554aa 24492929 10104222     T....T.J))I$"B..
+   2aa34:	fbffffff b5bb777d 49295556 00404222     ....}w..VU)I"B@.
+   2aa44:	ffff8056 00f70000 00000000 00000000     V...............
+   2aa54:	000101d5 00000000 00000000 00000000     ................
+   2aa64:	aaaab554 4a9554aa 24492929 10104222     T....T.J))I$"B..
+   2aa74:	fbffffff b5bb777d 49295556 00404222     ....}w..VU)I"B@.
+   2aa84:	ffff8056 00f70000 00000000 00000000     V...............
+   2aa94:	000101d5 00000000 00000000 00000000     ................
+   2aaa4:	00000000                                 .....
 
-0002aab1 <tmc5041_defaultRegisterAccess>:
-   2aab1:	02000103 00000201 00000000 00000000     ................
-   2aac1:	00000102 00000000 00000102 00000000     ................
-   2aad1:	02010303 02020202 02020002 00000302     ................
-   2aae1:	00020202 00010103 00000000 00000000     ................
-   2aaf1:	02010303 02020202 02020002 00000302     ................
-   2ab01:	00020202 00010103 00000000 00000000     ................
-   2ab11:	02020202 02020202 01010202 01000203     ................
+0002aaa9 <tmc5041_defaultRegisterAccess>:
+   2aaa9:	02000103 00000201 00000000 00000000     ................
+   2aab9:	00000102 00000000 00000102 00000000     ................
+   2aac9:	02010303 02020202 02020002 00000302     ................
+   2aad9:	00020202 00010103 00000000 00000000     ................
+   2aae9:	02010303 02020202 02020002 00000302     ................
+   2aaf9:	00020202 00010103 00000000 00000000     ................
+   2ab09:	02020202 02020202 01010202 01000203     ................
 	...
-   2ab29:	01010000 01000203                        ...........
+   2ab21:	01010000 01000203                        ...........
 
-0002ab34 <tmc5062_defaultRegisterAccess>:
-   2ab34:	02010103 00000207 00000000 00000000     ................
-   2ab44:	00000102 00000000 00000102 00000000     ................
-   2ab54:	02010303 02020202 02020202 00000302     ................
-   2ab64:	02020202 00010103 01020303 00000001     ................
-   2ab74:	02010303 02020202 02020202 00000302     ................
-   2ab84:	02020202 00010103 01020303 00000001     ................
-   2ab94:	42424242 42424242 01014242 01020203     BBBBBBBBBB......
-   2aba4:	42424242 42424242 01014242 01020203     BBBBBBBBBB......
+0002ab2c <tmc5062_defaultRegisterAccess>:
+   2ab2c:	02010103 00000207 00000000 00000000     ................
+   2ab3c:	00000102 00000000 00000102 00000000     ................
+   2ab4c:	02010303 02020202 02020202 00000302     ................
+   2ab5c:	02020202 00010103 01020303 00000001     ................
+   2ab6c:	02010303 02020202 02020202 00000302     ................
+   2ab7c:	02020202 00010103 01020303 00000001     ................
+   2ab8c:	42424242 42424242 01014242 01020203     BBBBBBBBBB......
+   2ab9c:	42424242 42424242 01014242 01020203     BBBBBBBBBB......
 
-0002abb4 <tmc5062_RegisterConstants>:
-   2abb4:	00000060 aaaab554 00000061 4a9554aa     `...T...a....T.J
-   2abc4:	00000062 24492929 00000063 10104222     b...))I$c..."B..
-   2abd4:	00000064 fbffffff 00000065 b5bb777d     d.......e...}w..
-   2abe4:	00000066 49295556 00000067 00404222     f...VU)Ig..."B@.
-   2abf4:	00000068 ffff8056 00000069 00f70000     h...V...i.......
-   2ac04:	00000070 aaaab554 00000071 4a9554aa     p...T...q....T.J
-   2ac14:	00000072 24492929 00000073 10104222     r...))I$s..."B..
-   2ac24:	00000074 fbffffff 00000075 b5bb777d     t.......u...}w..
-   2ac34:	00000076 49295556 00000077 00404222     v...VU)Iw..."B@.
-   2ac44:	00000078 ffff8056 00000079 00f70000     x...V...y.......
-   2ac54:	00000000                                 .....
+0002abac <tmc5062_RegisterConstants>:
+   2abac:	00000060 aaaab554 00000061 4a9554aa     `...T...a....T.J
+   2abbc:	00000062 24492929 00000063 10104222     b...))I$c..."B..
+   2abcc:	00000064 fbffffff 00000065 b5bb777d     d.......e...}w..
+   2abdc:	00000066 49295556 00000067 00404222     f...VU)Ig..."B@.
+   2abec:	00000068 ffff8056 00000069 00f70000     h...V...i.......
+   2abfc:	00000070 aaaab554 00000071 4a9554aa     p...T...q....T.J
+   2ac0c:	00000072 24492929 00000073 10104222     r...))I$s..."B..
+   2ac1c:	00000074 fbffffff 00000075 b5bb777d     t.......u...}w..
+   2ac2c:	00000076 49295556 00000077 00404222     v...VU)Iw..."B@.
+   2ac3c:	00000078 ffff8056 00000079 00f70000     x...V...y.......
+   2ac4c:	00000000                                 .....
 
-0002ac59 <tmc5072_defaultRegisterAccess>:
-   2ac59:	02010103 00000213 00000000 00000000     ................
-   2ac69:	00000102 00000000 00000102 00000000     ................
-   2ac79:	02010303 02020202 02020002 00000302     ................
-   2ac89:	02020202 00010103 01020303 00000001     ................
-   2ac99:	02010303 02020202 02020002 00000302     ................
-   2aca9:	02020202 00010103 01020303 00000001     ................
-   2acb9:	42424242 42424242 01014242 01020203     BBBBBBBBBB......
+0002ac51 <tmc5072_defaultRegisterAccess>:
+   2ac51:	02010103 00000213 00000000 00000000     ................
+   2ac61:	00000102 00000000 00000102 00000000     ................
+   2ac71:	02010303 02020202 02020002 00000302     ................
+   2ac81:	02020202 00010103 01020303 00000001     ................
+   2ac91:	02010303 02020202 02020002 00000302     ................
+   2aca1:	02020202 00010103 01020303 00000001     ................
+   2acb1:	42424242 42424242 01014242 01020203     BBBBBBBBBB......
 	...
-   2acd1:	01010000 01020203                        ...........
+   2acc9:	01010000 01020203                        ...........
 
-0002acdc <tmc5072_RegisterConstants>:
-   2acdc:	00000060 aaaab554 00000061 4a9554aa     `...T...a....T.J
-   2acec:	00000062 24492929 00000063 10104222     b...))I$c..."B..
-   2acfc:	00000064 fbffffff 00000065 b5bb777d     d.......e...}w..
-   2ad0c:	00000066 49295556 00000067 00404222     f...VU)Ig..."B@.
-   2ad1c:	00000068 ffff8056 00000069 00f70000     h...V...i.......
-   2ad2c:	00000000                                 .....
+0002acd4 <tmc5072_RegisterConstants>:
+   2acd4:	00000060 aaaab554 00000061 4a9554aa     `...T...a....T.J
+   2ace4:	00000062 24492929 00000063 10104222     b...))I$c..."B..
+   2acf4:	00000064 fbffffff 00000065 b5bb777d     d.......e...}w..
+   2ad04:	00000066 49295556 00000067 00404222     f...VU)Ig..."B@.
+   2ad14:	00000068 ffff8056 00000069 00f70000     h...V...i.......
+   2ad24:	00000000                                 .....
 
-0002ad31 <tmc5130_defaultRegisterAccess>:
-   2ad31:	02012103 00000213 00000000 00000000     .!..............
-   2ad41:	02010202 00000202 00000000 00000000     ................
-   2ad51:	02010303 02020202 02020002 00000302     ................
-   2ad61:	02000000 00012103 21020303 00000001     .....!.....!....
+0002ad29 <tmc5130_defaultRegisterAccess>:
+   2ad29:	02012103 00000213 00000000 00000000     .!..............
+   2ad39:	02010202 00000202 00000000 00000000     ................
+   2ad49:	02010303 02020202 02020002 00000302     ................
+   2ad59:	02000000 00012103 21020303 00000001     .....!.....!....
 	...
-   2ad91:	42424242 42424242 01014242 01020203     BBBBBBBBBB......
-   2ada1:	01020142 00000000 00000000 00000000     B...............
-   2adb1:	                                         ...
+   2ad89:	42424242 42424242 01014242 01020203     BBBBBBBBBB......
+   2ad99:	01020142 00000000 00000000 00000000     B...............
+   2ada9:	                                         ...
 
-0002adb4 <tmc5130_RegisterConstants>:
-   2adb4:	00000060 aaaab554 00000061 4a9554aa     `...T...a....T.J
-   2adc4:	00000062 24492929 00000063 10104222     b...))I$c..."B..
-   2add4:	00000064 fbffffff 00000065 b5bb777d     d.......e...}w..
-   2ade4:	00000066 49295556 00000067 00404222     f...VU)Ig..."B@.
-   2adf4:	00000068 ffff8056 00000069 00f70000     h...V...i.......
-   2ae04:	00000070 00050480                       p.......
+0002adac <tmc5130_RegisterConstants>:
+   2adac:	00000060 aaaab554 00000061 4a9554aa     `...T...a....T.J
+   2adbc:	00000062 24492929 00000063 10104222     b...))I$c..."B..
+   2adcc:	00000064 fbffffff 00000065 b5bb777d     d.......e...}w..
+   2addc:	00000066 49295556 00000067 00404222     f...VU)Ig..."B@.
+   2adec:	00000068 ffff8056 00000069 00f70000     h...V...i.......
+   2adfc:	00000070 00050480                       p.......
 
-0002ae0c <tmc5160_defaultRegisterAccess>:
-   2ae0c:	02010703 01020207 02020201 00000001     ................
-   2ae1c:	02010202 00000202 00000000 00000000     ................
-   2ae2c:	02010303 02020202 02020002 00000302     ................
-   2ae3c:	02000000 00010703 07020303 00000201     ................
+0002ae04 <tmc5160_defaultRegisterAccess>:
+   2ae04:	02010703 01020207 02020201 00000001     ................
+   2ae14:	02010202 00000202 00000000 00000000     ................
+   2ae24:	02010303 02020202 02020002 00000302     ................
+   2ae34:	02000000 00010703 07020303 00000201     ................
 	...
-   2ae6c:	02020202 02020202 01010202 01020203     ................
-   2ae7c:	01010102 00000000 00000000 00000000     ................
+   2ae64:	02020202 02020202 01010202 01020203     ................
+   2ae74:	01010102 00000000 00000000 00000000     ................
 
-0002ae8c <tmc5160_defaultRegisterResetState>:
-   2ae8c:	00000008 00000000 00000000 00000000     ................
+0002ae84 <tmc5160_defaultRegisterResetState>:
+   2ae84:	00000008 00000000 00000000 00000000     ................
 	...
-   2aeb0:	00010606 00080400 00000000 00000000     ................
+   2aea8:	00010606 00080400 00000000 00000000     ................
 	...
-   2aecc:	00070a03 0000000a 00000000 00000000     ................
+   2aec4:	00070a03 0000000a 00000000 00000000     ................
 	...
-   2aef8:	00000001 00000000 00000000 00000000     ................
+   2aef0:	00000001 00000000 00000000 00000000     ................
 	...
-   2af74:	00010000 00000000 00000000 00000000     ................
+   2af6c:	00010000 00000000 00000000 00000000     ................
 	...
-   2b00c:	aaaab554 4a9554aa 24492929 10104222     T....T.J))I$"B..
-   2b01c:	fbffffff b5bb777d 49295556 00404222     ....}w..VU)I"B@.
-   2b02c:	ffff8056 00f70000 00000000 00000000     V...............
-   2b03c:	00410153 00000000 00000000 00000000     S.A.............
-   2b04c:	c40c001e 00000000 00000000 00000000     ................
+   2b004:	aaaab554 4a9554aa 24492929 10104222     T....T.J))I$"B..
+   2b014:	fbffffff b5bb777d 49295556 00404222     ....}w..VU)I"B@.
+   2b024:	ffff8056 00f70000 00000000 00000000     V...............
+   2b034:	00410153 00000000 00000000 00000000     S.A.............
+   2b044:	c40c001e 00000000 00000000 00000000     ................
 	...
 
-0002b08c <tmc5161_defaultRegisterAccess>:
-   2b08c:	02011303 01020213 02020201 00000001     ................
-   2b09c:	02010202 00000202 00000000 00000000     ................
-   2b0ac:	02010303 02020202 02020002 00000302     ................
-   2b0bc:	02000000 00011303 13020303 00000201     ................
+0002b084 <tmc5161_defaultRegisterAccess>:
+   2b084:	02011303 01020213 02020201 00000001     ................
+   2b094:	02010202 00000202 00000000 00000000     ................
+   2b0a4:	02010303 02020202 02020002 00000302     ................
+   2b0b4:	02000000 00011303 13020303 00000201     ................
 	...
-   2b0ec:	42424242 42424242 01014242 01020203     BBBBBBBBBB......
-   2b0fc:	01010142 00000000 00000000 00000000     B...............
+   2b0e4:	42424242 42424242 01014242 01020203     BBBBBBBBBB......
+   2b0f4:	01010142 00000000 00000000 00000000     B...............
 
-0002b10c <g_languages>:
-   2b10c:	1fff0b5f 00000004 00000409 0002b170     _...........p...
-   2b11c:	0002b180 00000000 00000000 00000000     ................
+0002b104 <g_languages>:
+   2b104:	1fff0b5f 00000004 00000409 0002b168     _...........h...
+   2b114:	0002b178 00000000 00000000 00000000     x...............
 
-0002b12c <g_std_descriptors>:
-   2b12c:	00000000 1fff0c36 1fff0bf3 00000000     ....6...........
+0002b124 <g_std_descriptors>:
+   2b124:	00000000 1fff0c36 1fff0bf3 00000000     ....6...........
 	...
 
-0002b14c <g_std_desc_size>:
-   2b14c:	00120000 00000043 00000000 00000000     ....C...........
+0002b144 <g_std_desc_size>:
+   2b144:	00120000 00000043 00000000 00000000     ....C...........
 
-0002b15c <usb_desc_ep>:
-   2b15c:	01020103 02020010 03001000 00100103     ................
+0002b154 <usb_desc_ep>:
+   2b154:	01020103 02020010 03001000 00100103     ................
 
-0002b16c <g_valid_config_values>:
-   2b16c:	00000100                                ....
+0002b164 <g_valid_config_values>:
+   2b164:	00000100                                ....
 
-0002b170 <g_string_descriptors>:
-   2b170:	1fff0b5f 1fff0bb9 1fff0b93 1fff0b71     _...........q...
+0002b168 <g_string_descriptors>:
+   2b168:	1fff0b5f 1fff0bb9 1fff0b93 1fff0b71     _...........q...
 
-0002b180 <g_string_desc_size>:
-   2b180:	22263a04                                .:&"
+0002b178 <g_string_desc_size>:
+   2b178:	22263a04                                .:&"
 
-0002b184 <g_usb_CB>:
-   2b184:	00026e1d 00025745 000257d9 00025549     .n..EW...W..IU..
-   2b194:	00026955 00026955 00026955 00026955     Ui..Ui..Ui..Ui..
-   2b1a4:	00026955 00026955 00026955 00026955     Ui..Ui..Ui..Ui..
-   2b1b4:	00026955 00026955 00026955 00026955     Ui..Ui..Ui..Ui..
-   2b1c4:	00025abf 00025a51 00025ab1 00025a7d     .Z..QZ...Z..}Z..
-   2b1d4:	00025a51 00026955 00025a3d 00025b2d     QZ..Ui..=Z..-[..
+0002b17c <g_usb_CB>:
+   2b17c:	00026e1d 00025745 000257d9 00025549     .n..EW...W..IU..
+   2b18c:	00026955 00026955 00026955 00026955     Ui..Ui..Ui..Ui..
+   2b19c:	00026955 00026955 00026955 00026955     Ui..Ui..Ui..Ui..
+   2b1ac:	00026955 00026955 00026955 00026955     Ui..Ui..Ui..Ui..
+   2b1bc:	00025abf 00025a51 00025ab1 00025a7d     .Z..QZ...Z..}Z..
+   2b1cc:	00025a51 00026955 00025a3d 00025b2d     QZ..Ui..=Z..-[..
 
-0002b1e4 <g_standard_request>:
-   2b1e4:	00026be7 00026cb1 00000000 00026cb1     .k...l.......l..
-   2b1f4:	00000000 00026ba9 00026bd1 00000000     .....k...k......
-   2b204:	00026b15 00026b45 00026da1 00026d81     .k..Ek...m...m..
-   2b214:	00026ae9                                .j..
+0002b1dc <g_standard_request>:
+   2b1dc:	00026be7 00026cb1 00000000 00026cb1     .k...l.......l..
+   2b1ec:	00000000 00026ba9 00026bd1 00000000     .....k...k......
+   2b1fc:	00026b15 00026b45 00026da1 00026d81     .k..Ek...m...m..
+   2b20c:	00026ae9                                .j..
 
-0002b218 <g_validate_request>:
-   2b218:	01000101 00000001 00010100 00000000     ................
-   2b228:	01010101 00000001 01000101 00010001     ................
-   2b238:	00000100 43000001 3000444d 56323130     .......CMD.0012V
-   2b248:	00373033                                307.
+0002b210 <g_validate_request>:
+   2b210:	01000101 00000001 00010100 00000000     ................
+   2b220:	01010101 00000001 01000101 00010001     ................
+   2b230:	00000100 43000001 3000444d 56323130     .......CMD.0012V
+   2b240:	00373033                                307.
 
-0002b24c <_global_impure_ptr>:
-   2b24c:	1fff0c48                                H...
+0002b244 <_global_impure_ptr>:
+   2b244:	1fff0c48                                H...
 
-0002b250 <_init>:
-   2b250:	b5f8      	push	{r3, r4, r5, r6, r7, lr}
-   2b252:	bf00      	nop
-   2b254:	bcf8      	pop	{r3, r4, r5, r6, r7}
-   2b256:	bc08      	pop	{r3}
-   2b258:	469e      	mov	lr, r3
-   2b25a:	4770      	bx	lr
+0002b248 <_init>:
+   2b248:	b5f8      	push	{r3, r4, r5, r6, r7, lr}
+   2b24a:	bf00      	nop
+   2b24c:	bcf8      	pop	{r3, r4, r5, r6, r7}
+   2b24e:	bc08      	pop	{r3}
+   2b250:	469e      	mov	lr, r3
+   2b252:	4770      	bx	lr
 
-0002b25c <_fini>:
-   2b25c:	b5f8      	push	{r3, r4, r5, r6, r7, lr}
-   2b25e:	bf00      	nop
-   2b260:	bcf8      	pop	{r3, r4, r5, r6, r7}
-   2b262:	bc08      	pop	{r3}
-   2b264:	469e      	mov	lr, r3
-   2b266:	4770      	bx	lr
+0002b254 <_fini>:
+   2b254:	b5f8      	push	{r3, r4, r5, r6, r7, lr}
+   2b256:	bf00      	nop
+   2b258:	bcf8      	pop	{r3, r4, r5, r6, r7}
+   2b25a:	bc08      	pop	{r3}
+   2b25c:	469e      	mov	lr, r3
+   2b25e:	4770      	bx	lr
